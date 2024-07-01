@@ -114,15 +114,15 @@ new Vue({
                         <div class="doc-block" v-if="page === 'Main'">
                             <div class="doc-notice">
                                 <h4 class="centered">We may change the rules at any time as we see fit. New rules may or may not be retroactive at our discretion.</h4>
-                                <h4 class="centered">The rules on this page may not always be updated. Join our Discord to ensure you are reading the most up-to-date rules. This page was last updated on April 5th, 2023.</h4>
+                                <h4 class="centered">The rules on this page may not always be updated. Join our Discord to ensure you are reading the most up-to-date rules. This page was last updated on July 1st, 2024.</h4>
                             </div>
                             <div class="doc-section">
                                 <h3><i class="game icon"></i> General rules</h3>
-                                Any violation of the rules in this section will result in a restriction or ban, temporary or permanent, depending on the severity.
+                                Any violation of the rules in this section will result in a wipe, restriction, or ban, whether temporary or permanent, depending on the severity.
                                 <div class="doc-content">
-                                    <p>1.Unfair hacks, such as replay bots (including replay editing by extension), score modifiers, OD Changers, spinbots, Autobots (including all forms of auto/cursordance bots), and cheats that modify replay data, Tap Data, Aim Data, Mods, and Score Editors, are not allowed. This list is not exhaustive, and staff can enforce this outside the given examples.</br>
-                                    2.Shared or boosted accounts are NOT allowed.</br>
-                                    3.Do not try to exploit the server. If you find a vulnerability, please report it.</br>
+                                    <p>1. Unfair hacks such as replaybots (and replay editing, by extension), score modifiers, OD changers, spinbots, autobots (includes all forms of auto, cursordance bots too), cheats that modify the score's replay data, a.k.a. a replay editor (e.g., tapping data or aim data, or playing with the in-game Relax mod, then removing it on submission), and score editors are NOT allowed. The use of Relax hack in autopilot also applies. This rule may be enforced outside of the examples given. It is discretionary.</br>
+                                    2. Shared or boosted accounts are NOT allowed.</br>
+                                    3. Do not try to exploit the server. If you find a vulnerability, please report it.</br>
                                     4.Use an appropriate username or avatar. If you do not, your privileges to use them will be discontinued.</br>
                                     5.Multi-accounts are strictly prohibited.</p>
                                 </div>
@@ -147,17 +147,17 @@ new Vue({
                                 <div class="subsection">
                                     <h4><b>AutoPilot</b></h4>
                                     Any form of Relax is not allowed while using autopilot.
-                                    We can request liveplays at any time and failure to provide them will result in a wipe.
+                                    Staff's can request liveplays at any time and failure to provide them will result in a wipe.
                                 </div>
                             </div>
                             <div class="doc-section">
                                 <h3><i class="shield icon"></i> Moderation policy</h3>
                                 Unlike other infractions, we have a fixed moderation policy for hacking rules.
                                 <div class="doc-content">
-                                    If you get caught breaking any of the Hacking Rules, it will result in a wipe of your account's scores if you cannot prove you weren't breaking the rules.</br>
+                                    If you get caught breaking any of the hacking rules, it will result in a wipe of your account scores if you cannot prove you weren't breaking the rules.</br>
                                     </br>
                                     After 3 wipes, your account will be BANNED, not restricted.</br>
-                                    This means we'll never ban someone at their first wipe, other than for the Skoot.er AC rule and Multiple cheat client's rules.</br>
+                                    This means we'll never ban someone at their first wipe, other than for the Aeris AC rule and multiple cheat client's rules.</br>
                                     </br>
                                     You may appeal 1 month after your restriction unless you judge you haven't been restricted for a legitimate reason.</br>
                                     </br>
@@ -201,7 +201,7 @@ new Vue({
                                         <b>MPGH's Ainu</b> default AC is allowed;
                                     </div>
                                     <div class="doc-content">
-                                        <b>Skooter's AC/Abypass AA</b> is allowed; Its Strength must be at or below 60, but can only be a whole number. Values like 58.2 and 51.1 are not allowed.
+                                        <b>Aeris AC and Abypass AC</b> are allowed; Its Strength must be at or below 50, but can only be a whole number. Values like 48.2 and 41.1 are not allowed.
                                     </div>
                                     <div class="doc-content">
                                         <b>osu!buddy's AA</b> is allowed; but must be equal to or below the following settings. Strength: 11 Aim Start Distance: 666
@@ -213,11 +213,13 @@ new Vue({
                                         <b>Assist.games AA</b> is allowed, Its Strength cannot exceed 66.
                                     </div>
                                     <div class="doc-content">
-                                        <b>Maple AA</b> is allowed but MUST be equal to or below the following settings.</br>
+                                        <p><b>Maple AA</b> is allowed but MUST be equal to or below the following settings.</br>
                                         <div class="subsection">
-                                            AA <b>V1</b></br>
-                                            Strength: 0.66  | Base FOV: 55 |  Max FOV (Scaling): 2 | Minimum FOV (total): 25 Maximum FOV (Total): 185 | Assist on Sliders: Allowed | Acceleration Factor: 3 Minimum. |
-                                        </div>
+                                            <div><p>Aim Assist <b>RULES FOR VANILLA<b>:<p>
+                                            <div>AA <b>V1</b></br>
+                                            Strength: 0.7 | Base FOV: 70 | Max FOV (Scaling): 3 | Minimum FOV (total): 25 Maximum FOV (Total): 200 | Assist on Sliders: Allowed | Acceleration Factor: Doesn't matter. |
+
+                                        <div>
                                         <div class="subsection">
                                             AA <b>V2</b></br>
                                             AA Power: 0,6 or below. Assist on sliders: Allowed
@@ -226,38 +228,43 @@ new Vue({
                                             AA <b>V3</b></br>
                                             AA Power: 1.2 or below. Slider AA: 0,6 or below.
                                         </div>
-                                    </div>
+                                        
+                                         <div class="subsection">
+                                        <div><p>Aim Assist RULES FOR RELAX:
+                                        <div>AA <b>V1<b></br>
+                                            <div>Strength: 0.7 | Base FOV: 70 | Max FOV (Scaling): 3 | Minimum FOV (total): 30 Maximum FOV (Total): 250 | Assist on Sliders: Allowed | Acceleration Factor: Does not matter |
+                                        </div>    
+                                        <div class="subsection">    
+                                        <div>AA <b>V2</br>
+                                        <div>AA Power: 0.8 Assist on sliders: Allowed
+                                        
+                                         <div class="subsection">
+                                        <div>AA <b>V3</br>
+                                        <div>AA Power: 1.5 Slider AA: 0.6
+                                        
+                                        </div>
                                 </div>
                                 <div class="subsection">
                                     <h5><b>CS modifiers:</b></h5>
-                                    Circle Size changers are allowed, but with the following rules:
-                                    <div class="doc-content">
-                                        <p>For no-mod plays: default CS - 1 (eg. CS4 -> CS3);</br>
-                                        For HR plays: default CS - 0.77 (eg. CS4 -> CS3.23);</br>
-                                        For EZ plays: default CS - 2 (eg. CS4 -> CS2).</br>
-                                        </br>
-                                        These values must be applied to the map's default CS with NO MODS ENABLED.</br>
-                                        To check the CS, turn off your CS changer, reload the map and check in the top left corner where it says "CS: xxx AR: xxx OD: xxx"</p>
+                                   From now on (July 1st 2024), CS changers are NOT allowed anymore on Kawata.
+                                   The use of it will be punished with a wipe and counted as an act of overcheating.
                                     </div>
                                 </div>
                                 <div class="subsection">
                                     <h5><b>Flashlight:</b></h5>
                                     <div class="doc-content">
-                                        <p>You may use Flashlight removers, but only if the map's difficulty is lower than 7 stars after mods.</br>
-                                        So if it's 6 stars no mod, and you apply +HDDT and it becomes 8 stars, then it's not allowed.</br>
-                                        If that's the case you are required to liveplay the play with Flashlight.</br>
-                                        NOW, FL is not allowed even if there's a score on top 50 scores of that map (Bancho)</br>
+                                        <p>FL Remover is ONLY ALLOWED in maps that are below 7 Stars and if you set an FL Play in a map ABOVE 7 Stars (mods like DT included), THEN YOU MUST MAKE A LIVEPLAY THAT PROOFS YOU DID IT LEGIT AND SEND IT TO A STAFF MEMBER.</br>
                                         If you're unsure, then ask a Moderator.</br>
                                         </br>
-                                        TLDR: <b>FL REMOVER IS NOT ALLOWED.</b></p>
+                                        TLDR: <b>FL REMOVER IS NOT ALLOWED ABOVE 7 STAR MAPS (mods applied).</b></p>
                                     </div>
                                 </div>
                                 <div class="subsection">
                                     <h5><b>Multiple Cheats:</b></h5>
                                     <div class="doc-content">
-                                        <p>You <b>can't</b> have more than <b>ONE</b> cheat instance/client open at the same time.</br>
-                                        This ALSO applies to combining cheats together, if you get caught doing so you will end up getting banned.</br>
-                                        *The only exception for this rule is combining osu!rx (V1 or V2) with Kat's AA/any kind of Aim assist that doesn't have timewarp & relax.*</p>
+                                        <p>You now <b>can't<b> have more than <b>ONE<b> cheat instance/client open at the same time,this <b>ALSO<b> apply's for combining cheats together, if you get caught doing so you will end up getting banned.
+                                       
+                                        <p>* The only exception for this rule is combining osu!rx (V1 or V2) with Kat's AA/any kind of Aim assist that doesn't have timewarp & relax.</p>
                                     </div>
                                 </div>
                                 <div class="subsection">
