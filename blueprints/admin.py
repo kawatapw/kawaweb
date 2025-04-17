@@ -1846,14 +1846,14 @@ async def log(action: Action):
         if action.action != "changepassword":
             embed = DiscordEmbed(
                 title=f"{action.user.name} was {action.text} by {action.mod.name}",
-                description=f"a {action.action} was performed.",
+                description=f"A {action.action} was performed.",
                 color=5126045,
                 timestamp=datetime.datetime.now()
                 )
         else:
             embed = DiscordEmbed(
                 title=f"{action.user.name} was {action.text} by {action.mod.name}",
-                description=f"a {action.text} was performed.",
+                description=f"A {action.text} was performed.",
                 color=5126045,
                 timestamp=datetime.datetime.now()
                 )
@@ -1887,24 +1887,25 @@ async def log(action: Action):
         webhook = DiscordWebhook(glob.config.RANKED_WEBHOOK_URL)
 
         embed = DiscordEmbed(
-            title=f"{action.map.title} [{action.map.version}] was {action.text} by {action.mod.name} ({action.mod.id})",
-            description=f"[{action.map.title} [{action.map.version}]](https://osu.ppy.sh/b/{action.map.id}) was {action.text}",
+            title=f"Beatmap Status was changed to {action.text}",
+            description=f"[{action.map.title} [{action.map.version}]](https://osu.ppy.sh/b/{action.map.id})",
             color=5126045,
             timestamp=datetime.datetime.now()
             )
         
         embed.set_author(
-            name=f"Diff {action.text} By {action.mod.name} ({action.mod.id})",
+            name=f"{action.mod.name} ({action.mod.id})",
             icon_url=f"https://a.kawata.pw/{action.mod.id}"
             )
 
         embed.add_embed_field(
-            name="Information:",
+            name="Map Stats:",
             value=f"""
-            Ranked By: {action.mod.name} ({action.mod.id})\n
-            Map: {action.map.title} [{action.map.version}] ({action.map.id})\n
-            Map Stats: CS: {action.map.cs} AR: {action.map.ar} OD: {action.map.od} HP: {action.map.hp} NM*: {action.map.diff}\n
-            Action: {action.action}\n 
+            CS: {action.map.cs}
+            AR: {action.map.ar}
+            OD: {action.map.od}
+            HP: {action.map.hp}
+            NM SR: {action.map.diff} ⭐
             """,
             inline=False
             )
@@ -1935,7 +1936,7 @@ async def log(action: Action):
             )
         
         embed.set_author(
-            name=f"New Action By {action.mod.name}",
+            name=f"New Action by {action.mod.name}",
             icon_url=f"https://a.kawata.pw/{action.mod.id}"
             )
 
