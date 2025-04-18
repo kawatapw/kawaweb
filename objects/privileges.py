@@ -4,37 +4,41 @@ from enum import IntFlag
 from enum import unique
 from typing import Union, List
 
-__all__ = ('Privileges',)
+__all__ = ("Privileges",)
+
 
 @unique
 class Privileges(IntFlag):
     """Server side user privileges."""
 
-    Banned              = 0        # 0 Perms, Banned or Restricted, whatever you want to call it.
-    Normal              = 1        # user is not restricted.
-    Verified            = 2 << 0   # has logged in to the server in-game.
-    Supporter           = 2 << 1   # user is a supporter.
-    AccessPanel         = 2 << 2   # probably wont be used much.    
-    ManageUsers         = 2 << 3   # can manage users? probably going to be used for changing passwords/email/etc
-    RestrictUsers       = 2 << 4   # can ban users
-    SilenceUsers        = 2 << 5   # can silence users
-    WipeUsers           = 2 << 6   # can wipe users
-    ManageBeatmaps      = 2 << 7   # able to manage maps ranked status.
-    ManageBadges        = 2 << 13  # can manage badges
-    ViewPanelLog        = 2 << 14  # can view the panel log
-    ManagePrivs         = 2 << 15  # can manage privs of users
-    SendAlerts          = 2 << 16  # can send in-game alerts? probably not going to be used much
-    ChatMod             = 2 << 17  # chat mod, no way
-    KickUsers           = 2 << 18  # can kick users
-    Tournament          = 2 << 20  # able to manage match state without host.
-    ManageClans         = 2 << 27  # can manage clans.
-    ViewSensitiveInfo   = 2 << 28  # can view ips, hwids, disk ids of users. super awesome with the new system.
-    IsBot               = 2 << 30  # BOT_USER
-    Whitelisted         = 2 << 31  # has bypass to low-ceiling anticheat measures (trusted).
-    Premium             = 2 << 32  # 'premium' donor
-    Alumni              = 2 << 33  # notable users, receives some extra benefits.
-    Dangerous           = 2 << 34  # able to manage full server app.state.
-
+    Banned = 0  # 0 Perms, Banned or Restricted, whatever you want to call it.
+    Normal = 1  # user is not restricted.
+    Verified = 2 << 0  # has logged in to the server in-game.
+    Supporter = 2 << 1  # user is a supporter.
+    AccessPanel = 2 << 2  # probably wont be used much.
+    ManageUsers = (
+        2 << 3
+    )  # can manage users? probably going to be used for changing passwords/email/etc
+    RestrictUsers = 2 << 4  # can ban users
+    SilenceUsers = 2 << 5  # can silence users
+    WipeUsers = 2 << 6  # can wipe users
+    ManageBeatmaps = 2 << 7  # able to manage maps ranked status.
+    ManageBadges = 2 << 13  # can manage badges
+    ViewPanelLog = 2 << 14  # can view the panel log
+    ManagePrivs = 2 << 15  # can manage privs of users
+    SendAlerts = 2 << 16  # can send in-game alerts? probably not going to be used much
+    ChatMod = 2 << 17  # chat mod, no way
+    KickUsers = 2 << 18  # can kick users
+    Tournament = 2 << 20  # able to manage match state without host.
+    ManageClans = 2 << 27  # can manage clans.
+    ViewSensitiveInfo = (
+        2 << 28
+    )  # can view ips, hwids, disk ids of users. super awesome with the new system.
+    IsBot = 2 << 30  # BOT_USER
+    Whitelisted = 2 << 31  # has bypass to low-ceiling anticheat measures (trusted).
+    Premium = 2 << 32  # 'premium' donor
+    Alumni = 2 << 33  # notable users, receives some extra benefits.
+    Dangerous = 2 << 34  # able to manage full server app.state.
 
     # groups inherently say they "are part of" the things they contain.
     # e.g. if you have the AccessPanel privilege, you are also a Moderator, Admin, and Nominator..
@@ -47,14 +51,24 @@ class Privileges(IntFlag):
     # if user_priv & Privileges.Donator. thats it.
 
     Nominator = ManageBeatmaps | AccessPanel
-    SUPPORT = RestrictUsers | SilenceUsers | WipeUsers | KickUsers | ChatMod | ViewPanelLog | SendAlerts | ManageClans | AccessPanel
-    Mod = SUPPORT | ManageUsers | ManageBadges | ViewSensitiveInfo  # define this as a moderator
-    Admin = Mod | ManagePrivs # has moderator privileges, can view sensitive info
-    
+    SUPPORT = (
+        RestrictUsers
+        | SilenceUsers
+        | WipeUsers
+        | KickUsers
+        | ChatMod
+        | ViewPanelLog
+        | SendAlerts
+        | ManageClans
+        | AccessPanel
+    )
+    Mod = (
+        SUPPORT | ManageUsers | ManageBadges | ViewSensitiveInfo
+    )  # define this as a moderator
+    Admin = Mod | ManagePrivs  # has moderator privileges, can view sensitive info
 
     Donator = Supporter | Premium
     Staff = Mod | Admin | Dangerous
-
 
 
 def GetPriv(priv: Union[int, List[Privileges]]) -> Union[int, List[Privileges]]:
@@ -65,8 +79,8 @@ def GetPriv(priv: Union[int, List[Privileges]]) -> Union[int, List[Privileges]]:
         priv (Union[int, List[Privileges]]): The input representing the privileges. It can be either an integer or a list of Privileges instances.
 
     Returns:
-        Union[int, List[Privileges]]: The privileges based on the input. 
-        If the input is an integer, it returns a list of Privileges instances that match the input. 
+        Union[int, List[Privileges]]: The privileges based on the input.
+        If the input is an integer, it returns a list of Privileges instances that match the input.
         If the input is a list of Privileges instances, it returns an integer representing the combined privileges.
 
     Raises:
@@ -89,12 +103,14 @@ def GetPriv(priv: Union[int, List[Privileges]]) -> Union[int, List[Privileges]]:
     return privs
 
 
-def ComparePrivs(l1: Union[int, List[Privileges]], l2: Union[int, List[Privileges]]) -> bool:
+def ComparePrivs(
+    l1: Union[int, List[Privileges]], l2: Union[int, List[Privileges]]
+) -> bool:
     if isinstance(l1, int):
         l1 = GetPriv(l1)
     if isinstance(l2, int):
         l2 = GetPriv(l2)
-    
+
     s1 = set(l1)
     s2 = set(l2)
 
