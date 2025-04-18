@@ -148,7 +148,7 @@ new Vue({
             this.$log.debug('User badges before toggling:', this.user.badges);
             if (this.user.badges.find(b => b.id === badgeid)) {
                 this.user.badges.splice(this.user.badges.indexOf(badgeid), 1);
-                this.postAction('/admin/action/removebadge', { user: this.user.id, badge: badgeid })
+                this.postAction('/admin/action/removebadge', { targets: this.user.id, badge: badgeid })
                     .then(status => {
                         if (status === 200) {
                             this.$log.debug('Badge removed:', badgeid);
@@ -163,7 +163,7 @@ new Vue({
                     });
             } else {
                 this.user.badges.push(badgeid);
-                this.postAction('/admin/action/addbadge', { user: this.user.id, badge: badgeid })
+                this.postAction('/admin/action/addbadge', { targets: this.user.id, badge: badgeid })
                     .then(status => {
                         if (status === 200) {
                             this.$log.debug('Badge added:', badgeid);
@@ -267,16 +267,16 @@ new Vue({
                                         </div>
                                         <div class="dropdown-menu" id="wipe-dropdown-menu" role="menu">
                                             <div class="dropdown-content">
-                                                <a class="dropdown-item" @click="postAction('/admin/action/wipe', { user: user.id, reason: 'Auto mod' })">
+                                                <a class="dropdown-item" @click="postAction('/admin/action/wipe', { targets: [user.id], reason: 'Auto mod' })">
                                                     Auto mod
                                                 </a>
-                                                <a class="dropdown-item" @click="postAction('/admin/action/wipe', { user: user.id, reason: 'FL abuse' })">
+                                                <a class="dropdown-item" @click="postAction('/admin/action/wipe', { targets: [user.id], reason: 'FL abuse' })">
                                                     FL abuse
                                                 </a>
-                                                <a class="dropdown-item" @click="postAction('/admin/action/wipe', { user: user.id, reason: 'Requested Wipe' })">
+                                                <a class="dropdown-item" @click="postAction('/admin/action/wipe', { targets: [user.id], reason: 'Requested Wipe' })">
                                                     Requested Wipe
                                                 </a>
-                                                <a class="dropdown-item" @click="postAction('/admin/action/wipe', { user: user.id, reason: 'Overcheating' })">
+                                                <a class="dropdown-item" @click="postAction('/admin/action/wipe', { targets: [user.id], reason: 'Overcheating' })">
                                                     Overcheating
                                                 </a>
                                                 <div class="dropdown-divider"></div>
@@ -292,7 +292,7 @@ new Vue({
                                                     </div>
                                                     <div class="field">
                                                         <div class="control userspanel">
-                                                            <button class="button is-success" @click="postAction('/admin/action/wipe', { user: user.id, reason: document.getElementById('wipe-reason-input').value })">
+                                                            <button class="button is-success" @click="postAction('/admin/action/wipe', { targets: [user.id], reason: document.getElementById('wipe-reason-input').value })">
                                                                 Wipe
                                                             </button>
                                                         </div>
@@ -317,7 +317,7 @@ new Vue({
                                                     </div>
                                                     <div class="field">
                                                         <div class="control userspanel">
-                                                            <button class="button is-success" @click="postAction('/admin/action/removescore', { user: user.id, reason: document.getElementById('wipescore-reason-input').value, score: document.getElementById('wipescore-id-input').value })">
+                                                            <button class="button is-success" @click="postAction('/admin/action/removescore', { targets: [user.id], reason: document.getElementById('wipescore-reason-input').value, score: document.getElementById('wipescore-id-input').value })">
                                                                 Remove Score
                                                             </button>
                                                         </div>
@@ -336,10 +336,10 @@ new Vue({
                                         </div>
                                         <div class="dropdown-menu" id="wipe-dropdown-menu" role="menu">
                                             <div class="dropdown-content">
-                                                <a class="dropdown-item" @click="postAction('/admin/action/restrict', { user: user.id, reason: 'Repeated Offenses' })">
+                                                <a class="dropdown-item" @click="postAction('/admin/action/restrict', { targets: [user.id], reason: 'Repeated Offenses' })">
                                                     Repeated Offenses
                                                 </a>
-                                                <a class="dropdown-item" @click="postAction('/admin/action/restrict', { user: user.id, reason: '3rd Wipe' })">
+                                                <a class="dropdown-item" @click="postAction('/admin/action/restrict', { targets: [user.id], reason: '3rd Wipe' })">
                                                     3rd Wipe
                                                 </a>
                                                 <div class="dropdown-divider"></div>
@@ -355,7 +355,7 @@ new Vue({
                                                     </div>
                                                     <div class="field">
                                                         <div class="control userspanel">
-                                                            <button class="button is-success" @click="postAction('/admin/action/restrict', { user: user.id, reason: document.getElementById('restrict-reason-input').value })">
+                                                            <button class="button is-success" @click="postAction('/admin/action/restrict', { targets: [user.id], reason: document.getElementById('restrict-reason-input').value })">
                                                                 Restrict
                                                             </button>
                                                         </div>
@@ -366,7 +366,7 @@ new Vue({
                                     </div>
                                 </div>
                                 <div class="level-item">
-                                    <button class="button is-success" @click="postAction('/admin/action/unrestrict', { user: user.id })">Unrestrict</button>
+                                    <button class="button is-success" @click="postAction('/admin/action/unrestrict', { targets: [user.id] })">Unrestrict</button>
                                 </div>
                                 <div class="level-item">
                                     <div class="dropdown is-hoverable">
@@ -377,10 +377,10 @@ new Vue({
                                         </div>
                                         <div class="dropdown-menu" id="wipe-dropdown-menu" role="menu">
                                             <div class="dropdown-content">
-                                                <a class="dropdown-item" @click="postAction('/admin/action/silence', { user: user.id, duration: '2', reason: 'Spam' })">
+                                                <a class="dropdown-item" @click="postAction('/admin/action/silence', { targets: [user.id], duration: '2', reason: 'Spam' })">
                                                     Spam
                                                 </a>
-                                                <a class="dropdown-item" @click="postAction('/admin/action/silence', { user: user.id, duration: '6', reason: 'Consistent usage of inappropriate language' })">
+                                                <a class="dropdown-item" @click="postAction('/admin/action/silence', { targets: [user.id], duration: '6', reason: 'Consistent usage of inappropriate language' })">
                                                     Consistent usage of inappropriate language
                                                 </a>
                                                 <div class="dropdown-divider"></div>
@@ -402,7 +402,7 @@ new Vue({
                                                     </div>
                                                     <div class="field">
                                                         <div class="control userspanel">
-                                                            <button class="button is-success" @click="postAction('/admin/action/silence', { user: user.id, duration: document.getElementById('silence-duration-input').value, reason: document.getElementById('silence-reason-input').value })">
+                                                            <button class="button is-success" @click="postAction('/admin/action/silence', { targets: [user.id], duration: document.getElementById('silence-duration-input').value, reason: document.getElementById('silence-reason-input').value })">
                                                                 Silence
                                                             </button>
                                                         </div>
@@ -413,7 +413,7 @@ new Vue({
                                     </div>
                                 </div>
                                 <div class="level-item">
-                                    <button class="button is-primary" @click="postAction('/admin/action/unsilence', { user: user.id })">Unsilence</button>
+                                    <button class="button is-primary" @click="postAction('/admin/action/unsilence', { targets: [user.id] })">Unsilence</button>
                                 </div>
                                 <div class="level-item">
                                     <div class="dropdown is-hoverable">
@@ -432,7 +432,7 @@ new Vue({
                                                 </div>
                                                 <div class="field">
                                                     <div class="control userspanel">
-                                                        <button class="button is-success" @click="postAction('/admin/action/changepassword', { user: user.id, password: document.getElementById('new-password-input').value })">
+                                                        <button class="button is-success" @click="postAction('/admin/action/changepassword', { targets: [user.id], password: document.getElementById('new-password-input').value })">
                                                             Save
                                                         </button>
                                                     </div>
@@ -444,7 +444,7 @@ new Vue({
                             </div>
                         </div>
                         <form @submit.prevent="postAction('/admin/action/editaccount', {
-                            user: user.id,
+                            targets: user.id,
                             username: user.name,
                             email: user.email,
                             country: user.country,

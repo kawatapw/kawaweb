@@ -243,6 +243,14 @@
                     border: 1px solid hsl(var(--main), 30%, 65%);
                     box-shadow: 1px 2px 15px 1px hsla(var(--main), 40%, 1%, 80%);
                 }
+                [data-panel="changeBeatmapStatus"] button.active {
+                    background-color: hsl(var(--main), 25%, 55%);
+                    border: 1px solid hsl(var(--main), 30%, 65%);
+                    box-shadow: 1px 2px 15px 1px hsla(var(--main), 40%, 1%, 80%);
+                    transform: translateY(2px);
+                }
+
+                ]
     [data-panel="changeBeatmapStatus"] .second-block {
         background: var(--container-bg);
         max-height: 55vh;

@@ -8,8 +8,10 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+
 def read_list(value: str) -> list[str]:
     return [v.strip() for v in value.split(",")]
+
 
 # app info
 app_name = os.environ["APP_NAME"]
@@ -20,7 +22,7 @@ secret_key = os.environ["SECRET_KEY"]
 # API Key for Admin Requests
 api_key = os.environ["API_KEY"]
 
-#hCaptcha settings:
+# hCaptcha settings:
 hCaptcha_sitekey = os.environ["HCAPTCHA_SITEKEY"]
 hCaptcha_secret = os.environ["HCAPTCHA_SECRET"]
 
@@ -35,10 +37,10 @@ max_image_size_supporter = int(os.environ["MAX_IMAGE_SIZE_SUPPORTER"])
 
 # mysql credentials
 mysql = {
-    'db': os.environ["MYSQL_DB"],
-    'host': os.environ["MYSQL_HOST"],
-    'user': os.environ["MYSQL_USER"],
-    'password': os.environ["MYSQL_PASSWORD"],
+    "db": os.environ["MYSQL_DB"],
+    "host": os.environ["MYSQL_HOST"],
+    "user": os.environ["MYSQL_USER"],
+    "password": os.environ["MYSQL_PASSWORD"],
 }
 
 REDIS_HOST = os.environ["REDIS_HOST"]
@@ -59,8 +61,12 @@ debug = os.environ["DEBUG"]
 
 # Logging settings
 LOG_WITH_COLORS = os.environ["LOG_WITH_COLORS"]
-SERVICE_NAME = os.getenv("SERVICE_NAME", "kawata") # Brand Name of the Service, eg. "Kawata, Akatsuki, etc."
-CONTAINER_NAME = os.getenv("CONTAINER_NAME", "web") # Name of Container, eg. "kawaweb, web, etc."
+SERVICE_NAME = os.getenv(
+    "SERVICE_NAME", "kawata"
+)  # Brand Name of the Service, eg. "Kawata, Akatsuki, etc."
+CONTAINER_NAME = os.getenv(
+    "CONTAINER_NAME", "web"
+)  # Name of Container, eg. "kawaweb, web, etc."
 
 # disallowed names (hardcoded banned usernames)
 disallowed_names = read_list(os.environ["DISALLOWED_NAMES"])
@@ -79,4 +85,4 @@ twitter = os.getenv("TWITTER", "https://twitter.com/")
 instagram = os.getenv("INSTAGRAM", "https://instagram.com/")
 
 RANKED_WEBHOOK_URL = os.environ["RANKED_WEBHOOK_URL"]
-ADMIN_WEBHOOK_URL  = os.environ["ADMIN_WEBHOOK_URL"]
+ADMIN_WEBHOOK_URL = os.environ["ADMIN_WEBHOOK_URL"]
