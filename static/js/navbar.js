@@ -185,7 +185,7 @@ new Vue({
                                                     </i>
                                                 </div>
                                             </a>
-                                            <a :href="'https://api.osu.direct/d/' + map.SetID">
+                                            <a :href="'https://osu.direct/d/' + map.SetID">
                                                 <div class="download-div">
                                                     <i class="fas fa-download"></i>
                                                 </div>

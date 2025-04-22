@@ -1054,8 +1054,8 @@ new Vue({
                             <h4>{{ selected.artist }}</h4>
                             <div class="divider"></div>
                             <div class="buttons">
-                                <button class="button is-primary" @click="window.location.href = 'https://api.osu.direct/d/' + set_id">Download</button>
-                                <button class="button is-primary" @click="window.location.href = 'osu://dl/' + set_id">osu!Direct</button>
+                                <button class="button is-primary" @click="window.location.href = 'https://osu.direct/d/' + set_id">Download</button>
+                                <button class="button is-primary" @click="window.location.href = 'osu://dl/' + set_id">osu!direct</button>
                                 <button class="button is-primary" @click="window.location.href = 'https://osu.ppy.sh/b/' + selected.id">View on ppy.sh</button>
                                 <!--<button class="button is-primary" @click="downloadMapReplays">Download Replays</button>-->
                             </div>
