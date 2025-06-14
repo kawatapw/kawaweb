@@ -1838,5 +1838,5 @@ Vue.component('bmap-card', {
       </div>
     </div>
   </div>
-`
+  `
 });
