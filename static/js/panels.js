@@ -184,7 +184,7 @@ new Vue({
                                     Maple: 100 With DT (Rate), 0.66 With DT (Multiplier) 
                                     </div>
                                     <div class="doc-content">
-                                    Ainu & Ainu Based Clients: Skoot.er; 0.66 with DT | Abypass; 100 with DT
+                                    Ainu & Ainu Based Clients: Skoot.er; 0.66 with DT | 100 with DT
                                     </div>
                                     <div class="doc-content">
                                     Assist.Games: 100 with DT (rate)
@@ -201,7 +201,7 @@ new Vue({
                                         <b>MPGH's Ainu</b> default AC is allowed;
                                     </div>
                                     <div class="doc-content">
-                                        <b>Aeris AC and Abypass AC</b> are allowed; Its Strength must be at or below 50, but can only be a whole number. Values like 48.2 and 41.1 are not allowed.
+                                        <b>Aeris AC</b> is allowed; Its Strength must be at or below 50, but can only be a whole number. Values like 48.2 and 41.1 are not allowed.
                                     </div>
                                     <div class="doc-content">
                                         <b>osu!buddy's AA</b> is allowed; but must be equal to or below the following settings. Strength: 11 Aim Start Distance: 666
@@ -478,10 +478,6 @@ new Vue({
                             @click="LoadDoc('Clients', 'Kawata')">
                                 <i class="fas fa-client"></i><span class="modetext"> Kawata/Aeris </span>
                             </a>
-                            <a class="top-tab" v-bind:class="{ 'active': page === 'Abypass' }"
-                            @click="LoadDoc('Clients', 'Abypass')">
-                                <i class="fas fa-client"></i><span class="modetext"> Abypass </span>
-                            </a>
                             <a class="top-tab" v-bind:class="{ 'active': page === 'Maple' }"
                             @click="LoadDoc('Clients', 'Maple')">
                                 <i class="fas fa-client"></i><span class="modetext"> Maple </span>
@@ -529,14 +525,6 @@ new Vue({
                                             Contributions have been made by Maple Syrup and Chewy/Pythr.</br>
                                             Due to being the Kawata Client, you are the least likely to break our rules using this client. </br>
                                             Therefore is it the most recommended client to use.</p>
-                                        </div>
-                                        <div class="subsection linked" @click="LoadDoc('Clients', 'Abypass')">
-                                            <h4><b>Abypass:</b></h4>
-                                            <p>Abypass is the successor to Skoot.er created by Chewy/Pythr. </br>
-                                            Currently Maintained by Aochi.</br>
-                                            This client is a better version of Skoot.er with more features and less bugs. </br>
-                                            This client tries to comply with our rules, but it is not always updated. </br>
-                                            If Kawata/Aeris doesn't work for you, this is the next best, free choice.</p>
                                         </div>
                                         <div class="subsection linked" @click="LoadDoc('Clients', 'Maple')">
                                             <h4><b>Maple:</b></h4>
@@ -658,53 +646,6 @@ new Vue({
                                 </div>
                             </div>
                         </div>
-                        <div class="doc-block" v-if="page === 'Abypass'">
-                            <div class="doc-notice">
-                                <a class="button dl" href="https://abypass.fumo.lol/updater"><i class="fas fa-download"></i>  Download</a>
-                            </div>
-                            <div class="doc-section">
-                                <h3><i class="fas fa-exclamation-circle"></i> Abypass Client:</h3>
-                                <div class="subsection">
-                                    <h4><b>Abypass is the successor to Skoot.er created by Chewy/Pythr. </b></h4>
-                                    <p>Currently Maintained by Aochi.</br>
-                                    This client is a better version of Skoot.er with more features and less bugs. </br>
-                                    This client tries to comply with our rules, but it is not always updated. </br>
-                                    If Kawata/Aeris doesn't work for you, this is the next best, free choice.</p>
-                                    <div class="doc-content">
-                                        <h3><i class="fas fa-exclamation"></i> Features:</h3>
-                                        <div class="subsection">
-                                            <h5>Cheats:</h5>
-                                            <div class="level">
-                                                <p>
-                                                    Aim Correction</br>
-                                                    HD Remover</br>
-                                                    CTB Relax Hack (Control catcher with mouse)</br>
-                                                    Automatic CS Changer</br>
-                                                </p>
-                                                <p>
-                                                    Relax Hack</br>
-                                                    FL Remover</br>
-                                                    Timewarp</br>
-                                                    AR Changer</br>
-                                                </p>
-                                            </div>
-                                        </div>
-                                        <div class="subsection">
-                                            <h5>Other Features:</h5>
-                                            <div class="level">
-                                                <p>
-                                                    In-Game PP Counter</br>
-                                                    Uses an updater.</br>
-                                                </p>
-                                                <p>
-                                                    Server Switcher for Kawata & Fuquila</br>
-                                                </p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
                         <div class="doc-block" v-if="page === 'Maple'">
                             <div class="doc-notice">
                                 <a class="button dl" href="https://maple.software/"><i class="fas fa-download"></i>  Website</a>
@@ -819,7 +760,7 @@ new Vue({
                                         3. The player must show EVERY setting of the cheat that they are using before and after each play is submitted.
                                         4. The player must save the replay or replays of the score/scores they made and send them along with the liveplay to a member of the <b>Gestion Team or higher</b>.
                                         5. The player must have an analog clock running and visible during their liveplay if they are suspected of using a lower timewarp than allowed.
-                                        6. If you are a player that uses more than one client (e.g., Abypass, Maple, and Osubuddy), then you must submit a liveplay using each client to prove your legitimacy.
+                                        6. If you are a player that uses more than one client (e.g., Maple and Osubuddy), then you must submit a liveplay using each client to prove your legitimacy.
                                         7. Custom clients for liveplays aren't allowed.
                                     </p>
                                 </div>
