@@ -10,7 +10,13 @@
     var domain = "{{ domain() }}";
     var users = '{{ users|tojson }}';
     var page = "{{ page }}";
+    var totalPages = "{{ total_pages }}";
+    var totalCount = "{{ total_count }}";
     var userquery = "{{ search }}";
+    var sortBy = "{{ sort_by }}";
+    var sortOrder = "{{ sort_order }}";
+    var filterPriv = "{{ filter_priv or '' }}";
+    var filterCountry = "{{ filter_country or '' }}";
 </script>
 {% endblock%}
 
@@ -18,42 +24,273 @@
 
 <div class="dashboard" id="users">
     <div class="container">
-        <div id="user-search" class="main-block">
-            <div class="search-bar">
-                <div id="sw-search" class="field">
-                    <p class="search-input control has-icons-left">
-                        <input class="input" type="search" placeholder="Search by username or id..." v-model="userquery" @input="handleUserInput" ref="searchInput">
-                        <span class="icon is-left">
-                            <i class="fas fa-search"></i>
-                        </span>
-                    </p>
+        <!-- Enhanced Admin Users Filter Panel -->
+        <div id="user-search" class="admin-filter-panel">
+            <div class="filter-container">
+                <!-- Filter Header -->
+                <div class="filter-header">
+                    <div class="filter-title">
+                        <h3 class="title is-5 has-text-white">
+                            <i class="fas fa-users"></i>
+                            User Management
+                        </h3>
+                        <div class="filter-stats">
+                            <span class="tag is-info is-medium" v-if="!playersLoading">
+                                <i class="fas fa-chart-bar"></i>
+                                <% totalCount %> users found
+                            </span>
+                            <span class="tag is-warning is-medium" v-if="playersLoading">
+                                <i class="fas fa-spinner fa-spin"></i>
+                                Loading...
+                            </span>
+                        </div>
+                    </div>
                 </div>
-                
+
+                <!-- Main Filter Controls -->
+                <div class="filter-controls">
+                    <div class="filter-row filter-row-expanded">
+                        <!-- Search Input -->
+                        <div class="filter-group search-group">
+                            <label class="filter-label">Search Users</label>
+                            <div class="field has-addons">
+                                <div class="control has-icons-left is-expanded">
+                                    <input
+                                        class="input is-medium"
+                                        type="search"
+                                        placeholder="Search by username or ID..."
+                                        v-model="userquery"
+                                        @input="handleUserInput"
+                                        ref="searchInput"
+                                        :class="{ 'is-loading': playersLoading }"
+                                    >
+                                    <span class="icon is-left is-medium">
+                                        <i class="fas fa-search"></i>
+                                    </span>
+                                </div>
+                                <div class="control" v-if="userquery">
+                                    <button class="button is-medium is-light" @click="clearSearch" title="Clear search">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Privilege Filter -->
+                        <div class="filter-group">
+                            <label class="filter-label">User Type</label>
+                            <div class="control privilege-select-container">
+                                <div class="select is-medium is-fullwidth privilege-select" :class="{ 'is-active': filterPriv, 'has-default': !filterPriv }">
+                                    <select v-model="filterPriv" @change="filterByPrivilege(filterPriv)">
+                                        <option value="">All Users</option>
+                                        <option value="normal">Normal Users</option>
+                                        <option value="supporter">Supporters</option>
+                                        <option value="mod">Moderators</option>
+                                        <option value="admin">Administrators</option>
+                                        <option value="restricted">Restricted</option>
+                                    </select>
+                                    <!-- Icon indicator inside select -->
+                                    <div class="privilege-icon-indicator">
+                                        <i class="fas" :class="getPrivilegeIcon(filterPriv)" :style="getPrivilegeIconStyle(filterPriv)"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Sort By Dropdown -->
+                        <div class="filter-group">
+                            <label class="filter-label">Sort By</label>
+                            <div class="control">
+                                <div class="select is-medium is-fullwidth">
+                                    <select v-model="sortBy" @change="sortUsers(sortBy)">
+                                        <option value="id">ID</option>
+                                        <option value="name">Username</option>
+                                        <option value="creation_time">Join Date</option>
+                                        <option value="latest_activity">Last Active</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Sort Direction -->
+                        <div class="filter-group">
+                            <label class="filter-label">Order</label>
+                            <div class="control">
+                                <button
+                                    class="button is-medium is-fullwidth sort-direction-btn"
+                                    :class="sortOrder === 'ASC' ? 'is-info' : 'is-info is-light'"
+                                    @click="toggleSortOrder"
+                                    :title="sortOrder === 'ASC' ? 'Currently Ascending - Click for Descending' : 'Currently Descending - Click for Ascending'"
+                                >
+                                    <span class="icon">
+                                        <i class="fas" :class="sortOrder === 'ASC' ? 'fa-sort-up' : 'fa-sort-down'"></i>
+                                    </span>
+                                    <span><% sortOrder %></span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="filter-group actions-group">
+                            <label class="filter-label">Actions</label>
+                            <div class="field is-grouped">
+                                <div class="control">
+                                    <button class="button is-medium is-warning is-outlined" @click="clearFilters" :disabled="!hasActiveFilters">
+                                        <i class="fas fa-undo"></i>
+                                        <span>Reset</span>
+                                    </button>
+                                </div>
+                                <div class="control">
+                                    <button class="button is-medium is-success is-outlined" @click="refreshUsers">
+                                        <i class="fas fa-sync-alt" :class="{ 'fa-spin': playersLoading }"></i>
+                                        <span>Refresh</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Active Filters Display -->
+                <div class="active-filters" v-if="hasActiveFilters">
+                    <div class="active-filters-label">
+                        <span class="has-text-grey-light">Active filters:</span>
+                    </div>
+                    <div class="active-filters-tags">
+                        <span class="tag is-info is-light" v-if="userquery">
+                            <i class="fas fa-search"></i>
+                            Search: "<% userquery %>"
+                            <button class="delete is-small" @click="clearSearch"></button>
+                        </span>
+                        <span class="tag is-primary is-light" v-if="filterPriv">
+                            <i class="fas fa-user-tag"></i>
+                            Type: <% getPrivilegeLabel(filterPriv) %>
+                            <button class="delete is-small" @click="clearPrivilegeFilter"></button>
+                        </span>
+                        <span class="tag is-link is-light" v-if="sortBy !== 'id' || sortOrder !== 'ASC'">
+                            <i class="fas" :class="sortOrder === 'ASC' ? 'fa-sort-up' : 'fa-sort-down'"></i>
+                            Sort: <% getSortLabel() %>
+                            <button class="delete is-small" @click="resetSort"></button>
+                        </span>
+                    </div>
+                </div>
             </div>
         </div>
-        <div class="columns">
-            <div class="column">
-                <div v-for="(user, index) in users" :key="user.id" v-if="index % 2 === 0" id="user" class="card" @click="editUser(user.id)">
-                    <div v-if="user.customisations?.has_banner" class="card-background" :style="'background-image: url(/banners/' + user.id + ')'" @click="editUser(user.id)"></div>
-                    <div v-else class="card-background" @click="editUser(user.id)"></div>
-                    <div class="card-avatar" :style="'background-image: url(https://a.' + domain + '/' + user.id + ')'"></div>
-                    <div class="card-content">
-                        <h3><% user.name %></h3>
-                        <p>ID: <% user.id %></p>
+        <!-- Users Grid Container -->
+        <div class="users-grid-container">
+            <!-- Loading State -->
+            <div v-if="playersLoading" class="users-loading-state">
+                <div class="spinner"></div>
+                <p>Loading users...</p>
+            </div>
+
+            <!-- Users Grid -->
+            <div v-else-if="users.length > 0" class="columns">
+                <div class="column">
+                    <div v-for="(user, index) in users" :key="user.id" v-if="index % 2 === 0" id="user" class="card" @click="editUser(user.id)">
+                        <div v-if="user.customisations?.has_banner" class="card-background" :style="'background-image: url(/banners/' + user.id + ')'" @click="editUser(user.id)"></div>
+                        <div v-else class="card-background" @click="editUser(user.id)"></div>
+                        <div class="card-avatar" :style="'background-image: url(https://a.' + domain + '/' + user.id + ')'"></div>
+                        <div class="card-content">
+                            <h3><% user.name %></h3>
+                            <p>ID: <% user.id %></p>
+                            <p v-if="user.priv !== 1" class="has-text-info">
+                                <span v-if="user.priv & 2047">
+                                    <i class="fas fa-crown"></i> Admin
+                                </span>
+                                <span v-else-if="user.priv & 1023">
+                                    <i class="fas fa-shield-alt"></i> Moderator
+                                </span>
+                                <span v-else-if="user.priv & 4">
+                                    <i class="fas fa-heart"></i> Supporter
+                                </span>
+                                <span v-else-if="!(user.priv & 1)" class="has-text-danger">
+                                    <i class="fas fa-ban"></i> Restricted
+                                </span>
+                            </p>
+                            <p class="is-size-7 has-text-grey">
+                                <i class="fas fa-flag"></i> <% user.country %>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="column">
+                    <div v-for="(user, index) in users" :key="user.id" v-if="index % 2 !== 0" id="user" class="card" @click="editUser(user.id)">
+                        <div v-if="user.customisations?.has_banner" class="card-background" :style="'background-image: url(/banners/' + user.id + ')'" @click="editUser(user.id)"></div>
+                        <div v-else class="card-background" @click="editUser(user.id)"></div>
+                        <div class="card-avatar" :style="'background-image: url(https://a.' + domain + '/' + user.id + ')'"></div>
+                        <div class="card-content">
+                            <h3><% user.name %></h3>
+                            <p>ID: <% user.id %></p>
+                            <p v-if="user.priv !== 1" class="has-text-info">
+                                <span v-if="user.priv & 2047">
+                                    <i class="fas fa-crown"></i> Admin
+                                </span>
+                                <span v-else-if="user.priv & 1023">
+                                    <i class="fas fa-shield-alt"></i> Moderator
+                                </span>
+                                <span v-else-if="user.priv & 4">
+                                    <i class="fas fa-heart"></i> Supporter
+                                </span>
+                                <span v-else-if="!(user.priv & 1)" class="has-text-danger">
+                                    <i class="fas fa-ban"></i> Restricted
+                                </span>
+                            </p>
+                            <p class="is-size-7 has-text-grey">
+                                <i class="fas fa-flag"></i> <% user.country %>
+                            </p>
+                        </div>
                     </div>
                 </div>
             </div>
-            <div class="column">
-                <div v-for="(user, index) in users" :key="user.id" v-if="index % 2 !== 0" id="user" class="card" @click="editUser(user.id)">
-                    <div v-if="user.customisations?.has_banner" class="card-background" :style="'background-image: url(/banners/' + user.id + ')'" @click="editUser(user.id)"></div>
-                    <div v-else class="card-background" @click="editUser(user.id)"></div>
-                    <div class="card-avatar" :style="'background-image: url(https://a.' + domain + '/' + user.id + ')'"></div>
-                    <div class="card-content">
-                        <h3><% user.name %></h3>
-                        <p>ID: <% user.id %></p>
-                    </div>
-                </div>
+
+            <!-- No users message -->
+            <div v-else class="users-empty-state">
+                <p class="is-size-5">No users found</p>
+                <p class="has-text-grey">Try adjusting your search or filters</p>
             </div>
+        </div>
+
+        <!-- Pagination -->
+        <nav class="pagination is-centered" role="navigation" v-if="totalPages > 1">
+            <button class="pagination-previous" @click="goToPage(page - 1)" :disabled="page <= 1">
+                Previous
+            </button>
+            <button class="pagination-next" @click="goToPage(page + 1)" :disabled="page >= totalPages">
+                Next page
+            </button>
+            <ul class="pagination-list">
+                <!-- First page -->
+                <li v-if="page > 3">
+                    <button class="pagination-link" @click="goToPage(1)">1</button>
+                </li>
+                <li v-if="page > 4">
+                    <span class="pagination-ellipsis">&hellip;</span>
+                </li>
+
+                <!-- Pages around current -->
+                <li v-for="p in paginationRange" :key="p">
+                    <button class="pagination-link"
+                            :class="{ 'is-current': p === page }"
+                            @click="goToPage(p)">
+                        <% p %>
+                    </button>
+                </li>
+
+                <!-- Last page -->
+                <li v-if="page < totalPages - 3">
+                    <span class="pagination-ellipsis">&hellip;</span>
+                </li>
+                <li v-if="page < totalPages - 2">
+                    <button class="pagination-link" @click="goToPage(totalPages)"><% totalPages %></button>
+                </li>
+            </ul>
+        </nav>
+
+        <!-- No users message -->
+        <div v-if="!playersLoading && users.length === 0" class="has-text-centered" style="padding: 2rem;">
+            <p class="is-size-5 has-text-grey">No users found</p>
+            <p class="has-text-grey">Try adjusting your search or filters</p>
         </div>
         </div>
     </div>
