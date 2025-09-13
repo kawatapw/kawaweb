@@ -10,7 +10,8 @@
     var mode = "{{ mode }}";
     var mods = "{{ mods }}";
     var sort = "{{ sort }}";
-    var domain = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' ? 'localhost' : "{{ domain() }}";
+    // Domain is already set in base.html, don't override it
+    // var domain = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' ? 'localhost' : "{{ domain() }}";
 </script>
 
 <link rel="stylesheet" href="/static/css/pages/generic.css">

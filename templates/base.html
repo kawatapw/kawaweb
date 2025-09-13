@@ -57,6 +57,7 @@
   {% endblock %}
   <script>
     var domain = "{{ domain() }}";
+    var hinaDebug = {{ 'true' if hinaDebug() else 'false' }};
   </script>
 </head>
 
@@ -134,10 +135,7 @@
 
   <!-- Customisation -->
   {% block bottom %}
-  <script>
-    var domain = "{{ domain() }}";
-    var hinaDebug = {{ 'true' if hinaDebug() else 'false' }};
-  </script>
+  <!-- Domain and hinaDebug are already set in the header -->
   <style>
     :root {
       {% if 'user_data' in session and 'hue' in session['user_data'] and session['user_data']['hue'] %}

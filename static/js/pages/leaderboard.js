@@ -37,7 +37,7 @@ new Vue({
             // Use local API if hinaDebug is enabled, otherwise use production API
             const apiUrl = window.hinaDebug 
                 ? `${window.location.protocol}//${window.location.host}/api/v1/get_leaderboard`
-                : `${window.location.protocol}//api.${domain}/v1/get_leaderboard`;
+                : `${window.location.protocol}//api.${domain.split(':')[0]}/v1/get_leaderboard`;
             this.$axios.get(apiUrl, {
                 params: {
                     mode: this.StrtoGulagInt(),
