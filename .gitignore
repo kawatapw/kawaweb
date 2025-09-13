@@ -5,6 +5,8 @@ static/css/scss/*.css.map
 *.sql
 updateGit.sh
 start_local.sh
+.claude
+.gitmodules
 #_____
 
 # Byte-compiled / optimized / DLL files
