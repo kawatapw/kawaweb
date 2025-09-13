@@ -135,7 +135,8 @@
   <!-- Customisation -->
   {% block bottom %}
   <script>
-    var domain = {{ domain}}
+    var domain = "{{ domain() }}";
+    var hinaDebug = {{ 'true' if hinaDebug() else 'false' }};
   </script>
   <style>
     :root {

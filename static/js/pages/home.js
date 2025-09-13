@@ -13,9 +13,13 @@ new Vue({
     methods: {
         GetOnlineUsers() {
             var vm = this;
-            vm.$axios.get(`${window.location.protocol}//api.${domain}/v1/get_player_count`)
+            // For local development, use the same domain with /api prefix
+            const apiUrl = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+                ? `${window.location.protocol}//${window.location.host}/api/v1/get_player_count`
+                : `${window.location.protocol}//api.${domain}/v1/get_player_count`;
+            vm.$axios.get(apiUrl)
                 .then(function (response) {
-                    vm.online_users = response.data.counts.online;
+                    vm.online_users = response.data.count || 0;
                 });
         },
         addCommas(nStr) {

@@ -15,6 +15,9 @@ def read_list(value: str) -> list[str]:
 app_name = os.environ["APP_NAME"]
 app_port = int(os.environ["APP_PORT"])
 
+# Local development mode (Hina's Debug Mode)
+hina_debug = os.environ.get("HINA_DEBUG", "false").lower() == "true"
+
 # secret key
 secret_key = os.environ["SECRET_KEY"]
 # API Key for Admin Requests

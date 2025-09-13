@@ -112,11 +112,20 @@ def captchaKey() -> str:
 def domain() -> str:
     return glob.config.domain
 
+@app.template_global()
+def hinaDebug() -> bool:
+    return glob.config.hina_debug
+
 from blueprints.frontend import frontend
 app.register_blueprint(frontend)
 
 from blueprints.admin import admin
 app.register_blueprint(admin, url_prefix='/admin')
+
+# Only register local API blueprint if in debug mode
+if glob.config.hina_debug:
+    from blueprints.api import api
+    app.register_blueprint(api, url_prefix='/api')
 
 @app.errorhandler(404)
 async def page_not_found(e):

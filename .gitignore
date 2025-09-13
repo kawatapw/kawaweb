@@ -2,6 +2,11 @@
 hina_import.css.map
 static/css/scss/*.css
 static/css/scss/*.css.map
+*.sql
+updateGit.sh
+start_local.sh
+#_____
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -150,3 +155,7 @@ cython_debug/
 nginx/
 .fuse*
 logging.yaml
+TEST_ACCOUNTS.md
+.gitignore
+cookies.txt
+LOCAL_DEVELOPMENT_SETUP.md

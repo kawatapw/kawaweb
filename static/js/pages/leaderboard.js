@@ -34,7 +34,11 @@ new Vue({
             this.$set(this, 'sort', sort);
             this.$set(this, 'load', true);
             const offset = (this.page - 1) * this.pageSize; // Calculate the offset
-            this.$axios.get(`${window.location.protocol}//api.${domain}/v1/get_leaderboard`, {
+            // Use local API if hinaDebug is enabled, otherwise use production API
+            const apiUrl = window.hinaDebug 
+                ? `${window.location.protocol}//${window.location.host}/api/v1/get_leaderboard`
+                : `${window.location.protocol}//api.${domain}/v1/get_leaderboard`;
+            this.$axios.get(apiUrl, {
                 params: {
                     mode: this.StrtoGulagInt(),
                     sort: this.sort,

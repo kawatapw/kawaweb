@@ -4,12 +4,13 @@
 {% block header %}
 <script src="/static/js/asserts/vue.js"></script>
 <script src="/static/js/asserts/vue-axios.js"></script>
+<script src="/static/js/components.js"></script>
 
 <script>
     var mode = "{{ mode }}";
     var mods = "{{ mods }}";
     var sort = "{{ sort }}";
-    var domain = "{{ domain() }}";
+    var domain = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' ? 'localhost' : "{{ domain() }}";
 </script>
 
 <link rel="stylesheet" href="/static/css/pages/generic.css">
