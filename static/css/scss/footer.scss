@@ -1,63 +1,451 @@
-// #hina-footer{display:flex;flex-direction: column;}
-
-// #hina-footer .footer-block{display:flex;flex-direction: row;}
+// Modern Footer Redesign - KawaWeb v2
+// Complete overhaul with modern design practices
 
 .footer {
-    display: flex;
-    justify-content: space-between;
-    flex-wrap: wrap;
-    background-color: #333;
-    color: #fff;
-    padding: 20px;
-    .footer-section {
-        flex: 1;
-        min-width: 200px; // Minimum width for each section
-        display: flex;
-        flex-direction: column;
-        align-items: flex-start; // Align items to the start (left) for the logo-section
+    display: block !important; // Ensure footer is visible
+    visibility: visible !important;
+    opacity: 1 !important;
+    position: relative;
+    margin-top: 2rem !important;
+    padding: 0 !important; // Override default padding
+    min-height: 300px; // Ensure minimum height
+    background: linear-gradient(180deg, 
+        hsl(var(--main), 12%, 12%) 0%, 
+        hsl(var(--main), 15%, 10%) 100%);
+    color: hsl(var(--main), 10%, 85%);
+    overflow: hidden;
+    border-top: 1px solid hsl(var(--main), 20%, 20%);
 
-        &:not(:last-child) {
-            border-right: 1px solid #444;
+    // Container
+    .footer-container {
+        position: relative;
+        max-width: 1280px;
+        margin: 0 auto;
+        padding: 0 2rem;
+        z-index: 2;
+    }
+
+    // Top Section
+    .footer-top {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 4rem;
+        padding: 3.5rem 0 3rem;
+        border-bottom: 1px solid hsl(var(--main), 15%, 18%);
+
+        @media (max-width: 968px) {
+            grid-template-columns: 1fr;
+            gap: 3rem;
+            padding: 3rem 0 2.5rem;
+        }
+    }
+
+    // Brand Section
+    .footer-brand {
+        .brand-identity {
+            display: flex;
+            align-items: flex-start;
+            gap: 1.5rem;
+
+            .brand-logo {
+                width: 72px;
+                height: 72px;
+                object-fit: contain;
+                filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.3));
+                transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+                &:hover {
+                    transform: scale(1.05) rotate(-5deg);
+                }
+            }
+
+            .brand-info {
+                flex: 1;
+
+                .brand-name {
+                    margin: 0 0 0.5rem;
+                    font-size: 1.75rem;
+                    font-weight: 700;
+                    letter-spacing: -0.02em;
+                    color: hsl(var(--main), 20%, 95%);
+                    
+                    .brand-version {
+                        display: inline-block;
+                        margin-left: 0.75rem;
+                        padding: 0.125rem 0.5rem;
+                        background: linear-gradient(135deg,
+                            hsl(var(--main), 50%, 40%),
+                            hsl(var(--main), 60%, 50%));
+                        color: white;
+                        font-size: 0.75rem;
+                        font-weight: 600;
+                        border-radius: 0.375rem;
+                        vertical-align: middle;
+                        letter-spacing: 0.02em;
+                    }
+                }
+
+                .brand-tagline {
+                    margin: 0;
+                    font-size: 0.95rem;
+                    line-height: 1.6;
+                    color: hsl(var(--main), 15%, 65%);
+                    max-width: 380px;
+                }
+            }
+        }
+    }
+
+    // Links Grid
+    .footer-links-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(200px, 280px));
+        gap: 3rem;
+
+        @media (max-width: 768px) {
+            grid-template-columns: 1fr;
+            gap: 2.5rem;
+        }
+    }
+
+    // Column Styling
+    .footer-column {
+        .column-title {
+            position: relative;
+            margin: 0 0 1.5rem;
+            padding-bottom: 0.75rem;
+            font-size: 0.875rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: hsl(var(--main), 20%, 75%);
+
+            .title-accent {
+                position: absolute;
+                bottom: 0;
+                left: 0;
+                width: 40px;
+                height: 2px;
+                background: linear-gradient(90deg,
+                    hsl(var(--main), 60%, 50%) 0%,
+                    transparent 100%);
+                border-radius: 1px;
+            }
         }
 
-        .footer-logo {
-            max-width: 100px;
-            margin-bottom: 10px; // Ensure space between logo and version text
-        }
-
-        .logo-text {
-            text-align: left;
-        }
-
-        .social-links {
+        .column-links {
             display: flex;
             flex-direction: column;
-            align-items: baseline;
+            gap: 0.25rem;
+        }
+    }
+
+    // Footer Links
+    .footer-link {
+        position: relative;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.625rem 0.875rem;
+        color: hsl(var(--main), 10%, 70%);
+        text-decoration: none;
+        font-size: 0.95rem;
+        border-radius: 0.5rem;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        cursor: pointer;
+        
+        &:hover {
+            background: hsl(var(--main), 20%, 18%);
+            color: hsl(var(--main), 20%, 95%);
+            transform: translateX(4px);
+
+            .link-icon {
+                color: hsl(var(--main), 60%, 60%);
+                transform: scale(1.1);
+            }
+
+            .link-arrow {
+                opacity: 1;
+                transform: translateX(4px);
+            }
         }
 
-        .foot-link {
-            margin: 5px 0;
-            color: #ddd;
+        &:focus-visible {
+            outline: 2px solid hsl(var(--main), 50%, 50%);
+            outline-offset: 2px;
+            background: hsl(var(--main), 20%, 18%);
+        }
+
+        &:active {
+            transform: scale(0.98);
+        }
+
+        .link-icon {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 20px;
+            font-size: 1.1rem;
+            color: hsl(var(--main), 30%, 50%);
+            transition: all 0.2s ease;
+        }
+
+        .link-text {
+            flex: 1;
+            font-weight: 500;
+        }
+
+        .link-arrow {
+            opacity: 0;
+            font-size: 1rem;
+            transition: all 0.2s ease;
+        }
+
+        // Interactive variant for Vue.js bindings
+        &--interactive {
+            user-select: none;
+            
             &:hover {
-                color: #fff;
+                background: hsl(var(--main), 25%, 20%);
             }
-            i {
-                margin-right: 5px;
+        }
+    }
+
+    // Bottom Bar
+    .footer-bottom {
+        padding: 1.5rem 0;
+        background: hsl(var(--main), 15%, 8%);
+        border-top: 1px solid hsl(var(--main), 20%, 15%);
+
+        .footer-bottom-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1.5rem;
+
+            @media (max-width: 640px) {
+                justify-content: center;
+                text-align: center;
+            }
+        }
+
+        .footer-copyright {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-size: 0.875rem;
+            color: hsl(var(--main), 15%, 55%);
+
+            .separator {
+                color: hsl(var(--main), 20%, 30%);
+            }
+        }
+
+        .footer-status {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.875rem;
+            color: hsl(var(--main), 15%, 60%);
+
+            .status-indicator {
+                width: 8px;
+                height: 8px;
+                border-radius: 50%;
+                animation: pulse 2s infinite;
+
+                &--online {
+                    background: #10b981;
+                    box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
+                }
+
+                &--offline {
+                    background: #ef4444;
+                    box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.2);
+                }
+            }
+        }
+    }
+
+    // Background Decoration
+    .footer-decoration {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        pointer-events: none;
+        overflow: hidden;
+        opacity: 0.03;
+
+        .decoration-line {
+            position: absolute;
+            background: linear-gradient(90deg, 
+                transparent 0%, 
+                hsl(var(--main), 50%, 50%) 50%, 
+                transparent 100%);
+            height: 1px;
+            width: 200%;
+            animation: slide 20s linear infinite;
+
+            &--1 {
+                top: 20%;
+                animation-duration: 25s;
+            }
+
+            &--2 {
+                top: 50%;
+                animation-duration: 30s;
+                animation-direction: reverse;
+            }
+
+            &--3 {
+                top: 80%;
+                animation-duration: 35s;
             }
         }
     }
 }
 
+// Animations
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.6;
+    }
+}
 
+@keyframes slide {
+    0% {
+        transform: translateX(-50%);
+    }
+    100% {
+        transform: translateX(0);
+    }
+}
+
+// Mobile Responsive Styles
 @media (max-width: 768px) {
     .footer {
-        flex-direction: column;
-        .footer-section {
-            border-right: none;
-            align-items: center; // Center-align items on smaller screens
-            &:not(:last-child) {
-                margin-bottom: 20px;
+        .footer-container {
+            padding: 0 1.5rem;
+        }
+
+        .footer-top {
+            padding: 2.5rem 0 2rem;
+        }
+
+        .footer-brand {
+            .brand-identity {
+                flex-direction: column;
+                align-items: center;
+                text-align: center;
+
+                .brand-logo {
+                    width: 64px;
+                    height: 64px;
+                }
+
+                .brand-info {
+                    .brand-name {
+                        font-size: 1.5rem;
+                    }
+
+                    .brand-tagline {
+                        max-width: 100%;
+                    }
+                }
             }
+        }
+
+        .footer-column {
+            text-align: center;
+
+            .column-title {
+                .title-accent {
+                    left: 50%;
+                    transform: translateX(-50%);
+                }
+            }
+
+            .column-links {
+                align-items: stretch;
+            }
+        }
+
+        .footer-link {
+            justify-content: center;
+            
+            &:hover {
+                transform: none;
+            }
+
+            .link-arrow {
+                display: none;
+            }
+        }
+    }
+}
+
+// Small Mobile
+@media (max-width: 480px) {
+    .footer {
+        .footer-container {
+            padding: 0 1rem;
+        }
+
+        .footer-top {
+            gap: 2rem;
+            padding: 2rem 0 1.5rem;
+        }
+
+        .footer-bottom {
+            padding: 1.25rem 0;
+
+            .footer-copyright {
+                flex-direction: column;
+                gap: 0.25rem;
+
+                .separator {
+                    display: none;
+                }
+            }
+        }
+    }
+}
+
+// Dark Mode Support
+// Footer already designed for dark theme by default
+
+// Print Styles
+@media print {
+    .footer {
+        display: none;
+    }
+}
+
+// High Contrast Mode Support
+@media (prefers-contrast: high) {
+    .footer {
+        border-top: 2px solid hsl(var(--main), 30%, 40%);
+
+        .footer-link {
+            &:hover {
+                outline: 1px solid currentColor;
+            }
+        }
+    }
+}
+
+// Reduced Motion Support
+@media (prefers-reduced-motion: reduce) {
+    .footer {
+        * {
+            animation: none !important;
+            transition: none !important;
         }
     }
 }
