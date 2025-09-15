@@ -72,7 +72,14 @@ async def beatmaps_home():
         
     except Exception as e:
         klogging.log(f"Error loading beatmaps page: {e}", klogging.Ansi.LRED)
-        return await flash('error', 'Failed to load beatmaps page.', 'home')
+        # Return a simple error page instead of redirecting to home
+        return await render_template(
+            'beatmaps_hina.html',
+            globalNotice=None,
+            flash='Failed to load beatmaps page. Please try again later.',
+            status='error',
+            hello_data={"status": "error", "message": str(e)}
+        )
 
 
 @hinaManage.route('/api/hello')
@@ -107,67 +114,134 @@ async def api_hello():
 @error_catcher
 async def api_search():
     """
-    API endpoint for beatmap search
+    API endpoint for beatmap search with dual API support
     """
     try:
         query = request.args.get('q', '').strip()
         limit = min(int(request.args.get('limit', 50)), 100)
-        
+
+        # Additional search parameters
+        status = request.args.get('status', '')
+        mode = request.args.get('mode', '')
+        genre = request.args.get('genre', '')
+        language = request.args.get('language', '')
+        sort = request.args.get('sort', '')
+        cursor = request.args.get('cursor', '')
+
         if not query:
             return jsonify({
+                "success": False,
                 "status": "error",
                 "message": "Search query is required"
             }), 400
-        
+
         # Sanitize the query
         clean_query = utils.sanitize_search_query(query)
         if not clean_query:
             return jsonify({
+                "success": False,
                 "status": "error",
                 "message": "Invalid search query"
             }), 400
-        
+
+
+        # Build search parameters
+        search_params = {}
+        if status:
+            search_params['status'] = status
+        if mode:
+            search_params['mode'] = mode
+        if genre:
+            search_params['genre'] = genre
+        if language:
+            search_params['language'] = language
+        if sort:
+            search_params['sort'] = sort
+        if cursor:
+            search_params['cursor_string'] = cursor
+
         # Perform search
-        search_results = await beatmaps.search_beatmaps(clean_query, limit)
-        
+        search_results = await beatmaps.search_beatmaps(
+            clean_query,
+            limit=limit,
+            **search_params
+        )
+
         return jsonify(search_results), 200
-        
+
     except Exception as e:
         klogging.log(f"Error in search API: {e}", klogging.Ansi.LRED)
         return jsonify({
+            "success": False,
             "status": "error",
             "message": "Search API failed",
             "error": str(e)
         }), 500
 
 
-@hinaManage.route('/api/download/<int:beatmap_id>')
+@hinaManage.route('/api/download/<int:beatmapset_id>')
 @login_required
 @error_catcher
-async def api_download(beatmap_id: int):
+async def api_download(beatmapset_id: int):
     """
-    API endpoint for beatmap download
+    API endpoint for beatmapset download
     Requires user login
     """
     try:
-        # Validate beatmap ID
-        valid_id = utils.validate_beatmap_id(beatmap_id)
+        # Validate beatmapset ID
+        valid_id = utils.validate_beatmap_id(beatmapset_id)
         if not valid_id:
             return jsonify({
+                "success": False,
                 "status": "error",
-                "message": "Invalid beatmap ID"
+                "message": "Invalid beatmapset ID"
             }), 400
-        
+
+        # Get additional parameters
+        no_video = request.args.get('no_video', '').lower() == 'true'
+
         # Attempt download
-        download_result = await beatmaps.download_beatmap(valid_id)
-        
+        download_result = await beatmaps.download_beatmap(valid_id, no_video)
+
         return jsonify(download_result), 200
-        
+
     except Exception as e:
         klogging.log(f"Error in download API: {e}", klogging.Ansi.LRED)
         return jsonify({
+            "success": False,
             "status": "error",
             "message": "Download API failed",
+            "error": str(e)
+        }), 500
+
+
+@hinaManage.route('/api/beatmapset/<int:beatmapset_id>')
+@error_catcher
+async def api_beatmapset_info(beatmapset_id: int):
+    """
+    API endpoint to get detailed beatmapset information
+    """
+    try:
+        # Validate beatmapset ID
+        valid_id = utils.validate_beatmap_id(beatmapset_id)
+        if not valid_id:
+            return jsonify({
+                "success": False,
+                "status": "error",
+                "message": "Invalid beatmapset ID"
+            }), 400
+
+        # Get beatmapset info
+        beatmapset_result = await beatmaps.get_beatmapset(valid_id)
+
+        return jsonify(beatmapset_result), 200
+
+    except Exception as e:
+        klogging.log(f"Error in beatmapset info API: {e}", klogging.Ansi.LRED)
+        return jsonify({
+            "success": False,
+            "status": "error",
+            "message": "Beatmapset info API failed",
             "error": str(e)
         }), 500
 
@@ -176,20 +250,33 @@ async def api_download(beatmap_id: int):
 @error_catcher
 async def api_status():
     """
-    API endpoint to get system status
+    API endpoint to get system status including both API sources
     """
     try:
         system_status = utils.get_system_status()
-        api_test = await api_handlers.test_api_connection()
-        
+
+        # Test API connection
+        from .hinaManage_modules.osu_api_v2 import osu_api
+
+        osu_test = await osu_api.test_connection()
+
         response_data = {
+            "status": "success",
             "system": system_status,
-            "api_connection": api_test,
+            "api_sources": {
+                "osu": osu_test,
+                "catboy": {
+                    "status": "wip",
+                    "message": "Catboy mirror integration is work in progress",
+                    "api_responsive": False,
+                    "service_url": "https://catboy.best"
+                }
+            },
             "timestamp": asyncio.get_event_loop().time()
         }
-        
+
         return jsonify(response_data), 200
-        
+
     except Exception as e:
         klogging.log(f"Error in status API: {e}", klogging.Ansi.LRED)
         return jsonify({

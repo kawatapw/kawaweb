@@ -4,209 +4,385 @@
 {% block header %}
 <script src="/static/js/asserts/vue.js"></script>
 <script src="/static/js/asserts/vue-axios.js"></script>
-<link rel="stylesheet" href="/static/css/components.css">
-<style>
-/* Custom styles for beatmaps page */
-.beatmaps-container {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 2rem;
-}
-
-.hello-world-card {
-    background: hsl(var(--main), 10%, 20%);
-    border: 1px solid hsl(var(--main), 20%, 30%);
-    border-radius: 8px;
-    padding: 2rem;
-    margin-bottom: 2rem;
-    text-align: center;
-}
-
-.hello-world-card h2 {
-    color: hsl(var(--main), 100%, 60%);
-    margin-bottom: 1rem;
-}
-
-.hello-world-card .status {
-    display: inline-block;
-    padding: 0.5rem 1rem;
-    border-radius: 4px;
-    font-weight: bold;
-    margin: 0.5rem;
-}
-
-.status.success {
-    background: rgba(16, 185, 129, 0.2);
-    color: #10b981;
-    border: 1px solid #10b981;
-}
-
-.status.error {
-    background: rgba(239, 68, 68, 0.2);
-    color: #ef4444;
-    border: 1px solid #ef4444;
-}
-
-.api-test-section {
-    background: hsl(var(--main), 10%, 15%);
-    border-radius: 8px;
-    padding: 1.5rem;
-    margin-top: 2rem;
-}
-
-.api-response {
-    background: hsl(var(--main), 5%, 10%);
-    border: 1px solid hsl(var(--main), 20%, 25%);
-    border-radius: 4px;
-    padding: 1rem;
-    margin-top: 1rem;
-    font-family: 'Courier New', monospace;
-    font-size: 0.9rem;
-    white-space: pre-wrap;
-    color: hsl(var(--main), 10%, 80%);
-}
-
-.test-button {
-    background: hsl(var(--main), 100%, 60%);
-    color: white;
-    border: none;
-    padding: 0.75rem 1.5rem;
-    border-radius: 4px;
-    cursor: pointer;
-    font-weight: bold;
-    transition: background 0.3s ease;
-}
-
-.test-button:hover {
-    background: hsl(var(--main), 100%, 50%);
-}
-
-.test-button:disabled {
-    background: hsl(var(--main), 20%, 40%);
-    cursor: not-allowed;
-}
-
-.coming-soon {
-    background: hsl(var(--main), 10%, 18%);
-    border: 2px dashed hsl(var(--main), 20%, 30%);
-    border-radius: 8px;
-    padding: 3rem;
-    text-align: center;
-    margin-top: 2rem;
-    color: hsl(var(--main), 10%, 70%);
-}
-</style>
+<link rel="stylesheet" href="/static/css/hina_import.css">
 {% endblock %}
 
 {% block content %}
-<div class="beatmaps-container">
-    <!-- Page Header -->
-    <div class="section">
-        <h1 class="title is-2 has-text-centered">
-            <i class="fas fa-music"></i> Beatmaps Management
-        </h1>
-        <p class="subtitle has-text-centered">
-            Download and manage beatmaps from the osu! API
-        </p>
-    </div>
+<!-- Hina's Custom Beatmaps Page - After 4-5 years! 🎵 -->
+{% raw %}
+<div class="hina-beatmaps-container" id="hina-beatmaps-app">
+    <div class="hina-content-wrapper">
 
-    <!-- Hello World Connection Test -->
-    <div class="hello-world-card">
-        <h2><i class="fas fa-plug"></i> Backend Connection Test</h2>
-        
-        {% if hello_data %}
-        <div class="status success">
-            <i class="fas fa-check-circle"></i> {{ hello_data.status|title }}
-        </div>
-        <p><strong>Message:</strong> {{ hello_data.message }}</p>
-        <p><strong>Module:</strong> {{ hello_data.module }}</p>
-        <p><strong>Version:</strong> {{ hello_data.version }}</p>
-        {% else %}
-        <div class="status error">
-            <i class="fas fa-exclamation-circle"></i> Connection Failed
-        </div>
-        <p>Unable to connect to the HinaManage backend.</p>
-        {% endif %}
-    </div>
+        <!-- Page Header -->
+        <header class="hina-page-header">
+            <h1 class="hina-title">
+                <i class="fas fa-music hina-title-icon"></i>
+                Hina's Beatmaps
+            </h1>
+            <p class="hina-subtitle">
+                Discover, search, and download beatmaps from multiple sources
+            </p>
+            <div class="hina-header-decoration"></div>
+        </header>
 
-    <!-- API Test Section -->
-    <div class="api-test-section" id="api-test-app">
-        <h3 class="title is-4">
-            <i class="fas fa-code"></i> API Connection Test
-        </h3>
-        <p class="subtitle is-6">Test the backend API endpoints</p>
-        
-        <div class="buttons">
-            <button class="test-button" @click="testHelloAPI" :disabled="loading">
-                <i class="fas fa-play"></i> Test Hello API
+        <!-- API Source Switcher -->
+        <section class="hina-api-switcher">
+            <h2 class="hina-switcher-title">
+                <i class="fas fa-exchange-alt hina-switcher-icon"></i>
+                Choose Your Source
+            </h2>
+            <div class="hina-switcher-buttons">
+                <button
+                    class="hina-api-button"
+                    :class="{ active: currentSource === 'osu' }"
+                    @click="switchSource('osu')"
+                >
+                    <i class="fas fa-star"></i>
+                    osu! Official API
+                    <span class="hina-api-status" :class="apiStatus.osu ? 'online' : 'offline'"></span>
+                </button>
+                <button
+                    class="hina-api-button"
+                    :class="{ disabled: true }"
+                    @click.prevent="showWIPMessage()"
+                    disabled
+                >
+                    <i class="fas fa-cat"></i>
+                    Catboy Mirror
+                    <span class="hina-api-status wip">WIP</span>
+                </button>
+            </div>
+        </section>
+
+        <!-- Search Section -->
+        <section class="hina-search-section">
+            <div class="hina-search-header">
+                <i class="fas fa-search hina-search-icon"></i>
+                <h2 class="hina-search-title">Search Beatmaps</h2>
+            </div>
+            <form class="hina-search-form" @submit.prevent="searchBeatmaps">
+                <input
+                    type="text"
+                    class="hina-search-input"
+                    placeholder="Enter song title, artist, or creator..."
+                    v-model="searchQuery"
+                    :disabled="isLoading"
+                >
+                <button
+                    type="submit"
+                    class="hina-search-button"
+                    :disabled="isLoading || !searchQuery.trim()"
+                >
+                    <i class="fas fa-search"></i>
+                    <span v-if="!isLoading">Search</span>
+                    <span v-else>Searching...</span>
+                </button>
+            </form>
+        </section>
+
+        <!-- Loading State -->
+        <div v-if="isLoading" class="hina-loading">
+            <div class="hina-loading-spinner"></div>
+            <p class="hina-loading-text">Searching beatmaps...</p>
+        </div>
+
+        <!-- Error State -->
+        <div v-if="error" class="hina-error-card">
+            <i class="fas fa-exclamation-triangle hina-error-icon"></i>
+            <h3 class="hina-error-title">Search Failed</h3>
+            <p class="hina-error-message">{{ error }}</p>
+            <button class="hina-error-retry" @click="retrySearch">
+                <i class="fas fa-redo"></i>
+                Try Again
             </button>
-            <button class="test-button" @click="testStatusAPI" :disabled="loading">
-                <i class="fas fa-heartbeat"></i> Test Status API
-            </button>
         </div>
-        
-        <div v-if="loading" class="has-text-centered" style="margin-top: 1rem;">
-            <i class="fas fa-spinner fa-spin"></i> Testing API...
-        </div>
-        
-        <div v-if="apiResponse" class="api-response">{{ apiResponse }}</div>
-    </div>
 
-    <!-- Coming Soon Section -->
-    <div class="coming-soon">
-        <h3 class="title is-4">
-            <i class="fas fa-construction"></i> Coming Soon
-        </h3>
-        <p class="subtitle">
-            Full beatmap search, download, and management features will be available here soon!
-        </p>
-        <div style="margin-top: 2rem;">
-            <p><i class="fas fa-search"></i> <strong>Beatmap Search</strong> - Search the osu! database</p>
-            <p><i class="fas fa-download"></i> <strong>Direct Download</strong> - Download beatmaps directly</p>
-            <p><i class="fas fa-cogs"></i> <strong>Management Tools</strong> - Organize your beatmap collection</p>
-            {% if session.authenticated and session.user_data.is_staff %}
-            <p><i class="fas fa-shield-alt"></i> <strong>Admin Features</strong> - Advanced management tools</p>
-            {% endif %}
+        <!-- Results Section -->
+        <section v-if="searchResults.length > 0" class="hina-results-section">
+            <div class="hina-results-header">
+                <h2 class="hina-results-title">
+                    Search Results
+                    <span class="hina-results-count">{{ searchResults.length }}</span>
+                </h2>
+                <div class="hina-results-source">
+                    <span class="hina-source-indicator"></span>
+                    Source: <span v-text="currentSource === 'osu' ? 'osu! Official' : 'Catboy Mirror'"></span>
+                </div>
+            </div>
+
+            <div class="hina-results-grid">
+                <div
+                    v-for="beatmap in searchResults"
+                    :key="beatmap.id || beatmap.beatmapset_id"
+                    class="hina-beatmap-card"
+                    @click="selectBeatmap(beatmap)"
+                >
+                    <!-- Beatmap Cover Image -->
+                    <img
+                        :src="getBeatmapCover(beatmap)"
+                        :alt="beatmap.title"
+                        class="hina-beatmap-cover"
+                        @error="handleImageError"
+                    >
+
+                    <!-- Overlay -->
+                    <div class="hina-beatmap-overlay"></div>
+
+                    <!-- Status Badge -->
+                    <div
+                        class="hina-beatmap-status"
+                        :class="beatmap.status ? beatmap.status.toLowerCase() : 'unknown'"
+                        v-text="beatmap.status || 'Unknown'"
+                    >
+                    </div>
+
+                    <!-- Difficulty Icons -->
+                    <div class="hina-beatmap-difficulties" v-if="beatmap.beatmaps">
+                        <div
+                            v-for="diff in beatmap.beatmaps.slice(0, 5)"
+                            :key="diff.id"
+                            class="hina-difficulty-icon"
+                            :class="getDifficultyClass(diff.difficulty_rating)"
+                            :title="`${diff.version} - ${diff.difficulty_rating}⭐`"
+                        >
+                            {{ getDifficultyIcon(diff.mode) }}
+                        </div>
+                        <div v-if="beatmap.beatmaps.length > 5" class="hina-difficulty-icon">
+                            +{{ beatmap.beatmaps.length - 5 }}
+                        </div>
+                    </div>
+
+                    <!-- Content -->
+                    <div class="hina-beatmap-content">
+                        <h3 class="hina-beatmap-title">{{ beatmap.title }}</h3>
+                        <p class="hina-beatmap-artist">by {{ beatmap.artist }}</p>
+                        <div class="hina-beatmap-creator">
+                            <img
+                                v-if="beatmap.user && beatmap.user.avatar_url"
+                                :src="beatmap.user.avatar_url"
+                                :alt="beatmap.user.username || beatmap.creator"
+                                class="hina-creator-avatar"
+                                @error="handleAvatarError"
+                            >
+                            <span v-text="beatmap.user ? beatmap.user.username : beatmap.creator"></span>
+                        </div>
+                        <div class="hina-beatmap-stats">
+                            <div class="hina-stat" v-if="beatmap.bpm">
+                                <i class="fas fa-heartbeat hina-stat-icon"></i>
+                                {{ Math.round(beatmap.bpm) }} BPM
+                            </div>
+                            <div class="hina-stat" v-if="beatmap.total_length">
+                                <i class="fas fa-clock hina-stat-icon"></i>
+                                {{ formatDuration(beatmap.total_length) }}
+                            </div>
+                            <div class="hina-stat" v-if="beatmap.favourite_count">
+                                <i class="fas fa-heart hina-stat-icon"></i>
+                                {{ beatmap.favourite_count }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Empty State -->
+        <div v-if="!isLoading && !error && searchResults.length === 0 && hasSearched" class="hina-empty-state">
+            <i class="fas fa-search hina-empty-icon"></i>
+            <h3 class="hina-empty-title">No Results Found</h3>
+            <p class="hina-empty-description">
+                Try adjusting your search terms or switching to a different source.
+            </p>
         </div>
+
+        <!-- Welcome State -->
+        <div v-if="!hasSearched && !isLoading" class="hina-empty-state">
+            <i class="fas fa-music hina-empty-icon"></i>
+            <h3 class="hina-empty-title">Welcome to Hina's Beatmaps!</h3>
+            <p class="hina-empty-description">
+                Start by entering a search term above to discover amazing beatmaps.<br>
+                You can search by song title, artist, or creator name.
+            </p>
+        </div>
+
     </div>
 </div>
+{% endraw %}
 
 <script>
-// Vue.js app for API testing
+// Hina's Beatmaps Vue.js App - The main event! 🎵
 new Vue({
-    el: '#api-test-app',
+    el: '#hina-beatmaps-app',
     data: {
-        loading: false,
-        apiResponse: null
+        // API Management
+        currentSource: 'osu',
+        apiStatus: {
+            osu: true,
+            catboy: false  // WIP
+        },
+
+        // Search State
+        searchQuery: '',
+        searchResults: [],
+        isLoading: false,
+        error: null,
+        hasSearched: false,
+
+        // Pagination
+        currentPage: 1,
+        totalResults: 0,
+        cursor: null
     },
+
+    mounted() {
+        this.checkAPIStatus();
+    },
+
     methods: {
-        async testHelloAPI() {
-            this.loading = true;
-            this.apiResponse = null;
-            
-            try {
-                const response = await fetch('/beatmaps/api/hello');
-                const data = await response.json();
-                this.apiResponse = JSON.stringify(data, null, 2);
-            } catch (error) {
-                this.apiResponse = `Error: ${error.message}`;
-            } finally {
-                this.loading = false;
+        // API Source Management
+        switchSource(source) {
+            if (source === 'catboy') {
+                this.showWIPMessage();
+                return;
+            }
+            this.currentSource = source;
+            this.error = null;
+
+            // Re-search if we have a query
+            if (this.searchQuery.trim() && this.hasSearched) {
+                this.searchBeatmaps();
             }
         },
-        
-        async testStatusAPI() {
-            this.loading = true;
-            this.apiResponse = null;
-            
+
+        showWIPMessage() {
+            this.error = 'Catboy Mirror integration is currently work in progress. Please use the official osu! API.';
+            setTimeout(() => {
+                if (this.error && this.error.includes('work in progress')) {
+                    this.error = null;
+                }
+            }, 3000);
+        },
+
+        async checkAPIStatus() {
             try {
-                const response = await fetch('/beatmaps/api/status');
-                const data = await response.json();
-                this.apiResponse = JSON.stringify(data, null, 2);
+                // Check osu! API status
+                const osuResponse = await fetch('/beatmaps/api/status');
+                const osuData = await osuResponse.json();
+                this.apiStatus.osu = osuData.status === 'success';
+
+                // Catboy is WIP
+                this.apiStatus.catboy = false;
             } catch (error) {
-                this.apiResponse = `Error: ${error.message}`;
+                console.warn('Failed to check API status:', error);
+                this.apiStatus.osu = false;
+                this.apiStatus.catboy = true; // Assume catboy is available
+            }
+        },
+
+        // Search Functionality
+        async searchBeatmaps() {
+            if (!this.searchQuery.trim()) return;
+
+            this.isLoading = true;
+            this.error = null;
+            this.hasSearched = true;
+
+            try {
+                const params = new URLSearchParams({
+                    q: this.searchQuery.trim(),
+                    limit: 20
+                });
+
+                if (this.cursor) {
+                    params.append('cursor', this.cursor);
+                }
+
+                const response = await fetch(`/beatmaps/api/search?${params}`);
+                const data = await response.json();
+
+                if (data.success) {
+                    this.searchResults = data.data || [];
+                    this.totalResults = data.total || data.count || 0;
+                    this.cursor = data.cursor || null;
+                } else {
+                    throw new Error(data.error || 'Search failed');
+                }
+
+            } catch (error) {
+                this.error = error.message;
+                this.searchResults = [];
+                console.error('Search error:', error);
             } finally {
-                this.loading = false;
+                this.isLoading = false;
+            }
+        },
+
+        retrySearch() {
+            this.error = null;
+            this.searchBeatmaps();
+        },
+
+        // Beatmap Interaction
+        selectBeatmap(beatmap) {
+            console.log('Selected beatmap:', beatmap);
+            // TODO: Implement beatmap details modal or download
+        },
+
+        // Utility Functions
+        getBeatmapCover(beatmap) {
+            const beatmapsetId = beatmap.id || beatmap.beatmapset_id;
+            if (!beatmapsetId) return '/static/images/default-bg.png';
+
+            // Use osu! covers API
+            return `https://assets.ppy.sh/beatmaps/${beatmapsetId}/covers/card@2x.jpg`;
+        },
+
+        getDifficultyClass(rating) {
+            if (!rating) return 'normal';
+
+            if (rating < 2) return 'easy';
+            if (rating < 2.7) return 'normal';
+            if (rating < 4) return 'hard';
+            if (rating < 5.3) return 'insane';
+            if (rating < 6.5) return 'expert';
+            return 'expertplus';
+        },
+
+        getDifficultyIcon(mode) {
+            const icons = {
+                0: '○', // osu!
+                1: '○', // taiko
+                2: '○', // catch
+                3: '○'  // mania
+            };
+            return icons[mode] || '○';
+        },
+
+        formatDuration(seconds) {
+            if (!seconds) return '0:00';
+
+            const minutes = Math.floor(seconds / 60);
+            const remainingSeconds = seconds % 60;
+            return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+        },
+
+        // Error Handlers
+        handleImageError(event) {
+            event.target.src = '/static/images/default-bg.png';
+        },
+
+        handleAvatarError(event) {
+            event.target.src = 'https://a.ppy.sh/0';
+        }
+    },
+
+    watch: {
+        searchQuery(newQuery) {
+            // Auto-search after user stops typing (debounced)
+            clearTimeout(this.searchTimeout);
+            if (newQuery.trim().length >= 3) {
+                this.searchTimeout = setTimeout(() => {
+                    this.searchBeatmaps();
+                }, 500);
             }
         }
     }
