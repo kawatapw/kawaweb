@@ -211,13 +211,17 @@
         }
     }
 
-    // Bottom Bar
+    // Bottom Bar - Full Width
     .footer-bottom {
         padding: 1.5rem 0;
         background: hsl(var(--main), 15%, 8%);
         border-top: 1px solid hsl(var(--main), 20%, 15%);
+        width: 100%; // Ensure full width
 
         .footer-bottom-content {
+            max-width: 1280px; // Match footer-container max-width
+            margin: 0 auto; // Center the content
+            padding: 0 2rem; // Match footer-container padding
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -227,6 +231,7 @@
             @media (max-width: 640px) {
                 justify-content: center;
                 text-align: center;
+                padding: 0 1.5rem; // Match mobile padding
             }
         }
 
@@ -404,6 +409,10 @@
 
         .footer-bottom {
             padding: 1.25rem 0;
+
+            .footer-bottom-content {
+                padding: 0 1rem; // Match small mobile container padding
+            }
 
             .footer-copyright {
                 flex-direction: column;
