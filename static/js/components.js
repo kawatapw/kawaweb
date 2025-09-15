@@ -730,7 +730,7 @@ Vue.component('user-profile', {
   template: `
     <span :id="user.player_id" class="user-name" @mouseover="showProfile" @mouseout="hideProfile">
       <a :href="'/u/'+user.player_id+'?mode='+mode+'&mods='+mods">
-          {{ user.info?.name || user.player_name || 'Loading...' }}
+          {{ user.player_name || user.info?.name || 'Loading...' }}
       </a>
       <div :id="user.player_id" class="profile-panel" :class="profileClasses" 
            @mouseenter="mouseEnterPanel" @mouseleave="mouseLeavePanel">

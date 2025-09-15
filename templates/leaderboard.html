@@ -64,7 +64,7 @@
                     <div class="avatar-container">
                         <img class="avatar"
                              :src="'https://a.ppy.sh/' + boards[1].player_id"
-                             :alt="boards[1].name"
+                             :alt="boards[1].player_name"
                              @error="$event.target.src = 'https://avatars.githubusercontent.com/u/15048157?v=4'">
                         <div class="rank-badge">2</div>
                     </div>
@@ -73,7 +73,7 @@
                             <img class="country-flag"
                                  :src="'/static/images/flags/' + boards[1].country.toUpperCase() + '.png'"
                                  :alt="boards[1].country">
-                            <span><% boards[1].name %></span>
+                            <span><% boards[1].player_name %></span>
                         </div>
                         <div class="player-stats">
                             <div class="stat-item">
@@ -109,7 +109,7 @@
                     <div class="avatar-container">
                         <img class="avatar"
                              :src="'https://a.ppy.sh/' + boards[0].player_id"
-                             :alt="boards[0].name"
+                             :alt="boards[0].player_name"
                              @error="$event.target.src = 'https://avatars.githubusercontent.com/u/15048157?v=4'">
                         <div class="rank-badge">1</div>
                     </div>
@@ -118,7 +118,7 @@
                             <img class="country-flag"
                                  :src="'/static/images/flags/' + boards[0].country.toUpperCase() + '.png'"
                                  :alt="boards[0].country">
-                            <span><% boards[0].name %></span>
+                            <span><% boards[0].player_name %></span>
                         </div>
                         <div class="player-stats">
                             <div class="stat-item">
@@ -154,7 +154,7 @@
                     <div class="avatar-container">
                         <img class="avatar"
                              :src="'https://a.ppy.sh/' + boards[2].player_id"
-                             :alt="boards[2].name"
+                             :alt="boards[2].player_name"
                              @error="$event.target.src = 'https://avatars.githubusercontent.com/u/15048157?v=4'">
                         <div class="rank-badge">3</div>
                     </div>
@@ -163,7 +163,7 @@
                             <img class="country-flag"
                                  :src="'/static/images/flags/' + boards[2].country.toUpperCase() + '.png'"
                                  :alt="boards[2].country">
-                            <span><% boards[2].name %></span>
+                            <span><% boards[2].player_name %></span>
                         </div>
                         <div class="player-stats">
                             <div class="stat-item">
@@ -230,7 +230,9 @@
                                         <% flags[user.country.toUpperCase()] %>
                                     </div>
                                 </a>
-                                <user-profile :user="user" :key="user.player_id" :domain="domain"></user-profile>
+                                <a :href="'/u/' + user.player_id">
+                                    <% user.player_name %>
+                                </a>
                             </td>
                             <td id="clan-tag" >
                                 <span v-if="user.clan_tag">
