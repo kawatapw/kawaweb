@@ -124,6 +124,9 @@ app.register_blueprint(frontend)
 from blueprints.admin import admin
 app.register_blueprint(admin, url_prefix='/admin')
 
+from blueprints.hinaManage import hinaManage
+app.register_blueprint(hinaManage, url_prefix='/beatmaps')
+
 # Only register local API blueprint if in debug mode
 if glob.config.hina_debug:
     from blueprints.api import api

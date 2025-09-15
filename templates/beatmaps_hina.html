@@ -1,0 +1,215 @@
+{% extends 'base.html' %}
+{% block title %} Beatmaps {% endblock %}
+
+{% block header %}
+<script src="/static/js/asserts/vue.js"></script>
+<script src="/static/js/asserts/vue-axios.js"></script>
+<link rel="stylesheet" href="/static/css/components.css">
+<style>
+/* Custom styles for beatmaps page */
+.beatmaps-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+.hello-world-card {
+    background: hsl(var(--main), 10%, 20%);
+    border: 1px solid hsl(var(--main), 20%, 30%);
+    border-radius: 8px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    text-align: center;
+}
+
+.hello-world-card h2 {
+    color: hsl(var(--main), 100%, 60%);
+    margin-bottom: 1rem;
+}
+
+.hello-world-card .status {
+    display: inline-block;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    font-weight: bold;
+    margin: 0.5rem;
+}
+
+.status.success {
+    background: rgba(16, 185, 129, 0.2);
+    color: #10b981;
+    border: 1px solid #10b981;
+}
+
+.status.error {
+    background: rgba(239, 68, 68, 0.2);
+    color: #ef4444;
+    border: 1px solid #ef4444;
+}
+
+.api-test-section {
+    background: hsl(var(--main), 10%, 15%);
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin-top: 2rem;
+}
+
+.api-response {
+    background: hsl(var(--main), 5%, 10%);
+    border: 1px solid hsl(var(--main), 20%, 25%);
+    border-radius: 4px;
+    padding: 1rem;
+    margin-top: 1rem;
+    font-family: 'Courier New', monospace;
+    font-size: 0.9rem;
+    white-space: pre-wrap;
+    color: hsl(var(--main), 10%, 80%);
+}
+
+.test-button {
+    background: hsl(var(--main), 100%, 60%);
+    color: white;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: background 0.3s ease;
+}
+
+.test-button:hover {
+    background: hsl(var(--main), 100%, 50%);
+}
+
+.test-button:disabled {
+    background: hsl(var(--main), 20%, 40%);
+    cursor: not-allowed;
+}
+
+.coming-soon {
+    background: hsl(var(--main), 10%, 18%);
+    border: 2px dashed hsl(var(--main), 20%, 30%);
+    border-radius: 8px;
+    padding: 3rem;
+    text-align: center;
+    margin-top: 2rem;
+    color: hsl(var(--main), 10%, 70%);
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="beatmaps-container">
+    <!-- Page Header -->
+    <div class="section">
+        <h1 class="title is-2 has-text-centered">
+            <i class="fas fa-music"></i> Beatmaps Management
+        </h1>
+        <p class="subtitle has-text-centered">
+            Download and manage beatmaps from the osu! API
+        </p>
+    </div>
+
+    <!-- Hello World Connection Test -->
+    <div class="hello-world-card">
+        <h2><i class="fas fa-plug"></i> Backend Connection Test</h2>
+        
+        {% if hello_data %}
+        <div class="status success">
+            <i class="fas fa-check-circle"></i> {{ hello_data.status|title }}
+        </div>
+        <p><strong>Message:</strong> {{ hello_data.message }}</p>
+        <p><strong>Module:</strong> {{ hello_data.module }}</p>
+        <p><strong>Version:</strong> {{ hello_data.version }}</p>
+        {% else %}
+        <div class="status error">
+            <i class="fas fa-exclamation-circle"></i> Connection Failed
+        </div>
+        <p>Unable to connect to the HinaManage backend.</p>
+        {% endif %}
+    </div>
+
+    <!-- API Test Section -->
+    <div class="api-test-section" id="api-test-app">
+        <h3 class="title is-4">
+            <i class="fas fa-code"></i> API Connection Test
+        </h3>
+        <p class="subtitle is-6">Test the backend API endpoints</p>
+        
+        <div class="buttons">
+            <button class="test-button" @click="testHelloAPI" :disabled="loading">
+                <i class="fas fa-play"></i> Test Hello API
+            </button>
+            <button class="test-button" @click="testStatusAPI" :disabled="loading">
+                <i class="fas fa-heartbeat"></i> Test Status API
+            </button>
+        </div>
+        
+        <div v-if="loading" class="has-text-centered" style="margin-top: 1rem;">
+            <i class="fas fa-spinner fa-spin"></i> Testing API...
+        </div>
+        
+        <div v-if="apiResponse" class="api-response">{{ apiResponse }}</div>
+    </div>
+
+    <!-- Coming Soon Section -->
+    <div class="coming-soon">
+        <h3 class="title is-4">
+            <i class="fas fa-construction"></i> Coming Soon
+        </h3>
+        <p class="subtitle">
+            Full beatmap search, download, and management features will be available here soon!
+        </p>
+        <div style="margin-top: 2rem;">
+            <p><i class="fas fa-search"></i> <strong>Beatmap Search</strong> - Search the osu! database</p>
+            <p><i class="fas fa-download"></i> <strong>Direct Download</strong> - Download beatmaps directly</p>
+            <p><i class="fas fa-cogs"></i> <strong>Management Tools</strong> - Organize your beatmap collection</p>
+            {% if session.authenticated and session.user_data.is_staff %}
+            <p><i class="fas fa-shield-alt"></i> <strong>Admin Features</strong> - Advanced management tools</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+// Vue.js app for API testing
+new Vue({
+    el: '#api-test-app',
+    data: {
+        loading: false,
+        apiResponse: null
+    },
+    methods: {
+        async testHelloAPI() {
+            this.loading = true;
+            this.apiResponse = null;
+            
+            try {
+                const response = await fetch('/beatmaps/api/hello');
+                const data = await response.json();
+                this.apiResponse = JSON.stringify(data, null, 2);
+            } catch (error) {
+                this.apiResponse = `Error: ${error.message}`;
+            } finally {
+                this.loading = false;
+            }
+        },
+        
+        async testStatusAPI() {
+            this.loading = true;
+            this.apiResponse = null;
+            
+            try {
+                const response = await fetch('/beatmaps/api/status');
+                const data = await response.json();
+                this.apiResponse = JSON.stringify(data, null, 2);
+            } catch (error) {
+                this.apiResponse = `Error: ${error.message}`;
+            } finally {
+                this.loading = false;
+            }
+        }
+    }
+});
+</script>
+{% endblock %}
