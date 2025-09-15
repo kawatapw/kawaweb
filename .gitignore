@@ -2,6 +2,7 @@
 hina_import.css.map
 static/css/scss/*.css
 static/css/scss/*.css.map
+blueprints/hinaManage_modules/beatmap_views.py
 *.sql
 updateGit.sh
 start_local.sh
