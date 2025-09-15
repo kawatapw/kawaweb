@@ -13,6 +13,8 @@ def read_list(value: str) -> list[str]:
 
 # app info
 app_name = os.environ["APP_NAME"]
+if os.environ.get("HINA_DEBUG") == "true":
+    app_host = os.environ.get("APP_HOST", "127.0.0.1")
 app_port = int(os.environ["APP_PORT"])
 
 # Local development mode (Hina's Debug Mode)

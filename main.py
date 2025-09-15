@@ -24,7 +24,9 @@ from cmyui.version import Version
 import logging, time
 import json
 from quart import Response, request
+from dotenv import load_dotenv
 
+load_dotenv()
 app = Quart(f'{glob.config.app_name}')
 
 version = Version(1, 3, 0)
@@ -134,4 +136,7 @@ async def page_not_found(e):
 
 if __name__ == '__main__':
     os.chdir(os.path.dirname(os.path.realpath(__file__)))
-    app.run(port=glob.config.app_port, debug=glob.config.debug) # blocking call
+    if os.environ.get("HINA_DEBUG") == "true":
+        app.run(host=glob.config.app_host, port=glob.config.app_port, debug=glob.config.debug) # blocking call
+    else:
+        app.run(port=glob.config.app_port, debug=glob.config.debug) # blocking call

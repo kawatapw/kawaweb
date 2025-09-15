@@ -7,6 +7,14 @@ updateGit.sh
 start_local.sh
 .claude
 .gitmodules
+
+# Local Docker Development Files
+docker-compose.local.yml
+Dockerfile.local
+.env.docker.local
+start_docker_local.sh
+docker_utils.sh
+kawata_backup_*.sql
 #_____
 
 # Byte-compiled / optimized / DLL files
