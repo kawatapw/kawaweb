@@ -20,6 +20,7 @@
         width: inherit;
         background: hsl(var(--main), 10%, 15%);
         position: relative;
+        min-height: fit-content;
     }
         .main-block .selector {
             position: absolute;
@@ -75,6 +76,7 @@
             /*background-color: hsl(var(--main), 30%, 50%);*/
             max-height: fit-content;
             min-height: 194px;
+            width: 100%;
             border-top-right-radius: 20px;
             border-top-left-radius: 20px;
             display: flex;
