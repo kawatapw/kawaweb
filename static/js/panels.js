@@ -478,10 +478,10 @@ new Vue({
                             @click="LoadDoc('Clients', 'Kawata')">
                                 <i class="fas fa-client"></i><span class="modetext"> Kawata/Aeris </span>
                             </a>
-                            <a class="top-tab" v-bind:class="{ 'active': page === 'Abypass' }"
+                            <!--<a class="top-tab" v-bind:class="{ 'active': page === 'Abypass' }"
                             @click="LoadDoc('Clients', 'Abypass')">
                                 <i class="fas fa-client"></i><span class="modetext"> Abypass </span>
-                            </a>
+                            </a>-->
                             <a class="top-tab" v-bind:class="{ 'active': page === 'Maple' }"
                             @click="LoadDoc('Clients', 'Maple')">
                                 <i class="fas fa-client"></i><span class="modetext"> Maple </span>
@@ -530,14 +530,6 @@ new Vue({
                                             Due to being the Kawata Client, you are the least likely to break our rules using this client. </br>
                                             Therefore is it the most recommended client to use.</p>
                                         </div>
-                                        <div class="subsection linked" @click="LoadDoc('Clients', 'Abypass')">
-                                            <h4><b>Abypass:</b></h4>
-                                            <p>Abypass is the successor to Skoot.er created by Chewy/Pythr. </br>
-                                            Currently Maintained by Aochi.</br>
-                                            This client is a better version of Skoot.er with more features and less bugs. </br>
-                                            This client tries to comply with our rules, but it is not always updated. </br>
-                                            If Kawata/Aeris doesn't work for you, this is the next best, free choice.</p>
-                                        </div>
                                         <div class="subsection linked" @click="LoadDoc('Clients', 'Maple')">
                                             <h4><b>Maple:</b></h4>
                                             <p>Maple is a <b>paid</b> hack created by Maple Syrup. </br>
@@ -559,6 +551,16 @@ new Vue({
                                     </div>
                                     <div class="doc-content">
                                         <h3><i class="fas fa-exclamation"></i> Unsupported/Depreciated Cheats:</h3>
+                                        <div class="subsection linked" @click="LoadDoc('Clients', 'Abypass')">
+                                            <h4><b>Abypass:</b></h4>
+                                            <p>Abypass is the successor to Skoot.er created by Chewy/Pythr. </br>
+                                            Previously Maintained by Aochi.</br>
+                                            This client is a better version of Skoot.er with more features and less bugs. </br>
+                                            This client tries to comply with our rules, but it is not always updated. </br>
+                                            If Kawata/Aeris doesn't work for you, this is the next best, free choice. </br>
+                                            </br>
+                                            This client has been mostly discontinued and downloads for this client have been lost.</p>
+                                        </div>
                                         <div class="subsection linked" @click="LoadDoc('Clients', 'Skooter')">
                                             <h4><b>Skooter:</b></h4>
                                             <p>Skooter is a free client developed by Aoba Suzukaze, VacCat, Chewy/Pythr. </br>
