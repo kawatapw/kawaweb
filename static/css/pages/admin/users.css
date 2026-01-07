@@ -1,10 +1,495 @@
-#user-search.main-block {
-    width: inherit;
-    background: hsl(var(--main), 10%, 15%);
-    display: flex; 
+/* ===== ADMIN FILTER PANEL REDESIGN ===== */
+
+.admin-filter-panel {
+    background: linear-gradient(135deg, hsl(var(--main), 12%, 16%) 0%, hsl(var(--main), 8%, 14%) 100%);
+    border: 1px solid hsl(var(--main), 15%, 25%);
+    border-radius: 12px;
+    margin-bottom: 2rem;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+.admin-filter-panel:hover {
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+    transform: translateY(-2px);
+}
+
+/* Filter Container */
+.filter-container {
+    padding: 1.5rem;
+}
+
+/* Filter Header */
+.filter-header {
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid hsl(var(--main), 15%, 25%);
+}
+
+.filter-title {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.filter-title .title {
+    margin: 0;
+    color: hsl(var(--main), 50%, 85%);
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.filter-title .title i {
+    color: hsl(var(--main), 60%, 70%);
+}
+
+.filter-stats {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+/* Filter Controls */
+.filter-controls {
+    margin-bottom: 1rem;
+}
+
+.filter-row {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 1fr;
+    gap: 1.5rem;
+    align-items: end;
+}
+
+.filter-row-expanded {
+    grid-template-columns: 2fr 1fr 0.8fr 0.8fr 1fr;
+}
+
+.filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.filter-group.search-group {
+    min-width: 0; /* Allow flex shrinking */
+}
+
+.filter-group.actions-group {
+    justify-self: end;
+}
+
+.filter-label {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: hsl(var(--main), 40%, 75%);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 0.25rem;
+}
+
+/* Enhanced Form Controls */
+.filter-controls .input,
+.filter-controls .select select {
+    background: hsl(var(--main), 15%, 20%);
+    border: 2px solid hsl(var(--main), 20%, 30%);
+    color: hsl(var(--main), 50%, 90%);
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    font-size: 0.95rem;
+}
+
+.filter-controls .input:focus,
+.filter-controls .select select:focus {
+    border-color: hsl(var(--main), 60%, 60%);
+    box-shadow: 0 0 0 3px hsla(var(--main), 60%, 60%, 0.1);
+    background: hsl(var(--main), 18%, 22%);
+}
+
+.filter-controls .input:hover,
+.filter-controls .select select:hover {
+    border-color: hsl(var(--main), 40%, 50%);
+}
+
+.filter-controls .select.is-active select {
+    border-color: hsl(var(--main), 60%, 60%);
+    background: hsl(var(--main), 18%, 22%);
+}
+
+.filter-controls .select.has-default select {
+    border-color: hsl(var(--main), 30%, 40%);
+    background: hsl(var(--main), 12%, 18%);
+    color: hsl(var(--main), 40%, 80%);
+}
+
+.filter-controls .select.has-default:hover select {
+    border-color: hsl(var(--main), 40%, 50%);
+}
+
+/* ===== PRIVILEGE SELECT WITH FONT AWESOME ICON INDICATOR ===== */
+
+.privilege-select-container {
+    position: relative;
+}
+
+.privilege-select {
+    position: relative;
+}
+
+.privilege-icon-indicator {
+    position: absolute;
+    right: 2.5rem;
+    top: 50%;
+    transform: translateY(-50%);
+    pointer-events: none;
+    z-index: 2;
+    display: flex;
+    align-items: center;
     justify-content: center;
-    transition: 0.2s ease;
-  }
+    width: 1.5rem;
+    height: 1.5rem;
+}
+
+.privilege-icon-indicator i {
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3));
+}
+
+/* Enhanced select styling for privilege dropdown */
+.privilege-select select {
+    padding-right: 4rem !important; /* Make room for both arrow and icon */
+}
+
+.privilege-select.is-active .privilege-icon-indicator i {
+    transform: scale(1.1);
+}
+
+.privilege-select.has-default .privilege-icon-indicator i {
+    opacity: 0.7;
+}
+
+.privilege-select:hover .privilege-icon-indicator i {
+    transform: scale(1.05);
+    opacity: 1;
+}
+
+/* Button Styling */
+.filter-controls .button {
+    border-radius: 8px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+}
+
+.filter-controls .button:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.filter-controls .button.is-info {
+    background: linear-gradient(135deg, hsl(var(--main), 60%, 55%) 0%, hsl(var(--main), 60%, 45%) 100%);
+    border-color: hsl(var(--main), 60%, 50%);
+}
+
+.filter-controls .button.is-warning.is-outlined {
+    border-color: hsl(48, 100%, 67%);
+    color: hsl(48, 100%, 67%);
+}
+
+.filter-controls .button.is-success.is-outlined {
+    border-color: hsl(141, 71%, 48%);
+    color: hsl(141, 71%, 48%);
+}
+
+.filter-controls .button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* Sort Direction Button Specific Styling */
+.sort-direction-btn {
+    min-height: 2.5rem; /* Match select input height */
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.sort-direction-btn .icon {
+    margin: 0 !important;
+}
+
+.sort-direction-btn span:not(.icon) {
+    font-size: 0.875rem;
+    font-weight: 700;
+}
+
+/* Ensure consistent sizing across all medium controls */
+.filter-controls .is-medium,
+.filter-controls .select.is-medium select,
+.filter-controls .button.is-medium {
+    height: 2.5rem;
+    font-size: 1rem;
+}
+
+.filter-controls .select.is-medium {
+    height: 2.5rem;
+}
+
+.filter-controls .select.is-medium select {
+    height: 2.5rem;
+    line-height: 1.5;
+}
+
+/* Active Filters Section */
+.active-filters {
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid hsl(var(--main), 15%, 25%);
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.active-filters-label {
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.active-filters-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.active-filters .tag {
+    border-radius: 6px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.active-filters .tag i {
+    font-size: 0.75rem;
+}
+
+/* Loading spinner */
+.spinner {
+    border: 4px solid hsl(var(--main), 20%, 30%);
+    border-top: 4px solid hsl(var(--main), 60%, 60%);
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 1rem;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* ===== RESPONSIVE DESIGN ===== */
+
+@media screen and (max-width: 1216px) {
+    .filter-row {
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+    }
+
+    .filter-row-expanded {
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 1rem;
+    }
+
+    .filter-group.search-group {
+        grid-column: 1 / -1;
+    }
+}
+
+@media screen and (max-width: 768px) {
+    .filter-container {
+        padding: 1rem;
+    }
+
+    .filter-row,
+    .filter-row-expanded {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+
+    .filter-title {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.75rem;
+    }
+
+    .filter-stats {
+        align-self: stretch;
+        justify-content: center;
+    }
+
+    .active-filters {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+
+    /* Mobile-specific button adjustments */
+    .sort-direction-btn {
+        justify-content: space-between;
+        padding: 0 1rem;
+    }
+
+    /* Mobile privilege select adjustments */
+    .privilege-icon-indicator {
+        right: 2rem;
+    }
+
+    .privilege-icon-indicator i {
+        font-size: 1.1rem;
+    }
+}
+
+/* ===== ENHANCED USER CARDS ===== */
+
+.users-grid-container {
+    margin-top: 2rem;
+}
+
+.users-loading-state {
+    text-align: center;
+    padding: 3rem 1rem;
+    background: hsl(var(--main), 10%, 16%);
+    border-radius: 12px;
+    border: 1px solid hsl(var(--main), 15%, 25%);
+}
+
+.users-loading-state .spinner {
+    margin-bottom: 1rem;
+}
+
+.users-loading-state p {
+    color: hsl(var(--main), 40%, 70%);
+    font-size: 1.1rem;
+    font-weight: 500;
+}
+
+.users-empty-state {
+    text-align: center;
+    padding: 3rem 1rem;
+    background: hsl(var(--main), 10%, 16%);
+    border-radius: 12px;
+    border: 1px solid hsl(var(--main), 15%, 25%);
+}
+
+.users-empty-state .is-size-5 {
+    color: hsl(var(--main), 40%, 70%);
+    margin-bottom: 0.5rem;
+}
+
+.users-empty-state .has-text-grey {
+    color: hsl(var(--main), 30%, 60%) !important;
+}
+
+/* Enhanced User Cards */
+#user.card {
+    background: linear-gradient(135deg, hsl(var(--main), 12%, 18%) 0%, hsl(var(--main), 8%, 16%) 100%);
+    border: 1px solid hsl(var(--main), 15%, 28%);
+    border-radius: 12px;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    overflow: hidden;
+    position: relative;
+}
+
+#user.card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
+    border-color: hsl(var(--main), 30%, 40%);
+}
+
+#user.card .card-content {
+    position: relative;
+    z-index: 3;
+    padding: 1rem;
+}
+
+#user.card .card-content h3 {
+    color: hsl(var(--main), 50%, 90%);
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+}
+
+#user.card .card-content p {
+    color: hsl(var(--main), 40%, 75%);
+    font-size: 0.875rem;
+    margin-bottom: 0.25rem;
+}
+
+#user.card .card-content .has-text-info {
+    color: hsl(var(--main), 60%, 70%) !important;
+    font-weight: 600;
+}
+
+#user.card .card-content .has-text-danger {
+    color: hsl(348, 100%, 61%) !important;
+    font-weight: 600;
+}
+
+#user.card .card-content .has-text-grey {
+    color: hsl(var(--main), 30%, 65%) !important;
+}
+
+/* Pagination Enhancement */
+.pagination {
+    margin-top: 2rem;
+    background: hsl(var(--main), 10%, 16%);
+    border-radius: 12px;
+    padding: 1rem;
+    border: 1px solid hsl(var(--main), 15%, 25%);
+}
+
+.pagination-link,
+.pagination-previous,
+.pagination-next {
+    background: hsl(var(--main), 15%, 20%);
+    border: 2px solid hsl(var(--main), 20%, 30%);
+    color: hsl(var(--main), 50%, 85%);
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+
+.pagination-link:hover,
+.pagination-previous:hover,
+.pagination-next:hover {
+    background: hsl(var(--main), 18%, 25%);
+    border-color: hsl(var(--main), 40%, 50%);
+    transform: translateY(-1px);
+}
+
+.pagination-link.is-current {
+    background: linear-gradient(135deg, hsl(var(--main), 60%, 55%) 0%, hsl(var(--main), 60%, 45%) 100%);
+    border-color: hsl(var(--main), 60%, 50%);
+    color: white;
+    font-weight: 600;
+}
+
+.pagination-ellipsis {
+    color: hsl(var(--main), 40%, 60%);
+}
 
 #user.card {
     margin-bottom: 5px;

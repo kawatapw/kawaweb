@@ -361,10 +361,12 @@ Vue.component('user-profile', {
           mostPlayedMaps: []
         };
         // Move relevant properties from root to info
-        const rootProps = ['badges', 'clan_id', 'clan_name', 'clan_tag', 'country', 'name', 'player_id'];
+        const rootProps = ['badges', 'clan_id', 'clan_name', 'clan_tag', 'country', 'name', 'player_name', 'player_id'];
         rootProps.forEach(prop => {
           if (this.user[prop] !== undefined) {
-            this.user.info[prop] = this.user[prop];
+            // Map player_name to name for consistency
+            const targetProp = prop === 'player_name' ? 'name' : prop;
+            this.user.info[targetProp] = this.user[prop];
             if (prop !== 'player_id') {
               delete this.user[prop];
             }
@@ -506,7 +508,10 @@ Vue.component('user-profile', {
     fetchPlayerData: function() {
         this.isLoading.stats = true;
         
-        return fetch(`${window.location.protocol}//api.${domain}/v1/get_player_info?id=${this.user.player_id}&scope=all`)
+        const apiUrl = window.hinaDebug
+            ? `${window.location.protocol}//${window.location.host}/api/v1/get_player_info`
+            : `${window.location.protocol}//api.${domain}/v1/get_player_info`;
+        return fetch(`${apiUrl}?id=${this.user.player_id}&scope=all`)
             .then(response => response.json())
             .then(data => {
                 if (!this.user.info) {
@@ -540,7 +545,10 @@ Vue.component('user-profile', {
         this.isLoading[type] = true;
         const limit = 5; // Limit to 5 scores
         
-        return fetch(`${window.location.protocol}//api.${domain}/v1/get_player_scores?id=${this.user.player_id}&mode=${this.modeToGulagInt()}&scope=${type}&limit=${limit}`)
+        const apiUrl = window.hinaDebug
+            ? `${window.location.protocol}//${window.location.host}/api/v1/get_player_scores`
+            : `${window.location.protocol}//api.${domain}/v1/get_player_scores`;
+        return fetch(`${apiUrl}?id=${this.user.player_id}&mode=${this.modeToGulagInt()}&scope=${type}&limit=${limit}`)
             .then(response => response.json())
             .then(data => {
                 if (type === 'recent') {
@@ -567,7 +575,10 @@ Vue.component('user-profile', {
         this.isLoading.mostPlayed = true;
         const limit = 3; // Limit to 3 maps
         
-        return fetch(`${window.location.protocol}//api.${domain}/v1/get_player_most_played?id=${this.user.player_id}&mode=${this.modeToGulagInt()}&limit=${limit}`)
+        const apiUrl = window.hinaDebug
+            ? `${window.location.protocol}//${window.location.host}/api/v1/get_player_most_played`
+            : `${window.location.protocol}//api.${domain}/v1/get_player_most_played`;
+        return fetch(`${apiUrl}?id=${this.user.player_id}&mode=${this.modeToGulagInt()}&limit=${limit}`)
             .then(response => response.json())
             .then(data => {
                 this.user.info.mostPlayedMaps = data.maps;
@@ -719,7 +730,7 @@ Vue.component('user-profile', {
   template: `
     <span :id="user.player_id" class="user-name" @mouseover="showProfile" @mouseout="hideProfile">
       <a :href="'/u/'+user.player_id+'?mode='+mode+'&mods='+mods">
-          {{ user.info.name }}
+          {{ user.player_name || user.info?.name || 'Loading...' }}
       </a>
       <div :id="user.player_id" class="profile-panel" :class="profileClasses" 
            @mouseenter="mouseEnterPanel" @mouseleave="mouseLeavePanel">

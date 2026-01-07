@@ -24,7 +24,9 @@ from cmyui.version import Version
 import logging, time
 import json
 from quart import Response, request
+from dotenv import load_dotenv
 
+load_dotenv()
 app = Quart(f'{glob.config.app_name}')
 
 version = Version(1, 3, 0)
@@ -112,11 +114,23 @@ def captchaKey() -> str:
 def domain() -> str:
     return glob.config.domain
 
+@app.template_global()
+def hinaDebug() -> bool:
+    return glob.config.hina_debug
+
 from blueprints.frontend import frontend
 app.register_blueprint(frontend)
 
 from blueprints.admin import admin
 app.register_blueprint(admin, url_prefix='/admin')
+
+from blueprints.hinaManage import hinaManage
+app.register_blueprint(hinaManage, url_prefix='/beatmaps')
+
+# Only register local API blueprint if in debug mode
+if glob.config.hina_debug:
+    from blueprints.api import api
+    app.register_blueprint(api, url_prefix='/api')
 
 @app.errorhandler(404)
 async def page_not_found(e):
@@ -125,4 +139,7 @@ async def page_not_found(e):
 
 if __name__ == '__main__':
     os.chdir(os.path.dirname(os.path.realpath(__file__)))
-    app.run(port=glob.config.app_port, debug=glob.config.debug) # blocking call
+    if os.environ.get("HINA_DEBUG") == "true":
+        app.run(host=glob.config.app_host, port=glob.config.app_port, debug=glob.config.debug) # blocking call
+    else:
+        app.run(port=glob.config.app_port, debug=glob.config.debug) # blocking call

@@ -67,17 +67,31 @@ new Vue({
         },
         LoadProfileData() {
             this.$set(this.data.stats, 'load', true);
-            this.$axios.get(`${window.location.protocol}//api.${domain}/v1/get_player_info`, {
+            const apiUrl = window.hinaDebug
+                ? `${window.location.protocol}//${window.location.host}/api/v1/get_player_info`
+                : `${window.location.protocol}//api.${domain}/v1/get_player_info`;
+            this.$axios.get(apiUrl, {
                     params: {
                         id: this.userid,
                         scope: 'all'
                     }
                 })
                 .then(res => {
-                    this.$set(this.data.stats, 'out', res.data.player.stats);
-                    this.data.userpage.content = res.data.player.info.userpage_content;
+                    // Handle the stats data properly
+                    if (res.data.player && res.data.player.stats) {
+                        this.$set(this.data.stats, 'out', res.data.player.stats);
+                    }
+                    // Set userpage content if available
+                    if (res.data.player && res.data.player.userpage_content) {
+                        this.data.userpage.content = res.data.player.userpage_content;
+                    }
+                    // Set badges if available
                     if (this.load == 0) {
-                        this.$set(this.data, 'badges', res.data.player.info.badges);
+                        if (res.data.player && res.data.player.badges) {
+                            this.$set(this.data, 'badges', res.data.player.badges);
+                        } else {
+                            this.$set(this.data, 'badges', []);
+                        }
                         this.load = 1;
                     }
                     this.data.stats.load = false;
@@ -85,7 +99,10 @@ new Vue({
         },
         LoadScores(sort) {
             this.$set(this.data.scores[`${sort}`], 'load', true);
-            this.$axios.get(`${window.location.protocol}//api.${domain}/v1/get_player_scores`, {
+            const apiUrl = window.hinaDebug
+                ? `${window.location.protocol}//${window.location.host}/api/v1/get_player_scores`
+                : `${window.location.protocol}//api.${domain}/v1/get_player_scores`;
+            this.$axios.get(apiUrl, {
                     params: {
                         id: this.userid,
                         mode: this.StrtoGulagInt(),
@@ -101,7 +118,10 @@ new Vue({
         },
         LoadMostBeatmaps() {
             this.$set(this.data.maps.most, 'load', true);
-            this.$axios.get(`${window.location.protocol}//api.${domain}/v1/get_player_most_played`, {
+            const apiUrl = window.hinaDebug
+                ? `${window.location.protocol}//${window.location.host}/api/v1/get_player_most_played`
+                : `${window.location.protocol}//api.${domain}/v1/get_player_most_played`;
+            this.$axios.get(apiUrl, {
                     params: {
                         id: this.userid,
                         mode: this.StrtoGulagInt(),
@@ -115,7 +135,10 @@ new Vue({
                 });
         },
         LoadUserStatus() {
-            this.$axios.get(`${window.location.protocol}//api.${domain}/v1/get_player_status`, {
+            const apiUrl = window.hinaDebug
+                ? `${window.location.protocol}//${window.location.host}/api/v1/get_player_status`
+                : `${window.location.protocol}//api.${domain}/v1/get_player_status`;
+            this.$axios.get(apiUrl, {
                     params: {
                         id: this.userid
                     }

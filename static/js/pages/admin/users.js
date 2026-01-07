@@ -4,9 +4,15 @@ new Vue({
     data() {
         return {
             flags: window.flags,
-            users: {},
-            page: 1,
-            userquery: '', // changed from 'search' to 'userquery'
+            users: JSON.parse(users || '[]'), // Initialize with server data
+            page: parseInt(page) || 1,
+            totalPages: parseInt(totalPages) || 1,
+            totalCount: parseInt(totalCount) || 0,
+            userquery: userquery || '', // Initialize with server search
+            sortBy: sortBy || 'id',
+            sortOrder: sortOrder || 'ASC',
+            filterPriv: filterPriv && filterPriv !== 'None' ? filterPriv : '',
+            filterCountry: filterCountry || '',
             load: false,
             playersLoading: false,
             searchTimeout: null,
@@ -14,39 +20,148 @@ new Vue({
     },
     created() {
         this.$log.debug('Users.js User Page Created');
-        this.handleUserInput(userquery);
+        this.$log.debug('Initial users:', this.users);
+        this.$log.debug('Page:', this.page, 'Total Pages:', this.totalPages);
     },
     methods: {
         handleUserInput() {
             clearTimeout(this.searchTimeout);
-            if (this.userquery.length > 0)
-                this.searchTimeout = setTimeout(() => {
-                    const queryUsers = this.userquery;
-                    const url = `/admin/users/${this.page}?update=true&search=${queryUsers}`;
-                    fetch(url)
-                        .then(response => response.json())
-                        .then(data => {
-                            this.users = data;
-                            this.$log.debug('users:', this.users);
-                        })
-                        .catch(error => {
-                            this.$log.error('Error:', error);
-                        });
-                }, 500);
-            else {
-                const queryUsers = this.userquery;
-                const url = `/admin/users/${this.page}?update=true&search=${queryUsers}`;
-                fetch(url)
-                    .then(response => response.json())
-                    .then(data => {
+            this.searchTimeout = setTimeout(() => {
+                this.page = 1; // Reset to first page when searching
+                this.loadUsers();
+            }, 500);
+        },
+        loadUsers() {
+            this.playersLoading = true;
+            const params = new URLSearchParams({
+                update: 'true',
+                search: this.userquery,
+                sort: this.sortBy,
+                order: this.sortOrder,
+                priv: this.filterPriv,
+                country: this.filterCountry
+            });
+
+            const url = `/admin/users/${this.page}?${params.toString()}`;
+
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.users) {
+                        this.users = data.users;
+                        this.totalPages = data.pagination.total_pages;
+                        this.totalCount = data.pagination.total_count;
+                    } else {
+                        // Fallback for old response format
                         this.users = data;
-                        this.$log.debug('users:', this.users);
-                    })
-                    .catch(error => {
-                        this.$log.error('Error:', error);
-                    });
-                
+                    }
+                    this.$log.debug('Loaded users:', this.users);
+                    this.playersLoading = false;
+                })
+                .catch(error => {
+                    this.$log.error('Error loading users:', error);
+                    this.playersLoading = false;
+                });
+        },
+        goToPage(newPage) {
+            if (newPage >= 1 && newPage <= this.totalPages && newPage !== this.page) {
+                this.page = newPage;
+                this.loadUsers();
+                // Update URL without page reload
+                const url = new URL(window.location);
+                url.pathname = `/admin/users/${newPage}`;
+                window.history.pushState({}, '', url);
             }
+        },
+        sortUsers(column) {
+            if (this.sortBy === column) {
+                this.sortOrder = this.sortOrder === 'ASC' ? 'DESC' : 'ASC';
+            } else {
+                this.sortBy = column;
+                this.sortOrder = 'ASC';
+            }
+            this.page = 1; // Reset to first page when sorting
+            this.loadUsers();
+        },
+        filterByPrivilege(priv) {
+            this.filterPriv = this.filterPriv === priv ? '' : priv;
+            this.page = 1;
+            this.loadUsers();
+        },
+        toggleSortOrder() {
+            this.sortOrder = this.sortOrder === 'ASC' ? 'DESC' : 'ASC';
+            this.page = 1;
+            this.loadUsers();
+        },
+        clearSearch() {
+            this.userquery = '';
+            this.page = 1;
+            this.loadUsers();
+        },
+        clearPrivilegeFilter() {
+            this.filterPriv = '';
+            this.page = 1;
+            this.loadUsers();
+        },
+        resetSort() {
+            this.sortBy = 'id';
+            this.sortOrder = 'ASC';
+            this.page = 1;
+            this.loadUsers();
+        },
+        clearFilters() {
+            this.userquery = '';
+            this.filterPriv = '';
+            this.filterCountry = '';
+            this.sortBy = 'id';
+            this.sortOrder = 'ASC';
+            this.page = 1;
+            this.loadUsers();
+        },
+        refreshUsers() {
+            this.loadUsers();
+        },
+        getPrivilegeLabel(priv) {
+            const labels = {
+                '': 'All Users',
+                'normal': 'Normal Users',
+                'supporter': 'Supporters',
+                'mod': 'Moderators',
+                'admin': 'Administrators',
+                'restricted': 'Restricted'
+            };
+            return labels[priv] || priv || 'All Users';
+        },
+        getSortLabel() {
+            const sortLabels = {
+                'id': 'ID',
+                'name': 'Username',
+                'creation_time': 'Join Date',
+                'latest_activity': 'Last Active'
+            };
+            return `${sortLabels[this.sortBy] || this.sortBy} (${this.sortOrder})`;
+        },
+        getPrivilegeIcon(priv) {
+            const icons = {
+                '': 'fa-users',
+                'normal': 'fa-user',
+                'supporter': 'fa-heart',
+                'mod': 'fa-shield-alt',
+                'admin': 'fa-crown',
+                'restricted': 'fa-ban'
+            };
+            return icons[priv] || 'fa-users';
+        },
+        getPrivilegeIconStyle(priv) {
+            const colors = {
+                '': '#6c7b7f',
+                'normal': '#8fa8b2',
+                'supporter': '#ff6b9d',
+                'mod': '#48acff',
+                'admin': '#ffd700',
+                'restricted': '#ff4757'
+            };
+            return { color: colors[priv] || '#6c7b7f' };
         },
         editUser(userid) {
             editUserBus.$emit('showEditUserPanel', userid);
@@ -54,6 +169,23 @@ new Vue({
         },
     },
     computed: {
+        paginationRange() {
+            const range = [];
+            const start = Math.max(1, this.page - 2);
+            const end = Math.min(this.totalPages, this.page + 2);
+
+            for (let i = start; i <= end; i++) {
+                range.push(i);
+            }
+            return range;
+        },
+        hasActiveFilters() {
+            return this.userquery ||
+                   this.filterPriv ||
+                   this.filterCountry ||
+                   this.sortBy !== 'id' ||
+                   this.sortOrder !== 'ASC';
+        }
     }
 });
 var editUserBus = new Vue();

@@ -2,18 +2,10 @@
 {% block title %} Leaderboard {% endblock %}
 
 {% block header %}
-<script src="/static/js/asserts/vue.js"></script>
-<script src="/static/js/asserts/vue-axios.js"></script>
-
-<script>
-    var mode = "{{ mode }}";
-    var mods = "{{ mods }}";
-    var sort = "{{ sort }}";
-    var domain = "{{ domain() }}";
-</script>
-
 <link rel="stylesheet" href="/static/css/pages/generic.css">
 <link rel="stylesheet" href="/static/css/pages/leaderboard.css">
+<link rel="stylesheet" href="/static/css/hina_import.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 {% endblock %}
 
 {% block content %}
@@ -21,7 +13,7 @@
 <div class="lb-stars" id="stars1"></div>
 <div class="lb-stars" id="stars2"></div>
 <div class="lb-stars" id="stars3"></div>
-<div id="app" :class="(load ? 'load' : '')">
+<div id="app" v-cloak :class="(load ? 'load' : '')">
     <div class="leaderboard-banner main-banner">
         <div class="main-selector">
             <a class="mode-select" v-bind:class="{ 'active': mode === 'std' }"
@@ -59,6 +51,154 @@
             </div>
         </div>
     </div>
+
+    <!-- Trophy Podium Section for Top 3 Players -->
+    <div class="trophy-podium-section" v-if="boards && boards.length >= 3 && page === 1" v-cloak>
+        <div class="podium-container">
+            <!-- Second Place (Left) -->
+            <div class="podium-stand second" v-if="boards && boards[1]">
+                <div class="player-card" @click="goToProfile(boards[1].player_id)">
+                    <div class="trophy-icon">
+                        <i class="fas fa-trophy"></i>
+                    </div>
+                    <div class="avatar-container">
+                        <img class="avatar"
+                             :src="'https://a.ppy.sh/' + boards[1].player_id"
+                             :alt="boards[1].player_name"
+                             @error="$event.target.src = 'https://avatars.githubusercontent.com/u/15048157?v=4'">
+                        <div class="rank-badge">2</div>
+                    </div>
+                    <div class="player-info">
+                        <div class="player-name">
+                            <img class="country-flag"
+                                 :src="'/static/images/flags/' + boards[1].country.toUpperCase() + '.png'"
+                                 :alt="boards[1].country">
+                            <span><% boards[1].player_name %></span>
+                        </div>
+                        <div class="player-stats">
+                            <div class="stat-item">
+                                <span class="stat-label">PP</span>
+                                <span class="stat-value pp-value"><% boards[1].pp %>pp</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Accuracy</span>
+                                <span class="stat-value"><% boards[1].acc.toFixed(2) %>%</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Play Count</span>
+                                <span class="stat-value"><% addCommas(boards[1].plays) %></span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Max Combo</span>
+                                <span class="stat-value"><% addCommas(boards[1].max_combo) %></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="podium-base">
+                    <div class="podium-rank">2</div>
+                </div>
+            </div>
+
+            <!-- First Place (Center) -->
+            <div class="podium-stand first" v-if="boards && boards[0]">
+                <div class="player-card" @click="goToProfile(boards[0].player_id)">
+                    <div class="trophy-icon">
+                        <i class="fas fa-crown"></i>
+                    </div>
+                    <div class="avatar-container">
+                        <img class="avatar"
+                             :src="'https://a.ppy.sh/' + boards[0].player_id"
+                             :alt="boards[0].player_name"
+                             @error="$event.target.src = 'https://avatars.githubusercontent.com/u/15048157?v=4'">
+                        <div class="rank-badge">1</div>
+                    </div>
+                    <div class="player-info">
+                        <div class="player-name">
+                            <img class="country-flag"
+                                 :src="'/static/images/flags/' + boards[0].country.toUpperCase() + '.png'"
+                                 :alt="boards[0].country">
+                            <span><% boards[0].player_name %></span>
+                        </div>
+                        <div class="player-stats">
+                            <div class="stat-item">
+                                <span class="stat-label">PP</span>
+                                <span class="stat-value pp-value"><% boards[0].pp %>pp</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Accuracy</span>
+                                <span class="stat-value"><% boards[0].acc.toFixed(2) %>%</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Play Count</span>
+                                <span class="stat-value"><% addCommas(boards[0].plays) %></span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Max Combo</span>
+                                <span class="stat-value"><% addCommas(boards[0].max_combo) %></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="podium-base">
+                    <div class="podium-rank">1</div>
+                </div>
+            </div>
+
+            <!-- Third Place (Right) -->
+            <div class="podium-stand third" v-if="boards && boards[2]">
+                <div class="player-card" @click="goToProfile(boards[2].player_id)">
+                    <div class="trophy-icon">
+                        <i class="fas fa-medal"></i>
+                    </div>
+                    <div class="avatar-container">
+                        <img class="avatar"
+                             :src="'https://a.ppy.sh/' + boards[2].player_id"
+                             :alt="boards[2].player_name"
+                             @error="$event.target.src = 'https://avatars.githubusercontent.com/u/15048157?v=4'">
+                        <div class="rank-badge">3</div>
+                    </div>
+                    <div class="player-info">
+                        <div class="player-name">
+                            <img class="country-flag"
+                                 :src="'/static/images/flags/' + boards[2].country.toUpperCase() + '.png'"
+                                 :alt="boards[2].country">
+                            <span><% boards[2].player_name %></span>
+                        </div>
+                        <div class="player-stats">
+                            <div class="stat-item">
+                                <span class="stat-label">PP</span>
+                                <span class="stat-value pp-value"><% boards[2].pp %>pp</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Accuracy</span>
+                                <span class="stat-value"><% boards[2].acc.toFixed(2) %>%</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Play Count</span>
+                                <span class="stat-value"><% addCommas(boards[2].plays) %></span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-label">Max Combo</span>
+                                <span class="stat-value"><% addCommas(boards[2].max_combo) %></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="podium-base">
+                    <div class="podium-rank">3</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading state for podium -->
+    <div class="trophy-podium-section" v-if="load && page === 1" v-cloak>
+        <div class="podium-loading">
+            <div class="spinner"></div>
+        </div>
+    </div>
+
     <div class="main-block">
         <div class="leaderboard-main-bg table-responsive">
             <div v-if="boards.length != undefined && boards.length != 0">
@@ -90,7 +230,9 @@
                                         <% flags[user.country.toUpperCase()] %>
                                     </div>
                                 </a>
-                                <user-profile :user="user" :key="user.player_id" :domain="domain"></user-profile>
+                                <a :href="'/u/' + user.player_id">
+                                    <% user.player_name %>
+                                </a>
                             </td>
                             <td id="clan-tag" >
                                 <span v-if="user.clan_tag">
@@ -131,6 +273,12 @@
     </div>
 </div>
 
+<script>
+    // Set global variables before Vue initialization
+    window.mode = "{{ mode }}";
+    window.mods = "{{ mods }}";
+    window.sort = "{{ sort }}";
+</script>
 <script src="/static/js/asserts/vue-flags.js"></script>
 <script src="/static/js/pages/leaderboard.js"></script>
 {% endblock %}

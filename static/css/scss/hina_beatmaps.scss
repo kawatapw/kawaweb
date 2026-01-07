@@ -1,0 +1,807 @@
+// Hina's Beatmaps Page - Custom SCSS
+// Following Kawata design patterns with hina-prefixed classes
+// Created after 4-5 years - this is special! 🎵
+
+// ===== VARIABLES & MIXINS =====
+:root {
+  // Hina-specific color palette (extending Kawata theme)
+  --hina-primary: hsl(var(--main), 100%, 60%);
+  --hina-primary-dark: hsl(var(--main), 100%, 50%);
+  --hina-primary-light: hsl(var(--main), 100%, 70%);
+  
+  --hina-bg-primary: hsl(var(--main), 10%, 10%);
+  --hina-bg-secondary: hsl(var(--main), 10%, 15%);
+  --hina-bg-tertiary: hsl(var(--main), 10%, 20%);
+  --hina-bg-elevated: hsl(var(--main), 15%, 25%);
+  
+  --hina-border: hsl(var(--main), 20%, 30%);
+  --hina-border-light: hsl(var(--main), 15%, 25%);
+  --hina-border-accent: hsl(var(--main), 50%, 50%);
+  
+  --hina-text-primary: hsl(var(--main), 10%, 90%);
+  --hina-text-secondary: hsl(var(--main), 10%, 70%);
+  --hina-text-muted: hsl(var(--main), 10%, 50%);
+  
+  --hina-shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.1);
+  --hina-shadow-md: 0 4px 16px rgba(0, 0, 0, 0.15);
+  --hina-shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.2);
+  --hina-shadow-glow: 0 0 20px hsla(var(--main), 100%, 60%, 0.3);
+  
+  --hina-radius-sm: 6px;
+  --hina-radius-md: 8px;
+  --hina-radius-lg: 12px;
+  --hina-radius-xl: 16px;
+}
+
+// Mixins for consistent styling
+@mixin hina-card-base {
+  background: var(--hina-bg-secondary);
+  border: 1px solid var(--hina-border);
+  border-radius: var(--hina-radius-md);
+  box-shadow: var(--hina-shadow-sm);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@mixin hina-card-hover {
+  transform: translateY(-2px);
+  box-shadow: var(--hina-shadow-md);
+  border-color: var(--hina-border-accent);
+}
+
+@mixin hina-button-base {
+  padding: 0.75rem 1.5rem;
+  border-radius: var(--hina-radius-sm);
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  border: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+@mixin hina-shimmer-effect {
+  position: relative;
+  overflow: hidden;
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 200%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.05), transparent);
+    animation: hina-shimmer 3s infinite;
+  }
+}
+
+// ===== ANIMATIONS =====
+@keyframes hina-shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+@keyframes hina-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+@keyframes hina-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-5px); }
+}
+
+@keyframes hina-glow {
+  0%, 100% { box-shadow: var(--hina-shadow-md); }
+  50% { box-shadow: var(--hina-shadow-glow); }
+}
+
+// ===== MAIN CONTAINER =====
+.hina-beatmaps-container {
+  min-height: calc(100vh - 200px);
+  background: var(--hina-bg-primary);
+  position: relative;
+  overflow: hidden;
+  
+  // Animated background pattern (inspired by footer decoration)
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: 
+      radial-gradient(circle at 20% 30%, hsla(var(--main), 50%, 50%, 0.03) 0%, transparent 50%),
+      radial-gradient(circle at 80% 70%, hsla(var(--main), 70%, 60%, 0.02) 0%, transparent 50%),
+      radial-gradient(circle at 40% 80%, hsla(var(--main), 60%, 55%, 0.025) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: 0;
+  }
+  
+  // Floating particles effect
+  &::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image: 
+      radial-gradient(2px 2px at 20px 30px, hsla(var(--main), 100%, 70%, 0.1), transparent),
+      radial-gradient(2px 2px at 40px 70px, hsla(var(--main), 100%, 60%, 0.08), transparent),
+      radial-gradient(1px 1px at 90px 40px, hsla(var(--main), 100%, 80%, 0.06), transparent);
+    background-repeat: repeat;
+    background-size: 100px 100px;
+    animation: hina-float 20s ease-in-out infinite;
+    pointer-events: none;
+    z-index: 0;
+  }
+}
+
+.hina-content-wrapper {
+  position: relative;
+  z-index: 1;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+// ===== HEADER SECTION =====
+.hina-page-header {
+  text-align: center;
+  margin-bottom: 3rem;
+  position: relative;
+  
+  .hina-title {
+    font-size: 3rem;
+    font-weight: 700;
+    color: var(--hina-text-primary);
+    margin-bottom: 1rem;
+    background: linear-gradient(135deg, var(--hina-primary), var(--hina-primary-light));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    position: relative;
+    
+    .hina-title-icon {
+      margin-right: 1rem;
+      color: var(--hina-primary);
+      filter: drop-shadow(0 0 10px hsla(var(--main), 100%, 60%, 0.5));
+      animation: hina-pulse 2s ease-in-out infinite;
+    }
+  }
+  
+  .hina-subtitle {
+    font-size: 1.25rem;
+    color: var(--hina-text-secondary);
+    margin-bottom: 2rem;
+    font-weight: 400;
+  }
+  
+  .hina-header-decoration {
+    position: absolute;
+    bottom: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100px;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--hina-primary), transparent);
+    border-radius: 1px;
+  }
+}
+
+// ===== API SOURCE SWITCHER =====
+.hina-api-switcher {
+  @include hina-card-base;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  text-align: center;
+  @include hina-shimmer-effect;
+  
+  .hina-switcher-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--hina-text-primary);
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    
+    .hina-switcher-icon {
+      color: var(--hina-primary);
+    }
+  }
+  
+  .hina-switcher-buttons {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  
+  .hina-api-button {
+    @include hina-button-base;
+    background: var(--hina-bg-tertiary);
+    color: var(--hina-text-secondary);
+    border: 1px solid var(--hina-border);
+    position: relative;
+    overflow: hidden;
+    
+    &.active {
+      background: var(--hina-primary);
+      color: white;
+      box-shadow: var(--hina-shadow-glow);
+      border-color: var(--hina-primary);
+    }
+    
+    &:hover:not(.active) {
+      background: var(--hina-bg-elevated);
+      color: var(--hina-text-primary);
+      transform: translateY(-1px);
+    }
+    
+    .hina-api-status {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      margin-left: 0.5rem;
+      
+      &.online {
+        background: #10b981;
+        box-shadow: 0 0 6px rgba(16, 185, 129, 0.5);
+        animation: hina-pulse 2s infinite;
+      }
+      
+      &.offline {
+        background: #ef4444;
+        box-shadow: 0 0 6px rgba(239, 68, 68, 0.5);
+      }
+
+      &.wip {
+        width: auto;
+        height: auto;
+        padding: 0.125rem 0.375rem;
+        border-radius: 0.25rem;
+        background: #f59e0b;
+        color: white;
+        font-size: 0.65rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+    }
+
+    &.disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      background: var(--hina-bg-tertiary);
+      border-style: dashed;
+
+      &:hover {
+        transform: none;
+        background: var(--hina-bg-tertiary);
+        color: var(--hina-text-muted);
+      }
+    }
+  }
+}
+
+// ===== SEARCH SECTION =====
+.hina-search-section {
+  @include hina-card-base;
+  padding: 2rem;
+  margin-bottom: 2rem;
+  
+  &:hover {
+    @include hina-card-hover;
+  }
+  
+  .hina-search-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    
+    .hina-search-icon {
+      font-size: 1.5rem;
+      color: var(--hina-primary);
+    }
+    
+    .hina-search-title {
+      font-size: 1.5rem;
+      font-weight: 600;
+      color: var(--hina-text-primary);
+    }
+  }
+  
+  .hina-search-form {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 1rem;
+    align-items: end;
+    
+    @media (max-width: 768px) {
+      grid-template-columns: 1fr;
+    }
+  }
+  
+  .hina-search-input {
+    background: var(--hina-bg-tertiary);
+    border: 1px solid var(--hina-border);
+    border-radius: var(--hina-radius-sm);
+    padding: 0.875rem 1rem;
+    color: var(--hina-text-primary);
+    font-size: 1rem;
+    transition: all 0.2s ease;
+    
+    &:focus {
+      outline: none;
+      border-color: var(--hina-primary);
+      box-shadow: 0 0 0 3px hsla(var(--main), 100%, 60%, 0.1);
+    }
+    
+    &::placeholder {
+      color: var(--hina-text-muted);
+    }
+  }
+  
+  .hina-search-button {
+    @include hina-button-base;
+    background: var(--hina-primary);
+    color: white;
+
+    &:hover {
+      background: var(--hina-primary-dark);
+      transform: translateY(-1px);
+      box-shadow: var(--hina-shadow-md);
+    }
+
+    &:disabled {
+      background: var(--hina-bg-elevated);
+      color: var(--hina-text-muted);
+      cursor: not-allowed;
+      transform: none;
+    }
+  }
+}
+
+// ===== RESULTS SECTION =====
+.hina-results-section {
+  margin-bottom: 2rem;
+
+  .hina-results-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+
+    .hina-results-title {
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: var(--hina-text-primary);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+
+      .hina-results-count {
+        background: var(--hina-primary);
+        color: white;
+        padding: 0.25rem 0.5rem;
+        border-radius: var(--hina-radius-sm);
+        font-size: 0.875rem;
+        font-weight: 700;
+      }
+    }
+
+    .hina-results-source {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      color: var(--hina-text-secondary);
+      font-size: 0.875rem;
+
+      .hina-source-indicator {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--hina-primary);
+        animation: hina-pulse 2s infinite;
+      }
+    }
+  }
+
+  .hina-results-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: 1.5rem;
+
+    @media (max-width: 768px) {
+      grid-template-columns: 1fr;
+      gap: 1rem;
+    }
+  }
+}
+
+// ===== BEATMAP CARDS =====
+.hina-beatmap-card {
+  @include hina-card-base;
+  overflow: hidden;
+  position: relative;
+  cursor: pointer;
+
+  &:hover {
+    @include hina-card-hover;
+
+    .hina-beatmap-cover {
+      transform: scale(1.05);
+    }
+
+    .hina-beatmap-overlay {
+      opacity: 0.9;
+    }
+  }
+
+  .hina-beatmap-cover {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+    background: var(--hina-bg-tertiary);
+  }
+
+  .hina-beatmap-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(
+      to bottom,
+      transparent 0%,
+      rgba(0, 0, 0, 0.3) 50%,
+      rgba(0, 0, 0, 0.8) 100%
+    );
+    opacity: 0.7;
+    transition: opacity 0.3s ease;
+  }
+
+  .hina-beatmap-content {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 1.5rem;
+    color: white;
+    z-index: 2;
+  }
+
+  .hina-beatmap-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin-bottom: 0.25rem;
+    line-height: 1.3;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .hina-beatmap-artist {
+    font-size: 0.9rem;
+    opacity: 0.9;
+    margin-bottom: 0.5rem;
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .hina-beatmap-creator {
+    font-size: 0.8rem;
+    opacity: 0.8;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+
+    .hina-creator-avatar {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      border: 1px solid rgba(255, 255, 255, 0.3);
+    }
+  }
+
+  .hina-beatmap-stats {
+    display: flex;
+    gap: 1rem;
+    font-size: 0.8rem;
+
+    .hina-stat {
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+      opacity: 0.9;
+
+      .hina-stat-icon {
+        font-size: 0.7rem;
+      }
+    }
+  }
+
+  .hina-beatmap-status {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: var(--hina-radius-sm);
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    z-index: 3;
+
+    &.ranked {
+      background: rgba(16, 185, 129, 0.9);
+      color: white;
+    }
+
+    &.loved {
+      background: rgba(236, 72, 153, 0.9);
+      color: white;
+    }
+
+    &.qualified {
+      background: rgba(59, 130, 246, 0.9);
+      color: white;
+    }
+
+    &.pending {
+      background: rgba(245, 158, 11, 0.9);
+      color: white;
+    }
+
+    &.wip {
+      background: rgba(107, 114, 128, 0.9);
+      color: white;
+    }
+
+    &.graveyard {
+      background: rgba(75, 85, 99, 0.9);
+      color: white;
+    }
+  }
+
+  .hina-beatmap-difficulties {
+    position: absolute;
+    top: 1rem;
+    left: 1rem;
+    display: flex;
+    gap: 0.25rem;
+    z-index: 3;
+
+    .hina-difficulty-icon {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.7rem;
+      font-weight: 700;
+      color: white;
+      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+
+      &.easy { background: rgba(76, 175, 80, 0.9); }
+      &.normal { background: rgba(33, 150, 243, 0.9); }
+      &.hard { background: rgba(255, 193, 7, 0.9); }
+      &.insane { background: rgba(255, 87, 34, 0.9); }
+      &.expert { background: rgba(156, 39, 176, 0.9); }
+      &.expertplus { background: rgba(0, 0, 0, 0.9); }
+    }
+  }
+}
+
+// ===== LOADING STATES =====
+.hina-loading {
+  text-align: center;
+  padding: 3rem;
+  color: var(--hina-text-secondary);
+
+  .hina-loading-spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid var(--hina-border);
+    border-top: 3px solid var(--hina-primary);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 1rem;
+  }
+
+  .hina-loading-text {
+    font-size: 1.1rem;
+    font-weight: 500;
+  }
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+// ===== EMPTY STATES =====
+.hina-empty-state {
+  text-align: center;
+  padding: 4rem 2rem;
+  color: var(--hina-text-secondary);
+
+  .hina-empty-icon {
+    font-size: 4rem;
+    color: var(--hina-border);
+    margin-bottom: 1rem;
+    opacity: 0.5;
+  }
+
+  .hina-empty-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    color: var(--hina-text-primary);
+  }
+
+  .hina-empty-description {
+    font-size: 1rem;
+    line-height: 1.5;
+  }
+}
+
+// ===== ERROR STATES =====
+.hina-error-card {
+  @include hina-card-base;
+  padding: 2rem;
+  text-align: center;
+  border-color: #ef4444;
+  background: rgba(239, 68, 68, 0.05);
+
+  .hina-error-icon {
+    font-size: 3rem;
+    color: #ef4444;
+    margin-bottom: 1rem;
+  }
+
+  .hina-error-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #ef4444;
+    margin-bottom: 0.5rem;
+  }
+
+  .hina-error-message {
+    color: var(--hina-text-secondary);
+    margin-bottom: 1.5rem;
+  }
+
+  .hina-error-retry {
+    @include hina-button-base;
+    background: #ef4444;
+    color: white;
+
+    &:hover {
+      background: #dc2626;
+    }
+  }
+}
+
+// ===== RESPONSIVE DESIGN =====
+@media (max-width: 1200px) {
+  .hina-content-wrapper {
+    padding: 1.5rem;
+  }
+
+  .hina-page-header .hina-title {
+    font-size: 2.5rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .hina-content-wrapper {
+    padding: 1rem;
+  }
+
+  .hina-page-header {
+    margin-bottom: 2rem;
+
+    .hina-title {
+      font-size: 2rem;
+    }
+
+    .hina-subtitle {
+      font-size: 1rem;
+    }
+  }
+
+  .hina-api-switcher {
+    padding: 1rem;
+
+    .hina-switcher-buttons {
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .hina-api-button {
+      width: 100%;
+      max-width: 200px;
+    }
+  }
+
+  .hina-search-section {
+    padding: 1.5rem;
+  }
+
+  .hina-beatmap-card {
+    .hina-beatmap-content {
+      padding: 1rem;
+    }
+
+    .hina-beatmap-title {
+      font-size: 1rem;
+    }
+  }
+}
+
+@media (max-width: 480px) {
+  .hina-content-wrapper {
+    padding: 0.5rem;
+  }
+
+  .hina-page-header .hina-title {
+    font-size: 1.75rem;
+  }
+
+  .hina-results-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .hina-beatmap-card .hina-beatmap-cover {
+    height: 150px;
+  }
+}
+
+// ===== ACCESSIBILITY =====
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+@media (prefers-contrast: high) {
+  :root {
+    --hina-border: hsl(var(--main), 30%, 50%);
+    --hina-text-secondary: hsl(var(--main), 10%, 80%);
+  }
+}
+
+// ===== PRINT STYLES =====
+@media print {
+  .hina-beatmaps-container {
+    background: white !important;
+    color: black !important;
+
+    &::before,
+    &::after {
+      display: none;
+    }
+  }
+
+  .hina-beatmap-card {
+    break-inside: avoid;
+    box-shadow: none;
+    border: 1px solid #ccc;
+  }
+}
