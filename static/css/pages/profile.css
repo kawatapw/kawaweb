@@ -64,7 +64,6 @@
 .bar-selection {
   width: 100%;
   height: 60px;
-  padding: 10px 10px 10px 250px;
   display: flex;
   align-items: center;
   transition: 0.2s ease;
@@ -103,7 +102,17 @@
 
 .mode-selects {
   background: hsl(var(--main), 25%, 22%);
+  padding: 10px 10px 10px 250px;
 }
+
+.bar-selection.badge-selects {
+  padding: 12px;
+}
+
+.badge-selects .badge-block .badge-select-spacer {
+  width: 230px;
+}
+
 .select-left {
   display: flex;
   flex-direction: row;
@@ -375,6 +384,9 @@ html {
 @media screen and (max-width: 960px) {
   .bar-selection {
     padding: 10px 13px 10px 45px;
+  }
+  .badge-selects .badge-block .badge-select-spacer {
+    display: none;
   }
   .anime-girl {
     opacity: 0;

@@ -136,6 +136,7 @@
             </div>
             <div class="bar-selection badge-selects">
                 <div v-if="data.badges != undefined" class="select-left badge-block">
+                    <span class="badge-select-spacer"></span>
                     <badge v-for="badge in data.badges" :badge="badge" :type="0"></badge>
                 </div>
                 <div v-else class="select-left">

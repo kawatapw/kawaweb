@@ -2322,7 +2322,15 @@
     }
     
     [data-panel="EditUser"] .profile-avatar-area {
-        margin-top: -10rem;
+        margin-top: -5rem;
+    }
+
+    [data-panel="EditUser"] .mode-selects {
+      padding: 10px 10px 10px 10px;
+    }
+
+    [data-panel="EditUser"] .badge-block .badge-block-spacer {
+      display: none;
     }
 }
 
