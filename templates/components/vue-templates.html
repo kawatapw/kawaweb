@@ -1,0 +1,2317 @@
+<!-- vue-templates.html -->
+<!-- Section: Component Templates -->
+    <!-- Section: User Profile Component Templates -->
+        <script type="text/x-template" id="user-profile-hover-panel-template">
+            <div :class="panelClasses"
+                 @mouseenter="mouseEnterPanel"
+                 @mouseleave="mouseLeavePanel">
+
+              <!-- Panel background -->
+              <div class="user-profile-panel-background"
+                   :style="{ backgroundImage: 'url(' + bannerUrl + ')' }"></div>
+
+              <!-- Panel header -->
+              <div class="user-profile-panel-header">
+                <div class="user-profile-panel-avatar"
+                     :style="{ backgroundImage: 'url(' + avatarUrl + ')' }"></div>
+
+                <div class="user-profile-panel-info">
+                  <div class="user-profile-panel-name">
+                    <span v-if="showClan && user.info.clan.tag" class="user-profile-panel-clan">
+                      <span v-text="'[' + user.info.clan.tag + ']'"></span>
+                    </span>
+                    <span v-text="user.info.name"></span>
+                  </div>
+
+                  <div v-if="currentStats" class="user-profile-panel-rank">
+                    <span class="user-profile-panel-global-rank">
+                      <span v-text="currentStats.rank || '?'"></span>
+                    </span>
+                    <span v-if="showCountry && user.info.country" class="user-profile-panel-country">
+                      <img :src="flagUrl" :alt="user.info.country" class="user-flag" />
+                      <span v-text="'#' + currentStats.country_rank || '?'"></span>
+                    </span>
+                  </div>
+
+                  <div v-if="showBadges && user.info.badges && user.info.badges.length > 0"
+                       class="user-profile-panel-badges">
+                    <badge v-for="badge in user.info.badges"
+                           :key="badge.id"
+                           :badge="badge"
+                           :type="1"></badge>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Panel stats -->
+              <div v-if="currentStats" class="user-profile-panel-stats">
+                <div class="user-profile-panel-stat-item">
+                  <div class="user-profile-panel-stat-value">
+                    <span v-text="formatNumber(currentStats.pp) || '0'"></span>
+                  </div>
+                  <div class="user-profile-panel-stat-label">PP</div>
+                </div>
+
+                <div class="user-profile-panel-stat-item">
+                  <div class="user-profile-panel-stat-value">
+                    <span v-text="formatAccuracy(currentStats.acc) + '%'"></span>
+                  </div>
+                  <div class="user-profile-panel-stat-label">Accuracy</div>
+                </div>
+
+                <div class="user-profile-panel-stat-item">
+                  <div class="user-profile-panel-stat-value">
+                    <span v-text="formatNumber(currentStats.plays) || '0'"></span>
+                  </div>
+                  <div class="user-profile-panel-stat-label">Plays</div>
+                </div>
+              </div>
+
+              <!-- Panel status -->
+              <div v-if="showStatus && statusData" class="user-profile-panel-status" :class="statusClasses">
+                <i class="fas fa-circle"></i>
+                <span v-text="statusText"></span>
+              </div>
+            </div>
+        </script>
+
+        <script type="text/x-template" id="user-profile-username-template">
+            <div class="user-profile-username-container">
+                <span class="user-name"
+                        @mouseover="showProfile"
+                        @mouseout="hideProfile"
+                        @click="handleUsernameClick">
+                    
+                    <!-- Country flag (if enabled) -->
+                    <span v-if="showCountry && user.info.country" class="user-country">
+                        <img :src="flagUrl" :alt="user.info.country" class="user-flag" />
+                    </span>
+                    
+                    <!-- Clan tag (if enabled) -->
+                    <span v-if="showClan && user.info.clan_tag" class="user-clan">
+                        <a :href="clanUrl" @click.stop="handleClanClick" class="user-clan-link">
+                            <span v-text="'['+ user.info.clan_tag + ']'"></span>
+                        </a>
+                    </span>
+                    
+                    <!-- Username (always shown) -->
+                    <a :href="profileUrl" class="user-username-link">
+                        <span v-text="user.info.name"></span>
+                    </a>
+                </span>
+                
+                <!-- Hover panel -->
+                <user-profile-hover-panel
+                  :user="user"
+                  :statusData="statusData"
+                  :showCountry="showCountry"
+                  :showClan="showClan"
+                  :showBadges="showBadges"
+                  :showStatus="showStatus"
+                  :visible="profileVisible"
+                  :interactive="interactive"
+                  :avatarUrl="avatarUrl"
+                  :bannerUrl="bannerUrl"
+                  :flagUrl="flagUrl"
+                  :clanUrl="clanUrl"
+                  :profileUrl="profileUrl"
+                  :currentStats="currentStats"
+                  :formatNumber="formatNumber"
+                  :formatAccuracy="formatAccuracy"
+                  :statusText="statusText"
+                  :statusClasses="statusClasses"
+                  :mouseEnterPanel="mouseEnterPanel"
+                  :mouseLeavePanel="mouseLeavePanel"
+                />
+            </div>
+        </script>
+
+        <script type="text/x-template" id="user-profile-card-template">
+            <div class="user-profile-card-container">
+                <div class="user-profile-card">
+                    <!-- Card background (banner) -->
+                    <div class="user-profile-card-background"
+                         :style="'background-image: url(' + bannerUrl + ')'"></div>
+                    
+                    <!-- Card overlay -->
+                    <div class="user-profile-overlay"></div>
+                    
+                    <!-- Card content -->
+                    <div class="user-profile-card-content">
+                        <!-- Avatar and basic info -->
+                        <div class="user-profile-card-header">
+                            <div class="user-profile-card-avatar-container" :style="showStatus && statusData ? { '--user-status': 'var(--status-' + statusString + ')' } : {}">
+                                <div class="user-profile-avatar with-status"
+                                     :style="'background-image: url(' + avatarUrl + ')'"></div>
+                                
+                                <!-- Status indicator on avatar -->
+                                <div v-if="showStatus" class="user-profile-card-status-indicator">
+                                    <div v-if="isLoadingStatus" class="user-profile-card-status-loading">
+                                        <i class="fas fa-spinner fa-spin"></i>
+                                    </div>
+                                    <div v-else-if="statusData" class="user-profile-card-status-circle">
+                                        <i class="fas fa-circle"></i>
+                                    </div>
+                                    <div v-else class="user-profile-card-status-circle offline">
+                                        <i class="fas fa-circle"></i>
+                                    </div>
+                                    
+                                    <!-- Status text tooltip on hover -->
+                                    <div v-if="statusData" class="user-profile-card-status-tooltip" v-text="statusText">
+                                        <span ></span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="user-profile-card-info">
+                                <div class="user-profile-card-name">
+                                    <span v-if="showCountry && user.info.country" class="user-profile-card-country">
+                                        <img :src="flagUrl" :alt="user.info.country" class="user-flag" />
+                                    </span>
+                                    <span v-if="showClan && user.info.clan?.tag" class="user-profile-card-clan">
+                                        <a :href="clanUrl" class="user-profile-card-clan-link">
+                                            <span v-text="'[' + user.info.clan.tag + ']'"></span>
+                                        </a>
+                                    </span>
+                                    <a :href="profileUrl" class="user-profile-card-username">
+                                        <span v-text="user.info.name"></span>
+                                    </a>
+                                </div>
+                                
+                                <div v-if="currentStats" class="user-profile-card-ranks">
+                                    <span class="user-profile-card-global-rank">
+                                        <span v-text="currentStats.rank || '?'"></span>
+                                    </span>
+                                    <span v-if="showCountry && user.info.country" class="user-profile-card-country-rank">
+                                        <img :src="flagUrl" :alt="user.info.country" class="user-flag" />
+                                        <span v-text="'#' + currentStats.country_rank || '?'"></span>
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Badges -->
+                        <div v-if="showBadges && user.info.badges && user.info.badges.length > 0" class="user-profile-card-badges">
+                            <badge v-for="badge in user.info.badges"
+                                   :key="badge.id"
+                                   :badge="badge"
+                                   :type="1"></badge>
+                        </div>
+                        
+                        <!-- Stats -->
+                        <div v-if="currentStats" class="user-profile-card-stats">
+                          <div class="user-profile-card-stat-item">
+                            <div class="user-profile-card-stat-value">
+                                <span v-text="formatNumber(currentStats.pp) || '0'"></span>
+                            </div>
+                            <div class="user-profile-card-stat-label">PP</div>
+                          </div>
+                          
+                          <div class="user-profile-card-stat-item">
+                            <div class="user-profile-card-stat-value">
+                                <span v-text="formatAccuracy(currentStats.acc) + '%'"></span>
+                            </div>
+                            <div class="user-profile-card-stat-label">Accuracy</div>
+                          </div>
+                          
+                          <div class="user-profile-card-stat-item">
+                            <div class="user-profile-card-stat-value">
+                                <span v-text="formatNumber(currentStats.plays) || '0'"></span>
+                            </div>
+                            <div class="user-profile-card-stat-label">Plays</div>
+                          </div>
+                        </div>
+                        
+                                            </div>
+                </div>
+            </div>
+        </script>
+
+        <script type="text/x-template" id="user-profile-search-template">
+            <div class="user-profile-search-container">
+                <a class="user-profile-search" :href="profileUrl" :style="'--user-banner: url(' + bannerUrl || '' + ');'">
+                    <div class="user-profile-overlay"></div>
+                    <div class="user-profile-avatar search"
+                         :style="'background-image: url(' + avatarUrl + ')'"></div>
+                    
+                    <div class="user-profile-search-info">
+                        <div class="user-profile-search-name">
+                            <span v-if="showCountry && user.info.country" class="user-profile-search-country">
+                                <img :src="flagUrl" :alt="user.info.country" class="user-flag" />
+                            </span>
+                            <span v-if="showClan && user.info.clan?.tag" class="user-profile-search-clan">
+                                <a :href="clanUrl" class="user-profile-search-clan-link">
+                                    <span v-text="'[' + user.info.clan.tag + ']'"></span>
+                                </a>
+                            </span>
+                            <a :href="profileUrl" class="user-profile-search-username">
+                                <span v-text="user.info.name"></span>
+                            </a>
+                        </div>
+                        
+                        <div v-if="currentStats" class="user-profile-search-stats">
+                            <span class="user-profile-search-stat">
+                                <i class="fas fa-star"></i>
+                                <span v-text="formatNumber(currentStats.pp) + 'pp' || '0' + 'pp'"></span>
+                            </span>
+                            <span class="user-profile-search-stat">
+                                <i class="fas fa-crosshairs"></i>
+                                <span v-text="formatAccuracy(currentStats.acc) + '%'"></span>
+                            </span>
+                            <span v-if="currentStats.rank" class="user-profile-search-stat">
+                                <i class="fas fa-trophy"></i>
+                                <span v-text="'#' + currentStats.rank"></span>
+                            </span>
+                        </div>
+                    </div>
+                </a>
+            </div>
+        </script>
+
+        <script type="text/x-template" id="user-profile-template">
+            <div class="user-profile-master" v-if="hasUserData">
+            
+              <!-- Username style -->
+              <user-profile-username
+                v-if="displayStyle === 'username'"
+                :user="normalizedUserData"
+                :statusData="statusData"
+                :showCountry="showCountry"
+                :showClan="showClan"
+                :showBadges="showBadges"
+                :showStatus="showStatus"
+                :interactive="interactive"
+                :avatarUrl="avatarUrl"
+                :bannerUrl="bannerUrl"
+                :flagUrl="flagUrl"
+                :clanUrl="clanUrl"
+                :profileUrl="profileUrl"
+                :currentStats="currentStats"
+                :profileVisible="profileVisible"
+                :formatNumber="formatNumber"
+                :formatAccuracy="formatAccuracy"
+                :statusText="statusText"
+                :statusClasses="statusClasses"
+                :statusString="statusString"
+                :showProfile="showProfile"
+                :hideProfile="hideProfile"
+                :handleUsernameClick="handleUsernameClick"
+                :handleClanClick="handleClanClick"
+                :mouseEnterPanel="mouseEnterPanel"
+                :mouseLeavePanel="mouseLeavePanel"
+              />
+              
+              <!-- Card style -->
+              <user-profile-card
+                v-else-if="displayStyle === 'card'"
+                :user="normalizedUserData"
+                :statusData="statusData"
+                :showCountry="showCountry"
+                :showClan="showClan"
+                :showBadges="showBadges"
+                :showStatus="showStatus"
+                :isLoadingStatus="isLoadingStatus"
+                :avatarUrl="avatarUrl"
+                :bannerUrl="bannerUrl"
+                :flagUrl="flagUrl"
+                :clanUrl="clanUrl"
+                :profileUrl="profileUrl"
+                :currentStats="currentStats"
+                :formatNumber="formatNumber"
+                :formatAccuracy="formatAccuracy"
+                :statusText="statusText"
+                :statusClasses="statusClasses"
+                :statusString="statusString"
+              />
+              
+              <!-- Search style -->
+              <user-profile-search
+                v-else-if="displayStyle === 'search'"
+                :user="normalizedUserData"
+                :showCountry="showCountry"
+                :showClan="showClan"
+                :avatarUrl="avatarUrl"
+                :bannerUrl="bannerUrl"
+                :flagUrl="flagUrl"
+                :clanUrl="clanUrl"
+                :profileUrl="profileUrl"
+                :currentStats="currentStats"
+                :formatNumber="formatNumber"
+                :formatAccuracy="formatAccuracy"
+              />
+              
+            </div>
+            
+            <!-- Loading state -->
+            <div v-else-if="isLoadingUser" class="user-profile-loading">
+              <i class="fas fa-spinner fa-spin"></i>
+              <span>Loading user...</span>
+            </div>
+            
+            <!-- Error state -->
+            <div v-else-if="error" class="user-profile-error">
+              <i class="fas fa-exclamation-circle"></i>
+              <span v-text="error"></span>
+            </div>
+            
+            <!-- No data state -->
+            <div v-else class="user-profile-no-data">
+              <span>No user data available</span>
+            </div>
+        </script>
+
+    <!-- Section: Smaller Component Templates -->
+        <script type="text/x-template" id="badge-template">
+            <span>
+                <!-- Regular badge -->
+                <div v-if="type === 0" class="badge" :class="badge.styles.customClass" :style="badgeStyle" data-popup-trigger tabindex="0" role="button" :aria-label="badge.name" :aria-describedby="badgeId + '-desc'">
+                    <bg-effect-psy :settings="{ hue: badge.styles.color / 360, hueVariation: badge.styles.psyHueVar ? badge.styles.psyHueVar : 0.001, density: badge.styles.psyDensity ? badge.styles.psyDensity : 0, displacement: badge.styles.psyDisp ? badge.styles.psyDisp : 0.1, speed: badge.styles.psySpeed ? badge.styles.psySpeed : 0.2, gradient: badge.styles.psyGradient ? badge.styles.psyGradient : 0.15 }" :show-gui="false" :debug-level="0" v-if="badge.styles.customClass && badge.styles.customClass.includes('psy')"></bg-effect-psy>
+                    <span class="icon" v-if="badge.styles.icon" :class="badge.styles.iconClass" aria-hidden="true">
+                        <i v-bind:class="'' + badge.styles.icon"></i>
+                    </span>
+                    
+                    <span class="badge-name" :class="badge.styles.nameClass" :id="badgeId" v-text="badge.name"></span>
+                    
+                    <!-- Popup panel for regular badge (inside the badge element) -->
+                    <div class="badge-panel position-top" :class="badge.styles.panelClass" :style="panelStyle" :id="badgeId + '-desc'" data-popup role="tooltip" aria-live="polite">
+                        <h3 v-text="badge.name"></h3>
+                        <p v-text="badge.description"></p>
+                        <div v-if="badge.styles.panelFooter" class="badge-panel-footer" v-text="badge.styles.panelFooter"></div>
+                    </div>
+                </div>
+                
+                <!-- Icon badge -->
+                <div v-if="type === 1" class="iconBadge" :class="badge.styles.customClass" :style="badgeStyle" data-popup-trigger tabindex="0" role="button" :aria-label="badge.name" :aria-describedby="badgeId + '-desc'">
+                    <span class="icon" v-if="badge.styles.icon" :class="badge.styles.iconClass" aria-hidden="true">
+                        <i v-bind:class="'' + badge.styles.icon"></i>
+                    </span>
+                    
+                    <!-- Popup panel for icon badge (inside the badge element) -->
+                    <div class="badge-panel position-top" :class="badge.styles.panelClass" :style="panelStyle" :id="badgeId + '-desc'" data-popup role="tooltip" aria-live="polite">
+                        <h3 v-text="badge.name"></h3>
+                        <p v-text="badge.description"></p>
+                        <div v-if="badge.styles.panelFooter" class="badge-panel-footer" v-text="badge.styles.panelFooter"></div>
+                    </div>
+                </div>
+            </span>
+        </script>
+
+        <script type="text/x-template" id="score-card-template">
+            <div class="map-single"
+                :style="'background: linear-gradient(hsl(var(--main), 25%, 25%, 90%), hsl(var(--main), 25%, 25%, 90%)), url(https://assets.ppy.sh/beatmaps/' + score.beatmap.set_id + '/covers/cover.jpg)'"
+                @click="scoreBus.$emit('show-score-window', score.id)">
+                <div class="map-data">
+                    <div class="map-image">
+                        <img :src="'https://assets.ppy.sh/beatmaps/' + score.beatmap.set_id + '/covers/card.jpg'"
+                            class="map-image-picture">
+                    </div>
+                    <div class="map-content1">
+                        <div class="map-title-block">
+                            <div class="map-title">
+                                <a class="beatmap-link" @click.stop="beatmapBus.$emit('show-beatmap-panel', score.beatmap.id, score.beatmap.set_id)">
+                                    <span v-text="score.beatmap.title"></span> [<span v-text="score.beatmap.version"></span>] <span v-if="score.mods != 0">+<span v-text="score.mods_readable"></span></span>
+                                </a>
+                            </div>
+                            <div class="map-creators">
+                                By <a class="" v-text="score.beatmap.artist"></a>
+                                |
+                                Mapped by <a v-text="score.beatmap.creator"></a>
+                            </div>
+                        </div>
+                        <div class="play-stats-block">
+                            <div class="play-stats">
+                                <span v-text="formatNumber(score.score)"></span> / <span v-text="score.max_combo"></span><b>x</b> <span class="cheat_values" v-html="DisplayCheats(score.cheat_values)"></span>
+                            </div>
+                            <div class="map-date">
+                                <time v-text="timeago ? timeago.format(score.play_time) : new Date(score.play_time).toLocaleString()"></time>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="map-content2">
+                        <div class="score-details d-flex">
+                            <div class="score-details_right-block">
+                                <div class="score-details_pp-block">
+                                    <div class="map-pp">
+                                        <span v-text="score.pp.toFixed()"></span><span class="map-pp-unit">pp</span>
+                                    </div>
+                                    <div class="map-acc">accuracy:&nbsp;<b>
+                                        <span v-text="score.acc.toFixed(2)"></span>%
+                                    </b></div>
+                                </div>
+                                <div class="score-details_grade-block">
+                                    <div class="rank-single">
+                                        <div :class="'map-rank rank-'+score.grade" v-text="score.grade.replace('X', 'SS').replace('H', '')"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </script>
+
+        <script type="text/x-template" id="score-list-template">
+            <div class="log-block" :class="{ 'load': loading }">
+                <div class="header">
+                    <div class="title">
+                        <i class="fas fa-trophy"></i> <span v-text="title"></span>
+                    </div>
+                </div>
+                <div v-if="scores.length > 0" class="scores">
+                    <score-card 
+                        v-for="(score, index) in scores" 
+                        :key="score.id" 
+                        :score="score"
+                        @score-click="$emit('score-click', score.id)"
+                        @beatmap-click="$emit('beatmap-click', $event[0], $event[1])">
+                    </score-card>
+                </div>
+                <div v-else-if="scores.length === 0" class="stats-block">
+                    <div class="columns is-marginless">
+                        <div class="column is-1">
+                            <h1 class="title">: (</h1>
+                        </div>
+                        <div class="column">
+                            <h1 class="title is-6" v-text="emptyMessage"></h1>
+                            <p class="subtitle is-7" v-text="emptySubMessage"></p>
+                        </div>
+                    </div>
+                </div>
+                <div v-if="showMore" class="extra-block" id="hina-stats-block">
+                    <a class="show-button" @click="loadMore">Show more</a>
+                </div>
+            </div>
+        </script>
+
+        <script type="text/x-template" id="bmap-card-template"> <!-- Note: Refactor this fucking mess into mutliple sub components -->
+            <div :class="['beatmap-card', 'mode-' + mode, { 'expanded': expanded, 'interactive': interactive }]" 
+                @click="handleClick">
+                <!-- Loading state -->
+                <div v-if="dataLoading" class="beatmap-loading-overlay">
+                    <div class="beatmap-loading-spinner"></div>
+                    <div class="beatmap-loading-text">Loading beatmap...</div>
+                </div>
+                
+                <!-- Error state -->
+                <div v-else-if="error" class="beatmap-error">
+                    <i class="fas fa-exclamation-circle"></i>
+                    <span v-text="error"></span>
+                    <button @click.stop="loadMapData" class="beatmap-retry-btn">Retry</button>
+                </div>
+                
+                <!-- Mini Mode -->
+                <div v-else-if="mode === 'mini'" class="beatmap-mini">
+                    <div class="beatmap-mini-background">
+                        <img :src="cardUrl" alt="Beatmap Cover">
+                        <div class="beatmap-mini-overlay"></div>
+                    </div>
+                    
+                    <div class="beatmap-mini-content">
+                        <!-- Single difficulty mode - show icon on the left -->
+                        <div v-if="!showAllDifficulties" class="beatmap-mini-single-diff">
+                            <div class="beatmap-mini-diff-icon-container" :style="{ '--diff-color': difficultyColor(selectedDifficulty) }" v-data-popup
+                                :class="[selectedDifficulty.difficulty_rating ? 'difficulty-' + Math.floor(parseFloat(selectedDifficulty.difficulty_rating)) : '']">
+                                
+                                <!-- Difficulty icon with rank change indicator if available -->
+                                <div class="beatmap-mini-diff-icon" @click.stop="beatmapBus.$emit('show-beatmap-panel', selectedDifficulty.id, mapData.set_id)" data-popup-trigger>
+                                    <i :class="getModeIcon(selectedDifficulty.mode)" class="beatmap-mini-mode-icon"></i>
+                                    
+                                    <div v-if="rankChanges && rankChanges[selectedDifficulty.id]" class="beatmap-mini-rank-change"
+                                        :style="{ backgroundColor: getRankChangeInfo(selectedDifficulty.id).color }">
+                                        <i :class="['fas', getRankChangeInfo(selectedDifficulty.id).icon]"></i>
+                                    </div>
+                                </div>
+                                
+                                <!-- Popup panel with position based on screen location -->
+                                <div :class="['beatmap-mini-popup', 'position-' + 'top']" data-popup> <!-- Remake Dynamic Position Logic -->
+                                    <div class="beatmap-mini-popup-header">
+                                        <div class="beatmap-mini-popup-title" :title="mapData.title" v-text="mapData.title || 'Loading...'"></div>
+                                        <div class="beatmap-mini-popup-artist" :title="mapData.artist" v-text="mapData.artist || ''"></div>
+                                        <div class="beatmap-mini-popup-version" :title="selectedDifficulty.version" v-text="selectedDifficulty.version || ''"></div>
+                                    </div>
+                                    
+                                    <div class="beatmap-mini-popup-details">
+                                        <div class="beatmap-mini-popup-creator" :title="'Mapped by ' + mapData.creator">
+                                            Mapped by <span v-text="mapData.creator || ''"></span>
+                                        </div>
+                                        
+                                        <div class="beatmap-mini-popup-stats">
+                                            <div v-if="selectedDifficulty.bpm" class="beatmap-mini-popup-stat">
+                                                <i class="fas fa-heartbeat"></i> <span v-text="Math.round(selectedDifficulty.bpm)"></span>bpm
+                                            </div>
+                                            <div v-if="selectedDifficulty.hit_length" class="beatmap-mini-popup-stat">
+                                                <i class="fas fa-clock"></i> <span v-text="formatLength(selectedDifficulty.hit_length)"></span>
+                                            </div>
+                                            <div v-if="selectedDifficulty.difficulty_rating" class="beatmap-mini-popup-stat">
+                                                <i class="fas fa-star" :style="{ color: difficultyStars ? difficultyStars.color : '#FFCC22' }"></i> 
+                                                <span v-text="parseFloat(selectedDifficulty.difficulty_rating).toFixed(2)"></span>
+                                            </div>
+                                            <div v-if="showStatus" class="beatmap-mini-popup-stat">
+                                                <span class="beatmap-mini-status" :style="{ backgroundColor: statusColor }" v-text="statusName"></span>
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- Rank change info if available -->
+                                        <div v-if="rankChanges && rankChanges[selectedDifficulty.id]" class="beatmap-mini-popup-rank-change">
+                                            <div class="beatmap-mini-popup-rank-label">Rank:</div>
+                                            <div class="beatmap-mini-popup-rank-value" 
+                                                :style="{ color: getRankChangeInfo(selectedDifficulty.id).color }">
+                                                <span v-text="formatRankChange(selectedDifficulty.id)"></span>
+                                                <i :class="['fas', getRankChangeInfo(selectedDifficulty.id).icon]"></i>
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- Other difficulties in the set -->
+                                        <div v-if="hasMultipleDifficulties" class="beatmap-mini-popup-other-diffs">
+                                            <div class="beatmap-mini-popup-diffs-header">Other difficulties:</div>
+                                            <div v-if="loading" class="beatmap-mini-popup-loading">Loading...</div>
+                                            <div v-else-if="setDifficulties.length <= 1" class="beatmap-mini-popup-no-diffs">None</div>
+                                            <div v-else class="beatmap-mini-popup-diffs-list">
+                                                <div v-for="diff in setDifficulties.filter(d => d.id !== selectedDifficulty.id)" 
+                                                    :key="diff.id" 
+                                                    class="beatmap-mini-popup-diff"
+                                                    @click.stop="handleDifficultyClick(diff, $event)">
+                                                    <span class="beatmap-mini-popup-diff-name" :title="diff.version" v-text="diff.version"></span>
+                                                    <span v-if="diff.difficulty_rating" class="beatmap-mini-popup-diff-stars">
+                                                        <span v-text="parseFloat(diff.difficulty_rating).toFixed(2)"></span>
+                                                    </span>
+                                                    
+                                                    <!-- Rank change for other difficulties if available -->
+                                                    <span v-if="rankChanges && rankChanges[diff.id]" 
+                                                        class="beatmap-mini-popup-diff-rank"
+                                                        :style="{ color: getRankChangeInfo(diff.id).color }">
+                                                        <i :class="['fas', getRankChangeInfo(diff.id).icon]"></i>
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- Actions -->
+                                        <div class="beatmap-mini-popup-actions">
+                                            <a :href="'https://osu.ppy.sh/b/' + selectedDifficulty.id" target="_blank" class="beatmap-mini-popup-action" @click.stop>
+                                                <i class="fas fa-external-link-alt"></i> osu!
+                                            </a>
+                                            <a class="beatmap-mini-popup-action" @click.stop="console.log('Beatmap ID:', selectedDifficulty.id)">
+                                                <i class="fas fa-info-circle"></i> Details
+                                            </a>
+                                            <a :href="'/d/' + mapData.set_id" class="beatmap-mini-popup-action" @click.stop>
+                                                <i class="fas fa-download"></i> Download
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Map info (center section) -->
+                        <div class="beatmap-mini-info" :class="{ 'with-single-diff': !showAllDifficulties }">
+                            <div class="beatmap-mini-title" :title="mapData.title" v-text="mapData.title || 'Loading...'"></div>
+                            <div class="beatmap-mini-artist" :title="mapData.artist" v-text="mapData.artist || ''"></div>
+                            <div class="beatmap-mini-creator" :title="'Mapped by ' + mapData.creator" v-text="mapData.creator || ''"></div>
+                        </div>
+                        
+                        <!-- Status indicator (right side) -->
+                        <div class="content-right">
+                            <div v-if="showStatus" class="beatmap-mini-status-indicator" :style="{ backgroundColor: statusColor }" v-text="statusName"></div>
+                            <div v-if="showPlays && mapData.plays" class="beatmap-mini-plays">
+                                <i class="fas fa-play"></i> <span v-text="formatNumber(mapData.plays)"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Difficulty icons section (when showing all difficulties) -->
+                <div v-if="showAllDifficulties && hasMultipleDifficulties && mode === 'mini'" 
+                    :class="['beatmap-mini-difficulties']">
+                    <div class="beatmap-mini-difficulties-container">
+                        <!-- Loading state -->
+                        <div v-if="loading" class="beatmap-mini-difficulties-loading">
+                            <div class="beatmap-mini-loading-spinner"></div>
+                            <span>Loading...</span>
+                        </div>
+                        
+                        <!-- No difficulties found -->
+                        <div v-else-if="setDifficulties.length === 0" class="beatmap-mini-no-difficulties">
+                            No difficulties found
+                        </div>
+                        
+                        <!-- Difficulties list with scroll controls -->
+                        <div v-else class="beatmap-mini-difficulties-scroll-container">
+                            <!-- Left scroll button -->
+                            <button v-if="canScrollBack" 
+                                class="beatmap-mini-difficulties-scroll-btn left" 
+                                @click.stop="scrollDifficultiesLeft">
+                                <i class="fas fa-chevron-left"></i>
+                            </button>
+                            
+                            <!-- Difficulties -->
+                            <div class="beatmap-mini-difficulties-list">
+                                <div v-for="diff in visibleDifficulties" v-portal-popup
+                                    :key="diff.id" 
+                                    :class="['beatmap-mini-difficulty-icon-container']" :style="{ '--diff-color': difficultyColor(diff) }">
+                                    
+                                    <!-- Difficulty icon -->
+                                    <div class="beatmap-mini-difficulty-icon" @click.stop="beatmapBus.$emit('show-beatmap-panel', diff.id, mapData.set_id)" data-popup-trigger>
+                                        <i :class="getModeIcon(diff.mode)" class="beatmap-mini-mode-icon"></i>
+                                        
+                                        <!-- Rank change indicator if available -->
+                                        <div v-if="rankChanges && rankChanges[diff.id]" class="beatmap-mini-rank-change"
+                                            :style="{ backgroundColor: getRankChangeInfo(diff.id).color }">
+                                            <i :class="['fas', getRankChangeInfo(diff.id).icon]"></i>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Difficulty name (shown when expanded) -->
+                                    <div v-if="difficultyExpanded" class="beatmap-mini-difficulty-name" :title="diff.version" v-text="diff.version"></div>
+                                    
+                                    <!-- Popup panel (same as single difficulty mode) -->
+                                    <div :class="['beatmap-mini-popup', 'position-' + 'top' ]" data-popup> <!-- Remake Dynamic Position Logic -->
+                                        <div class="beatmap-mini-popup-header">
+                                            <div class="beatmap-mini-popup-title" :title="mapData.title" v-text="mapData.title || 'Loading...'"></div>
+                                            <div class="beatmap-mini-popup-artist" :title="mapData.artist" v-text="mapData.artist || ''"></div>
+                                            <div class="beatmap-mini-popup-version" :title="diff.version" v-text="diff.version || ''"></div>
+                                        </div>
+                                        
+                                        <div class="beatmap-mini-popup-details">
+                                            <div class="beatmap-mini-popup-creator" :title="'Mapped by ' + mapData.creator">
+                                                Mapped by <span v-text="mapData.creator || ''"></span>
+                                            </div>
+                                            
+                                            <div class="beatmap-mini-popup-stats">
+                                                <div v-if="diff.bpm" class="beatmap-mini-popup-stat">
+                                                    <i class="fas fa-heartbeat"></i> <span v-text="Math.round(diff.bpm)"></span>bpm
+                                                </div>
+                                                <div v-if="diff.hit_length" class="beatmap-mini-popup-stat">
+                                                    <i class="fas fa-clock"></i> <span v-text="formatLength(diff.hit_length)"></span>
+                                                </div>
+                                                <div v-if="diff.difficulty_rating" class="beatmap-mini-popup-stat">
+                                                    <i class="fas fa-star" :style="{ color: difficultyStars ? difficultyStars.color : '#FFCC22' }"></i> 
+                                                    <span v-text="parseFloat(diff.difficulty_rating).toFixed(2)"></span>
+                                                </div>
+                                                <div v-if="showStatus" class="beatmap-mini-popup-stat">
+                                                    <span class="beatmap-mini-status" :style="{ backgroundColor: statusColor }" v-text="statusName"></span>
+                                                </div>
+                                            </div>
+                                            
+                                            <!-- Rank change info if available -->
+                                            <div v-if="rankChanges && rankChanges[diff.id]" class="beatmap-mini-popup-rank-change">
+                                                <div class="beatmap-mini-popup-rank-label">Rank:</div>
+                                                <div class="beatmap-mini-popup-rank-value" 
+                                                    :style="{ color: getRankChangeInfo(diff.id).color }">
+                                                    <span v-text="formatRankChange(diff.id)"></span>
+                                                    <i :class="['fas', getRankChangeInfo(diff.id).icon]"></i>
+                                                </div>
+                                            </div>
+                                            
+                                            <!-- Actions -->
+                                            <div class="beatmap-mini-popup-actions">
+                                                <a :href="'https://osu.ppy.sh/b/' + diff.id" target="_blank" class="beatmap-mini-popup-action" @click.stop>
+                                                    <i class="fas fa-external-link-alt"></i> osu!
+                                                </a>
+                                                <a class="beatmap-mini-popup-action" @click.stop="beatmapBus.$emit('show-beatmap-panel', diff.id, mapData.set_id)">
+                                                    <i class="fas fa-info-circle"></i> Details
+                                                </a>
+                                                <a :href="'/d/' + mapData.set_id" class="beatmap-mini-popup-action" @click.stop>
+                                                    <i class="fas fa-download"></i> Download
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Right scroll button -->
+                            <button v-if="hasMoreDifficulties" class="beatmap-mini-difficulties-scroll-btn right" 
+                                @click.stop="scrollDifficultiesRight">
+                                <i class="fas fa-chevron-right"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Compact Mode -->
+                <div v-else-if="mode === 'compact'" class="beatmap-compact">
+                    <div class="beatmap-thumbnail" :style="{ backgroundImage: 'url(' + thumbnailUrl + ')' }">
+                        <div v-if="!isSet && difficultyStars" class="beatmap-stars-small" :style="{ color: difficultyStars.color }">
+                            <i class="fas fa-star"></i> <span v-text="difficultyStars.value"></span>
+                        </div>
+                    </div>
+                    <div class="beatmap-info">
+                        <div class="beatmap-title" v-text="mapData.title || 'Loading...'"></div>
+                        <div class="beatmap-artist" v-text="mapData.artist || ''"></div>
+                        <div v-if="!isSet" class="beatmap-version" v-text="mapData.version || ''"></div>
+                        <div v-if="showPlays && mapData.plays" class="beatmap-plays">
+                            <i class="fas fa-play"></i> <span v-text="formatNumber(mapData.plays)"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </script>
+
+<!-- Section: Panel Templates -->
+    <script type="text/x-template" id="search-panel-template">
+        <div id="search-panel" class="modal" :class="{ 'is-active': show }" style="z-index: 21;">
+            <div class="modal-background" @click="close"></div>
+    
+            <div id="search" data-panel="Search" class="modal-content" v-show="show">
+                <div class="search-fg">
+                    <!-- Header -->
+                    <div class="search-header">
+                        <h2>Search</h2>
+                        <div class="kbd-hint">ESC to close</div>
+                    </div>
+    
+                    <!-- Search Input -->
+                    <div class="search-input-wrapper">
+                        <input
+                            type="search"
+                            placeholder="Search for players or beatmaps..."
+                            v-model="query"
+                            @input="handleInput"
+                            @keydown.esc="close"
+                            ref="searchInput"
+                            autocomplete="off"
+                        >
+                        <i class="fas fa-search search-icon"></i>
+                        <button
+                            v-if="query"
+                            class="clear-btn"
+                            @click="resetQuery"
+                            title="Clear search"
+                        >
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+    
+                    <div class="search-divider"></div>
+    
+                    <!-- Search Results -->
+                    <div class="search-container">
+                        <!-- Players Section -->
+                        <div class="search-section" v-if="hasSearched">
+                            <div class="search-section-header player-results">
+                                <i class="fas fa-users icon"></i>
+                                <h3>Players</h3>
+                                <span class="count" v-if="players.length > 0" v-text="players.length"></span>
+                            </div>
+    
+                            <div class="results-container" :class="{ loading: playersLoading, empty: !playersLoading && players.length === 0 }">
+                                <div v-if="playersLoading" class="loading-spinner"></div>
+                                <div v-else-if="playersError" class="error-message">
+                                    <i class="fas fa-exclamation-circle"></i>
+                                    <span v-text="playersError"></span>
+                                </div>
+                                <div v-else-if="!playersLoading && players.length === 0" class="no-results">
+                                    <i class="fas fa-user-slash"></i>
+                                    <p>No players found</p>
+                                </div>
+                                <user-profile
+                                    v-else
+                                    v-for="player in players"
+                                    :key="player.info.id"
+                                    :user="player"
+                                    displayStyle="search"
+                                ></user-profile>
+                            </div>
+                        </div>
+    
+                        <!-- Beatmaps Section -->
+                        <div class="search-section" v-if="hasSearched">
+                            <div class="search-section-header beatmap-results">
+                                <i class="fas fa-music icon"></i>
+                                <h3>Beatmaps</h3>
+                                <span class="count" v-if="maps.length > 0" v-text="maps.length"></span>
+                            </div>
+    
+                            <div class="results-container" :class="{ loading: mapsLoading, empty: !mapsLoading && maps.length === 0 }">
+                                <div v-if="mapsLoading" class="loading-spinner"></div>
+                                <div v-else-if="mapsError" class="error-message">
+                                    <i class="fas fa-exclamation-circle"></i>
+                                    <span v-text="mapsError"></span>
+                                </div>
+                                <div v-else-if="!mapsLoading && maps.length === 0" class="no-results">
+                                    <i class="fas fa-music-slash"></i>
+                                    <p>No beatmaps found</p>
+                                </div>
+                                <div
+                                    v-else
+                                    v-for="map in maps"
+                                    :key="map.SetID"
+                                    class="bm-search-result"
+                                    :id="map.SetID"
+                                    @click="openBeatmapPanel(map)"
+                                >
+                                    <div class="bm-search-result-container">
+                                        <div class="thumbnail">
+                                            <img
+                                                v-if="!map.thumbnailError"
+                                                :src="'https://assets.ppy.sh/beatmaps/' + map.SetID + '/covers/card@2x.jpg'"
+                                                @load="map.thumbnailError = false"
+                                                @error="map.thumbnailError = true"
+                                                alt="Beatmap thumbnail"
+                                            >
+                                            <i v-else class="fas fa-music fallback-icon"></i>
+                                            <div class="play-overlay" @click.stop="interract(map.SetID)">
+                                                <div class="play-btn" :class="{ playing: currentAudio && currentAudio.id === 'audio-' + map.SetID }">
+                                                    <i :class="currentAudio && currentAudio.id === 'audio-' + map.SetID ? 'fas fa-pause' : 'fas fa-play'"></i>
+                                                </div>
+                                            </div>
+                                            <audio
+                                                :src="'https://b.ppy.sh/preview/' + map.SetID + '.mp3'"
+                                                :id="'audio-' + map.SetID"
+                                            ></audio>
+                                        </div>
+
+                                        <div class="info">
+                                            <div class="title" v-text="map.Title"></div>
+                                            <div>
+                                                <span class="artist" v-text="map.Artist"></span>
+                                                <span class="creator" v-text="'by ' + map.Creator"></span>
+                                            </div>
+                                            
+                                            <div class="mode-icons">
+                                                <difficulty-icon
+                                                    v-for="(childMap, index) in getNormalizedDifficulties(map)"
+                                                    :key="childMap.id"
+                                                    v-if="index < 8"
+                                                    :diff="childMap"
+                                                    :setId="map.SetID"
+                                                    :interactive="true"
+                                                ></difficulty-icon>
+                                                <div v-if="map.ChildrenBeatmaps.length > 8" class="mode-icon" title="More difficulties available">
+                                                    <span style="font-size: 0.7rem; color: hsl(var(--main), 40%, 60%);" v-text="'+' + (map.ChildrenBeatmaps.length - 8)"></span>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="actions">
+                                            <a
+                                                class="action-btn play"
+                                                :class="{ playing: currentAudio && currentAudio.id === 'audio-' + map.SetID }"
+                                                @click.stop="interract(map.SetID)"
+                                                title="Preview audio"
+                                            >
+                                                <i :class="currentAudio && currentAudio.id === 'audio-' + map.SetID ? 'fas fa-pause' : 'fas fa-play'"></i>
+                                            </a>
+                                            <a
+                                                class="action-btn download"
+                                                :href="'https://osu.direct/d/' + map.SetID"
+                                                title="Download beatmap"
+                                                target="_blank"
+                                                @click.stop
+                                            >
+                                                <i class="fas fa-download"></i>
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+    
+                        <!-- Empty State (no search yet) -->
+                        <div v-if="!hasSearched" class="empty-state">
+                            <i class="fas fa-search"></i>
+                            <p>Start typing to search for players or beatmaps</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </script>
+    
+    <script type="text/x-template" id="docs-panel-template">
+        <div id="docs-panel" class="modal" v-bind:class="{ 'is-active': show }">
+            <div class="modal-background" @click="close"></div>
+            <div data-panel="Docs" id="docs-window" class="modal-content">
+                <div class="main-block">
+                    <div class="docs-banner">
+                        <div class="docs-banner img" style="height: fit-content" :style="{
+                            backgroundImage: 'linear-gradient(to bottom, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.5)), url(/static/images/banners/' + module + '.jpg)'
+                            }"></div>
+                        <h1 class="docs-banner title">Docs</h1>
+                        <div id="docs-selector" class="selector">
+                            <a class="bottom-tab" v-bind:class="{ 'active': module === 'Rules' }"
+                                @click="LoadDoc('Rules')">
+                            <i class="fas fa-user"></i><span class="modetext"> Rules </span>
+                            </a>
+                            <a class="bottom-tab" v-bind:class="{ 'active': module === 'Clients' }"
+                                @click="LoadDoc('Clients', 'Main')">
+                            <i class="fas fa-clients"></i><span class="modetext"> Clients/Cheats </span>
+                            </a>
+                            <a class="bottom-tab" v-bind:class="{ 'active': module === 'Connection' }"
+                                @click="LoadDoc('Connection', 'Main')">
+                            <i class="fas fa-network"></i><span class="modetext"> Connection Guide </span>
+                            </a>
+                            <a class="bottom-tab" v-bind:class="{ 'active': module === 'Verification' }"
+                                @click="LoadDoc('Verification', 'Main')">
+                            <i class="fas fa-network"></i><span class="modetext"> Verification Guide </span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <div class="second-block">
+                    <div id="rules-doc" class="content" v-if="module === 'Rules'">
+                        <div id="docs-selector" class="selector">
+                            <a class="top-tab" v-bind:class="{ 'active': page === 'Main' }"
+                                @click="LoadDoc('Rules', 'Main')">
+                            <i class="fas fa-hammer"></i><span class="modetext"> General </span>
+                            </a>
+                            <a class="top-tab" v-bind:class="{ 'active': page === 'Cheats' }"
+                                @click="LoadDoc('Rules', 'Cheats')">
+                            <i class="fas fa-hammer"></i><span class="modetext"> Cheating Rules </span>
+                            </a>
+                            <a class="top-tab" v-bind:class="{ 'active': page === 'Scorehunt' }"
+                                @click="LoadDoc('Rules', 'Scorehunt')">
+                            <i class="fas fa-hammer"></i><span class="modetext"> Score Hunting </span>
+                            </a>
+                        </div>
+                        <div class="doc-block" v-if="page === 'Main'">
+                            <div class="doc-notice">
+                                <h4 class="centered">We may change the rules at any time as we see fit. New rules may or may not be retroactive at our discretion.</h4>
+                                <h4 class="centered">The rules on this page may not always be updated. Join our Discord to ensure you are reading the most up-to-date rules. This page was last updated on July 1st, 2024.</h4>
+                            </div>
+                            <div class="doc-section">
+                                <h3><i class="game icon"></i> General rules</h3>
+                                Any violation of the rules in this section will result in a wipe, restriction, or ban, whether temporary or permanent, depending on the severity.
+                                <div class="doc-content">
+                                    <p>1. Unfair hacks such as replaybots (and replay editing, by extension), score modifiers, OD changers, spinbots, autobots (includes all forms of auto, cursordance bots too), cheats that modify the score's replay data, a.k.a. a replay editor (e.g., tapping data or aim data, or playing with the in-game Relax mod, then removing it on submission), and score editors are NOT allowed. The use of Relax hack in autopilot also applies. This rule may be enforced outside of the examples given. It is discretionary.</br>
+                                        2. Shared or boosted accounts are NOT allowed.</br>
+                                        3. Do not try to exploit the server. If you find a vulnerability, please report it.</br>
+                                        4.Use an appropriate username or avatar. If you do not, your privileges to use them will be discontinued.</br>
+                                        5.Multi-accounts are strictly prohibited.
+                                    </p>
+                                </div>
+                            </div>
+                            <div class="doc-section">
+                                <h3><i class="comment icon"></i> Chat rules</h3>
+                                <p>Failure to comply with the rules in this section will result in a <b>silence</b>.</br>
+                                    These rules apply to both our Discord and in-game chat.
+                                </p>
+                                <div class="doc-content">
+                                    <p>1.  Do not share your private information with anyone.</br>
+                                        2.  Treat all members, no matter what they are, with respect.</br>
+                                        3.  Suspicious, Malicious, Content or links are not allowed.</br>
+                                        4.  Discrimination, racism, sexism, and hate speech are all strictly disallowed.
+                                    </p>
+                                </div>
+                            </div>
+                            <div class="doc-section">
+                                <h3><i class="fas fa-exclamation-circle"></i> Gamemode Specific Rules</h3>
+                                <div class="subsection">
+                                    <h4><b>CTB:</b></h4>
+                                    Hyperwalk maps are not allowed.
+                                </div>
+                                <div class="subsection">
+                                    <h4><b>AutoPilot</b></h4>
+                                    Any form of Relax is not allowed while using autopilot.
+                                    Staff's can request liveplays at any time and failure to provide them will result in a wipe.
+                                </div>
+                            </div>
+                            <div class="doc-section">
+                                <h3><i class="shield icon"></i> Moderation policy</h3>
+                                Unlike other infractions, we have a fixed moderation policy for hacking rules.
+                                <div class="doc-content">
+                                    If you get caught breaking any of the hacking rules, it will result in a wipe of your account scores if you cannot prove you weren't breaking the rules.</br>
+                                    </br>
+                                    After 3 wipes, your account will be BANNED, not restricted.</br>
+                                    This means we'll never ban someone at their first wipe, other than for the Aeris AC rule and multiple cheat client's rules.</br>
+                                    </br>
+                                    You may appeal 1 month after your restriction unless you judge you haven't been restricted for a legitimate reason.</br>
+                                    </br>
+                                    If you want to appeal, <a href="https://discord.gg/4CzsqkK">Join our Discord</a> and open a ticket at #support-tickets.
+                                </div>
+                            </div>
+                        </div>
+                        <div class="doc-block" v-if="page === 'Cheats'">
+                            <div class="doc-section">
+                                <h3><i class="fas fa-exclamation-circle"></i> Cheating rules</h3>
+                                <h5>Even though Kawata is a cheating server, we are enforcing a few rules, to make sure playing on Kawata is a fun and rewarding experience for everyone!</br>
+                                    Failure to comply with the rules in this section will result in an <b>account wipe and a strike</b>.
+                                </h5>
+                                <div class="subsection">
+                                    <h5><b>Timewarp:</b></h5>
+                                    <p>Timewarp has specific set limits: your Timewarp speed MUST be at minimum 66% of 1.5x speed for Double Time*, and NO Timewarp with nomod.</p>
+                                    With the most Common Clients, This would be:</br>
+                                    <div class="doc-content">
+                                        AQN: 100 with DT 
+                                    </div>
+                                    <div class="doc-content">
+                                        osu!rx: 0.66 with DT
+                                    </div>
+                                    <div class="doc-content">
+                                        Maple: 100 With DT (Rate), 0.66 With DT (Multiplier) 
+                                    </div>
+                                    <div class="doc-content">
+                                        Ainu & Ainu Based Clients: Skoot.er; 0.66 with DT | Abypass; 100 with DT
+                                    </div>
+                                    <div class="doc-content">
+                                        Assist.Games: 100 with DT (rate)
+                                    </div>
+                                </div>
+                                <div class="subsection">
+                                    <h5><b>Aim Correction/Aim Assist:</b></h5>
+                                    <p>Below listed are the HIGHEST allowed settings and/or whether or not the cheat is allowed for each of the most common aim assist tools for osu!. If your cheat is not listed, ask a moderator.</p>
+                                    Here are more details:
+                                    <div class="doc-content">
+                                        <b>Ainu/hq.af's</b> "SAVE ME" is allowed (no limit);
+                                    </div>
+                                    <div class="doc-content">
+                                        <b>MPGH's Ainu</b> default AC is allowed;
+                                    </div>
+                                    <div class="doc-content">
+                                        <b>Aeris AC and Abypass AC</b> are allowed; Its Strength must be at or below 60, but can only be a whole number. Values like 48.2 and 41.1 are not allowed.
+                                    </div>
+                                    <div class="doc-content">
+                                        <b>osu!buddy's AA</b> is allowed; but must be equal to or below the following settings. Strength: 11 Aim Start Distance: 666
+                                    </div>
+                                    <div class="doc-content">
+                                        <b>Kat's AA</b> is allowed; Its Strength cannot exceed 1.5x.
+                                    </div>
+                                    <div class="doc-content">
+                                        <b>Assist.games AA</b> is allowed, Its Strength cannot exceed 66.
+                                    </div>
+                                    <div class="doc-content">
+                                        <p><b>Maple AA</b> is allowed but MUST be equal to or below the following settings.</br>
+                                        <div class="subsection">
+                                            <p>Aim Assist <b>RULES FOR VANILLA</b>:
+                                            <p>
+                                            <div class="subsection">
+                                                AA <b>V1</b></br>
+                                                Strength: 0.7 | Base FOV: 70 | Max FOV (Scaling): 3 | Minimum FOV (total): 25 Maximum FOV (Total): 200 | Assist on Sliders: Allowed | Acceleration Factor: Doesn't matter. |
+                                            </div>
+                                            <div class="subsection">
+                                                AA <b>V2</b></br>
+                                                AA Power: 0,6 or below. Assist on sliders: Allowed
+                                            </div>
+                                            <div class="subsection">
+                                                AA <b>V3</b></br>
+                                                AA Power: 1.2 or below. Slider AA: 0,6 or below.
+                                            </div>
+                                        </div>
+                                        <div class="subsection">
+                                            <p>Aim Assist <b>RULES FOR RELAX</b>:</p>
+                                            <div class="subsection">
+                                                AA <b>V1</b></br>
+                                                Strength: 0.7 | Base FOV: 70 | Max FOV (Scaling): 3 | Minimum FOV (total): 30 Maximum FOV (Total): 250 | Assist on Sliders: Allowed | Acceleration Factor: Does not matter |
+                                            </div>
+                                            <div class="subsection">
+                                                AA <b>V2</b></br>
+                                                AA Power: 0.8 Assist on sliders: Allowed
+                                            </div>
+                                            <div class="subsection">
+                                                AA <b>V3</b></br>
+                                                AA Power: 1.5 Slider AA: 0.6
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="subsection">
+                                    <h5><b>CS modifiers:</b></h5>
+                                    From now on (July 1st 2024), CS changers are NOT allowed anymore on Kawata.</br>
+                                    The use of it will be punished with a wipe and counted as an act of overcheating.
+                                </div>
+                                <div class="subsection">
+                                    <h5><b>Flashlight:</b></h5>
+                                    <div class="doc-content">
+                                        <p>FL Remover is ONLY ALLOWED in maps that are below 7 Stars and if you set an FL Play in a map ABOVE 7 Stars (mods like DT included), THEN YOU MUST MAKE A LIVEPLAY THAT PROOFS YOU DID IT LEGIT AND SEND IT TO A STAFF MEMBER.</br>
+                                            If you're unsure, then ask a Moderator.</br>
+                                            </br>
+                                            TLDR: <b>FL REMOVER IS NOT ALLOWED ABOVE 7 STAR MAPS (mods applied).</b>
+                                        </p>
+                                    </div>
+                                </div>
+                                <div class="subsection">
+                                    <h5><b>Multiple Cheats:</b></h5>
+                                    <div class="doc-content">
+                                        <p>You now <b>can't</b> have more than <b>ONE</b> cheat instance/client open at the same time. </br>
+                                            This <b>ALSO</b> apply's for combining cheats together, if you get caught doing so you will end up getting banned.</br>
+                                            </br>
+                                        <p>* The only exception for this rule is combining osu!rx (V1 or V2) with Kat's AA/any kind of Aim assist that doesn't have timewarp & relax.</p>
+                                    </div>
+                                </div>
+                                <div class="subsection">
+                                    <h5><b>Unfair hacks:</b></h5>
+                                    <div class="doc-content">
+                                        Unfair hacks such as replay bots (and replay editing, by extension), </br>
+                                        score modifiers, OD changers, spinbots, </br>
+                                        autobots (includes all forms of auto,cursordance bots too), </br>
+                                        cheats that modify the score's replay data (e.g. tap data or aim data, or playing with the in-game Relax mod, then removing it on submission) </br>
+                                        and score editors are <b>NOT</b> allowed, this rule may be enforced outside of the examples given. It is discretionary.
+                                    </div>
+                                </div>
+                                <div class="subsection">
+                                    <h4><b>Other Important Notes:</b></h4>
+                                    <div class="doc-content">
+                                        <p>For Ainu users, make sure the client you use was downloaded on MPGH, the Skoot.er Discord server or the Ainu Xheaters Discord server, otherwise it contains prohibited features.</br>
+                                            </br>
+                                            Things as: Relax hacks, AR changers, Enlighten (Un-HD), and other stuff that wasn't listed in the hacking rules ARE ALLOWED. You can also ask one of the staff members if you still need clarification.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="doc-block" v-if="page === 'Scorehunt'">
+                            <div class="doc-section">
+                                <h3><i class="fas fa-exclamation-circle"></i> Score Hunting</h3>
+                                In September 2022, Kawata introduced Score Hunts!
+                                <div class="doc-content">
+                                    This is a way to get rewards from playing difficult, strange or technical maps. How it works is pretty simple.</br>
+                                    </br>
+                                    If you want to participate in Score Hunts, <a href="https://discord.gg/4CzsqkK">Join our Discord</a> In there you can find the #score-hunting channel, which shows you the current active and previous Score Hunts.</br>
+                                    </br>
+                                    *Make sure to read the requirements of <b>each</b> scorehunt. They can change depending on any of them.*</br>
+                                    </br>
+                                    The following notes will <b>ALWAYS</b> be true for scorehunts.
+                                    <div class="subsection">
+                                        1. Scorehunt Information will be available in #score-hunting & the <a href="https://docs.google.com/spreadsheets/d/1iabjrE_O52rNifvUi8s1tBqzThGqa699pmwZdGZTCN8/edit?usp=sharing">Public Score Hunt Spreadsheet</a></br>
+                                        </br>
+                                        2. CS changer is not allowed in Scorehunts.</br>
+                                        </br>
+                                        3. Scorehunts will follow the rules set here.</br>
+                                        </br>
+                                        4. Breaking scorehunt rules will incur a normal moderation punishment (See Moderation Policy) And a ban from future Score Hunts, the ban is appealable after 1 year.
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="connection-doc" class="content" v-if="module === 'Connection'">
+                        <div id="docs-selector" class="selector">
+                            <a class="top-tab" v-bind:class="{ 'active': page === 'Main' }"
+                                @click="LoadDoc('Connection', 'Main')">
+                            <span class="modetext"> How to Connect </span>
+                            </a>
+                            <a class="top-tab" v-bind:class="{ 'active': page === 'Old' }"
+                                @click="LoadDoc('Connection', 'Old')">
+                            <span class="modetext"> Old Method </span>
+                            </a>
+                            <a class="top-tab" v-bind:class="{ 'active': page === 'Cert' }"
+                                @click="LoadDoc('Connection', 'Cert')">
+                            <span class="modetext"> Certificate Guide </span>
+                            </a>
+                        </div>
+                        <div class="doc-block" v-if="page === 'Main'">
+                            <div class="doc-notice">
+                                <h2>Video tutorial</h2>
+                                We now have a video tutorial to get you up and running in no time!</br>
+                                <p align="center"><iframe width="560" height="315" src="https://www.youtube-nocookie.com/embed/imdQcbwOoi0" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></p>
+                            </div>
+                            <div class="doc-section">
+                                <h1>Registering on Kawata</h1>
+                                To create your Kawata account, follow <a href="/register">this link</a>, and follow the instructions to create your account.
+                                <br>
+                                Make sure you read the <a @click="LoadDoc('Rules', 'Main')">rules</a> before proceeding!
+                            </div>
+                            <div class="doc-section">
+                                <h1>Connecting to Kawata</h1>
+                                <div class="subsection">
+                                    <h2>New method (-devserver flag)</h2>
+                                    osu! has added *official-ish* support for private servers.</br>
+                                    That means you can now easily connect to Kawata, without tampering with your system files. This is the recommended method.</br>
+                                    Please note that some unofficial osu! clients may not be compatible with this new method yet.
+                                    <div class="doc-content">
+                                        <h3>Launching osu! on Kawata</h3>
+                                        <p>
+                                            - Open your osu! installation folder.</br>
+                                            - Click the address bar, and type "osu!.exe -devserver Kawata.pw".</br>
+                                            - Open osu! and log in with your Kawata account.
+                                        </p>
+                                    </div>
+                                    <div class="doc-content">
+                                        <h3>Creating a shortcut to connect quickly</h3>
+                                        <p>
+                                            - Open your osu! installation folder.</br>
+                                            - Create a shortcut to osu!.exe wherever you want, or copy your existing shortcut.</br>
+                                            - Right-click your newly created shortcut, and click <b>Properties</b>.</br>
+                                            - In the <b>Target</b> field of the <b>Properties</b> window, add "-devserver Kawata.pw" to the existing text.</br>
+                                            - Open your newly created shortcut and log in with your Kawata account.
+                                        </p>
+                                    </div>
+                                </div>
+                                <h2>Having troubles?</h2>
+                                Check out our <a @click="LoadDoc('FAQ')">FAQ</a>
+                            </div>
+                        </div>
+                        <div class="doc-block" v-if="page === 'Old'">
+                            <div class="doc-notice">
+                                <h2 style="color: red;">Notice: This method is not supported anymore!</h2>
+                                <p style="color: red;">This method is no longer supported, and should only be used if the new method does not work for you.</br>
+                                    Most of the popular clients that don't support the new method have their own built in server switcher that should be used instead.
+                                </p>
+                            </div>
+                            <div class="doc-section">
+                                <h1>Connecting to Kawata: </h1>
+                                <div class="subsection">
+                                    <h2>Old method (server switcher) (legacy/unsupported)</h2>
+                                    This is the traditional method for connecting to private servers. </br>
+                                    This method requires administrator access, as it implies tampering with the osu! certificate, and the hosts file. </br>
+                                    This method is considered legacy and should only be used in cases where the new method cannot be used.
+                                    <div class="doc-content">
+                                        <h3>Certificate installation</h3>
+                                        If you want to play on Kawata, you must install our HTTPS certificate. </br> 
+                                        Do this only the first time you connect to Kawata.  </br>
+                                        <div class="subsection">
+                                            <p>
+                                                - Open the switcher.</br>
+                                                - Click on <b>"Install certificate"</b>.</br>
+                                                - Click <b>"Yes"</b>.
+                                            </p>
+                                        </div>
+                                        *If you can't install the certificate properly, follow <a @click="LoadDoc('Connection', 'Cert')">these instructions</a> to install it manually.*
+                                    </div>
+                                    <div class="doc-content">
+                                        <h3>How to connect to Kawata</h3>
+                                        <div class="subsection">
+                                            <p>
+                                                - Run the switcher <b>as administrator</b></br>
+                                                - Click "Connect to Kawata".</br>
+                                                - Make sure that the switcher says <b>"You're connected to Kawata!"</b> (it should look like <a href="https://i.imgur.com/0LotBDY.png">this</a>), if not, click <b>"Connect to Kawata"</b> to switch servers.</br>
+                                                - Open osu! and log in with your Kawata account.
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <div class="doc-content">
+                                        <h3>How to play on official osu! again</h3>
+                                        <div class="subsection">
+                                            <p>
+                                                - Make sure osu! is <b>closed</b>  </br>
+                                                - Open the switcher and make sure it says <b>"You are playing on Bancho"</b> (it should look like <a href="https://i.imgur.com/JwrBy8S.png">this</a>), if not, click <b>"Disconnect from Kawata"</b> to switch server.</br>
+                                                - Open osu! and log in with your osu! account.
+                                            </p>
+                                        </div>
+                                        NOTE: If you want to connect to osu.ppy.sh and you still see Kawata's website even if the switcher is off, empty your browser cache.
+                                    </div>
+                                    <div class="doc-content">
+                                        <h3>How to update osu!/switch release branch</h3>
+                                        <div class="subsection">
+                                            <p>
+                                                - Make sure osu! is <b>closed</b>.</br>
+                                                - Open the switcher and make sure it says <b>"You are playing on Bancho"</b> (it should look like <a href="https://i.imgur.com/JwrBy8S.png">this</a>).</br>
+                                                - Open osu! and update the game.
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="doc-block" v-if="page === 'Cert'">
+                            <div class="doc-section">
+                                <h1>Installing the certificate manually</h1>
+                                <p>If you're having trouble connecting to Kawata using stable (latest), beta, or cutting edge, or the switcher doesn't install the certificate properly, you can install the certificate manually.</p>
+                                <div class="subsection">
+                                    <h3>Instructions:</h3>
+                                    <div class="doc-content">
+                                        <p>
+                                            - To begin, obtain the certificate <a href="/static/cert.crt">by clicking here</a>.</br>
+                                            - Then, open certificate.crt.</br>
+                                            - Click the "Install certificate..." button.</br>
+                                            - Click Next.</br>
+                                            - Click "Browse..." after selecting "Place all certificates in the following store" (the second option).</br>
+                                            - A new window will pop up, select Trusted root certification authorities and click Ok.</br>
+                                            - Click Next.</br>
+                                            - Click Finish.</br>
+                                        </p>
+                                    </div>
+                                </div>
+                                <div class="subsection">
+                                    <h3>How to test the certificate:</h3>
+                                    <p>To ensure the certificate has been installed successfully, make sure the switcher is On and open <a href="https://c.ppy.sh/">this page</a>.</p>
+                                    <div class="doc-content">
+                                        <p>
+                                            - If you see <a href="http://y.zxq.co/ubfzty.png">osu!bancho stuff</a>, your switcher is off. Turn it on and try again.</br>
+                                            - If you see <a href="http://y.zxq.co/zphobw.png">some ripple stuff</a>, you're successfully connected to Kawata under HTTPS, good job!</br>
+                                            - If you get <a href="http://y.zxq.co/reaueu.png">some certificate or security error</a>, the certificate has not been installed successfully. <b>Follow the instructions below.</b></br>
+                                        </p>
+                                    </div>
+                                </div>
+                                <div class="subsection">
+                                    <h3>If everything else fails...</h3>
+                                    <p>You can try to remove all existing Kawata/Ripple/Akatsuki/Enjuu/whatever certificates and install the certificate again. Follow these steps:</p>
+                                    <div class="doc-content">
+                                        <p>
+                                            - Press <b>Win+R</b>  - In the run box, type "mmc certmgr.msc" and press "enter" to launch the Certificate Manager.</br>
+                                            - Select <b>Trusted root certification authorities</b> on the left.</br>
+                                            - On the right, click "Certificates."</br>
+                                            - You should see a <a href="https://i.imgur.com/iJlLOg3.png">Kawata</a> entry and one or two <b>*.ppy.sh</b> entries in the list. Select them, then right-click and select "Delete."</br>
+                                            - Select all the positive options.</br>
+                                            - Launch the switcher, then select "Install certificate," followed by "Yes."- Connecting to <a href="https://c.ppy.sh/">Kawata's bancho server via https</a> should work.</br>
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="clients-doc" class="content" v-if="module === 'Clients'">
+                        <div id="docs-selector" class="selector">
+                            <a class="top-tab" v-bind:class="{ 'active': page === 'Main' }"
+                                @click="LoadDoc('Clients', 'Main')">
+                            <i class="fas fa-list"></i><span class="modetext"> List </span>
+                            </a>
+                            <a class="top-tab" v-bind:class="{ 'active': page === 'Kawata' }"
+                                @click="LoadDoc('Clients', 'Kawata')">
+                            <i class="fas fa-client"></i><span class="modetext"> Kawata/Aeris </span>
+                            </a>
+                            <!--<a class="top-tab" v-bind:class="{ 'active': page === 'Abypass' }"
+                                @click="LoadDoc('Clients', 'Abypass')">
+                                    <i class="fas fa-client"></i><span class="modetext"> Abypass </span>
+                                </a>-->
+                            <a class="top-tab" v-bind:class="{ 'active': page === 'Maple' }"
+                                @click="LoadDoc('Clients', 'Maple')">
+                            <i class="fas fa-client"></i><span class="modetext"> Maple </span>
+                            </a>
+                        </div>
+                        <div class="doc-block" v-if="page === 'Main'">
+                            <div class="doc-notice">
+                                <h2>Disclaimer:</h2>
+                                </br>
+                                <p>While this is a server centered around cheating, 
+                                    We at Kawata do <b>NOT</b> condone the usage of any form of cheating on other servers. </br>
+                                    Please be respectful to others and and keep your usage of cheats on our server where it is implicitly allowed. </br>
+                                    We do not want to disrupt the enjoyment of the game for other playerbases.
+                                </p>
+                            </div>
+                            <div class="doc-section">
+                                <h3><i class="fas fa-exclamation-circle"></i> Differences between Clients and Hacks:</h3>
+                                <div class="subsection">
+                                    <h4><b>Client:</b></h4>
+                                    <div class="doc-content">
+                                        <p>A client is a modified version of osu! that allows you to cheat and often times has other features built in. </br>
+                                            It is a separate program from osu!, and it is not made by the osu! team. </br>
+                                            It is made by the community, for the community.
+                                        </p>
+                                    </div>
+                                </div>
+                                <div class="subsection">
+                                    <h4><b>Hack:</b></h4>
+                                    <div class="doc-content">
+                                        <p>A hack is a program that modifies the original game while it is running. </br>
+                                            It is a separate program or file that is injected into the original game, and it is not made by the osu! team. </br>
+                                            It is made by the community, for the community.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="doc-section">
+                                <h3><i class="fas fa-exclamation-circle"></i> Cheats & Clients:</h3>
+                                <div class="subsection">
+                                    <div class="doc-notice">
+                                        <h4><b>Note: Each of these can be clicked to navigate</b></h4>
+                                    </div>
+                                    <div class="doc-content">
+                                        <h3><i class="fas fa-exclamation"></i> Popular/Recommended:</h3>
+                                        <div class="subsection linked" @click="LoadDoc('Clients', 'Kawata')">
+                                            <h4><b>Kawata/Aeris:</b></h4>
+                                            <p>Kawata/Aeris is a client originally developed by Panini Céleste. </br>
+                                                It is currently being maintained and developed by TheFantasticLoki. </br>
+                                                Contributions have been made by Maple Syrup and Chewy/Pythr.</br>
+                                                Due to being the Kawata Client, you are the least likely to break our rules using this client. </br>
+                                                Therefore is it the most recommended client to use.
+                                            </p>
+                                        </div>
+                                        <div class="subsection linked" @click="LoadDoc('Clients', 'Maple')">
+                                            <h4><b>Maple:</b></h4>
+                                            <p>Maple is a <b>paid</b> hack created by Maple Syrup. </br>
+                                                It is a very powerful hack that is constantly being updated. </br>
+                                                It's main draw is Aim Assist and Relax that is widely considered to be the best in the community. </br>
+                                                This client does not have any built in limits, so you must be careful not to break our rules. 
+                                            </p>
+                                        </div>
+                                        <div class="subsection linked" @click="LoadDoc('Clients', 'AQN')">
+                                            <h4><b>AQN:</b></h4>
+                                            <p>AQN is a now free hack created by Rumoi. </br>
+                                                Powerful hack from the founding of the server, it is no longer maintained.</br>
+                                                Crashes on latest osu! version due to compatibility issues.
+                                            </p>
+                                        </div>
+                                        <div class="subsection linked" @click="LoadDoc('Clients', 'osu!rx')">
+                                            <h4><b>osu!rx:</b></h4>
+                                            <p>osu!rx is a free hack created by mrflashstudio and updated by Sasuke. </br>
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <div class="doc-content">
+                                        <h3><i class="fas fa-exclamation"></i> Unsupported/Depreciated Cheats:</h3>
+                                        <div class="subsection linked" @click="LoadDoc('Clients', 'Abypass')">
+                                            <h4><b>Abypass:</b></h4>
+                                            <p>Abypass is the successor to Skoot.er created by Chewy/Pythr. </br>
+                                                Previously Maintained by Aochi.</br>
+                                                This client is a better version of Skoot.er with more features and less bugs. </br>
+                                                This client tries to comply with our rules, but it is not always updated. </br>
+                                                If Kawata/Aeris doesn't work for you, this is the next best, free choice. </br>
+                                                </br>
+                                                This client has been mostly discontinued and downloads for this client have been lost.
+                                            </p>
+                                        </div>
+                                        <div class="subsection linked" @click="LoadDoc('Clients', 'Skooter')">
+                                            <h4><b>Skooter:</b></h4>
+                                            <p>Skooter is a free client developed by Aoba Suzukaze, VacCat, Chewy/Pythr. </br>
+                                                It is no longer maintained, and has been replaced by Abypass. </br>
+                                                No longer supported on our server due to connection issues.
+                                            </p>
+                                        </div>
+                                        <div class="subsection linked" @click="LoadDoc('Clients', 'Ainu')">
+                                            <h4><b>Ainu:</b></h4>
+                                            <p>Ainu is a free client Created by Aoba Suzukaze, Edited by Chewy/Pythr. </br>
+                                                It is no longer maintained, and was replaced by Skooter which was then replaced by Abypass. </br>
+                                                No longer supported on our server due to connection issues and banned features.
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <div class="doc-content">
+                                        <h3><i class="fas fa-exclamation" style="color: red;"></i> Banned Cheats</h3>
+                                        <div class="subsection">
+                                            <h4><b>Freedom:</b></h4>
+                                            <p>Freedom has been banned from being used on our server due to it's features breaking our rules at all settings.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="doc-block" v-if="page === 'Kawata'">
+                            <div class="doc-notice">
+                                <div class="notice">
+                                    <h2>Notice:</h2>
+                                    <p>It is recommended to add install folder as exclusion in anti-virus to prevent connection issues.</p>
+                                </div>
+                                <div class="content">
+                                    <a class="button dl" href="https://storage.kawata.pw/get/osu!Kawata.zip" title="Client is in Public Beta, You may encounter bugs."><i class="fas fa-download"></i>  Download</a> <a class="button VA" href="http://www.hybrid-analysis.com/sample/3a08fea940bb7028b08b0a6688cae86344af3fc5ea2340ff03a29d95be090614"><i></i> Virus Analysis Report</a>
+                                </div>
+                            </div>
+                            <div class="doc-section">
+                                <h3><i class="fas fa-exclamation-circle"></i> Kawata/Aeris Client:</h3>
+                                <div class="subsection">
+                                    <h4><b>Kawata/Aeris is the Official Client for Kawata originally developed by Panini Céleste. </b></h4>
+                                    <p>
+                                        Currently Maintained and Developed by The Fantastic Loki.</br>
+                                        Contributions have been made by Maple Syrup and Chewy/Pythr.</br>
+                                        Designed to be the Ultimate Community Client, it is the most recommended client to use on our server.</br>
+                                    </p>
+                                    <div class="doc-content">
+                                        <h3><i class="fas fa-exclamation"></i> Features:</h3>
+                                        <div class="subsection">
+                                            <h5>Cheats: (Server Enabled [Only on Kawata atm])</h5>
+                                            <div class="level">
+                                                <p>
+                                                    Aim Correction (Improved Skooter AC, Optional Tap on Correct for Non-RX Players, Relative Range Support)</br>
+                                                    Relax Hack (SkooterRX)</br>
+                                                    Timewarp (Both Rate & Multiplier Style)</br>
+                                                    Automatic CS Changer</br>
+                                                </p>
+                                                <p>
+                                                    AR Changer</br>
+                                                    HD Remover</br>
+                                                    FL Remover (Prevents Breaking Rules)</br>
+                                                </p>
+                                            </div>
+                                            <h5>Beta Cheats:</h5>
+                                            <div class="level">
+                                                <p>
+                                                    Maple Aim Assist (V1, V2 Submitting. V3 and L-V1 not Submitting.)
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <div class="subsection">
+                                            <h5>Other Features:</h5>
+                                            <div class="level">
+                                                <p>
+                                                    In-Game Updater</br>
+                                                    Lazer Style UI (SkinVersion 7+)</br>
+                                                    Background Beatmap Importing</br>
+                                                    Links to original game folder to save space</br>
+                                                    Built in Server Switcher</br>
+                                                    New Slider Style</br>
+                                                    Fail with Relax (Toggle)</br>
+                                                    Combo Break Sound with Relax (Toggle)</br>
+                                                </p>
+                                                <p>
+                                                    Lazer Style Triangle Animations</br>
+                                                    Rainbow Visualization</br>
+                                                    Discord Rich Presence</br>
+                                                    Show Misses in Relax (Toggle)</br>
+                                                    Boss Key Disable (Toggle)</br>
+                                                    Auto Hide Replay Overlay (Toggle)</br>
+                                                    Low HP Glow on Relax (Toggle)</br>
+                                                </p>
+                                            </div>
+                                            <h5>Beta Features:</h5>
+                                            <div class="level">
+                                                <p>
+                                                    Dedicated Input thread (Aim input only atm. [1/2/4/8/16K FPS options]). Massive improvement to aim responsiveness, beats stable and lazer.
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="doc-block" v-if="page === 'Abypass'">
+                            <div class="doc-notice">
+                                <a class="button dl" href="https://abypass.fumo.lol/updater"><i class="fas fa-download"></i>  Download</a>
+                            </div>
+                            <div class="doc-section">
+                                <h3><i class="fas fa-exclamation-circle"></i> Abypass Client:</h3>
+                                <div class="subsection">
+                                    <h4><b>Abypass is the successor to Skoot.er created by Chewy/Pythr. </b></h4>
+                                    <p>Currently Maintained by Aochi.</br>
+                                        This client is a better version of Skoot.er with more features and less bugs. </br>
+                                        This client tries to comply with our rules, but it is not always updated. </br>
+                                        If Kawata/Aeris doesn't work for you, this is the next best, free choice.
+                                    </p>
+                                    <div class="doc-content">
+                                        <h3><i class="fas fa-exclamation"></i> Features:</h3>
+                                        <div class="subsection">
+                                            <h5>Cheats:</h5>
+                                            <div class="level">
+                                                <p>
+                                                    Aim Correction</br>
+                                                    HD Remover</br>
+                                                    CTB Relax Hack (Control catcher with mouse)</br>
+                                                    Automatic CS Changer</br>
+                                                </p>
+                                                <p>
+                                                    Relax Hack</br>
+                                                    FL Remover</br>
+                                                    Timewarp</br>
+                                                    AR Changer</br>
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <div class="subsection">
+                                            <h5>Other Features:</h5>
+                                            <div class="level">
+                                                <p>
+                                                    In-Game PP Counter</br>
+                                                    Uses an updater.</br>
+                                                </p>
+                                                <p>
+                                                    Server Switcher for Kawata & Fuquila</br>
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="doc-block" v-if="page === 'Maple'">
+                            <div class="doc-notice">
+                                <a class="button dl" href="https://maple.software/"><i class="fas fa-download"></i>  Website</a>
+                            </div>
+                            <div class="doc-section">
+                                <h3><i class="fas fa-exclamation-circle"></i> Maple Hack:</h3>
+                                <div class="subsection">
+                                    <h4><b>Maple is a Premium hack for osu! created by Maple Syrup</b></h4>
+                                    <p>It is a very powerful hack that is constantly being updated. </br>
+                                        It's main draw is Aim Assist and Relax that is widely considered to be the best in the community. </br>
+                                        This hack does not have any built in limits, so you must be careful not to break our rules. 
+                                    </p>
+                                    <div class="doc-content">
+                                        <h3><i class="fas fa-exclamation"></i> Features:</h3>
+                                        <div class="subsection">
+                                            <h5>Cheats:</h5>
+                                            <div class="level">
+                                                <p>
+                                                    Aim Assist (3 Versions)</br>
+                                                    Relax Hack</br>
+                                                    Timewarp</br>
+                                                    AR Changer</br>
+                                                </p>
+                                                <p>
+                                                    FL Remover</br>
+                                                    HD Remover</br>
+                                                    CS Changer</br>
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="doc-block" v-if="page === 'Skooter'">
+                        </div>
+                        <div class="doc-block" v-if="page === 'AQN'">
+                        </div>
+                        <div class="doc-block" v-if="page === 'osu!rx'">
+                            <div class="doc-notice">
+                                <a class="button dl" href="https://www.mpgh.net/forum/showthread.php?t=1538659"><i class="fas fa-download"></i>  Download</a>
+                            </div>
+                            <div class="doc-section">
+                                <h3><i class="fas fa-exclamation-circle"></i> osu!rx Hack:</h3>
+                                <div class="subsection">
+                                    <h4><b>Instructions:</b></h4>
+                                    <p>
+                                        osu!rx does not run on the latest version of osu!.</br>
+                                        You must download <a href="https://osekai.net/snapshots/versions/b20220424/b20220424.zip">this version</a> of osu! to use it.</br>
+                                        You must also download <a href="https://cdn.discordapp.com/attachments/598976475579809860/1082594775988981760/osu.exe">this patched exe</a> to use it on our server. This patches the tls to use a higher version required for our server.</br>
+                                        In order to prevent the game from updating you need to make a _STAGING file in your osu! folder.</br>
+                                    </p>
+                                </div>
+                                <div class="subsection">
+                                    <h4><b>Features:</b></h4>
+                                    <div class="level">
+                                        <p>
+                                            Timewarp</br>
+                                            Relax Hack</br>
+                                            HitWindow100 Key</br>
+                                        </p>
+                                        <p>
+                                            Playstyles (Single Tap, Alternate, Mouse Only, Tap X)</br>
+                                            Hit Timing Randomization</br>
+                                            Hit Scan</br>
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="faq-doc" class="content" v-if="module === 'FAQ'">
+                        <div class="doc-block" v-if="page === 'Main'">
+                            <div class="doc-section">
+                                <h1>FAQ:</h1>
+                                <div class="subsection">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="verification-doc" class="content" v-if="module === 'Verification'">
+                        <div class="doc-block" v-if="page === 'Main'">
+                            <h2>How do I get Verified?</h2>
+                            <p><b>
+                                We reserve the right to remove your badge and/or re-verify you.</br>
+                                New rules may or may not be retroactive at our discretion. 
+                                </b>
+                            </p>
+                            <div class="doc-section">
+                                <h3><i class="fas fa-hammer"></i> Verification Rules:</h3>
+                                <p><b>
+                                    These are the rules and conditions that must be met in order to apply for verification of your account.
+                                    </b>
+                                </p>
+                                <div class="subsection">
+                                    <p>
+                                        1. The player cannot have one or more wipes in the last three months (self wipes do not count!).</br>
+                                        2. The player must have been active (in the community) for the last 3 weeks!</br>
+                                        3. The player must have an account that is at least 60 days old.</br>
+                                        4. The player either must have a total amount of PP greater than or equaling 25,000 or have at least one 5,000 PP play.</br>
+                                        5. The player must have 1-3 liveplays of a single score or multiple scores that are in their top 10 plays (by pp). (These liveplays MUST follow the liveplay rules that are listed below; otherwise, they won't be valid.)
+                                    </p>
+                                </div>
+                            </div>
+                            <div class="doc-section">
+                                <h3><i class="fas fa-hammer"></i> Liveplay Rules:</h3>
+                                <p><b>
+                                    These are the rules that must be followed when recording a liveplay for verification.
+                                    </b>
+                                </p>
+                                <div class="subsection">
+                                    <p>
+                                        1. Show your hands and monitor every moment of the liveplay. (Webcam or phone cam are allowed if of good enough quality.)
+                                        2. Show task manager, and then show the process of injecting/opening (in the case of a client) your cheat.
+                                        3. The player must show EVERY setting of the cheat that they are using before and after each play is submitted.
+                                        4. The player must save the replay or replays of the score/scores they made and send them along with the liveplay to a member of the <b>Gestion Team or higher</b>.
+                                        5. The player must have an analog clock running and visible during their liveplay if they are suspected of using a lower timewarp than allowed.
+                                        6. If you are a player that uses more than one client (e.g., Abypass, Maple, and Osubuddy), then you must submit a liveplay using each client to prove your legitimacy.
+                                        7. Custom clients for liveplays aren't allowed.
+                                    </p>
+                                </div>
+                            </div>
+                            <div class="doc-section">
+                                <h3><i class="fas fa-hammer"></i> Special way to get the badge:</h3>
+                                <div class="subsection">
+                                    <p>
+                                        -> The player is known for submitting videos or doing streams of their plays to prove their legitimacy in the Kawata Discord or via Twitch, YouTube, or any other social media website. If you follow this requirement and you don't have the badge already, please DM a member of the Gestion Team or a role above.
+                                    </p>
+                                </div>
+                            </div>
+                            <h5>All of the above rules may be changed if we think they should be different or if they are unbalanced.</h5>
+                            <div class="doc-section">
+                                <h3><i class="fas fa-hammer"></i> Where do I apply to get Verified?</h3>
+                                <div class="subsection">
+                                    <p>
+                                        You can get verified by contacting a Gestion team member or above in the <a href="https://discord.gg/4CzsqkK">Kawata Discord</a>; it will be done as quickly as possible.</br>
+                                        </br>
+                                        If you have any question, Join our <a href="https://discord.gg/4CzsqkK">Discord</a> and contact any member of our staff team.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        </div>
+        </div>
+    </script>
+    
+    <script type="text/x-template" id="beatmap-panel-template">
+        <div id="beatmap-panel" class="modal" :class="{ 'is-active': show }" style="z-index: 25;">
+            <div class="modal-background" @click="close"></div>
+        
+            <div id="beatmap-window" data-panel="Beatmap" class="modal-content" v-show="show">
+                <div class="main-block">
+                    <div class="main-banner" :style="{'--banner-bg': `url(https://assets.ppy.sh/beatmaps/` + set_id + `/covers/cover.jpg)`}">
+                    
+                        <!-- ================= MAP STATS ================= -->
+                        <div class="map-stats" v-if="selected">
+                            <a class="stat-block map-play top" @click="playMapAudio(set_id)">
+                                <i :class="currentAudio && currentAudio.paused === false && currentAudio.id === 'audio-' + set_id ? 'fas fa-pause' : 'fas fa-play'" :id="'play-' + set_id">
+                                    <audio
+                                        :id="'audio-' + set_id"
+                                        :src="'https://b.ppy.sh/preview/' + set_id + '.mp3'"
+                                    ></audio>
+                                </i>
+                            </a>
+        
+                            <div class="stat-block">
+                                <div style="width: 100%; display: flex; flex-direction: row; justify-content: space-between;">
+                                    <span class="level-left" style="margin-right: auto;">Circle Size</span><span class="level-right" v-text="selected.cs"></span>
+                                </div>
+                                <div style="width: 100%; display: flex; flex-direction: row; justify-content: space-between;">
+                                    <span class="level-left" style="margin-right: auto;">Approach Rate</span><span class="level-right" v-text="selected.ar"></span>
+                                </div>
+                                <div style="width: 100%; display: flex; flex-direction: row; justify-content: space-between;">
+                                    <span class="level-left" style="margin-right: auto;">Overall Difficulty</span><span class="level-right" v-text="selected.od"></span>
+                                </div>
+                                <div style="width: 100%; display: flex; flex-direction: row; justify-content: space-between;">
+                                    <span class="level-left" style="margin-right: auto;">HP Drain</span><span class="level-right" v-text="selected.hp"></span>
+                                </div>
+                            </div>
+    
+                            <div class="stat-block row-stats bottom">
+                                <div data-stat="length" class="stat-item">
+                                    <span class="stat-icon">
+                                        <i class="fas fa-stopwatch"></i>
+                                    </span>
+                                    <span class="stat-value" v-text="formatDuration(selected.total_length)"></span>
+                                </div>
+                                <div data-stat="stars" class="stat-item">
+                                    <span class="stat-icon">
+                                        <i class="fas fa-star"></i>
+                                    </span>
+                                    <span class="stat-value" v-text="selected.diff"></span>
+                                </div>
+                                <div data-stat="bpm" class="stat-item">
+                                    <span class="stat-icon">
+                                        <i class="fas fa-music"></i>
+                                    </span>
+                                    <span class="stat-value" v-text="selected.bpm"></span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- ================= LOADING/ERROR STATE ================= -->
+                        <div class="map-stats" v-else>
+                            <div class="stat-block">
+                                <div style="width: 100%; text-align: center; padding: 20px;">
+                                    <span v-if="beatmaps.length === 0">Loading beatmap data...</span>
+                                    <span v-else>No beatmap data available</span>
+                                </div>
+                            </div>
+                        </div>
+    
+                        <!-- ================= DIFFICULTY SELECTOR ================= -->
+                        <div class="selector">
+                            <a
+                                v-for="map in beatmaps"
+                                :key="map.id"
+                                class="map-diff"
+                                :class="{ 'active': selected && selected.id === map.id }"
+                                data-popup-trigger
+                                @click="beatmapBus.$emit('select-beatmap', map.id)"
+                            >
+                                <difficulty-icon :diff="map" :set-id="set_id" :interactive="false"></difficulty-icon>
+                                <span v-text="map.version"></span>
+                                <div data-popup class="beatmap-diff-tooltip">
+                                    <span v-text="map.version"></span>
+                                </div>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+        
+                <!-- ================= SECOND BLOCK ================= -->
+                <div class="second-block">
+                    <div class="content" v-if="selected">
+                    
+                        <!-- ================= BEATMAP INFO ================= -->
+                        <div class="beatmap-info">
+                            <div class="info-block">
+                                <h2 v-text="selectedStats.title"></h2>
+                                <h4 v-text="selectedStats.artist"></h4>
+        
+                                <div class="divider"></div>
+        
+                                <div class="buttons">
+                                    <button class="button" @click="window.location.href = 'https://osu.direct/d/' + set_id">
+                                        <i class="fas fa-download"></i> Download
+                                    </button>
+                                    <button class="button" @click="window.location.href = 'osu://dl/' + set_id">
+                                        <i class="fas fa-external-link-alt"></i> osu!direct
+                                    </button>
+                                    <button class="button" @click="window.location.href = 'https://osu.ppy.sh/b/' + selectedStats.id">
+                                        <i class="fas fa-external-link-alt"></i> View on ppy.sh
+                                    </button>
+                                </div>
+                            </div>
+        
+                            <div class="info-block">
+                                <span>
+                                    Mapped by
+                                    <a
+                                        :href="'https://osu.ppy.sh/u/' + selectedStats.creator"
+                                        v-text="selectedStats.creator"
+                                    ></a>
+                                </span>
+                            </div>
+                        </div>
+                        <!-- ================= LEADERBOARD FILTERS ================= -->
+                        <div class="leaderboard-filter">
+                            <!-- Mode Selector -->
+                            <div class="leaderboard-filter-section mode-section">
+                                <div class="leaderboard-filter-buttons">
+                                    <button
+                                        v-for="mode in [0, 1, 2, 3]"
+                                        :key="mode"
+                                        class="leaderboard-filter-button"
+                                        :class="{ 'active': selectedMode === mode }"
+                                        @click="selectMode(mode)"
+                                        :title="getModeName(mode)"
+                                    >
+                                        <span class="mode-icon" v-html="getModeIcon(mode)"></span>
+                                        <span v-text="getModeName(mode)"></span>
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <!-- Ruleset Selector -->
+                            <div class="leaderboard-filter-section ruleset-section">
+                                <div class="leaderboard-filter-buttons">
+                                    <button
+                                        v-for="ruleset in [0, 1, 2]"
+                                        :key="ruleset"
+                                        class="leaderboard-filter-button"
+                                        :class="{ 'active': selectedRuleset === ruleset }"
+                                        @click="selectRuleset(ruleset)"
+                                        :title="getRulesetName(ruleset)"
+                                    >
+                                        <span class="ruleset-icon" v-html="getRulesetIcon(ruleset)"></span>
+                                        <span v-text="getRulesetName(ruleset)"></span>
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <!-- Mods Selector -->
+                            <div class="leaderboard-filter-section mods-section">
+                                <div class="leaderboard-filter-buttons mods-grid">
+                                    <button
+                                        v-for="modBit in validModsList"
+                                        :key="modBit"
+                                        class="leaderboard-filter-button mod-button"
+                                        :class="{ 
+                                            'active': selectedMods & modBit,
+                                            'incompatible': incompatibleMods.includes(modBit) && !(selectedMods & modBit)
+                                        }"
+                                        data-popup-trigger
+                                        @click="toggleMod(modBit)"
+                                    >
+                                        <span class="mod-icon" v-html="getModIcon(modBit)"></span>
+                                        <span class="mod-abbr" v-text="getModName(modBit)"></span>
+                                        <div data-popup class="mod-tooltip">
+                                            <span v-text="getModFullName(modBit)"></span>
+                                        </div>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- ================= LEADERBOARDS ================= -->
+                        <div class="beatmap-lb">
+                        
+                            <!-- ===== FIRST PLACE ===== -->
+                            <div class="table-responsive" v-if="topScore">
+                                <div class="lb-first-place-header">
+                                    <div class="user-block">
+                                    
+                                        <div class="play-rank">
+                                            <span class="score-rank">#1</span>
+                                            <span
+                                                :class="'map-rank rank-' + topScore.grade"
+                                                v-text="topScore.grade"
+                                            ></span>
+                                        </div>
+        
+                                        <a
+                                            class="user-avatar"
+                                            :href="'/u/' + topScore.userid"
+                                            :style="'background-image: url(https://a.' + domain + '/' + topScore.userid + ');'"
+                                        ></a>
+        
+                                        <div class="user">
+                                            <span v-if="topScore.clan_id != null"
+                                                  v-text="'[' + topScore.clan_tag + ']'"></span>
+                                            <a
+                                                class="username"
+                                                :href="'/u/' + topScore.userid"
+                                                v-text="topScore.player_name"
+                                            ></a>
+        
+                                            <div
+                                                class="user-flag"
+                                                :style="'background-image: url(/static/images/flags/' + topScore.player_country.toUpperCase() + '.png);'"
+                                            ></div>
+                                        </div>
+                                    </div>
+        
+                                    <div class="playstats-block">
+                                        <div class="beatmap-score-top__stats">
+                                            <div class="stat-block stat-bolder">
+                                                <div class="stat-title">PP</div>
+                                                <span v-text="topScore.pp.toFixed(2)"></span>
+                                            </div>
+                                            <div class="stat-block">
+                                                <div class="stat-title">Accuracy</div>
+                                                <span v-text="topScore.acc.toFixed(2) + '%'"></span>
+                                            </div>
+                                            <div class="stat-block">
+                                                <div class="stat-title">Combo</div>
+                                                <span v-text="topScore.max_combo + 'x'"></span>
+                                            </div>
+                                            <div class="stat-block stat-bolder">
+                                                <div class="stat-title">Mods</div>
+                                                <span v-text="topScore.mods_readable"></span>
+                                            </div>
+                                        </div>
+                                        <div class="beatmap-score-top__stats">
+                                            <div class="stat-block">
+                                                <div class="stat-title">Score</div>
+                                                <span v-text="topScore.score"></span>
+                                            </div>
+                                            <div class="stat-block">
+                                                <div class="stat-title">300</div>
+                                                <span v-text="topScore.n300 + topScore.ngeki"></span>
+                                            </div>
+                                            <div class="stat-block">
+                                                <div class="stat-title">100</div>
+                                                <span v-text="topScore.n100 + topScore.nkatu"></span>
+                                            </div>
+                                            <div class="stat-block">
+                                                <div class="stat-title">50</div>
+                                                <span v-text="topScore.n50"></span>
+                                            </div>
+                                            <div class="stat-block">
+                                                <div class="stat-title">Miss</div>
+                                                <span v-text="topScore.nmiss"></span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+        
+                            <!-- ===== FULL LEADERBOARD ===== -->
+                            <div class="bm-lb-bg table-responsive" v-if="hasLeaderboards">
+                                <table class="bm-lb-table table-responsive">
+                                    <thead class="leaderboard-thead">
+                                        <tr>
+                                            <th class="leaderboard-table__heading table-header-rank"> Rank</th> 
+                                            <th class="leaderboard-table__heading table-header-grade"></th> 
+                                            <th class="leaderboard-table__heading table-header-flag"></th> 
+                                            <th class="leaderboard-table__heading table-header-player">Player</th> 
+                                            <th class="leaderboard-table__heading table-header-pp">PP</th> 
+                                            <th class="leaderboard-table__heading table-header-score">Score</th> 
+                                            <th class="leaderboard-table__heading table-header-acc">Accuracy</th> 
+                                            <th class="leaderboard-table__heading table-header-combo">Combo</th>
+                                            <th class="leaderboard-table__heading table-header-hitstat">300</th>
+                                            <th class="leaderboard-table__heading table-header-hitstat">100</th> 
+                                            <th class="leaderboard-table__heading table-header-hitstat">50</th> 
+                                            <th class="leaderboard-table__heading table-header-miss">Miss</th> 
+                                            <th class="leaderboard-table__heading table-header-mods">Mods</th> 
+                                            <th class="leaderboard-table__heading table-header-date">Date</th> 
+                                            <th class="leaderboard-table__heading table-header-report"></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody style="display: table-row-group;">
+                                        <tr
+                                            v-for="(score, index) in leaderboards"
+                                            :key="score.id"
+                                            class="leaderboard-row"
+                                            :class="index % 2 === 0 ? 'row2p' : 'row1p'"
+                                        >
+                                            <td class="leaderboard-table__column leaderboard-column__rank"><a @click="scoreBus.$emit('show-score-window', score.id)" v-text="'#' + (index + 1)"></a></td>
+                                            <td class="leaderboard-table__column leaderboard-column__grade" :class="'rank-' + score.grade" v-text="score.grade"></td>
+                                            <td class="leaderboard-table__column leaderboard-column__flag">
+                                                <img
+                                                    :src="'/static/images/flags/' + score.player_country.toUpperCase() + '.png'"
+                                                >
+                                            </td>
+                                            <td class="leaderboard-table__column leaderboard-column__player">
+                                                <span v-if="score.clan_id != null"
+                                                      v-text="'[' + score.clan_tag + ']'"></span>
+                                                <a :href="'/u/' + score.userid"
+                                                   v-text="score.player_name"></a>
+                                            </td>
+                                            <td class="leaderboard-table__column leaderboard-column__pp tooltip-container">
+                                                <span v-text="Math.round(score.pp)"></span>
+                                                <div class="tooltip-content">
+                                                    <span v-text="score.pp.toFixed(2) + 'pp'"></span>
+                                                </div>
+                                            </td>
+                                            <td class="leaderboard-table__column leaderboard-column__score" v-text="score.score"></td>
+                                            <td class="leaderboard-table__column leaderboard-column__accuracy" v-text="score.acc.toFixed(2) + '%'"></td>
+                                            <td class="leaderboard-table__column leaderboard-column__combo" v-text="score.max_combo + 'x'"></td>
+                                            <td class="leaderboard-table__column leaderboard-column__hitstat" v-text="score.n300 + score.ngeki"></td>
+                                            <td class="leaderboard-table__column leaderboard-column__hitstat" v-text="score.n100 + score.nkatu"></td>
+                                            <td class="leaderboard-table__column leaderboard-column__hitstat" v-text="score.n50"></td>
+                                            <td class="leaderboard-table__column leaderboard-column__miss zero" v-text="score.nmiss"></td>
+                                            <td class="leaderboard-table__column leaderboard-column__mods" v-text="score.mods_readable"></td>
+                                            <td class="leaderboard-table__column leaderboard-column__date tooltip-container">
+                                                <span v-text="formatTimeAgo(score.play_time)"></span>
+                                                <div class="tooltip-content">
+                                                    <span v-text="formatDate(score.play_time)"></span>
+                                                </div>
+                                            </td>
+                                            <td class="leaderboard-table__column leaderboard-column__report"><i class="fa-solid fa-triangle-exclamation"></i></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- ================= LOADING/ERROR STATE ================= -->
+                    <div class="content" v-else>
+                        <div style="text-align: center; padding: 40px;">
+                            <span v-if="beatmaps.length === 0">Loading beatmap data...</span>
+                            <span v-else>No beatmap data available</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </script>
+    
+    <script type="text/x-template" id="score-panel-template">
+        <div id="score-panel-modal" class="modal" :class="{ 'is-active': show }" style="z-index: 26;">
+            <div class="modal-background" @click="close"></div>
+    
+            <!-- Loading State -->
+            <div v-if="fetchState === 'loading'" class="modal-content loading-state" style="max-width: 500px; margin: 100px auto; background: hsl(var(--main), 20%, 15%); padding: 20px; border-radius: 8px; text-align: center; animation: fadeIn 0.3s ease-out;">
+                <div style="color: #4a9eff; font-size: 18px; margin-bottom: 10px; animation: pulse 1.5s ease-in-out infinite;">
+                    <i class="fas fa-spinner fa-spin"></i> Loading Score...
+                </div>
+                <div style="color: #888; font-size: 12px;">
+                    Score ID: <span v-text="scoreId"></span>
+                </div>
+            </div>
+    
+            <!-- Error Display -->
+            <div v-if="fetchState === 'error'" class="modal-content error-state" style="max-width: 500px; margin: 100px auto; background: #2c2c2c; padding: 20px; border-radius: 8px; animation: slideIn 0.3s ease-out;">
+                <div style="color: #ff6b6b; font-size: 18px; margin-bottom: 10px; animation: shake 0.5s ease-out;">
+                    <i class="fas fa-exclamation-triangle"></i> Error Loading Score
+                </div>
+                <div style="color: #ccc; margin-bottom: 15px;">
+                    <span v-text="fetchError || 'An unknown error occurred'"></span>
+                </div>
+                <div style="color: #888; font-size: 12px; margin-bottom: 15px;">
+                    Score ID: <span v-text="scoreId"></span>
+                </div>
+                <button @click="close" style="background: #4a4a4a; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; transition: background 0.2s;" onmouseover="this.style.background='#5a5a5a'" onmouseout="this.style.background='#4a4a4a'">
+                    Close
+                </button>
+            </div>
+    
+            <!-- Main Content - Only show when data is ready -->
+            <div v-if="fetchState === 'success'" id="score-panel" data-panel="Score" class="modal-content" style="animation: scaleIn 0.3s ease-out;">
+                <!-- ================= MAIN BANNER ================= -->
+                <div class="main-block">
+                    <div class="main-banner" :style="{'--banner-bg': safeBeatmap && safeBeatmap.set_id ? `url(https://assets.ppy.sh/beatmaps/` + safeBeatmap.set_id + `/covers/cover@2x.jpg)` : 'none'}">
+                        <!-- ===== SONG INFO ===== -->
+                        <div id="SongInfo">
+                            <div id="score-banner-map" class="map-info">
+                                <span class="map-title" v-text="getBeatmapProperty('title', 'Unknown Beatmap')"></span>
+    
+                                <div class="map-artist-creator">
+                                    <span v-text="getBeatmapProperty('artist', 'Unknown Artist')"></span>
+                                    <span> || </span>
+                                    <a
+                                        v-if="safeBeatmap && safeBeatmap.creator"
+                                        :href="'https://osu.ppy.sh/u/' + safeBeatmap.creator"
+                                        v-text="safeBeatmap.creator"
+                                    ></a>
+                                    <span v-else>Unknown Creator</span>
+                                </div>
+                            </div>
+                            <div id="score-banner-score-info" class="score-info">
+                                <div class="grade-info">
+                                    <div class="grade-tower">
+                                        <div class="grade-tower-layer" :class="{ passed: isGradePassed('SS') }">
+                                            <div class="grade-icon grade-ss"></div>
+                                        </div>
+                                        <div class="grade-tower-layer" :class="{ passed: isGradePassed('S') }">
+                                            <div class="grade-icon grade-s"></div>
+                                        </div>
+                                        <div class="grade-tower-layer" :class="{ passed: isGradePassed('A') }">
+                                            <div class="grade-icon grade-a"></div>
+                                        </div>
+                                        <div class="grade-tower-layer" :class="{ passed: isGradePassed('B') }">
+                                            <div class="grade-icon grade-b"></div>
+                                        </div>
+                                        <div class="grade-tower-layer" :class="{ passed: isGradePassed('C') }">
+                                            <div class="grade-icon grade-c"></div>
+                                        </div>
+                                        <div class="grade-tower-layer" :class="{ passed: isGradePassed('D') }">
+                                            <div class="grade-icon grade-d"></div>
+                                        </div>
+                                    </div>
+                                    <!-- TEMP: Grade Dial (future implementation): Commented out for now. -->
+                                    <!--<div class="grade-dial">
+                                        <div class="grade-dial-layer"></div>
+                                        <div class="grade-dial-layer-grade">
+                                            <span v-text="safeScore ? safeScore.grade : '-'"></span>
+                                        </div>
+                                    </div>-->
+                                </div>
+                                <div class="score-details">
+                                    <div class="score-value" v-text="safeScore ? addCommas(safeScore.score) : '0'"></div>
+                                    <div class="player-info">
+                                        <div class="info-key">
+                                            <span>Played by:</span>
+                                            <span>Submitted on:</span>
+                                        </div>
+                                        <div class="info-value">
+                                            <a
+                                                v-if="safePlayer && safeScore"
+                                                :href="'/u/' + safeScore.userid"
+                                                v-text="getPlayerProperty('name', 'Unknown Player')"
+                                            ></a>
+                                            <span v-else-if="safeScore">Loading...</span>
+                                            <span v-else>Unknown Player</span>
+                                            <br>
+                                            <span v-text="safeScore ? formatDate(safeScore.play_time) : '-'"></span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="score-buttons">
+                                    <button class="button score-button is-primary" @click="DownloadReplay(safeScore.id)" :disabled="!safeScore">
+                                        Download Replay
+                                    </button>
+                                    <button class="button score-button" @click="" :disabled="!safeScore">
+                                        View Beatmap Page
+                                    </button>
+                                    <button class="button score-button not-ready" @click="" :disabled="!safeScore" tooltip="You can use this to watch a replay of this score in your browser!">
+                                        Open Beatmap in JoSu!
+                                    </button>
+                                    <button class="button score-button" @click="shareScore()" :disabled="!safeScore">
+                                        Share Score
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+    
+                <!-- ================= SECOND BLOCK ================= -->
+                <div class="second-block">
+                    <div class="content">
+                        <div class="selector">
+                            <a
+                                class="tab-item"
+                                :class="{ 'is-active': activeTab === 'Score' }"
+                                @click="activeTab = 'Score'"
+                            >
+                                Score
+                            </a>
+                            <a
+                                v-if="hasCheats"
+                                class="tab-item"
+                                :class="{ 'is-active': activeTab === 'Cheats' }"
+                                @click="activeTab = 'Cheats'"
+                            >
+                                Cheats
+                            </a>
+                            <a
+                                class="tab-item not-ready"
+                                :class="{ 'is-active': activeTab === 'Comments' }"
+                                @click="activeTab = 'Comments'"
+                            >
+                                Comments
+                            </a>
+                        </div>
+                        <div class="tab-content" :class="{ 'active': activeTab === 'Score' }">
+                            <div class="score-overview">
+                                <div class="score-player">
+                                    <div v-if="!safePlayer" class="player-loading" style="padding: 20px; text-align: center; color: #888; animation: fadeIn 0.3s ease-out;">
+                                        Loading player info...
+                                    </div>
+                                    <user-profile v-show="safePlayer" :user="safePlayer" displayStyle="card" showCountry="true" style="width: 100%; animation: fadeIn 0.3s ease-out 0.1s both;"></user-profile>
+                                </div>
+                                <div class="score-stats">
+                                    <div class="stat-block">
+                                        <div class="stat-bubble">
+                                            <div class="stat-title">Accuracy</div>
+                                            <span v-text="safeScore ? safeScore.acc.toFixed(2) + '%' : '-'"></span>
+                                        </div>
+                                        <div class="stat-bubble">
+                                            <div class="stat-title">Combo</div>
+                                            <span v-text="safeScore ? safeScore.max_combo + 'x' : '-'"></span>
+                                        </div>
+                                        <div class="stat-bubble">
+                                            <div class="stat-title">PP</div>
+                                            <span v-text="safeScore ? safeScore.pp.toFixed(2) : '-'"></span>
+                                        </div>
+                                        <div v-if="safeScore && safeScore.mods !== 0" class="stat-bubble">
+                                            <div class="stat-title">Mods</div>
+                                            <span v-text="safeScore.mods_readable"></span>
+                                        </div>
+                                    </div>
+                                    <div class="stat-block">
+                                        <div class="stat-bubble">
+                                            <div class="stat-title lowercase">300s</div>
+                                            <span v-text="safeScore ? safeScore.n300 + safeScore.ngeki : '-'"></span>
+                                        </div>
+                                        <div class="stat-bubble">
+                                            <div class="stat-title lowercase">100s</div>
+                                            <span v-text="safeScore ? safeScore.n100 + safeScore.nkatu : '-'"></span>
+                                        </div>
+                                        <div class="stat-bubble">
+                                            <div class="stat-title lowercase">50s</div>
+                                            <span v-text="safeScore ? safeScore.n50 : '-'"></span>
+                                        </div>
+                                        <div class="stat-bubble">
+                                            <div class="stat-title">Misses</div>
+                                            <span v-text="safeScore ? safeScore.nmiss : '-'"></span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div v-if="hasCheats" class="tab-content" :class="{ 'active': activeTab === 'Cheats' }">
+                            <div class="cheats-container">
+                                <div class="cheats-header">
+                                    <i class="fas fa-shield-alt"></i>
+                                    <span>Cheat Values</span>
+                                </div>
+                                <div class="cheats-categories">
+                                    <div v-for="category in getCheatValuesByCategory()" :key="category.name" class="cheat-category">
+                                        <div class="category-header">
+                                            <i class="fas fa-chevron-right"></i>
+                                            <span v-text="category.name"></span>
+                                            <span class="category-count" v-text="'(' + category.values.length + ')'"></span>
+                                        </div>
+                                        <div class="category-values">
+                                            <div v-for="item in category.values" :key="item.key" class="cheat-item">
+                                                <span class="cheat-key" v-text="getCheatDisplayName(item.key)"></span>
+                                                <span class="cheat-value" v-text="item.value"></span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="tab-content" :class="{ 'active': activeTab === 'Comments' }">
+                            <div class="not-ready-message">
+                                <i class="fas fa-construction"></i>
+                                <span>Comments are not yet available.</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </script>

@@ -66,6 +66,7 @@ tr td {
     color: #e7c500 !important;
   }
 .column-player-name {
+  display: block ruby;
   padding: 10px 10px;
   font-weight: 600;
   text-align: left;

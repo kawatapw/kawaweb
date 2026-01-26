@@ -1,63 +1,200 @@
-new Vue({
+bootstrapVue('admin-users-panel', {
     el: "#users",
     delimiters: ["<%", "%>"],
     data() {
         return {
             flags: window.flags,
-            users: {},
-            page: 1,
-            userquery: '', // changed from 'search' to 'userquery'
+            users: JSON.parse(users || '[]'), // Initialize with server data
+            page: parseInt(page) || 1,
+            totalPages: parseInt(totalPages) || 1,
+            totalCount: parseInt(totalCount) || 0,
+            userquery: userquery || '', // Initialize with server search
+            sortBy: sortBy || 'id',
+            sortOrder: sortOrder || 'ASC',
+            filterPriv: filterPriv && filterPriv !== 'None' ? filterPriv : '',
+            filterCountry: filterCountry || '',
             load: false,
             playersLoading: false,
             searchTimeout: null,
         }
     },
     created() {
-        this.$log.debug('Users.js User Page Created');
-        this.handleUserInput(userquery);
+        if(!this.$log) {
+            this.$log = ColorfulLogger.child('Admin | Users Page');
+        }
     },
     methods: {
         handleUserInput() {
             clearTimeout(this.searchTimeout);
-            if (this.userquery.length > 0)
-                this.searchTimeout = setTimeout(() => {
-                    const queryUsers = this.userquery;
-                    const url = `/admin/users/${this.page}?update=true&search=${queryUsers}`;
-                    fetch(url)
-                        .then(response => response.json())
-                        .then(data => {
-                            this.users = data;
-                            this.$log.debug('users:', this.users);
-                        })
-                        .catch(error => {
-                            this.$log.error('Error:', error);
-                        });
-                }, 500);
-            else {
-                const queryUsers = this.userquery;
-                const url = `/admin/users/${this.page}?update=true&search=${queryUsers}`;
-                fetch(url)
-                    .then(response => response.json())
-                    .then(data => {
+            this.searchTimeout = setTimeout(() => {
+                this.page = 1; // Reset to first page when searching
+                this.loadUsers();
+            }, 500);
+        },
+        loadUsers() {
+            this.playersLoading = true;
+            const params = new URLSearchParams({
+                update: 'true',
+                search: this.userquery,
+                sort: this.sortBy,
+                order: this.sortOrder,
+                priv: this.filterPriv,
+                country: this.filterCountry
+            });
+
+            const url = `/admin/users/${this.page}?${params.toString()}`;
+
+            // Debug logs - using global kawataLogger with sections
+            this.$log.debug('LIFECYCLE', 'Users.js User Page Created');
+            this.$log.debug('DATA', 'Initial users:', this.users);
+            this.$log.debug('DATA', 'Page:', this.page, 'Total Pages:', this.totalPages);
+
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.users) {
+                        this.users = data.users;
+                        this.totalPages = data.pagination.total_pages;
+                        this.totalCount = data.pagination.total_count;
+                    } else {
+                        // Fallback for old response format
                         this.users = data;
-                        this.$log.debug('users:', this.users);
-                    })
-                    .catch(error => {
-                        this.$log.error('Error:', error);
-                    });
-                
+                    }
+                    this.$log.debug('DATA', 'Loaded users:', this.users);
+                    this.playersLoading = false;
+                })
+                .catch(error => {
+                    this.$log.error('API', 'Error loading users:', error);
+                    this.playersLoading = false;
+                });
+        },
+        goToPage(newPage) {
+            if (newPage >= 1 && newPage <= this.totalPages && newPage !== this.page) {
+                this.page = newPage;
+                this.loadUsers();
+                // Update URL without page reload
+                const url = new URL(window.location);
+                url.pathname = `/admin/users/${newPage}`;
+                window.history.pushState({}, '', url);
             }
+        },
+        sortUsers(column) {
+            if (this.sortBy === column) {
+                this.sortOrder = this.sortOrder === 'ASC' ? 'DESC' : 'ASC';
+            } else {
+                this.sortBy = column;
+                this.sortOrder = 'ASC';
+            }
+            this.page = 1; // Reset to first page when sorting
+            this.loadUsers();
+        },
+        filterByPrivilege(priv) {
+            this.filterPriv = this.filterPriv === priv ? '' : priv;
+            this.page = 1;
+            this.loadUsers();
+        },
+        toggleSortOrder() {
+            this.sortOrder = this.sortOrder === 'ASC' ? 'DESC' : 'ASC';
+            this.page = 1;
+            this.loadUsers();
+        },
+        clearSearch() {
+            this.userquery = '';
+            this.page = 1;
+            this.loadUsers();
+        },
+        clearPrivilegeFilter() {
+            this.filterPriv = '';
+            this.page = 1;
+            this.loadUsers();
+        },
+        resetSort() {
+            this.sortBy = 'id';
+            this.sortOrder = 'ASC';
+            this.page = 1;
+            this.loadUsers();
+        },
+        clearFilters() {
+            this.userquery = '';
+            this.filterPriv = '';
+            this.filterCountry = '';
+            this.sortBy = 'id';
+            this.sortOrder = 'ASC';
+            this.page = 1;
+            this.loadUsers();
+        },
+        refreshUsers() {
+            this.loadUsers();
+        },
+        getPrivilegeLabel(priv) {
+            const labels = {
+                '': 'All Users',
+                'normal': 'Normal Users',
+                'supporter': 'Supporters',
+                'mod': 'Moderators',
+                'admin': 'Administrators',
+                'restricted': 'Restricted'
+            };
+            return labels[priv] || priv || 'All Users';
+        },
+        getSortLabel() {
+            const sortLabels = {
+                'id': 'ID',
+                'name': 'Username',
+                'creation_time': 'Join Date',
+                'latest_activity': 'Last Active'
+            };
+            return `${sortLabels[this.sortBy] || this.sortBy} (${this.sortOrder})`;
+        },
+        getPrivilegeIcon(priv) {
+            const icons = {
+                '': 'fa-users',
+                'normal': 'fa-user',
+                'supporter': 'fa-heart',
+                'mod': 'fa-shield-alt',
+                'admin': 'fa-crown',
+                'restricted': 'fa-ban'
+            };
+            return icons[priv] || 'fa-users';
+        },
+        getPrivilegeIconStyle(priv) {
+            const colors = {
+                '': '#6c7b7f',
+                'normal': '#8fa8b2',
+                'supporter': '#ff6b9d',
+                'mod': '#48acff',
+                'admin': '#ffd700',
+                'restricted': '#ff4757'
+            };
+            return { color: colors[priv] || '#6c7b7f' };
         },
         editUser(userid) {
             editUserBus.$emit('showEditUserPanel', userid);
-            this.$log.debug('Edit User Window Trigger Emitted');
+            this.$log.debug('EVENT', 'Edit User Window Trigger Emitted');
         },
     },
     computed: {
+        paginationRange() {
+            const range = [];
+            const start = Math.max(1, this.page - 2);
+            const end = Math.min(this.totalPages, this.page + 2);
+
+            for (let i = start; i <= end; i++) {
+                range.push(i);
+            }
+            return range;
+        },
+        hasActiveFilters() {
+            return this.userquery ||
+                   this.filterPriv ||
+                   this.filterCountry ||
+                   this.sortBy !== 'id' ||
+                   this.sortOrder !== 'ASC';
+        }
     }
 });
 var editUserBus = new Vue();
-new Vue({
+bootstrapVue('edit-user-panel',{
     el: "#editUserWindow",
     delimiters: ["<%", "%>"],
     data() {
@@ -75,16 +212,29 @@ new Vue({
             subdropdown: null,
         }
     },
+    created: function() {
+        if (!this.$log) {
+            this.$log = ColorfulLogger.child('Admin | Edit User Panel');
+        }
+        editUserBus.$on('showEditUserPanel', (userid) => {
+            this.$log.debug('EVENT', 'Edit User Window Triggered')
+            this.userid = userid;
+            this.subdropdown = null;
+            this.fetchSelectedUser(userid);
+            this.getAllBadges();
+            this.show = true;
+        });
+    },
     methods: {
         close: function() {
             this.show = false;
         },
         LoadUserEditor(module) {
-            this.$log.debug(`Loading ${module} editor...`); // placeholder print statement
+            this.$log.debug('UI', `Loading ${module} editor...`); // placeholder print statement
             this.module = module;
         },
         showdropdown(subdropdown) {
-            this.$log.debug(`Showing ${subdropdown} dropdown...`); // placeholder print statement
+            this.$log.debug('UI', `Showing ${subdropdown} dropdown...`); // placeholder print statement
             this.subdropdown = subdropdown;
         },
         fetchSelectedUser(userid) {
@@ -95,10 +245,10 @@ new Vue({
                 .then(data => {
                     this.user = null;
                     this.user = data;
-                    this.$log.debug('User:', this.user);
+                    this.$log.debug('DATA', 'User:', this.user);
                 })
                 .catch(error => {
-                    this.$log.error('Error:', error);
+                    this.$log.error('API', 'Error:', error);
                 });
         },
         async postAction(url, formData) {
@@ -136,427 +286,54 @@ new Vue({
                 .then(response => response.json())
                 .then(data => {
                     this.badges = data;
-                    this.$log.debug('Badges:', this.badges);
+                    this.$log.debug('DATA', 'Badges:', this.badges);
                 })
                 .catch(error => {
-                    this.$log.error('Error:', error);
+                    this.$log.error('API', 'Error:', error);
                 });
             return this.badges;
         },
         toggleBadgeSelection(badgeid) {
-            this.$log.debug(`Toggling badge ${badgeid}...`);
-            this.$log.debug('User badges before toggling:', this.user.badges);
+            this.$log.debug('LOGIC', `Toggling badge ${badgeid}...`);
+            this.$log.debug('DATA', 'User badges before toggling:', this.user.badges);
             if (this.user.badges.find(b => b.id === badgeid)) {
                 this.user.badges.splice(this.user.badges.indexOf(badgeid), 1);
                 this.postAction('/admin/action/removebadge', { user: this.user.id, badge: badgeid })
                     .then(status => {
                         if (status === 200) {
-                            this.$log.debug('Badge removed:', badgeid);
+                            this.$log.debug('LOGIC', 'Badge removed:', badgeid);
                             this.$refs[badgeid][0].classList.toggle('selected');
                             this.fetchSelectedUser(this.user.id);
                         } else {
-                            this.$log.error('Failed to remove badge:', badgeid);
+                            this.$log.error('LOGIC', 'Failed to remove badge:', badgeid);
                         }
                     })
                     .catch(error => {
-                        this.$log.error('Error:', error);
+                        this.$log.error('API', 'Error:', error);
                     });
             } else {
                 this.user.badges.push(badgeid);
                 this.postAction('/admin/action/addbadge', { user: this.user.id, badge: badgeid })
                     .then(status => {
                         if (status === 200) {
-                            this.$log.debug('Badge added:', badgeid);
+                            this.$log.debug('LOGIC', 'Badge added:', badgeid);
                             this.$refs[badgeid][0].classList.toggle('selected');
                             this.fetchSelectedUser(this.user.id);
                         } else {
-                            this.$log.error('Failed to add badge:', badgeid);
+                            this.$log.error('LOGIC', 'Failed to add badge:', badgeid);
                         }
                     })
                     .catch(error => {
-                        this.$log.error('Error:', error);
+                        this.$log.error('API', 'Error:', error);
                     });
             }
             
-            this.$log.debug('User badges after toggling:', this.user.badges);
+            this.$log.debug('DATA', 'User badges after toggling:', this.user.badges);
         }
-    },
-    created: function() {
-        editUserBus.$on('showEditUserPanel', (userid) => {
-            this.$log.debug('Edit User Window Triggered')
-            this.userid = userid;
-            this.subdropdown = null;
-            this.fetchSelectedUser(userid);
-            this.getAllBadges();
-            this.show = true;
-        });
     },
     computed: {
     },
-    template: `
-    <div id="editUserWindow" class="modal" v-bind:class="{ 'is-active': show }">
-        <div class="modal-background" @click="close"></div>
-        <div id="editUserWindow" class="modal-content" v-if="show">
-            <div id="editUser" class="box">
-                <div id="editUser" class="user-banner" >
-                    <div id="editUserBanner" class="user-banner-background" :style="'background-image: url(/banners/' + userid + ')'" alt="User Banner">
-                        <div class="info-block">
-                            <h1 class="title">
-                                <p class="ranks">
-                                    <img :src="'/static/images/flags/' + user.country.toUpperCase() + '.png'" class="user-flag">
-                                    <span class="bgf"><% user.name %></span>
-                                </p>
-                            </h1>
-                        </div>
-                    </div>
-                    <div class="user-flex">
-                        <div class="user-avatar-area">
-                            <img :src="'https://a.' + domain + '/' + userid" alt="avatar" class="rounded-avatar user-avatar"
-                                onError="this.src='/static/images/avatar_notwork.png';">
-                        </div>
-                        <div class="bar-selection mode-selects">
-                            <div id="editUser" class="select-left">
-                                <a class="simple-banner-switch" v-bind:class="{ 'active': module === 'Account' }"
-                                @click="LoadUserEditor('Account', module)">
-                                    <i class="fas fa-user"></i><span class="modetext"> Account </span>
-                                </a>
-                                <a class="simple-banner-switch" v-bind:class="{ 'active': module === 'Badges' }"
-                                @click="LoadUserEditor('Badges', module)">
-                                    <i class="fas fa-shield"></i><span class="modetext"> Badges </span>
-                                </a>
-                                <a class="simple-banner-switch" v-bind:class="{ 'active': module === 'Privileges' }"
-                                @click="LoadUserEditor('Privileges', module)">
-                                    <i class="fas fa-lock"></i><span class="modetext"> Privileges </span>
-                                </a>
-                                <a class="simple-banner-switch" v-bind:class="{ 'active': module === 'Logs' }"
-                                @click="LoadUserEditor('Logs', module)">
-                                    <i class="fas fa-book"></i><span class="modetext"> Logs </span>
-                                </a>
-                            </div>
-                        </div>
-                        <div class="bar-selection badge-selects">
-                            <div v-if="user.badges.length != 0" class="select-left badge-block">
-                                <badge v-for="badge in user.badges" :badge="badge"></badge>
-                            </div>
-                            <div v-else class="select-left">
-                                <div class="badge-block">
-                                    <span>
-                                        This user has no badges.
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div id="editUser" class="main-block">
-                    <div class="alert" v-if="postresponse" :style="'background-color: var(--alert-' + postresponsestatus + ');'">
-                        <div class="alert-content">
-                            <p><% postresponse.message %></p>
-                        </div>
-                    </div>
-                    <div class="content" v-if="module === 'Account'">
-                        <div class="column">
-                            <span class="title is-4 is-centered">Quick Actions</span>
-                            <div id="quickActions" class="level is-centered">
-                                <div class="level-item">
-                                    <div class="dropdown is-hoverable">
-                                        <div class="dropdown-trigger">
-                                            <button class="button is-danger" aria-haspopup="true" aria-controls="wipe-dropdown-menu">
-                                                Wipe
-                                            </button>
-                                        </div>
-                                        <div class="dropdown-menu" id="wipe-dropdown-menu" role="menu">
-                                            <div class="dropdown-content">
-                                                <a class="dropdown-item" @click="postAction('/admin/action/wipe', { user: user.id, reason: 'Auto mod' })">
-                                                    Auto mod
-                                                </a>
-                                                <a class="dropdown-item" @click="postAction('/admin/action/wipe', { user: user.id, reason: 'FL abuse' })">
-                                                    FL abuse
-                                                </a>
-                                                <a class="dropdown-item" @click="postAction('/admin/action/wipe', { user: user.id, reason: 'Requested Wipe' })">
-                                                    Requested Wipe
-                                                </a>
-                                                <a class="dropdown-item" @click="postAction('/admin/action/wipe', { user: user.id, reason: 'Overcheating' })">
-                                                    Overcheating
-                                                </a>
-                                                <div class="dropdown-divider"></div>
-                                                <a class="dropdown-item" @click="showdropdown('customwipe', subdropdown)">
-                                                    Custom Reason
-                                                </a>
-                                                <span v-if="subdropdown === 'customwipe'">
-                                                    <div class="field">
-                                                        <label class="label">Custom Wipe Reason</label>
-                                                        <div class="control userspanel">
-                                                            <input class="input" type="reason" id="wipe-reason-input">
-                                                        </div>
-                                                    </div>
-                                                    <div class="field">
-                                                        <div class="control userspanel">
-                                                            <button class="button is-success" @click="postAction('/admin/action/wipe', { user: user.id, reason: document.getElementById('wipe-reason-input').value })">
-                                                                Wipe
-                                                            </button>
-                                                        </div>
-                                                    </div>
-                                                </span>
-                                                <div class="dropdown-divider"></div>
-                                                <a class="dropdown-item" @click="showdropdown('removescore', subdropdown)">
-                                                    Score Removal
-                                                </a>
-                                                <span v-if="subdropdown === 'removescore'">
-                                                    <div class="field">
-                                                        <label class="label">Score Removal Reason</label>
-                                                        <div class="control userspanel">
-                                                            <input class="input" type="reason" id="wipescore-reason-input">
-                                                        </div>
-                                                    </div>
-                                                    <div class="field">
-                                                        <label class="label">Score ID</label>
-                                                        <div class="control userspanel">
-                                                            <input class="input" type="id" id="wipescore-id-input">
-                                                        </div>
-                                                    </div>
-                                                    <div class="field">
-                                                        <div class="control userspanel">
-                                                            <button class="button is-success" @click="postAction('/admin/action/removescore', { user: user.id, reason: document.getElementById('wipescore-reason-input').value, score: document.getElementById('wipescore-id-input').value })">
-                                                                Remove Score
-                                                            </button>
-                                                        </div>
-                                                    </div>
-                                                </span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="level-item">
-                                    <div class="dropdown is-hoverable">
-                                        <div class="dropdown-trigger">
-                                            <button class="button is-warning" aria-haspopup="true" aria-controls="silence-dropdown-menu">
-                                                Restrict
-                                            </button>
-                                        </div>
-                                        <div class="dropdown-menu" id="wipe-dropdown-menu" role="menu">
-                                            <div class="dropdown-content">
-                                                <a class="dropdown-item" @click="postAction('/admin/action/restrict', { user: user.id, reason: 'Repeated Offenses' })">
-                                                    Repeated Offenses
-                                                </a>
-                                                <a class="dropdown-item" @click="postAction('/admin/action/restrict', { user: user.id, reason: '3rd Wipe' })">
-                                                    3rd Wipe
-                                                </a>
-                                                <div class="dropdown-divider"></div>
-                                                <a class="dropdown-item" @click="showdropdown('customrestrict', subdropdown)">
-                                                    Custom Reason
-                                                </a>
-                                                <span v-if="subdropdown === 'customrestrict'">
-                                                    <div class="field">
-                                                        <label class="label">Custom Restrict Reason</label>
-                                                        <div class="control userspanel">
-                                                            <input class="input" type="reason" id="restrict-reason-input">
-                                                        </div>
-                                                    </div>
-                                                    <div class="field">
-                                                        <div class="control userspanel">
-                                                            <button class="button is-success" @click="postAction('/admin/action/restrict', { user: user.id, reason: document.getElementById('restrict-reason-input').value })">
-                                                                Restrict
-                                                            </button>
-                                                        </div>
-                                                    </div>
-                                                </span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="level-item">
-                                    <button class="button is-success" @click="postAction('/admin/action/unrestrict', { user: user.id })">Unrestrict</button>
-                                </div>
-                                <div class="level-item">
-                                    <div class="dropdown is-hoverable">
-                                        <div class="dropdown-trigger">
-                                            <button class="button is-info" aria-haspopup="true" aria-controls="silence-dropdown-menu">
-                                                Silence
-                                            </button>
-                                        </div>
-                                        <div class="dropdown-menu" id="wipe-dropdown-menu" role="menu">
-                                            <div class="dropdown-content">
-                                                <a class="dropdown-item" @click="postAction('/admin/action/silence', { user: user.id, duration: '2', reason: 'Spam' })">
-                                                    Spam
-                                                </a>
-                                                <a class="dropdown-item" @click="postAction('/admin/action/silence', { user: user.id, duration: '6', reason: 'Consistent usage of inappropriate language' })">
-                                                    Consistent usage of inappropriate language
-                                                </a>
-                                                <div class="dropdown-divider"></div>
-                                                <a class="dropdown-item" @click="showdropdown('customsilence', subdropdown)">
-                                                    Custom Reason
-                                                </a>
-                                                <span v-if="subdropdown === 'customsilence'">
-                                                    <div class="field">
-                                                        <label class="label">Custom Silence Reason</label>
-                                                        <div class="control userspanel">
-                                                            <input class="input" type="reason" id="silence-reason-input">
-                                                        </div>
-                                                    </div>
-                                                    <div class="field">
-                                                        <label class="label">Silence Duration (in hours)</label>
-                                                        <div class="control userspanel">
-                                                            <input class="input" type="number" id="silence-duration-input">
-                                                        </div>
-                                                    </div>
-                                                    <div class="field">
-                                                        <div class="control userspanel">
-                                                            <button class="button is-success" @click="postAction('/admin/action/silence', { user: user.id, duration: document.getElementById('silence-duration-input').value, reason: document.getElementById('silence-reason-input').value })">
-                                                                Silence
-                                                            </button>
-                                                        </div>
-                                                    </div>
-                                                </span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="level-item">
-                                    <button class="button is-primary" @click="postAction('/admin/action/unsilence', { user: user.id })">Unsilence</button>
-                                </div>
-                                <div class="level-item">
-                                    <div class="dropdown is-hoverable">
-                                        <div class="dropdown-trigger">
-                                            <button class="button is-primary" aria-haspopup="true" aria-controls="change-password-dropdown-menu">
-                                                Change Password
-                                            </button>
-                                        </div>
-                                        <div class="dropdown-menu" id="change-password-dropdown-menu" role="menu">
-                                            <div class="dropdown-content">
-                                                <div class="field">
-                                                    <label class="label">New Password</label>
-                                                    <div class="control userspanel">
-                                                        <input class="input" type="password" id="new-password-input">
-                                                    </div>
-                                                </div>
-                                                <div class="field">
-                                                    <div class="control userspanel">
-                                                        <button class="button is-success" @click="postAction('/admin/action/changepassword', { user: user.id, password: document.getElementById('new-password-input').value })">
-                                                            Save
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <form @submit.prevent="postAction('/admin/action/editaccount', {
-                            user: user.id,
-                            username: user.name,
-                            email: user.email,
-                            country: user.country,
-                            userpage_content: user.userpage_content
-                        })">
-                            <div class="field">
-                                <label class="label">User ID</label>
-                                <div class="control userspanel">
-                                    <input class="input" type="text" :value="user.id" readonly>
-                                </div>
-                            </div>
-                            <div class="field">
-                                <label class="label">Username</label>
-                                <div class="control userspanel">
-                                    <input class="input" type="text" name="username" v-model="user.name">
-                                </div>
-                            </div>
-                            <div class="field">
-                                <label class="label">Email</label>
-                                <div class="control userspanel">
-                                    <input class="input" type="email" name="email" v-model="user.email">
-                                </div>
-                            </div>
-                            <div class="field" v-if="user.country">
-                                <label class="label">Country</label>
-                                <div class="control userspanel">
-                                    <div class="select is-fullwidth">
-                                        <country-select v-model="user.country"></country-select>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="field">
-                                <label class="label">User Page Content</label>
-                                <div class="control userspanel">
-                                    <textarea id="userpage_content" class="input" name="userpage_content" v-model="user.userpage_content"></textarea>
-                                </div>
-                            </div>
-                            <div class="field is-grouped">
-                                <div class="control userspanel">
-                                    <button class="button is-primary" type="submit">Save</button>
-                                </div>
-                            </div>
-                        </form>
-                    </div>
-                    <div class="content" v-if="module === 'Badges'">
-                        Note: You must leave and re-enter this page to undo any badge changes. Will be fixed eventually.
-                        <div id="badges" class="columns is-multiline">
-                            <div v-for="(badge, index) in badges" :key="badge.id" class="column is-half">
-                                <div id="badge" class="card" :class="{ 'selected': user.badges.find(b => b.id === badge.id) }" :ref="badge.id" @click="toggleBadgeSelection(badge.id)">
-                                    <div id="badge" class="card-image">
-                                        <i :class="'badge-icon ' + badge.styles.icon" :style="'color: hsl('+ badge.styles.color +', 80%, 80%);'"></i>
-                                    </div>
-                                    <div id="badge" class="card-content">
-                                        <h3 class="title" :style="'color: hsl('+ badge.styles.color +', 80%, 80%);'"><% badge.name %></h3>
-                                        <p><% badge.description %></p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="content" v-if="module === 'Privileges'">
-                        <p>Privileges editor placeholder</p> <!-- placeholder print statement -->
-                    </div>
-                    <div id="logs" class="content" v-if="module === 'Logs'">
-                        <h5 class="title">Admin Logs</h5>
-                        <div id="logs" class="columns is-multiline">
-                            <div v-for="(log, index) in user.logs.admin_logs" :key="log.id" class="column is-half">
-                                <div id="log" class="card">
-                                    <div id="log" class="card-content">
-                                        <div class="Sender">
-                                            <div class="SenderAvatar">
-                                                <img :src="'https://a.' + domain + '/' + log.mod.id" alt="avatar" class="rounded-avatar">
-                                            </div>
-                                            <div class="SenderInfo">
-                                                <h3 class="from">Action taken by:</h3>
-                                                <h4>
-                                                    <img :src="'/static/images/flags/' + log.mod.country.toUpperCase() + '.png'" class="user-flag">
-                                                    <a :href="'/u/' + log.mod.id"><% log.mod.name %></a>
-                                                </h4>
-                                                <h5>On: <% log.time %></h5>
-                                            </div>
-                                        </div>
-                                        <div class="Action">
-                                            <h3 class="title">Action: <% log.action %></h3>
-                                            <h4>Reason: <% log.reason %></p>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <h5 class="title">Client Hashes</h5>
-                        <div id="hashes" class="columns is-multiline">
-                            <div v-for="(hash, index) in user.logs.hashes" :key="index" class="column is-half">
-                                <div id="hash" class="card">
-                                    <div id="hash" class="card-content">
-                                        <h3 class="title">Client Hashes:</h3>
-                                        <p class="detail">Occurrences: <% hash.occurrences %></p>
-                                        <p class="detail">Last Occurance: <% hash.latest_time %></p>
-                                        <p class="detail">Adapters Hash: <% hash.adapters %></p>
-                                        <p class="detail">Disk Serial: <% hash.disk_serial %></p>
-                                        <p class="detail">OSU Path Hash: <% hash.osupath %></p>
-                                        <p class="detail">Uninstall ID: <% hash.uninstall_id %></p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    `
+    template: `#admin-edit-user-panel-template`
 });
 
 

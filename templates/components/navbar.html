@@ -12,7 +12,7 @@
         </a>
     </div>
 
-    <div id="navbar" class="navbar-menu">
+    <div id="navbar-menu" class="navbar-menu">
         <div class="navbar-start">
             <a class="navbar-item" href="/home">
                 Home
@@ -22,40 +22,9 @@
                 Leaderboards
             </a>
 
-            <!--<div class="navbar-item has-dropdown is-hoverable">
-                <a class="navbar-link">
-                    Information
-                </a>
-                <div class="navbar-dropdown">
-                    <a class="navbar-item" href="/doc/rules">
-                        Rules
-                    </a>
-                    <a class="navbar-item" href="/discord">
-                        Discord
-                    </a>
-                    <hr class="navbar-divider">
-                    <a class="navbar-item" href="https://github.com/varkaria/guweb/issues/new">
-                        Report an issue
-                    </a>
-                </div>
-            </div>-->
-
             <a id="docs" class="navbar-item" @click="showDocsPanel('Rules')">
                 Docs
             </a>
-            <!--<div class="navbar-item has-dropdown is-hoverable">
-                <a id="beatmap" class="navbar-link">
-                    Beatmaps
-                </a>
-                <div class="navbar-dropdown">
-                    <a class="navbar-item disabled" href="/beatmaps">
-                        Beatmaps
-                    </a>
-                    <a class="navbar-item disabled" href="/beatmaprequests">
-                        Beatmap Requests
-                    </a>
-                </div>
-            </div>-->
             {% if session.authenticated and session.user_data['is_dev'] %}
                 <a class="navbar-item" href="/admin/stuffbroke">
                     Stuff Broke
@@ -85,7 +54,7 @@
         </div>
 
         <div class="navbar-end">
-            <div id="search-icon" @click="searchBus.$emit('show-search-window');" @mouseover="startAnimation" @mouseleave="stopAnimation" class="navbar-item search-button" style="
+            <div id="search-icon" @click="showSearchWindow" @mouseover="startAnimation" @mouseleave="stopAnimation" class="navbar-item search-button" style="
                 position: relative;
             ">
                 <div class="navbar-item search-circle" :class="{ 'animate': isAnimating }"></div>
@@ -150,7 +119,4 @@
     </div>
 </nav>
 {% block content %}
-<div id="search-window"></div>
-<div id="docs-panel"></div>
-<div id="beatmap-panel"></div>
 {% endblock %}

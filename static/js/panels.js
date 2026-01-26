@@ -1,1621 +1,2251 @@
-var docsBus = new Vue();
-new Vue({
-    el: '#docs',
-    data: {
-        module: 'Rules', // Module Controls which doc is shown
-        page: 'Main', // Page controls which page of the doc is shown
-    },
-    async created() {
-        const urlParams = new URLSearchParams(window.location.search);
-        const urlPath = window.location.pathname;
-        const pathParts = urlPath.split('/');
-        
-        // Check if the URL path matches the expected format
-        if (pathParts[1] === 'docs') {
-            const doc = pathParts[2];
-            const page = urlParams.get('page');
-            if (page === "Cheats") {
-                page = "Clients";
-            }
+// ================= GLOBAL EVENT BUSES =================
+// Use lightweight event buses instead of full Vue instances
+// This prevents memory leaks from Vue's reactivity system
+class EventBus {
+  constructor() {
+    this.listeners = {};
+  }
+  
+  $on(event, callback) {
+    if (!this.listeners[event]) {
+      this.listeners[event] = [];
+    }
+    this.listeners[event].push(callback);
+  }
+  
+  $off(event, callback) {
+    if (!this.listeners[event]) return;
+    
+    if (callback) {
+      const index = this.listeners[event].indexOf(callback);
+      if (index > -1) {
+        this.listeners[event].splice(index, 1);
+      }
+    } else {
+      this.listeners[event] = [];
+    }
+  }
+  
+  $emit(event, ...args) {
+    if (!this.listeners[event]) return;
+    
+    // Create a copy to avoid issues if listeners are removed during iteration
+    const callbacks = [...this.listeners[event]];
+    callbacks.forEach(callback => {
+      try {
+        callback(...args);
+      } catch (err) {
+        logger.error(`EventBus`,`Error in listener for ${event}:`, err);
+      }
+    });
+  }
+  
+  $destroy() {
+    this.listeners = {};
+  }
+}
 
-                console.log("Showing doc: " + doc + ", page: " + page);
+const searchBus = new EventBus();
+const docsBus = new EventBus();
+const beatmapBus = new EventBus();
+const scoreBus = new EventBus();
 
-                await setTimeout(() => {
-                    if (page) {
-                        this.showDocsPanel(doc, page);
-                    } else {
-                        this.showDocsPanel(doc);
-                    }
-                }, 100); // 1 second delay
-        }
-    },
+// Export cleanup function for use on page unload
+window.cleanupEventBuses = function() {
+  searchBus.$destroy();
+  docsBus.$destroy();
+  beatmapBus.$destroy();
+  scoreBus.$destroy();
+  logger.log('EventBus', 'All event buses cleaned up');
+};
+
+// ================= SEARCH ICON =================
+bootstrapVue('search-icon', {
+    el: '#search-icon',
+    data: { isAnimating: false },
     methods: {
-        showDocsPanel: function(doc, page) {
-            this.doc = doc || 'Rules';
-            this.page = page || 'Main';
-            docsBus.$emit('show-docs-panel', this.doc, this.page);
-        }
-    },
-});
-new Vue({
-    el: '#docs-panel',
-    data: {
-        show: false,
-        module: 'Rules', // Module Controls which doc is shown
-        page: 'Main', // Page controls which page of the doc is shown
-    },
-    created: function() {
-        docsBus.$on('show-docs-panel', (module, page) => { 
-            this.module = module || 'Rules'; 
-            this.page = page || 'Main';
-            this.show = true;
-        });
-    },
-    methods: {
-        close: function() {
-            this.show = false;
-        },
-        LoadDoc(module, page) {
-            console.log(`Loading ${module} doc...`); // placeholder print statement
-            this.module = module;
-            this.page = page || 'Main';
-        },
-    },
-    watch: {
-            
-    },
-    template: `
-        <div id="docs-modal" class="modal" v-bind:class="{ 'is-active': show }">
-            <div class="modal-background" @click="close"></div>
-            <div data-panel="Docs" id="docs-window" class="modal-content" v-if="show">
-                <div class="main-block">
-                    <div class="docs-banner">
-                        <div class="docs-banner img" style="height: fit-content" :style="{
-                            backgroundImage: 'linear-gradient(to bottom, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.5)), url(/static/images/banners/' + module + '.jpg)'
-                        }">
-                        </div>
-                        <h1 class="docs-banner title">Docs</h1>
-                        <div id="docs-selector" class="selector">
-                            <a class="bottom-tab" v-bind:class="{ 'active': module === 'Rules' }"
-                            @click="LoadDoc('Rules')">
-                                <i class="fas fa-user"></i><span class="modetext"> Rules </span>
-                            </a>
-                            <a class="bottom-tab" v-bind:class="{ 'active': module === 'Clients' }"
-                            @click="LoadDoc('Clients', 'Main')">
-                                <i class="fas fa-clients"></i><span class="modetext"> Clients/Cheats </span>
-                            </a>
-                            <a class="bottom-tab" v-bind:class="{ 'active': module === 'Connection' }"
-                            @click="LoadDoc('Connection', 'Main')">
-                                <i class="fas fa-network"></i><span class="modetext"> Connection Guide </span>
-                            </a>
-                            <a class="bottom-tab" v-bind:class="{ 'active': module === 'Verification' }"
-                            @click="LoadDoc('Verification', 'Main')">
-                                <i class="fas fa-network"></i><span class="modetext"> Verification Guide </span>
-                            </a>
-                        </div>
-                    </div>
-                </div>
-                <div class="second-block">
-                    <div id="panel" class="content" v-if="module === 'Rules'">
-                        <div id="docs-selector" class="selector">
-                            <a class="top-tab" v-bind:class="{ 'active': page === 'Main' }"
-                            @click="LoadDoc('Rules', 'Main')">
-                                <i class="fas fa-hammer"></i><span class="modetext"> General </span>
-                            </a>
-                            <a class="top-tab" v-bind:class="{ 'active': page === 'Cheats' }"
-                            @click="LoadDoc('Rules', 'Cheats')">
-                                <i class="fas fa-hammer"></i><span class="modetext"> Cheating Rules </span>
-                            </a>
-                            <a class="top-tab" v-bind:class="{ 'active': page === 'Scorehunt' }"
-                            @click="LoadDoc('Rules', 'Scorehunt')">
-                                <i class="fas fa-hammer"></i><span class="modetext"> Score Hunting </span>
-                            </a>
-                        </div>
-                        <div class="doc-block" v-if="page === 'Main'">
-                            <div class="doc-notice">
-                                <h4 class="centered">We may change the rules at any time as we see fit. New rules may or may not be retroactive at our discretion.</h4>
-                                <h4 class="centered">The rules on this page may not always be updated. Join our Discord to ensure you are reading the most up-to-date rules. This page was last updated on July 1st, 2024.</h4>
-                            </div>
-                            <div class="doc-section">
-                                <h3><i class="game icon"></i> General rules</h3>
-                                Any violation of the rules in this section will result in a wipe, restriction, or ban, whether temporary or permanent, depending on the severity.
-                                <div class="doc-content">
-                                    <p>1. Unfair hacks such as replaybots (and replay editing, by extension), score modifiers, OD changers, spinbots, autobots (includes all forms of auto, cursordance bots too), cheats that modify the score's replay data, a.k.a. a replay editor (e.g., tapping data or aim data, or playing with the in-game Relax mod, then removing it on submission), and score editors are NOT allowed. The use of Relax hack in autopilot also applies. This rule may be enforced outside of the examples given. It is discretionary.</br>
-                                    2. Shared or boosted accounts are NOT allowed.</br>
-                                    3. Do not try to exploit the server. If you find a vulnerability, please report it.</br>
-                                    4.Use an appropriate username or avatar. If you do not, your privileges to use them will be discontinued.</br>
-                                    5.Multi-accounts are strictly prohibited.</p>
-                                </div>
-                            </div>
-                            <div class="doc-section">
-                                <h3><i class="comment icon"></i> Chat rules</h3>
-                                <p>Failure to comply with the rules in this section will result in a <b>silence</b>.</br>
-                                These rules apply to both our Discord and in-game chat.</p>
-                                <div class="doc-content">
-                                    <p>1.  Do not share your private information with anyone.</br>
-                                    2.  Treat all members, no matter what they are, with respect.</br>
-                                    3.  Suspicious, Malicious, Content or links are not allowed.</br>
-                                    4.  Discrimination, racism, sexism, and hate speech are all strictly disallowed.</p>
-                                </div>
-                            </div>
-                            <div class="doc-section">
-                                <h3><i class="fas fa-exclamation-circle"></i> Gamemode Specific Rules</h3>
-                                <div class="subsection">
-                                    <h4><b>CTB:</b></h4>
-                                    Hyperwalk maps are not allowed.
-                                </div>
-                                <div class="subsection">
-                                    <h4><b>AutoPilot</b></h4>
-                                    Any form of Relax is not allowed while using autopilot.
-                                    Staff's can request liveplays at any time and failure to provide them will result in a wipe.
-                                </div>
-                            </div>
-                            <div class="doc-section">
-                                <h3><i class="shield icon"></i> Moderation policy</h3>
-                                Unlike other infractions, we have a fixed moderation policy for hacking rules.
-                                <div class="doc-content">
-                                    If you get caught breaking any of the hacking rules, it will result in a wipe of your account scores if you cannot prove you weren't breaking the rules.</br>
-                                    </br>
-                                    After 3 wipes, your account will be BANNED, not restricted.</br>
-                                    This means we'll never ban someone at their first wipe, other than for the Aeris AC rule and multiple cheat client's rules.</br>
-                                    </br>
-                                    You may appeal 1 month after your restriction unless you judge you haven't been restricted for a legitimate reason.</br>
-                                    </br>
-                                    If you want to appeal, <a href="https://discord.gg/4CzsqkK">Join our Discord</a> and open a ticket at #support-tickets.
-                                </div>
-                            </div>
-                        </div>
-                        <div class="doc-block" v-if="page === 'Cheats'">
-                            <div class="doc-section">
-                                <h3><i class="fas fa-exclamation-circle"></i> Cheating rules</h3>
-                                <h5>Even though Kawata is a cheating server, we are enforcing a few rules, to make sure playing on Kawata is a fun and rewarding experience for everyone!</br>
-                                Failure to comply with the rules in this section will result in an <b>account wipe and a strike</b>.</h5>
-                                <div class="subsection">
-                                    <h5><b>Timewarp:</b></h5>
-                                    <p>Timewarp has specific set limits: your Timewarp speed MUST be at minimum 66% of 1.5x speed for Double Time*, and NO Timewarp with nomod.</p>
-                                    With the most Common Clients, This would be:</br>
-                                    <div class="doc-content">
-                                        AQN: 100 with DT 
-                                    </div>
-                                    <div class="doc-content">
-                                    osu!rx: 0.66 with DT
-                                    </div>
-                                    <div class="doc-content">
-                                    Maple: 100 With DT (Rate), 0.66 With DT (Multiplier) 
-                                    </div>
-                                    <div class="doc-content">
-                                    Ainu & Ainu Based Clients: Skoot.er; 0.66 with DT | Abypass; 100 with DT
-                                    </div>
-                                    <div class="doc-content">
-                                    Assist.Games: 100 with DT (rate)
-                                    </div>
-                                </div>
-                                <div class="subsection">
-                                    <h5><b>Aim Correction/Aim Assist:</b></h5>
-                                    <p>Below listed are the HIGHEST allowed settings and/or whether or not the cheat is allowed for each of the most common aim assist tools for osu!. If your cheat is not listed, ask a moderator.</p>
-                                    Here are more details:
-                                    <div class="doc-content">
-                                        <b>Ainu/hq.af's</b> "SAVE ME" is allowed (no limit);
-                                    </div>
-                                    <div class="doc-content">
-                                        <b>MPGH's Ainu</b> default AC is allowed;
-                                    </div>
-                                    <div class="doc-content">
-                                        <b>Aeris AC and Abypass AC</b> are allowed; Its Strength must be at or below 50, but can only be a whole number. Values like 48.2 and 41.1 are not allowed.
-                                    </div>
-                                    <div class="doc-content">
-                                        <b>osu!buddy's AA</b> is allowed; but must be equal to or below the following settings. Strength: 11 Aim Start Distance: 666
-                                    </div>
-                                    <div class="doc-content">
-                                        <b>Kat's AA</b> is allowed; Its Strength cannot exceed 1.5x.
-                                    </div>
-                                    <div class="doc-content">
-                                        <b>Assist.games AA</b> is allowed, Its Strength cannot exceed 66.
-                                    </div>
-                                    <div class="doc-content">
-                                        <p><b>Maple AA</b> is allowed but MUST be equal to or below the following settings.</br>
-                                        <div class="subsection">
-                                            <p>Aim Assist <b>RULES FOR VANILLA</b>:<p>
-                                            <div class="subsection">
-                                                AA <b>V1</b></br>
-                                                Strength: 0.7 | Base FOV: 70 | Max FOV (Scaling): 3 | Minimum FOV (total): 25 Maximum FOV (Total): 200 | Assist on Sliders: Allowed | Acceleration Factor: Doesn't matter. |
-                                            </div>
-                                            <div class="subsection">
-                                                AA <b>V2</b></br>
-                                                AA Power: 0,6 or below. Assist on sliders: Allowed
-                                            </div>
-                                            <div class="subsection">
-                                                AA <b>V3</b></br>
-                                                AA Power: 1.2 or below. Slider AA: 0,6 or below.
-                                            </div>
-                                        </div>
-                                        <div class="subsection">
-                                            <p>Aim Assist <b>RULES FOR RELAX</b>:</p>
-                                            <div class="subsection">
-                                                AA <b>V1</b></br>
-                                                Strength: 0.7 | Base FOV: 70 | Max FOV (Scaling): 3 | Minimum FOV (total): 30 Maximum FOV (Total): 250 | Assist on Sliders: Allowed | Acceleration Factor: Does not matter |
-                                            </div>    
-                                            <div class="subsection">
-                                                AA <b>V2</b></br>
-                                                AA Power: 0.8 Assist on sliders: Allowed
-                                            </div>
-                                            <div class="subsection">
-                                                AA <b>V3</b></br>
-                                                AA Power: 1.5 Slider AA: 0.6
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="subsection">
-                                    <h5><b>CS modifiers:</b></h5>
-                                    From now on (July 1st 2024), CS changers are NOT allowed anymore on Kawata.</br>
-                                    The use of it will be punished with a wipe and counted as an act of overcheating.
-                                </div>
-                                <div class="subsection">
-                                    <h5><b>Flashlight:</b></h5>
-                                    <div class="doc-content">
-                                        <p>FL Remover is ONLY ALLOWED in maps that are below 7 Stars and if you set an FL Play in a map ABOVE 7 Stars (mods like DT included), THEN YOU MUST MAKE A LIVEPLAY THAT PROOFS YOU DID IT LEGIT AND SEND IT TO A STAFF MEMBER.</br>
-                                        If you're unsure, then ask a Moderator.</br>
-                                        </br>
-                                        TLDR: <b>FL REMOVER IS NOT ALLOWED ABOVE 7 STAR MAPS (mods applied).</b></p>
-                                    </div>
-                                </div>
-                                <div class="subsection">
-                                    <h5><b>Multiple Cheats:</b></h5>
-                                    <div class="doc-content">
-                                        <p>You now <b>can't</b> have more than <b>ONE</b> cheat instance/client open at the same time. </br>
-                                        This <b>ALSO</b> apply's for combining cheats together, if you get caught doing so you will end up getting banned.</br>
-                                        </br>
-                                        <p>* The only exception for this rule is combining osu!rx (V1 or V2) with Kat's AA/any kind of Aim assist that doesn't have timewarp & relax.</p>
-                                    </div>
-                                </div>
-                                <div class="subsection">
-                                    <h5><b>Unfair hacks:</b></h5>
-                                    <div class="doc-content">
-                                        Unfair hacks such as replay bots (and replay editing, by extension), </br>
-                                        score modifiers, OD changers, spinbots, </br>
-                                        autobots (includes all forms of auto,cursordance bots too), </br>
-                                        cheats that modify the score's replay data (e.g. tap data or aim data, or playing with the in-game Relax mod, then removing it on submission) </br>
-                                        and score editors are <b>NOT</b> allowed, this rule may be enforced outside of the examples given. It is discretionary.
-                                    </div>
-                                </div>
-                                <div class="subsection">
-                                    <h4><b>Other Important Notes:</b></h4>
-                                    <div class="doc-content">
-                                        <p>For Ainu users, make sure the client you use was downloaded on MPGH, the Skoot.er Discord server or the Ainu Xheaters Discord server, otherwise it contains prohibited features.</br>
-                                        </br>
-                                        Things as: Relax hacks, AR changers, Enlighten (Un-HD), and other stuff that wasn't listed in the hacking rules ARE ALLOWED. You can also ask one of the staff members if you still need clarification.</p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="doc-block" v-if="page === 'Scorehunt'">
-                            <div class="doc-section">
-                                <h3><i class="fas fa-exclamation-circle"></i> Score Hunting</h3>
-                                In September 2022, Kawata introduced Score Hunts!
-                                <div class="doc-content">
-                                    This is a way to get rewards from playing difficult, strange or technical maps. How it works is pretty simple.</br>
-                                    </br>
-                                    If you want to participate in Score Hunts, <a href="https://discord.gg/4CzsqkK">Join our Discord</a> In there you can find the #score-hunting channel, which shows you the current active and previous Score Hunts.</br>
-                                    </br>
-                                    *Make sure to read the requirements of <b>each</b> scorehunt. They can change depending on any of them.*</br>
-                                    </br>
-                                    The following notes will <b>ALWAYS</b> be true for scorehunts.
-                                    <div class="subsection">
-                                        1. Scorehunt Information will be available in #score-hunting & the <a href="https://docs.google.com/spreadsheets/d/1iabjrE_O52rNifvUi8s1tBqzThGqa699pmwZdGZTCN8/edit?usp=sharing">Public Score Hunt Spreadsheet</a></br>
-                                        </br>
-                                        2. CS changer is not allowed in Scorehunts.</br>
-                                        </br>
-                                        3. Scorehunts will follow the rules set here.</br>
-                                        </br>
-                                        4. Breaking scorehunt rules will incur a normal moderation punishment (See Moderation Policy) And a ban from future Score Hunts, the ban is appealable after 1 year.
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div id="panel" class="content" v-if="module === 'Connection'">
-                        <div id="docs-selector" class="selector">
-                            <a class="top-tab" v-bind:class="{ 'active': page === 'Main' }"
-                            @click="LoadDoc('Connection', 'Main')">
-                                <span class="modetext"> How to Connect </span>
-                            </a>
-                            <a class="top-tab" v-bind:class="{ 'active': page === 'Old' }"
-                            @click="LoadDoc('Connection', 'Old')">
-                                <span class="modetext"> Old Method </span>
-                            </a>
-                            <a class="top-tab" v-bind:class="{ 'active': page === 'Cert' }"
-                            @click="LoadDoc('Connection', 'Cert')">
-                                <span class="modetext"> Certificate Guide </span>
-                            </a>
-                        </div>
-                        <div class="doc-block" v-if="page === 'Main'">
-                            <div class="doc-notice">
-                                <h2>Video tutorial</h2>
-                                We now have a video tutorial to get you up and running in no time!</br>
-                                <p align="center"><iframe width="560" height="315" src="https://www.youtube-nocookie.com/embed/imdQcbwOoi0" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></p>
-                            </div>
-                            <div class="doc-section">
-                                <h1>Registering on Kawata</h1>
-                                To create your Kawata account, follow <a href="/register">this link</a>, and follow the instructions to create your account.
-                                <br>
-                                Make sure you read the <a @click="LoadDoc('Rules', 'Main')">rules</a> before proceeding!
-                            </div>
-                            <div class="doc-section">
-                                <h1>Connecting to Kawata</h1>
-                                <div class="subsection">
-                                    <h2>New method (-devserver flag)</h2>
-                                    osu! has added *official-ish* support for private servers.</br>
-                                    That means you can now easily connect to Kawata, without tampering with your system files. This is the recommended method.</br>
-                                    Please note that some unofficial osu! clients may not be compatible with this new method yet.
-                                    <div class="doc-content">
-                                        <h3>Launching osu! on Kawata</h3><p>
-                                        - Open your osu! installation folder.</br>
-                                        - Click the address bar, and type "osu!.exe -devserver Kawata.pw".</br>
-                                        - Open osu! and log in with your Kawata account.</p>
-                                    </div>
-                                    <div class="doc-content">
-                                        <h3>Creating a shortcut to connect quickly</h3><p>
-                                        - Open your osu! installation folder.</br>
-                                        - Create a shortcut to osu!.exe wherever you want, or copy your existing shortcut.</br>
-                                        - Right-click your newly created shortcut, and click <b>Properties</b>.</br>
-                                        - In the <b>Target</b> field of the <b>Properties</b> window, add "-devserver Kawata.pw" to the existing text.</br>
-                                        - Open your newly created shortcut and log in with your Kawata account.</p>
-                                    </div>
-                                </div>
-                                
-                                <h2>Having troubles?</h2>
-                                Check out our <a @click="LoadDoc('FAQ')">FAQ</a>
-                            </div>
-                        </div>
-                        <div class="doc-block" v-if="page === 'Old'">
-                            <div class="doc-notice">
-                                <h2 style="color: red;">Notice: This method is not supported anymore!</h2>
-                                <p style="color: red;">This method is no longer supported, and should only be used if the new method does not work for you.</br>
-                                Most of the popular clients that don't support the new method have their own built in server switcher that should be used instead.</p>
-                            </div>
-                            <div class="doc-section">
-                                <h1>Connecting to Kawata: </h1>
-                                <div class="subsection">
-                                    <h2>Old method (server switcher) (legacy/unsupported)</h2>
-                                    This is the traditional method for connecting to private servers. </br>
-                                    This method requires administrator access, as it implies tampering with the osu! certificate, and the hosts file. </br>
-                                    This method is considered legacy and should only be used in cases where the new method cannot be used.
-                                    <div class="doc-content">
-                                        <h3>Certificate installation</h3>
-                                        If you want to play on Kawata, you must install our HTTPS certificate. </br> 
-                                        Do this only the first time you connect to Kawata.  </br>
-                                        <div class="subsection"><p>
-                                            - Open the switcher.</br>
-                                            - Click on <b>"Install certificate"</b>.</br>
-                                            - Click <b>"Yes"</b>.</p>
-                                        </div>
-                                        *If you can't install the certificate properly, follow <a @click="LoadDoc('Connection', 'Cert')">these instructions</a> to install it manually.*
-                                    </div>
-                                    <div class="doc-content">
-                                        <h3>How to connect to Kawata</h3>
-                                        <div class="subsection"><p>
-                                            - Run the switcher <b>as administrator</b></br>
-                                            - Click "Connect to Kawata".</br>
-                                            - Make sure that the switcher says <b>"You're connected to Kawata!"</b> (it should look like <a href="https://i.imgur.com/0LotBDY.png">this</a>), if not, click <b>"Connect to Kawata"</b> to switch servers.</br>
-                                            - Open osu! and log in with your Kawata account.</p>
-                                        </div>
-                                    </div>
-                                    <div class="doc-content">
-                                        <h3>How to play on official osu! again</h3>
-                                        <div class="subsection"><p>
-                                            - Make sure osu! is <b>closed</b>  </br>
-                                            - Open the switcher and make sure it says <b>"You are playing on Bancho"</b> (it should look like <a href="https://i.imgur.com/JwrBy8S.png">this</a>), if not, click <b>"Disconnect from Kawata"</b> to switch server.</br>
-                                            - Open osu! and log in with your osu! account.</p>
-                                        </div>
-                                        NOTE: If you want to connect to osu.ppy.sh and you still see Kawata's website even if the switcher is off, empty your browser cache.
-                                    </div>
-                                    <div class="doc-content">
-                                        <h3>How to update osu!/switch release branch</h3>
-                                        <div class="subsection"><p>
-                                        - Make sure osu! is <b>closed</b>.</br>
-                                        - Open the switcher and make sure it says <b>"You are playing on Bancho"</b> (it should look like <a href="https://i.imgur.com/JwrBy8S.png">this</a>).</br>
-                                        - Open osu! and update the game.</p>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="doc-block" v-if="page === 'Cert'">
-                            <div class="doc-section">
-                                <h1>Installing the certificate manually</h1>
-                                <p>If you're having trouble connecting to Kawata using stable (latest), beta, or cutting edge, or the switcher doesn't install the certificate properly, you can install the certificate manually.</p>
-                                <div class="subsection">
-                                    <h3>Instructions:</h3>
-                                    <div class="doc-content">
-                                        <p>
-                                            - To begin, obtain the certificate <a href="/static/cert.crt">by clicking here</a>.</br>
-                                            - Then, open certificate.crt.</br>
-                                            - Click the "Install certificate..." button.</br>
-                                            - Click Next.</br>
-                                            - Click "Browse..." after selecting "Place all certificates in the following store" (the second option).</br>
-                                            - A new window will pop up, select Trusted root certification authorities and click Ok.</br>
-                                            - Click Next.</br>
-                                            - Click Finish.</br>
-                                        </p>
-                                    </div>
-                                </div>
-                                <div class="subsection">
-                                    <h3>How to test the certificate:</h3>
-                                    <p>To ensure the certificate has been installed successfully, make sure the switcher is On and open <a href="https://c.ppy.sh/">this page</a>.</p>
-                                    <div class="doc-content">
-                                        <p>
-                                            - If you see <a href="http://y.zxq.co/ubfzty.png">osu!bancho stuff</a>, your switcher is off. Turn it on and try again.</br>
-                                            - If you see <a href="http://y.zxq.co/zphobw.png">some ripple stuff</a>, you're successfully connected to Kawata under HTTPS, good job!</br>
-                                            - If you get <a href="http://y.zxq.co/reaueu.png">some certificate or security error</a>, the certificate has not been installed successfully. <b>Follow the instructions below.</b></br>
-                                        </p>
-                                    </div>
-                                </div>
-                                <div class="subsection">
-                                    <h3>If everything else fails...</h3>
-                                    <p>You can try to remove all existing Kawata/Ripple/Akatsuki/Enjuu/whatever certificates and install the certificate again. Follow these steps:</p>
-                                    <div class="doc-content">
-                                        <p>
-                                            - Press <b>Win+R</b>  - In the run box, type "mmc certmgr.msc" and press "enter" to launch the Certificate Manager.</br>
-                                            - Select <b>Trusted root certification authorities</b> on the left.</br>
-                                            - On the right, click "Certificates."</br>
-                                            - You should see a <a href="https://i.imgur.com/iJlLOg3.png">Kawata</a> entry and one or two <b>*.ppy.sh</b> entries in the list. Select them, then right-click and select "Delete."</br>
-                                            - Select all the positive options.</br>
-                                            - Launch the switcher, then select "Install certificate," followed by "Yes."- Connecting to <a href="https://c.ppy.sh/">Kawata's bancho server via https</a> should work.</br>
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div id="panel" class="content" v-if="module === 'Clients'">
-                        <div id="docs-selector" class="selector">
-                            <a class="top-tab" v-bind:class="{ 'active': page === 'Main' }"
-                            @click="LoadDoc('Clients', 'Main')">
-                                <i class="fas fa-list"></i><span class="modetext"> List </span>
-                            </a>
-                            <a class="top-tab" v-bind:class="{ 'active': page === 'Kawata' }"
-                            @click="LoadDoc('Clients', 'Kawata')">
-                                <i class="fas fa-client"></i><span class="modetext"> Kawata/Aeris </span>
-                            </a>
-                            <!--<a class="top-tab" v-bind:class="{ 'active': page === 'Abypass' }"
-                            @click="LoadDoc('Clients', 'Abypass')">
-                                <i class="fas fa-client"></i><span class="modetext"> Abypass </span>
-                            </a>-->
-                            <a class="top-tab" v-bind:class="{ 'active': page === 'Maple' }"
-                            @click="LoadDoc('Clients', 'Maple')">
-                                <i class="fas fa-client"></i><span class="modetext"> Maple </span>
-                            </a>
-                        </div>
-                        <div class="doc-block" v-if="page === 'Main'">
-                            <div class="doc-notice">
-                                <h2>Disclaimer:</h2></br>
-                                <p>While this is a server centered around cheating, 
-                                We at Kawata do <b>NOT</b> condone the usage of any form of cheating on other servers. </br>
-                                Please be respectful to others and and keep your usage of cheats on our server where it is implicitly allowed. </br>
-                                We do not want to disrupt the enjoyment of the game for other playerbases.</p>
-                            </div>
-                            <div class="doc-section">
-                                <h3><i class="fas fa-exclamation-circle"></i> Differences between Clients and Hacks:</h3>
-                                <div class="subsection">
-                                    <h4><b>Client:</b></h4>
-                                    <div class="doc-content">
-                                        <p>A client is a modified version of osu! that allows you to cheat and often times has other features built in. </br>
-                                        It is a separate program from osu!, and it is not made by the osu! team. </br>
-                                        It is made by the community, for the community.</p>
-                                    </div>
-                                </div>
-                                <div class="subsection">
-                                    <h4><b>Hack:</b></h4>
-                                    <div class="doc-content">
-                                        <p>A hack is a program that modifies the original game while it is running. </br>
-                                        It is a separate program or file that is injected into the original game, and it is not made by the osu! team. </br>
-                                        It is made by the community, for the community.</p>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="doc-section">
-                                <h3><i class="fas fa-exclamation-circle"></i> Cheats & Clients:</h3>
-                                <div class="subsection">
-                                    <div class="doc-notice">
-                                        <h4><b>Note: Each of these can be clicked to navigate</b></h4>
-                                    </div>
-                                    <div class="doc-content">
-                                        <h3><i class="fas fa-exclamation"></i> Popular/Recommended:</h3>
-                                        <div class="subsection linked" @click="LoadDoc('Clients', 'Kawata')">
-                                            <h4><b>Kawata/Aeris:</b></h4>
-                                            <p>Kawata/Aeris is a client originally developed by Panini Céleste. </br>
-                                            It is currently being maintained and developed by TheFantasticLoki. </br>
-                                            Contributions have been made by Maple Syrup and Chewy/Pythr.</br>
-                                            Due to being the Kawata Client, you are the least likely to break our rules using this client. </br>
-                                            Therefore is it the most recommended client to use.</p>
-                                        </div>
-                                        <div class="subsection linked" @click="LoadDoc('Clients', 'Maple')">
-                                            <h4><b>Maple:</b></h4>
-                                            <p>Maple is a <b>paid</b> hack created by Maple Syrup. </br>
-                                            It is a very powerful hack that is constantly being updated. </br>
-                                            It's main draw is Aim Assist and Relax that is widely considered to be the best in the community. </br>
-                                            This client does not have any built in limits, so you must be careful not to break our rules. </p>
-                                        </div>
-                                        <div class="subsection linked" @click="LoadDoc('Clients', 'AQN')">
-                                            <h4><b>AQN:</b></h4>
-                                            <p>AQN is a now free hack created by Rumoi. </br>
-                                            Powerful hack from the founding of the server, it is no longer maintained.</br>
-                                            Crashes on latest osu! version due to compatibility issues.</p>
-                                        </div>
-                                        <div class="subsection linked" @click="LoadDoc('Clients', 'osu!rx')">
-                                            <h4><b>osu!rx:</b></h4>
-                                            <p>osu!rx is a free hack created by mrflashstudio and updated by Sasuke. </br>
-                                            </p>
-                                        </div>
-                                    </div>
-                                    <div class="doc-content">
-                                        <h3><i class="fas fa-exclamation"></i> Unsupported/Depreciated Cheats:</h3>
-                                        <div class="subsection linked" @click="LoadDoc('Clients', 'Abypass')">
-                                            <h4><b>Abypass:</b></h4>
-                                            <p>Abypass is the successor to Skoot.er created by Chewy/Pythr. </br>
-                                            Previously Maintained by Aochi.</br>
-                                            This client is a better version of Skoot.er with more features and less bugs. </br>
-                                            This client tries to comply with our rules, but it is not always updated. </br>
-                                            If Kawata/Aeris doesn't work for you, this is the next best, free choice. </br>
-                                            </br>
-                                            This client has been mostly discontinued and downloads for this client have been lost.</p>
-                                        </div>
-                                        <div class="subsection linked" @click="LoadDoc('Clients', 'Skooter')">
-                                            <h4><b>Skooter:</b></h4>
-                                            <p>Skooter is a free client developed by Aoba Suzukaze, VacCat, Chewy/Pythr. </br>
-                                            It is no longer maintained, and has been replaced by Abypass. </br>
-                                            No longer supported on our server due to connection issues.</p>
-                                        </div>
-                                        <div class="subsection linked" @click="LoadDoc('Clients', 'Ainu')">
-                                            <h4><b>Ainu:</b></h4>
-                                            <p>Ainu is a free client Created by Aoba Suzukaze, Edited by Chewy/Pythr. </br>
-                                            It is no longer maintained, and was replaced by Skooter which was then replaced by Abypass. </br>
-                                            No longer supported on our server due to connection issues and banned features.</p>
-                                        </div>
-                                    </div>
-                                    <div class="doc-content">
-                                        <h3><i class="fas fa-exclamation" style="color: red;"></i> Banned Cheats</h3>
-                                        <div class="subsection">
-                                            <h4><b>Freedom:</b></h4>
-                                            <p>Freedom has been banned from being used on our server due to it's features breaking our rules at all settings.</p>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="doc-block" v-if="page === 'Kawata'">
-                            <div class="doc-notice">
-                                <div class="notice">
-                                    <h2>Notice:</h2> <p>It is recommended to add install folder as exclusion in anti-virus to prevent connection issues.</p>
-                                </div>
-                                <div class="content">
-                                <a class="button dl" href="https://storage.kawata.pw/get/osu!Kawata.zip" title="Client is in Public Beta, You may encounter bugs."><i class="fas fa-download"></i>  Download</a> <a class="button VA" href="http://www.hybrid-analysis.com/sample/3a08fea940bb7028b08b0a6688cae86344af3fc5ea2340ff03a29d95be090614"><i></i> Virus Analysis Report</a>
-                                </div>
-                            </div>
-                            <div class="doc-section">
-                                <h3><i class="fas fa-exclamation-circle"></i> Kawata/Aeris Client:</h3>
-                                <div class="subsection">
-                                    <h4><b>Kawata/Aeris is the Official Client for Kawata originally developed by Panini Céleste. </b></h4>
-                                    <p>
-                                        Currently Maintained and Developed by The Fantastic Loki.</br>
-                                        Contributions have been made by Maple Syrup and Chewy/Pythr.</br>
-                                        Designed to be the Ultimate Community Client, it is the most recommended client to use on our server.</br>
-                                    </p>
-                                    <div class="doc-content">
-                                        <h3><i class="fas fa-exclamation"></i> Features:</h3>
-                                        <div class="subsection">
-                                            <h5>Cheats: (Server Enabled [Only on Kawata atm])</h5>
-                                            <div class="level">
-                                                <p>
-                                                    Aim Correction (Improved Skooter AC, Optional Tap on Correct for Non-RX Players, Relative Range Support)</br>
-                                                    Relax Hack (SkooterRX)</br>
-                                                    Timewarp (Both Rate & Multiplier Style)</br>
-                                                    Automatic CS Changer</br>
-                                                </p>
-                                                <p>
-                                                    AR Changer</br>
-                                                    HD Remover</br>
-                                                    FL Remover (Prevents Breaking Rules)</br>
-                                                </p>
-                                            </div>
-                                            <h5>Beta Cheats:</h5>
-                                            <div class="level">
-                                                <p>
-                                                    Maple Aim Assist (V1, V2 Submitting. V3 and L-V1 not Submitting.)
-                                                </p>
-                                            </div>
-                                        </div>
-                                        <div class="subsection">
-                                            <h5>Other Features:</h5>
-                                            <div class="level">
-                                                <p>
-                                                    In-Game Updater</br>
-                                                    Lazer Style UI (SkinVersion 7+)</br>
-                                                    Background Beatmap Importing</br>
-                                                    Links to original game folder to save space</br>
-                                                    Built in Server Switcher</br>
-                                                    New Slider Style</br>
-                                                    Fail with Relax (Toggle)</br>
-                                                    Combo Break Sound with Relax (Toggle)</br>
-                                                </p>
-                                                <p>
-                                                    Lazer Style Triangle Animations</br>
-                                                    Rainbow Visualization</br>
-                                                    Discord Rich Presence</br>
-                                                    Show Misses in Relax (Toggle)</br>
-                                                    Boss Key Disable (Toggle)</br>
-                                                    Auto Hide Replay Overlay (Toggle)</br>
-                                                    Low HP Glow on Relax (Toggle)</br>
-                                                </p>
-                                            </div>
-                                            <h5>Beta Features:</h5>
-                                            <div class="level">
-                                                <p>
-                                                    Dedicated Input thread (Aim input only atm. [1/2/4/8/16K FPS options]). Massive improvement to aim responsiveness, beats stable and lazer.
-                                                </p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="doc-block" v-if="page === 'Abypass'">
-                            <div class="doc-notice">
-                                <a class="button dl" href="https://abypass.fumo.lol/updater"><i class="fas fa-download"></i>  Download</a>
-                            </div>
-                            <div class="doc-section">
-                                <h3><i class="fas fa-exclamation-circle"></i> Abypass Client:</h3>
-                                <div class="subsection">
-                                    <h4><b>Abypass is the successor to Skoot.er created by Chewy/Pythr. </b></h4>
-                                    <p>Currently Maintained by Aochi.</br>
-                                    This client is a better version of Skoot.er with more features and less bugs. </br>
-                                    This client tries to comply with our rules, but it is not always updated. </br>
-                                    If Kawata/Aeris doesn't work for you, this is the next best, free choice.</p>
-                                    <div class="doc-content">
-                                        <h3><i class="fas fa-exclamation"></i> Features:</h3>
-                                        <div class="subsection">
-                                            <h5>Cheats:</h5>
-                                            <div class="level">
-                                                <p>
-                                                    Aim Correction</br>
-                                                    HD Remover</br>
-                                                    CTB Relax Hack (Control catcher with mouse)</br>
-                                                    Automatic CS Changer</br>
-                                                </p>
-                                                <p>
-                                                    Relax Hack</br>
-                                                    FL Remover</br>
-                                                    Timewarp</br>
-                                                    AR Changer</br>
-                                                </p>
-                                            </div>
-                                        </div>
-                                        <div class="subsection">
-                                            <h5>Other Features:</h5>
-                                            <div class="level">
-                                                <p>
-                                                    In-Game PP Counter</br>
-                                                    Uses an updater.</br>
-                                                </p>
-                                                <p>
-                                                    Server Switcher for Kawata & Fuquila</br>
-                                                </p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="doc-block" v-if="page === 'Maple'">
-                            <div class="doc-notice">
-                                <a class="button dl" href="https://maple.software/"><i class="fas fa-download"></i>  Website</a>
-                            </div>
-                            <div class="doc-section">
-                                <h3><i class="fas fa-exclamation-circle"></i> Maple Hack:</h3>
-                                <div class="subsection">
-                                    <h4><b>Maple is a Premium hack for osu! created by Maple Syrup</b></h4>
-                                    <p>It is a very powerful hack that is constantly being updated. </br>
-                                    It's main draw is Aim Assist and Relax that is widely considered to be the best in the community. </br>
-                                    This hack does not have any built in limits, so you must be careful not to break our rules. </p>
-                                    <div class="doc-content">
-                                        <h3><i class="fas fa-exclamation"></i> Features:</h3>
-                                        <div class="subsection">
-                                            <h5>Cheats:</h5>
-                                            <div class="level">
-                                                <p>
-                                                    Aim Assist (3 Versions)</br>
-                                                    Relax Hack</br>
-                                                    Timewarp</br>
-                                                    AR Changer</br>
-                                                </p>
-                                                <p>
-                                                    FL Remover</br>
-                                                    HD Remover</br>
-                                                    CS Changer</br>
-                                                </p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="doc-block" v-if="page === 'Skooter'">
-                        </div>
-                        <div class="doc-block" v-if="page === 'AQN'">
-                        </div>
-                        <div class="doc-block" v-if="page === 'osu!rx'">
-                            <div class="doc-notice">
-                                <a class="button dl" href="https://www.mpgh.net/forum/showthread.php?t=1538659"><i class="fas fa-download"></i>  Download</a>
-                            </div>
-                            <div class="doc-section">
-                                <h3><i class="fas fa-exclamation-circle"></i> osu!rx Hack:</h3>
-                                <div class="subsection">
-                                    <h4><b>Instructions:</b></h4>
-                                    <p>
-                                        osu!rx does not run on the latest version of osu!.</br>
-                                        You must download <a href="https://osekai.net/snapshots/versions/b20220424/b20220424.zip">this version</a> of osu! to use it.</br>
-                                        You must also download <a href="https://cdn.discordapp.com/attachments/598976475579809860/1082594775988981760/osu.exe">this patched exe</a> to use it on our server. This patches the tls to use a higher version required for our server.</br>
-                                        In order to prevent the game from updating you need to make a _STAGING file in your osu! folder.</br>
-                                    </p>
-                                </div>
-                                <div class="subsection">
-                                    <h4><b>Features:</b></h4>
-                                    <div class="level">
-                                        <p>
-                                            Timewarp</br>
-                                            Relax Hack</br>
-                                            HitWindow100 Key</br>
-                                        </p>
-                                        <p>
-                                            Playstyles (Single Tap, Alternate, Mouse Only, Tap X)</br>
-                                            Hit Timing Randomization</br>
-                                            Hit Scan</br>
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div id="panel" class="content" v-if="module === 'FAQ'">
-                        <div class="doc-block" v-if="page === 'Main'">
-                            <div class="doc-section">
-                                <h1>FAQ:</h1>
-                                <div class="subsection">
-
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div id="panel" class="content" v-if="module === 'Verification'">
-                        <div class="doc-block" v-if="page === 'Main'">
-                            <h2>How do I get Verified?</h2>
-                            <p><b>
-                                We reserve the right to remove your badge and/or re-verify you.</br>
-                                New rules may or may not be retroactive at our discretion. 
-                            </b></p>
-                            <div class="doc-section">
-                                <h3><i class="fas fa-hammer"></i> Verification Rules:</h3>
-                                <p><b>
-                                    These are the rules and conditions that must be met in order to apply for verification of your account.
-                                </b></p>
-                                <div class="subsection">
-                                    <p>
-                                        1. The player cannot have one or more wipes in the last three months (self wipes do not count!).</br>
-                                        2. The player must have been active (in the community) for the last 3 weeks!</br>
-                                        3. The player must have an account that is at least 60 days old.</br>
-                                        4. The player either must have a total amount of PP greater than or equaling 25,000 or have at least one 5,000 PP play.</br>
-                                        5. The player must have 1-3 liveplays of a single score or multiple scores that are in their top 10 plays (by pp). (These liveplays MUST follow the liveplay rules that are listed below; otherwise, they won't be valid.)
-                                    </p>
-                                </div>
-                            </div>
-                            <div class="doc-section">
-                                <h3><i class="fas fa-hammer"></i> Liveplay Rules:</h3>
-                                <p><b>
-                                    These are the rules that must be followed when recording a liveplay for verification.
-                                </b></p>
-                                <div class="subsection">
-                                    <p>
-                                        1. Show your hands and monitor every moment of the liveplay. (Webcam or phone cam are allowed if of good enough quality.)
-                                        2. Show task manager, and then show the process of injecting/opening (in the case of a client) your cheat.
-                                        3. The player must show EVERY setting of the cheat that they are using before and after each play is submitted.
-                                        4. The player must save the replay or replays of the score/scores they made and send them along with the liveplay to a member of the <b>Gestion Team or higher</b>.
-                                        5. The player must have an analog clock running and visible during their liveplay if they are suspected of using a lower timewarp than allowed.
-                                        6. If you are a player that uses more than one client (e.g., Abypass, Maple, and Osubuddy), then you must submit a liveplay using each client to prove your legitimacy.
-                                        7. Custom clients for liveplays aren't allowed.
-                                    </p>
-                                </div>
-                            </div>
-                            <div class="doc-section">
-                                <h3><i class="fas fa-hammer"></i> Special way to get the badge:</h3>
-                                <div class="subsection">
-                                    <p>
-                                    -> The player is known for submitting videos or doing streams of their plays to prove their legitimacy in the Kawata Discord or via Twitch, YouTube, or any other social media website. If you follow this requirement and you don't have the badge already, please DM a member of the Gestion Team or a role above.
-                                    </p>
-                                </div>
-                            </div>
-                            <h5>All of the above rules may be changed if we think they should be different or if they are unbalanced.</h5>
-                            <div class="doc-section">
-                                <h3><i class="fas fa-hammer"></i> Where do I apply to get Verified?</h3>
-                                <div class="subsection">
-                                    <p>
-                                    You can get verified by contacting a Gestion team member or above in the <a href="https://discord.gg/4CzsqkK">Kawata Discord</a>; it will be done as quickly as possible.</br>
-                                    </br>
-                                    If you have any question, Join our <a href="https://discord.gg/4CzsqkK">Discord</a> and contact any member of our staff team.
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    </div>
-    `
-});
-var beatmapBus = new Vue();
-new Vue({
-    el: '#beatmap',
-    data: {
-        id: null,
-        set_id: null,
-    },
-    async created() {
-        const urlParams = new URLSearchParams(window.location.search);
-        const urlPath = window.location.pathname;
-        const pathParts = urlPath.split('/');
-        
-        // Check if the URL path matches the expected format
-        if (pathParts[1] === 'b') {
-            const id = pathParts[2];
-            console.log("URL BM ID: " + id + "");
-            this.id = parseInt(id);
-            this.set_id = await this.fetchMapInfo();
-            console.log("Triggering Beatmap Panel with ID: " + this.id + " and Set ID: " + this.set_id + "");
-            await setTimeout(() => {
-                this.showBeatmapPanel(this.id, this.set_id);
-            }, 10);
-        }
-        if (pathParts[1] === 's') {
-            const set_id = pathParts[2];
-
-            console.log("Triggering Beatmap Panel with SetID: " + set_id + "");
-
-            await setTimeout(() => {
-                this.showBeatmapPanel(null, parseInt(set_id));
-            }, 10); 
-        }
-    },
-    methods: {
-        showBeatmapPanel: function(id, set_id) {
-            this.id = id || null;
-            this.set_id = set_id || null;
-            beatmapBus.$emit('show-beatmap-panel', this.id, this.set_id);
-        },
-        fetchMapInfo: async function() {
-            try {
-                const response = await fetch(`https://api.` + domain + `/v2/maps/${this.id}`);
-                const data = await response.json();
-                console.log(data);
-                return data.data.set_id;
-            } catch (error) {
-                // Handle any errors
-                this.$log.error(error);
-            }
-        },
+        showSearchWindow() { searchBus.$emit('show-search-window'); },
+        startAnimation() { this.isAnimating = true; },
+        stopAnimation() { this.isAnimating = false; }
     }
 });
-new Vue({
+
+// ================= SEARCH WINDOW =================
+bootstrapVue('search-panel', {
+    el: '#search-panel',
+    templateId: 'search-panel-template',
+    data: {
+        show: false,
+        query: '',
+        players: [],
+        playersLoading: false,
+        playersError: null,
+        maps: [],
+        mapsLoading: false,
+        mapsError: null,
+        typingTimeout: null,
+        currentAudio: null,
+        searchId: 0,
+        hasSearched: false
+    },
+    created() {
+        this.$log = ColorfulLogger.child('Search Panel');
+        this.$log.info('LIFECYCLE', 'Search Panel created');
+        this.handleShowSearchWindow = () => {
+            this.show = true;
+            this.$nextTick(() => {
+                if (this.$refs.searchInput) {
+                    this.$refs.searchInput.focus();
+                }
+            });
+        };
+        searchBus.$on('show-search-window', this.handleShowSearchWindow);
+    },
+    computed: {
+        hasResults() {
+            return this.players.length > 0 || this.maps.length > 0;
+        },
+        isLoading() {
+            return this.playersLoading || this.mapsLoading;
+        }
+    },
+    methods: {
+        close() {
+            this.show = false;
+            this.resetQuery();
+        },
+        resetQuery() {
+            this.query = '';
+            this.players = [];
+            this.maps = [];
+            this.playersLoading = false;
+            this.mapsLoading = false;
+            this.playersError = null;
+            this.mapsError = null;
+            this.hasSearched = false;
+        },
+        async search() {
+            if (this.query.trim() === '') {
+                this.players = [];
+                this.maps = [];
+                this.hasSearched = false;
+                return;
+            }
+
+            const currentSearchId = ++this.searchId;
+            this.hasSearched = true;
+            this.playersLoading = true;
+            this.mapsLoading = true;
+            this.playersError = null;
+            this.mapsError = null;
+
+            try {
+                // Fetch players
+                try {
+                    const playersResponse = await fetch(
+                        `https://api.${domain}/v1/search_players?limit=10&q=${encodeURIComponent(this.query)}`,
+                        { signal: AbortSignal.timeout(5000) }
+                    );
+                    
+                    if (!playersResponse.ok) {
+                        throw new Error(`HTTP ${playersResponse.status}`);
+                    }
+                    
+                    const playersData = await playersResponse.json();
+                    if (currentSearchId === this.searchId) {
+                        this.players = playersData.result || [];
+                    }
+                } catch (err) {
+                    if (currentSearchId === this.searchId) {
+                        this.playersError = 'Failed to load players';
+                        this.$log.error('API', 'Search error (players)', err);
+                    }
+                }
+
+                // Fetch beatmaps
+                try {
+                    const mapsResponse = await fetch(
+                        `https://osu.direct/api/search?amount=10&query=${encodeURIComponent(this.query)}`,
+                        { signal: AbortSignal.timeout(5000) }
+                    );
+                    
+                    if (!mapsResponse.ok) {
+                        throw new Error(`HTTP ${mapsResponse.status}`);
+                    }
+                    
+                    const mapsData = await mapsResponse.json();
+                    if (currentSearchId === this.searchId) {
+                        // Initialize thumbnailError property for each map
+                        this.maps = (mapsData || []).map(map => ({
+                            ...map,
+                            thumbnailError: false
+                        }));
+                    }
+                } catch (err) {
+                    if (currentSearchId === this.searchId) {
+                        this.mapsError = 'Failed to load beatmaps';
+                        this.$log.error('API', 'Search error (maps)', err);
+                    }
+                }
+            } finally {
+                if (currentSearchId === this.searchId) {
+                    this.playersLoading = false;
+                    this.mapsLoading = false;
+                }
+            }
+        },
+        handleInput() {
+            clearTimeout(this.typingTimeout);
+            const delay = Math.max(1200 - (this.query.length * 80), 400);
+            this.typingTimeout = setTimeout(() => this.search(), delay);
+        },
+        interract(setId) {
+            const audio = document.getElementById(`audio-${setId}`);
+            if (!audio) return;
+
+            if (this.currentAudio && this.currentAudio !== audio) {
+                this.currentAudio.pause();
+            }
+            
+            if (audio.paused) {
+                audio.play();
+                this.currentAudio = audio;
+            } else {
+                audio.pause();
+                if (this.currentAudio === audio) {
+                    this.currentAudio = null;
+                }
+            }
+        },
+        clearAudio() {
+            if (this.currentAudio) {
+                this.currentAudio.pause();
+                this.currentAudio = null;
+            }
+        },
+        openBeatmapPanel(map) {
+            if (!map || !map.SetID) return;
+            
+            // Close the search panel
+            this.close();
+            
+            // Emit event to open beatmap panel
+            // The beatmap panel expects (id, set_id)
+            // We'll pass null for id since we're opening the set
+            beatmapBus.$emit('show-beatmap-panel', null, map.SetID);
+        },
+        /**
+         * Normalize beatmap API response data to match the difficulty-icon component format
+         * @param {Object} map - The beatmap set object from the search API
+         * @returns {Array} - Normalized difficulty objects
+         */
+        getNormalizedDifficulties(map) {
+            if (!map || !map.ChildrenBeatmaps) return [];
+            
+            return map.ChildrenBeatmaps.map(diff => ({
+                id: diff.BeatmapID,
+                diff: diff.DifficultyRating,
+                mode: diff.Mode,
+                version: diff.DiffName,
+                // Add any other properties the component might need
+                bpm: diff.BPM,
+                hit_length: diff.HitLength,
+                difficulty_rating: diff.DifficultyRating
+            }));
+        }
+    },
+    beforeDestroy() {
+        // Clean up event bus listeners
+        if (this.handleShowSearchWindow) {
+            searchBus.$off('show-search-window', this.handleShowSearchWindow);
+        }
+        
+        // Clean up audio references
+        this.clearAudio();
+        
+        // Clean up typing timeout
+        if (this.typingTimeout) {
+            clearTimeout(this.typingTimeout);
+            this.typingTimeout = null;
+        }
+    }
+});
+
+// ================= DOCS PANEL =================
+bootstrapVue('docs', {
+    el: '#docs',
+    data: {
+        module: 'Rules',
+        page: 'Main'
+    },
+    async created() {
+        this.$log = ColorfulLogger.child('Docs URL Handler');
+        this.$log.info('LIFECYCLE', 'Docs URL Handler created');
+        const urlParams = new URLSearchParams(window.location.search);
+        const pathParts = window.location.pathname.split('/');
+        if (pathParts[1] === 'docs') {
+            let doc = pathParts[2];
+            let page = urlParams.get('page');
+            if (page === "Cheats") page = "Clients";
+
+            setTimeout(() => this.showDocsPanel(doc, page), 100);
+        }
+    },
+    methods: {
+        showDocsPanel(doc, page) {
+            this.module = doc || 'Rules';
+            this.page = page || 'Main';
+            docsBus.$emit('show-docs-panel', this.module, this.page);
+        }
+    }
+});
+
+bootstrapVue('docs-panel', {
+    el: '#docs-panel',
+    templateId: 'docs-panel-template',
+    data: {
+        show: false,
+        module: 'Rules',
+        page: 'Main'
+    },
+    created() {
+        this.$log = ColorfulLogger.child('Docs Panel');
+        this.$log.info('LIFECYCLE', 'Docs Panel created');
+        this.handleShowDocsPanel = (module, page) => {
+            this.module = module || 'Rules';
+            this.page = page || 'Main';
+            this.show = true;
+        };
+        docsBus.$on('show-docs-panel', this.handleShowDocsPanel);
+    },
+    beforeDestroy() {
+        if (this.handleShowDocsPanel) {
+            docsBus.$off('show-docs-panel', this.handleShowDocsPanel);
+        }
+    },
+    methods: {
+        close() { this.show = false; },
+        LoadDoc(module, page) {
+            this.module = module;
+            this.page = page || 'Main';
+            this.$log.info('LIFECYCLE', `Loading ${module} doc...`);
+        }
+    }
+});
+
+// ================= BEATMAP URL HANDLER =================
+bootstrapVue('beatmap', {
+    el: '#beatmap',
+    data: { id: null, set_id: null },
+    async created() {
+        this.$log = ColorfulLogger.child('BeatmapURL');
+        this.$log.info('LIFECYCLE', 'Beatmap URL Handler created');
+        const pathParts = window.location.pathname.split('/');
+        if (pathParts[1] === 'b') {
+            this.id = parseInt(pathParts[2]);
+            this.set_id = await this.fetchSetIdFromMap(this.id);
+            this.deferShow();
+        }
+        if (pathParts[1] === 's') {
+            this.set_id = parseInt(pathParts[2]);
+            this.deferShow();
+        }
+    },
+    methods: {
+        deferShow() {
+            setTimeout(() => beatmapBus.$emit('show-beatmap-panel', this.id, this.set_id), 10);
+        },
+        async fetchSetIdFromMap(id) {
+            try {
+                const res = await fetch(`https://api.${domain}/v2/maps/${id}`);
+                const json = await res.json();
+                return json.data.set_id;
+            } catch (err) {
+                this.$log.error('API', 'Error fetching set ID from map', err);
+                return null;
+            }
+        }
+    }
+});
+
+// ================= BEATMAP PANEL =================
+bootstrapVue('beatmap-panel', {
     el: '#beatmap-panel',
+    templateId: 'beatmap-panel-template',
     data: {
         show: false,
         id: null,
         set_id: null,
-        title: "",
-        artist: "",
         beatmaps: [],
-        selected: {},
+        selected: null,
         leaderboards: [],
+        currentAudio: null,
+        // Filter state
+        selectedMode: 0, // 0: osu, 1: taiko, 2: catch, 3: mania
+        selectedRuleset: 0, // 0: vanilla, 1: relax, 2: autopilot
+        selectedMods: 0 // Bitmask of selected mods
     },
-    created: async function() {
-        beatmapBus.$on('show-beatmap-panel', (id, set_id) => { 
-            this.id = id || null; 
-            this.set_id = set_id || null;
-            this.init();
-        });
-        beatmapBus.$on('select-beatmap', (id) => { this.selectMap(id); });
+    created() {
+        this.$log = ColorfulLogger.child('Beatmap Panel');
+        this.$log.info('LIFECYCLE', 'Beatmap Panel created');
+        beatmapBus.$on('show-beatmap-panel', this.openPanel);
+        beatmapBus.$on('select-beatmap', this.selectMap);
     },
-    methods: {
-        init: async function() {
-            await this.fetchMapInfo();
-            this.show = true;
-            console.log("Showing Beatmap Panel | ID: " + this.id + "(set: " + this.set_id + ")");
-        },
-        close: function() {
-            this.show = false;
-        },
-        fetchMapInfo: async function() {
-            try {
-                const response = await fetch(`https://api.` + domain + `/v2/maps?set_id=${this.set_id}`);
-                const data = await response.json();
-                const maps = data.data;
-                maps.sort((a, b) => a.diff - b.diff);
-                this.title = maps[0].title;
-                this.artist = maps[0].artist;
-                this.beatmaps = maps;
-                console.log(data);
-                await this.selectMap();
-            } catch (error) {
-                // Handle any errors
-                this.$log.error(error);
-            }
-        },
-        fetchMapLb: async function() {
-            if (!this.selected) {
-                this.selected = {id: null,};
-                if (this.id !== null){this.selected.id = this.id;}
-                else {this.selected.id = this.beatmaps[0].id;}
-                
-            }
-            try {
-                const response = await fetch(`https://api.` + domain + `/v1/get_map_scores?id=${this.selected.id}&scope=best`);
-                const data = await response.json();
-                this.leaderboards = data.scores;
-                console.log(data);
-            } catch (error) {
-                // Handle any errors
-                this.$log.error(error);
-            }
-        },
-        downloadMapReplays: async function() {
-            this.leaderboards.forEach(async (score) => {
-                try {
-                    // Construct the URL for the replay
-                    const url = `https://api.${domain}/v1/get_replay?id=${score.id}`;
-                    // Direct the browser to the URL, which should trigger the download
-                    window.open(url, '_blank');
-                }
-                catch (error) {
-                    // Handle any errors
-                    this.$log.error(error);
-                }
-            }, this);
-        },
-        selectMap: function(id) {
-            if (id) {
-                console.log("Selected map: " + id + "");
-                this.id = id;
-            }
-            this.leaderboards = [];
-            if (this.id === null) {
-                this.selected = this.beatmaps[0];
-            } else {
-                console.log("Selected ID: " + this.id + "");
-                console.log("Beatmaps: ");
-                console.log(this.beatmaps);
-                if (this.beatmaps.length > 0) {
-                    console.log("ID Types: ")
-                    console.log(typeof this.id, typeof this.beatmaps[0].id);  // Check the types of the ids
-                }
-                this.selected = this.beatmaps.find(map => map.id === this.id);
-            }
-            console.log("Selected: ");
-            console.log(this.selected);
-            this.fetchMapLb();
-        },
-        playMapAudio: function(setId) {
-            const audioElement = document.getElementById('audio-' + setId);
-            if (this.currentAudio && this.currentAudio !== audioElement) {
-                this.currentAudio.pause();
-            }
-            if (audioElement.paused) {
-                audioElement.play();
-            } else {
-                audioElement.pause();
-            }
-            this.currentAudio = audioElement;
-        },
-    },
-    watch: {
+    beforeDestroy() {
+        this.$log.info('LIFECYCLE', 'Beatmap Panel destroyed, cleaning up');
+        beatmapBus.$off('show-beatmap-panel', this.openPanel);
+        beatmapBus.$off('select-beatmap', this.selectMap);
         
+        // Clean up audio references
+        if (this.currentAudio) {
+            this.currentAudio.pause();
+            this.currentAudio = null;
+        }
     },
-    template: `
-    <div id="beatmap-panel" class="modal" v-bind:class="{ 'is-active': show }" style="z-index: 25;">
-        <div class="modal-background" @click="close"></div>
-        <div data-panel="Beatmap" id="beatmap-window" class="modal-content" v-if="show">
-            <div class="main-block">
-                <div class="main-banner">
-                    <div class="selector">
-                        <a v-for="(map, index) in beatmaps" data-id="beatmapPanel" class="map-diff" style="width: fit-content;" @click="beatmapBus.$emit('select-beatmap', map.id)">
-                            <img :src="'/static/images/icons/mode-' + map.mode + '.png'"></img>
-                            {{ map.version }}
-                        </a>
-                    </div>
-                    <div id="panel" class="map-stats">
-                        <a class="stat-block map-play top" @click="playMapAudio(set_id)">
-                            <i class="fas fa-play" :id="'play-' + set_id">
-                                <audio :src="'https://b.ppy.sh/preview/' + set_id + '.mp3'" :id="'audio-' + set_id"></audio>
-                            </i>
-                        </a>
-                        <div class="stat-block map-diff">
-                            <div style="width: 100%; display: flex; flex-direction: row; justify-content: space-between;">
-                                <span class="level-left" style="margin-right: auto;">Circle Size</span><span class="level-right">{{ selected.cs }}</span>
-                            </div>
-                            <div style="width: 100%; display: flex; flex-direction: row; justify-content: space-between;">
-                                <span class="level-left" style="margin-right: auto;">Approach Rate</span><span class="level-right">{{ selected.ar }}</span>
-                            </div>
-                            <div style="width: 100%; display: flex; flex-direction: row; justify-content: space-between;">
-                                <span class="level-left" style="margin-right: auto;">Overall Difficulty</span><span class="level-right">{{ selected.od }}</span>
-                            </div>
-                            <div style="width: 100%; display: flex; flex-direction: row; justify-content: space-between;">
-                                <span class="level-left" style="margin-right: auto;">HP Drain</span><span class="level-right">{{ selected.hp }}</span>
-                            </div>
-                        </div>
-                        <div class="stat-block map-info bottom">
-                            
-                        </div>
-                    </div>
-                    <div class="banner-background" v-bind:style="{ backgroundImage: 'url(https://assets.ppy.sh/beatmaps/' + set_id + '/covers/cover.jpg)' }"></div>
-                    <div class="banner-overlay"></div>
-                </div>
-            </div>
-            <div id="panel" class="second-block">
-                <div id="panel" class="content">
-                    <div class="beatmap-info">
-                        <div class="info-block">
-                            <h2>{{ selected.title }}</h2>
-                            <h4>{{ selected.artist }}</h4>
-                            <div class="divider"></div>
-                            <div class="buttons">
-                                <button class="button is-primary" @click="window.location.href = 'https://osu.direct/d/' + set_id">Download</button>
-                                <button class="button is-primary" @click="window.location.href = 'osu://dl/' + set_id">osu!direct</button>
-                                <button class="button is-primary" @click="window.location.href = 'https://osu.ppy.sh/b/' + selected.id">View on ppy.sh</button>
-                                <!--<button class="button is-primary" @click="downloadMapReplays">Download Replays</button>-->
-                            </div>
-                        </div>
-                        <div class="info-block">
-                            <div class="mapper">
-                                <!--<div class="mapper-avatar" :style="'background-image: url(https://a.ppy.sh/' + ');'">-->
-                                <span>Mapped by: <a :href="'https://osu.ppy.sh/u/' + selected.creator">{{ selected.creator }}</a></span>
-                            </div>
-                            <div class="rating">
-
-                            </div>
-                            <div class="success-rate">
-                            
-                            </div>
-                        </div>
-                    </div>
-                    <div class="beatmap-lb">
-                        <div class="lb-selector">
-                        </div>
-                        <div class="table-responsive" v-if="leaderboards.length > 0 && leaderboards[0]">
-                            <div class="lb-first-place-header">
-                                <div class="user-block">
-                                    <div class="play-rank">
-                                        <span class="score-rank">#1</span>
-                                        <span :class="'map-rank rank-' + leaderboards[0].grade">{{ leaderboards[0].grade }}</span>
-                                    </div>
-                                    <a class="user-avatar" :href="'/u/' + leaderboards[0].userid" :style="'background-image: url(https://a.' + domain + '/' + leaderboards[0].userid + ');'"></a>
-                                    <div class="user">
-                                        <a class="username"><a v-if="leaderboards[0].clan_id != null">[{{ leaderboards[0].clan_tag }}]</a> <a :href="'/u/' + leaderboards[0].userid">{{ leaderboards[0].player_name }}</a></a>
-                                        <div class="score-date">
-                                        
-                                        </div>
-                                        <div class="user-flag" :style="'background-image: url(/static/images/flags/' + leaderboards[0].player_country.toUpperCase() + '.png);'"></div>
-                                    </div>
-                                </div>
-                                <div class="playstats-block">
-                                    <div class="beatmap-score-top__stats">
-                                        <div class="stat-block stat-bolder">
-                                            <div class="stat-title">PP</div>{{ leaderboards[0].pp }}
-                                        </div>
-                                        <div class="stat-block">
-                                            <div class="stat-title">Accuracy</div>{{ leaderboards[0].acc }}%
-                                        </div>
-                                        <div class="stat-block">
-                                            <div class="stat-title">Combo</div>{{ leaderboards[0].max_combo }}x
-                                        </div>
-                                        <div class="stat-block stat-bolder">
-                                            <div class="stat-title">Mods</div>{{ leaderboards[0].mods }}
-                                        </div>
-                                    </div>
-                                    <div class="beatmap-score-top__stats">
-                                        <div class="stat-block">
-                                            <div class="stat-title">Score</div>{{ leaderboards[0].score }}
-                                        </div>
-                                        <div class="stat-block">
-                                            <div class="stat-title">300</div>{{ leaderboards[0].n300 + leaderboards[0].ngeki }}
-                                        </div>
-                                        <div class="stat-block">
-                                            <div class="stat-title">100</div>{{ leaderboards[0].n100 + leaderboards[0].nkatu }}
-                                        </div>
-                                        <div class="stat-block">
-                                            <div class="stat-title">50</div>{{ leaderboards[0].n50 }}
-                                        </div>
-                                        <div class="stat-block stat-bolder">
-                                            <div class="stat-title">Miss</div>{{ leaderboards[0].nmiss }}
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div id="panel" class="bm-lb-bg table-responsive" v-if="leaderboards.length > 0">
-                            <table id="panel" class="bm-lb-table table-responsive">
-                                <thead id="panel" class="leaderboard-thread">
-                                    <tr id="panel">
-                                        <th id="panel" class="leaderboard-table__heading table-header-rank"> Rank</th> 
-                                        <th id="panel" class="leaderboard-table__heading table-header-grade"></th> 
-                                        <th id="panel" class="leaderboard-table__heading table-header-flag"></th> 
-                                        <th id="panel" class="leaderboard-table__heading table-header-player">Player</th> 
-                                        <th id="panel" class="leaderboard-table__heading table-header-pp">PP</th> 
-                                        <th id="panel" class="leaderboard-table__heading table-header-score">Score</th> 
-                                        <th id="panel" class="leaderboard-table__heading table-header-acc">Accuracy</th> 
-                                        <th id="panel" class="leaderboard-table__heading table-header-combo">Combo</th>
-                                        <th id="panel" class="leaderboard-table__heading table-header-hitstat">300</th>
-                                        <th id="panel" class="leaderboard-table__heading table-header-hitstat">100</th> 
-                                        <th id="panel" class="leaderboard-table__heading table-header-hitstat">50</th> 
-                                        <th id="panel" class="leaderboard-table__heading table-header-miss">Miss</th> 
-                                        <th id="panel" class="leaderboard-table__heading table-header-mods">Mods</th> 
-                                        <th id="panel" class="leaderboard-table__heading table-header-date">Date</th> 
-                                        <th id="panel" class="leaderboard-table__heading table-header-report"></th>
-                                    </tr>
-                                </thead>
-                                <tbody id="panel" style="display: table-row-group;">
-                                    <tr id="panel" v-for="(score, index) in leaderboards" class="leaderboard-row" :class="index % 2 === 0 ? 'row2p' : 'row1p'">
-                                        <td id="panel" class="leaderboard-table__column leaderboard-column__rank"><a @click="scoreBus.$emit('show-score-window', score.id)">#{{ index + 1 }}</a></td>
-                                        <td id="panel" class="leaderboard-table__column leaderboard-column__grade">{{ score.grade }}</td>
-                                        <td id="panel" class="leaderboard-table__column leaderboard-column__flag"><img :src="'/static/images/flags/' + score.player_country.toUpperCase() + '.png'" class="leaderboard-player-flag"></td>
-                                        <td id="panel" class="leaderboard-table__column leaderboard-column__player"><a v-if="score.clan_id != null">[{{ score.clan_tag }}]</a> <a :href="'/u/' + score.userid">{{ score.player_name }}</a></td>
-                                        <td id="panel" class="leaderboard-table__column leaderboard-column__pp">{{ score.pp }}</td>
-                                        <td id="panel" class="leaderboard-table__column leaderboard-column__score">{{ score.score }}</td>
-                                        <td id="panel" class="leaderboard-table__column leaderboard-column__accuracy">{{ score.acc }}%</td>
-                                        <td id="panel" class="leaderboard-table__column leaderboard-column__combo">{{ score.max_combo }}x</td>
-                                        <td id="panel" class="leaderboard-table__column leaderboard-column__hitstat">{{ score.n300 + score.ngeki }}</td>
-                                        <td id="panel" class="leaderboard-table__column leaderboard-column__hitstat">{{ score.n100 + score.nkatu }}</td>
-                                        <td id="panel" class="leaderboard-table__column leaderboard-column__hitstat">{{ score.n50 }}</td>
-                                        <td id="panel" class="leaderboard-table__column leaderboard-column__miss zero">{{ score.nmiss }}</td>
-                                        <td id="panel" class="leaderboard-table__column leaderboard-column__mods">{{ score.mods }}</td>
-                                        <td id="panel" class="leaderboard-table__column leaderboard-column__date">{{ score.play_time }}</td>
-                                        <td id="panel" class="leaderboard-table__column leaderboard-column__report">Report</td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    `,
-});
-var scoreBus = new Vue();
-new Vue({
-    el: '#score-window',
-    data: {
-        show: false,
-        scoreId: '', 
-        score: null,
-        video: null,
-        videoheight: '360px',
-        renderedreplayurl: '',
-        progress: 0,
-        replayIsLoading: false,
-    },
-    created: async function() {
-        scoreBus.$on('show-score-window', (scoreId) => { 
-            this.scoreId = scoreId; 
-            this.initScorePanel();
-        });
-        try {
-            const urlParams = new URLSearchParams(window.location.search);
-            const score = urlParams.get('score');
-
-            // If 'score' parameter is present, call showScoreWindow after 1 second
+    computed: {
+        hasLeaderboards() { 
+            const has = this.leaderboards.length > 0;
+            this.$log.debug('DATA', `hasLeaderboards: ${has}`, { leaderboards: this.leaderboards });
+            return has;
+        },
+        topScore() { 
+            const score = this.leaderboards[0] || null;
             if (score) {
-                console.log("Showing score: " + score);
-
-                await setTimeout(() => {
-                    scoreBus.$emit('show-score-window', score); // Pass the score ID as an argument
-                }, 10);
+                this.$log.debug('DATA', 'Top score retrieved', { scoreId: score.id, player: score.player_name });
             }
-        } catch (error) {
-            this.$log.error("Error showing score from url.");
-            this.$log.error(error);
+            return score;
+        },
+        selectedStats() { 
+            const stats = this.selected || {};
+            this.$log.debug('DATA', 'selectedStats accessed', { 
+                hasSelected: !!this.selected, 
+                title: stats.title,
+                artist: stats.artist 
+            });
+            return stats;
+        },
+        // Get the full game mode (mode + ruleset)
+        fullGameMode() {
+            const mode = this.selectedMode;
+            const ruleset = this.selectedRuleset;
+            
+            // Ruleset offsets: vanilla=0, relax=4, autopilot=8
+            // This matches the backend GameMode enum:
+            // 0-3: Vanilla (osu, taiko, catch, mania)
+            // 4-7: Relax (osu, taiko, catch, mania)
+            // 8-11: Autopilot (osu, taiko, catch, mania)
+            const rulesetOffset = ruleset === 1 ? 4 : (ruleset === 2 ? 8 : 0);
+            
+            return mode + rulesetOffset;
+        },
+        // Get valid mods for current mode and ruleset
+        validMods() {
+            const mode = this.selectedMode;
+            const ruleset = this.selectedRuleset;
+            
+            // Base mods that are valid for all modes/rulesets
+            let valid = 0;
+            
+            // Mods that work in all modes (excluding non-submittable mods)
+            valid |= (1 << 0);  // NOFAIL
+            valid |= (1 << 1);  // EASY
+            valid |= (1 << 3);  // HIDDEN
+            valid |= (1 << 4);  // HARDROCK
+            valid |= (1 << 5);  // SUDDENDEATH
+            valid |= (1 << 6);  // DOUBLETIME
+            valid |= (1 << 8);  // HALFTIME
+            valid |= (1 << 9);  // NIGHTCORE
+            valid |= (1 << 10); // FLASHLIGHT
+            valid |= (1 << 14); // PERFECT
+            valid |= (1 << 29); // SCOREV2
+            
+            // Mode-specific mods (excluding non-submittable mods)
+            if (mode === 0) { // osu!
+                valid |= (1 << 2);  // TOUCHSCREEN
+                valid |= (1 << 12); // SPUNOUT
+                valid |= (1 << 20); // FADEIN
+                // Note: AUTOPLAY, CINEMA, TARGET are not submittable
+                // Note: RELAX and AUTOPILOT are rulesets, not mods
+            } else if (mode === 1) { // taiko
+                valid |= (1 << 20); // FADEIN
+                // Note: AUTOPLAY, CINEMA, TARGET are not submittable
+                // Note: RELAX is a ruleset, not a mod
+            } else if (mode === 2) { // catch
+                valid |= (1 << 20); // FADEIN
+                // Note: AUTOPLAY, CINEMA, TARGET are not submittable
+                // Note: RELAX is a ruleset, not a mod
+            } else if (mode === 3) { // mania
+                valid |= (1 << 20); // FADEIN
+                valid |= (1 << 30); // MIRROR
+                valid |= (1 << 15); // KEY4
+                valid |= (1 << 16); // KEY5
+                valid |= (1 << 17); // KEY6
+                valid |= (1 << 18); // KEY7
+                valid |= (1 << 19); // KEY8
+                valid |= (1 << 24); // KEY9
+                valid |= (1 << 25); // KEYCOOP
+                valid |= (1 << 26); // KEY1
+                valid |= (1 << 27); // KEY3
+                valid |= (1 << 28); // KEY2
+                // Note: AUTOPLAY, CINEMA, TARGET are not submittable
+                // Note: RELAX is a ruleset, not a mod
+            }
+            
+            // Remove mods that conflict with ruleset
+            if (ruleset === 1) { // Relax ruleset
+                // In relax ruleset, SPUNOUT is not valid
+                valid &= ~(1 << 12); // Remove SPUNOUT
+            } else if (ruleset === 2) { // Autopilot ruleset
+                // In autopilot ruleset, SPUNOUT is not valid
+                valid &= ~(1 << 12); // Remove SPUNOUT
+            }
+            
+            return valid;
+        },
+        // Get list of mods that are currently selected and valid
+        selectedModsList() {
+            const mods = [];
+            const valid = this.validMods;
+            
+            for (let i = 0; i < 31; i++) {
+                const modBit = 1 << i;
+                if ((this.selectedMods & modBit) && (valid & modBit)) {
+                    mods.push(modBit);
+                }
+            }
+            
+            return mods;
+        },
+        // Get mods as a string for API
+        modsString() {
+            return this.selectedModsList.map(mod => {
+                const modNames = {
+                    0: 'NF', 1: 'EZ', 2: 'TD', 3: 'HD', 4: 'HR', 5: 'SD', 6: 'DT',
+                    7: 'RX', 8: 'HT', 9: 'NC', 10: 'FL', 11: 'AU', 12: 'SO', 13: 'AP',
+                    14: 'PF', 15: '4K', 16: '5K', 17: '6K', 18: '7K', 19: '8K', 20: 'FI',
+                    21: 'RN', 22: 'CN', 23: 'TP', 24: '9K', 25: 'CO', 26: '1K', 27: '3K',
+                    28: '2K', 29: 'V2', 30: 'MR'
+                };
+                const bitIndex = Math.log2(mod);
+                return modNames[bitIndex] || '';
+            }).join('');
+        },
+        // Get list of valid mod bits for display
+        validModsList() {
+            const mods = [];
+            const valid = this.validMods;
+            
+            for (let i = 0; i < 31; i++) {
+                const modBit = 1 << i;
+                if (valid & modBit) {
+                    mods.push(modBit);
+                }
+            }
+            
+            return mods;
+        },
+        // Get list of mods that are incompatible with currently selected mods
+        incompatibleMods() {
+            const incompatible = [];
+            
+            // Check each valid mod to see if it conflicts with selected mods
+            for (let i = 0; i < 31; i++) {
+                const modBit = 1 << i;
+                
+                // Only check mods that are valid for current mode/ruleset
+                if (this.validMods & modBit) {
+                    // Check if this mod conflicts with any selected mod
+                    const conflicts = this.getModConflicts(modBit);
+                    if (conflicts.length > 0) {
+                        incompatible.push(modBit);
+                    }
+                }
+            }
+            
+            return incompatible;
         }
     },
     methods: {
-        initScorePanel: async function() {
-            console.log("Showing Score Window | ID: " + this.scoreId + "");
-            // Reset Score Window Data
-            this.score = null;
-            this.video = null;
-            this.renderedreplayurl = '';
-            this.progress = 0;
-            await this.fetchScoreInfo();
-            console.log("");
+        async openPanel(id, set_id) {
+            this.$log.info('LIFECYCLE', 'Opening beatmap panel', { id, set_id });
+            this.id = id ?? null;
+            this.set_id = set_id ?? null;
+            
+            // Assert that set_id is provided
+            this.$log.assert(
+                this.set_id !== null && this.set_id !== undefined,
+                'LIFECYCLE',
+                'set_id is required to open beatmap panel',
+                { id, set_id },
+                false
+            );
+            
+            await this.fetchBeatmaps();
             this.show = true;
-        },
-        fetchScoreInfo: function() {
-            // Use the score ID to fetch score information from the API
-            try {
-                fetch(`https://api.${domain}/v1/get_score_info?id=${this.scoreId}&b=1`)
-                    .then(response => response.json())
-                    .then(data => {
-                        console.log(data);
-                        this.score = data['score'];
-                        console.warn("Retrieved Score:")
-                        console.log(this.score);
-                        this.score.beatmap = data['beatmap_info'];
-                        this.renderedreplayurl = 'https://dl2.issou.best/ordr/videos/render' + this.score.r_replay_id + '.mp4';
-                    })
-                    .catch(error => {
-                        this.$log.error('Error fetching score information:');
-                        this.$log.error(error);
-                    });
-            } catch (error) {
-                // Handle any errors
-                this.$log.error('Error fetching score information:');
-                this.$log.error(error);
-            }
-        },
-        addCommas(nStr) {
-            nStr += '';
-            var x = nStr.split('.');
-            var x1 = x[0];
-            var x2 = x.length > 1 ? '.' + x[1] : '';
-            var rgx = /(\d+)(\d{3})/;
-            while (rgx.test(x1)) {
-                x1 = x1.replace(rgx, '$1' + ',' + '$2');
-            }
-            return x1 + x2;
-        },
-        async DownloadReplay(scoreId) {
-            this.replayIsLoading = true;
-            // Construct the URL for the replay
-            const url = `https://api.${domain}/v1/get_replay?id=${scoreId}`;
-            // Direct the browser to the URL, which should trigger the download
-            window.location = url;
-            this.replayIsLoading = false;
-        },
-        play() {
-            if (this.video.paused) {
-                this.video.play();
-            } else {
-                this.video.pause();
-            }
-        },
-        fullScreen() {
-            //this.video.requestFullscreen(); // Disabled For new Container Fullscreen
-            const videoContainer = this.$refs.videoContainer;
-            if (videoContainer.requestFullscreen) {
-                videoContainer.requestFullscreen();
-            } else if (videoContainer.mozRequestFullScreen) { // Firefox
-                videoContainer.mozRequestFullScreen();
-            } else if (videoContainer.webkitRequestFullscreen) { // Chrome, Safari and Opera
-                videoContainer.webkitRequestFullscreen();
-            } else if (videoContainer.msRequestFullscreen) { // IE/Edge
-                videoContainer.msRequestFullscreen();
-            }
-        },
-        download() {
-            let a = document.createElement('a');
-            a.href = this.video.src;
-            a.target = "_blank";
-            a.download = "";
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-        },
-        shareScore() {
-            // Get the current URL without any query parameters
-            const baseUrl = window.location.protocol + '//' + window.location.host + window.location.pathname;
-    
-            // Get the scoreId
-            const scoreId = this.scoreId; // Replace this with how you get the scoreId
-    
-            // Create the share URL
-            const shareUrl = `${baseUrl}?score=${scoreId}`;
-    
-            // Copy the share URL to the clipboard
-            navigator.clipboard.writeText(shareUrl).then(() => {
-                console.log('Share URL copied to clipboard');
-            }).catch(err => {
-                this.$log.error('Could not copy text: ', err);
+            this.$log.info('LIFECYCLE', 'Beatmap panel opened', { 
+                show: this.show, 
+                beatmapsCount: this.beatmaps.length,
+                hasSelected: !!this.selected 
             });
         },
-        rewind() {
-            this.video.currentTime = this.video.currentTime - ((this.video.duration / 100) * 5);
+        close() { 
+            this.$log.info('LIFECYCLE', 'Closing beatmap panel');
+            this.show = false; 
         },
-        forward() {
-            this.video.currentTime = this.video.currentTime + ((this.video.duration / 100) * 5);
-        },
-        close: function() {
-            this.show = false;
-            const url = new URL(window.location.href);
-            url.searchParams.delete('score');
-            window.history.replaceState({}, '', url);
-        },
-        MAAIntToStr(int) {
-            switch (int) {
-                case 0:
-                    return 'V1';
-                case 1:
-                    return 'V2';
-                case 2:
-                    return 'V3';
-                case 3:
-                    return 'V-L1';
+        async fetchBeatmaps() {
+            this.$log.info('API', 'Fetching beatmaps', { set_id: this.set_id });
+            
+            try {
+                const url = `https://api.${domain}/v2/maps?set_id=${this.set_id}`;
+                this.$log.debug('API', 'Fetching from URL', { url });
+                
+                const res = await fetch(url);
+                
+                // Assert HTTP response is OK
+                this.$log.assert(
+                    res.ok,
+                    'API',
+                    'HTTP response not OK',
+                    { status: res.status, statusText: res.statusText, url },
+                    false
+                );
+                
+                const json = await res.json();
+                this.$log.debug('API', 'API response received', { 
+                    hasData: !!json.data,
+                    dataLength: json.data?.length || 0 
+                });
+                
+                // Assert that data exists
+                this.$log.assert(
+                    json.data && Array.isArray(json.data) && json.data.length > 0,
+                    'API',
+                    'No beatmap data returned from API',
+                    { set_id: this.set_id, rawData: json },
+                    false
+                );
+                
+                this.beatmaps = json.data.sort((a, b) => a.diff - b.diff);
+                this.$log.debug('DATA', 'Beatmaps sorted by difficulty', { 
+                    count: this.beatmaps.length,
+                    minDiff: this.beatmaps[0]?.diff,
+                    maxDiff: this.beatmaps[this.beatmaps.length - 1]?.diff 
+                });
+                
+                // Determine selected beatmap
+                if (this.id !== null) {
+                    this.selected = this.beatmaps.find(m => m.id === this.id);
+                    if (!this.selected) {
+                        this.$log.warn('DATA', 'Specific beatmap ID not found, using first beatmap', { 
+                            requestedId: this.id,
+                            availableIds: this.beatmaps.map(m => m.id) 
+                        });
+                        this.selected = this.beatmaps[0];
+                    }
+                } else {
+                    this.selected = this.beatmaps[0];
+                }
+                
+                // Assert that selected is now valid
+                this.$log.assert(
+                    this.selected !== null && this.selected !== undefined,
+                    'DATA',
+                    'Failed to select a beatmap',
+                    { 
+                        beatmapsCount: this.beatmaps.length,
+                        requestedId: this.id,
+                        set_id: this.set_id 
+                    },
+                    true
+                );
+                
+                this.$log.debug('DATA', 'Selected beatmap', { 
+                    id: this.selected.id,
+                    version: this.selected.version,
+                    diff: this.selected.diff 
+                });
+                
+                await this.fetchLeaderboards();
+            } catch (err) {
+                this.$log.error('API', 'Error fetching beatmaps', { 
+                    error: err.message,
+                    stack: err.stack,
+                    set_id: this.set_id 
+                });
+                
+                // Ensure selected is null on error to prevent template errors
+                this.selected = null;
+                this.beatmaps = [];
             }
         },
-    },
-    watch: {
-            score: function(newScore) {
-                if (newScore) {
-                    this.$nextTick(() => {
-                        this.video = this.$refs.video;
-                        this.video.addEventListener("timeupdate", () => {
-                            this.progress = (this.video.currentTime / this.video.duration) * 100;
-                        });
-                        this.video.addEventListener("ended", () => {
-                            this.video.currentTime = 0;
-                            this.video.pause();
-                        });
-                        // Select the element with the class 'modal-content'
-                        const modalContent = document.querySelector('.modal-content');
-
-                        // Calculate the width of the 'modal-content' element
-                        const width = modalContent.offsetWidth;
-
-                        // Calculate the height for a 16:9 aspect ratio
-                        const height = (width * 9) / 16;
-
-
-                        // Set the height of the video element
-                        var videoheight = `${height}`;
-                        this.videoheight = videoheight + 'px';
-                        const videoElement = this.$el.querySelector('.responsive-video');
-                        const scoreBanner = this.$el.querySelector('.score-banner');
-                        const songInfo = this.$el.querySelector('#SongInfo');
-                        const songTitle = this.$el.querySelector('#score-banner-map.title');
-                        const artistCreator = this.$el.querySelector('#score-banner-map.artist-creator');
-                        const scoreWindow = this.$el.querySelector('#score-window');
-                        const mapDifficulty = this.$el.querySelector('#difficulty.right');
-                        const mapInfo = this.$el.querySelector('#bm-info.selector');
-
-                        if (videoElement && scoreBanner) {
-                            videoElement.addEventListener('focus', function() {
-                                scoreWindow.classList.add('video-focused');
-                                scoreBanner.classList.add('video-focused');
-                                mapDifficulty.classList.add('video-focused');
-                                songInfo.classList.add('video-focused');
-                                songTitle.classList.add('video-focused');
-                                artistCreator.classList.add('video-focused');
-                            });
-
-                            videoElement.addEventListener('blur', function() {
-                                scoreWindow.classList.remove('video-focused');
-                                scoreBanner.classList.remove('video-focused');
-                                mapDifficulty.classList.remove('video-focused');
-                                songInfo.classList.remove('video-focused');
-                                songTitle.classList.remove('video-focused');
-                                artistCreator.classList.remove('video-focused');
-                            });
-
-                            videoElement.addEventListener('mouseover', function() {
-                                scoreBanner.classList.add('video-hovered');
-                                songInfo.classList.add('video-hovered');
-                                songTitle.classList.add('video-hovered');
-                                artistCreator.classList.add('video-hovered');
-                                mapInfo.classList.add('video-hovered');
-                            });
-
-                            videoElement.addEventListener('mouseout', function() {
-                                scoreBanner.classList.remove('video-hovered');
-                                songInfo.classList.remove('video-hovered');
-                                songTitle.classList.remove('video-hovered');
-                                artistCreator.classList.remove('video-hovered');
-                                mapInfo.classList.remove('video-hovered');
-                            });
-                        }
-                    });
+        async fetchLeaderboards() {
+            this.$log.info('API', 'Fetching leaderboards', { 
+                hasSelected: !!this.selected,
+                selectedId: this.selected?.id,
+                mode: this.selectedMode,
+                ruleset: this.selectedRuleset,
+                mods: this.selectedMods,
+                modsString: this.modsString 
+            });
+            
+            if (!this.selected) {
+                this.$log.warn('API', 'Cannot fetch leaderboards - no selected beatmap');
+                return;
+            }
+            
+            try {
+                // Build URL with filters
+                let url = `https://api.${domain}/v1/get_map_scores?id=${this.selected.id}&scope=best`;
+                
+                // Add mode parameter (full game mode including ruleset)
+                const fullMode = this.fullGameMode;
+                url += `&mode=${fullMode}`;
+                
+                // Add mods parameter if any mods are selected
+                if (this.selectedModsList.length > 0) {
+                    url += `&mods=${this.modsString}`;
+                }
+                
+                this.$log.debug('API', 'Fetching from URL', { url });
+                
+                const res = await fetch(url);
+                
+                // Assert HTTP response is OK
+                this.$log.assert(
+                    res.ok,
+                    'API',
+                    'HTTP response not OK',
+                    { status: res.status, statusText: res.statusText, url, selectedId: this.selected.id },
+                    false
+                );
+                
+                const json = await res.json();
+                this.$log.debug('API', 'API response received', { 
+                    hasScores: !!json.scores,
+                    scoresLength: json.scores?.length || 0 
+                });
+                
+                this.leaderboards = json.scores || [];
+                this.$log.info('API', 'Leaderboards fetched', { 
+                    count: this.leaderboards.length,
+                    selectedId: this.selected.id,
+                    mode: fullMode,
+                    mods: this.modsString 
+                });
+            } catch (err) {
+                this.$log.error('API', 'Error fetching leaderboards', { 
+                    error: err.message,
+                    stack: err.stack,
+                    selectedId: this.selected?.id 
+                });
+                this.leaderboards = [];
+            }
+        },
+        selectMap(id) {
+            this.$log.info('LIFECYCLE', 'Selecting beatmap', { id });
+            
+            if (!id) {
+                this.$log.warn('LIFECYCLE', 'Invalid beatmap ID provided', { id });
+                return;
+            }
+            
+            this.id = id;
+            this.selected = this.beatmaps.find(m => m.id === id) || this.beatmaps[0];
+            
+            // Assert that selected is now valid
+            this.$log.assert(
+                this.selected !== null && this.selected !== undefined,
+                'LIFECYCLE',
+                'Failed to select beatmap',
+                { 
+                    requestedId: id,
+                    beatmapsCount: this.beatmaps.length,
+                    availableIds: this.beatmaps.map(m => m.id) 
+                },
+                true
+            );
+            
+            this.$log.debug('DATA', 'Beatmap selected', { 
+                id: this.selected.id,
+                version: this.selected.version 
+            });
+            
+            this.leaderboards = [];
+            this.fetchLeaderboards();
+        },
+        playMapAudio(setId) {
+            this.$log.info('LIFECYCLE', 'Playing map audio', { setId });
+            
+            const audio = document.getElementById(`audio-${setId}`);
+            const playButton = document.getElementById(`play-${setId}`);
+            const mapPlayDiv = playButton ? playButton.parentElement : null;
+            
+            // Assert that audio element exists
+            this.$log.assert(
+                audio !== null,
+                'LIFECYCLE',
+                'Audio element not found',
+                { setId, elementId: `audio-${setId}` },
+                false
+            );
+            
+            if (!audio) return;
+            
+            // If clicking the same audio that's already playing, pause it
+            if (this.currentAudio && this.currentAudio === audio && !audio.paused) {
+                this.$log.debug('LIFECYCLE', 'Pausing current audio');
+                audio.pause();
+                if (mapPlayDiv) {
+                    mapPlayDiv.classList.remove('playing');
+                    // Don't reset progress - keep it at current position
+                }
+                // Cancel any pending animation frame
+                if (audio.animationFrameId) {
+                    cancelAnimationFrame(audio.animationFrameId);
+                    audio.animationFrameId = null;
+                }
+                this.currentAudio = null;
+                return;
+            }
+            
+            // Pause any other audio that's playing
+            if (this.currentAudio && this.currentAudio !== audio) {
+                this.$log.debug('LIFECYCLE', 'Pausing previous audio');
+                this.currentAudio.pause();
+                // Remove playing class from previous button and cancel animation frame
+                const prevAudio = this.currentAudio;
+                const prevPlayButton = document.getElementById(`play-${prevAudio.id.replace('audio-', '')}`);
+                if (prevPlayButton) {
+                    const prevMapPlayDiv = prevPlayButton.parentElement;
+                    if (prevMapPlayDiv) {
+                        prevMapPlayDiv.classList.remove('playing');
+                        prevMapPlayDiv.style.setProperty('--audio-progress', '0%');
+                    }
+                }
+                if (prevAudio.animationFrameId) {
+                    cancelAnimationFrame(prevAudio.animationFrameId);
+                    prevAudio.animationFrameId = null;
                 }
             }
-    },
-    template: `
-        <div id="score-modal" class="modal" v-bind:class="{ 'is-active': show }" style="z-index: 26;">
-            <div class="modal-background" @click="close"></div>
-            <div id="score-window" class="modal-content" v-if="show">
-                <style>
-                    .score-banner.video-focused {
-                        height: {{ videoheight }};
+            
+            // Play the new audio
+            this.$log.debug('LIFECYCLE', 'Playing audio');
+            audio.play();
+            
+            // Add playing class and set up progress tracking
+            if (mapPlayDiv) {
+                mapPlayDiv.classList.add('playing');
+                mapPlayDiv.style.setProperty('--audio-progress', '0%');
+            }
+            
+            // Store reference to mapPlayDiv for cleanup
+            audio.mapPlayDiv = mapPlayDiv;
+            
+            // Start smooth progress animation
+            this.startSmoothProgress(audio);
+            
+            // Reset progress when audio ends
+            audio.addEventListener('ended', () => {
+                if (mapPlayDiv) {
+                    mapPlayDiv.classList.remove('playing');
+                    mapPlayDiv.style.setProperty('--audio-progress', '0%');
+                }
+                // Cancel animation frame
+                if (audio.animationFrameId) {
+                    cancelAnimationFrame(audio.animationFrameId);
+                    audio.animationFrameId = null;
+                }
+                // Force Vue to update the icon
+                if (this.$forceUpdate) {
+                    this.$forceUpdate();
+                }
+            });
+            
+            // Reset progress only when paused at the beginning
+            audio.addEventListener('pause', () => {
+                if (mapPlayDiv && audio.currentTime === 0) {
+                    mapPlayDiv.classList.remove('playing');
+                    mapPlayDiv.style.setProperty('--audio-progress', '0%');
+                }
+                // Cancel animation frame
+                if (audio.animationFrameId) {
+                    cancelAnimationFrame(audio.animationFrameId);
+                    audio.animationFrameId = null;
+                }
+            });
+            
+            this.currentAudio = audio;
+        },
+        
+        /**
+         * Starts smooth progress animation using requestAnimationFrame
+         * @param {HTMLAudioElement} audio - The audio element
+         */
+        startSmoothProgress(audio) {
+            const updateProgress = () => {
+                if (!audio || !audio.mapPlayDiv || audio.paused) return;
+                
+                const progress = (audio.currentTime / audio.duration) * 100;
+                audio.mapPlayDiv.style.setProperty('--audio-progress', `${progress}%`);
+                
+                // Continue animation frame
+                audio.animationFrameId = requestAnimationFrame(updateProgress);
+            };
+            
+            // Start the animation loop
+            audio.animationFrameId = requestAnimationFrame(updateProgress);
+        },
+        /**
+         * Formats a date string or Unix timestamp to a "time ago" string.
+         * @param {string|number} dateString - The date string from your score object (e.g., '2023-01-10T14:59:00Z') or Unix timestamp in seconds.
+         * @returns {string} - A human-readable "time ago" string.
+         */
+        formatTimeAgo(dateString) {
+            // Check if it's a Unix timestamp (number in seconds)
+            let date;
+            if (typeof dateString === 'number' || /^\d+$/.test(dateString)) {
+                // Convert Unix timestamp (seconds) to milliseconds
+                date = new Date(dateString * 1000);
+            } else {
+                // Treat as date string
+                date = new Date(dateString);
+            }
+            
+            const now = new Date();
+            const seconds = Math.floor((now - date) / 1000);
+
+            let interval = seconds / 31536000;
+            if (interval >= 1) {
+                const years = Math.floor(interval);
+                return years === 1 ? "1 year ago" : years + " years ago";
+            }
+            
+            interval = seconds / 2592000;
+            if (interval >= 1) {
+                const months = Math.floor(interval);
+                return months === 1 ? "1 month ago" : months + " months ago";
+            }
+            
+            interval = seconds / 86400;
+            if (interval >= 1) {
+                const days = Math.floor(interval);
+                return days === 1 ? "1 day ago" : days + " days ago";
+            }
+            
+            interval = seconds / 3600;
+            if (interval >= 1) {
+                const hours = Math.floor(interval);
+                return hours === 1 ? "1 hour ago" : hours + " hours ago";
+            }
+            
+            interval = seconds / 60;
+            if (interval >= 1) {
+                const minutes = Math.floor(interval);
+                return minutes === 1 ? "1 minute ago" : minutes + " minutes ago";
+            }
+            
+            return Math.floor(seconds) + " seconds ago";
+        },
+        /**
+         * Formats a date string to a more readable local date and time.
+         * @param {string} dateString - The date string from your score object.
+         * @returns {string} - A formatted date string.
+         */
+        formatDate(dateString) {
+            const options = {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: false // Use 24-hour format
+            };
+            return new Date(dateString).toLocaleString(undefined, options);
+        },
+        /**
+         * Formats a duration in seconds into a MM:SS string.
+         * @param {number} totalSeconds - The total duration in seconds.
+         * @returns {string} - Formatted string like "2:05".
+         */
+        formatDuration(totalSeconds) {
+            const minutes = Math.floor(totalSeconds / 60);
+            const seconds = totalSeconds % 60;
+            const formattedMinutes = String(minutes);
+            const formattedSeconds = String(seconds).padStart(2, '0');
+            return `${formattedMinutes}:${formattedSeconds}`;
+        },
+        
+        // ================= FILTER METHODS =================
+        
+        /**
+         * Select a game mode (osu, taiko, catch, mania)
+         * @param {number} mode - The mode to select (0-3)
+         */
+        selectMode(mode) {
+            this.$log.info('LIFECYCLE', 'Selecting mode', { mode });
+            
+            if (mode < 0 || mode > 3) {
+                this.$log.warn('LIFECYCLE', 'Invalid mode provided', { mode });
+                return;
+            }
+            
+            this.selectedMode = mode;
+            
+            // Clear mods that are not valid for this mode
+            this.filterModsForMode();
+            
+            // Refetch leaderboards with new mode
+            this.refetchLeaderboards();
+        },
+        
+        /**
+         * Select a ruleset (vanilla, relax, autopilot)
+         * @param {number} ruleset - The ruleset to select (0-2)
+         */
+        selectRuleset(ruleset) {
+            this.$log.info('LIFECYCLE', 'Selecting ruleset', { ruleset });
+            
+            if (ruleset < 0 || ruleset > 2) {
+                this.$log.warn('LIFECYCLE', 'Invalid ruleset provided', { ruleset });
+                return;
+            }
+            
+            this.selectedRuleset = ruleset;
+            
+            // Clear mods that are not valid for this ruleset
+            this.filterModsForRuleset();
+            
+            // Refetch leaderboards with new ruleset
+            this.refetchLeaderboards();
+        },
+        
+        /**
+         * Toggle a mod on/off
+         * @param {number} modBit - The mod bit to toggle (1 << modIndex)
+         */
+        toggleMod(modBit) {
+            this.$log.info('LIFECYCLE', 'Toggling mod', { modBit });
+            
+            // Check if mod is valid for current mode/ruleset
+            if (!(this.validMods & modBit)) {
+                this.$log.warn('LIFECYCLE', 'Mod not valid for current mode/ruleset', { 
+                    modBit,
+                    validMods: this.validMods,
+                    mode: this.selectedMode,
+                    ruleset: this.selectedRuleset 
+                });
+                return;
+            }
+            
+            // Check for mod conflicts before enabling
+            if (!(this.selectedMods & modBit)) {
+                const conflicts = this.getModConflicts(modBit);
+                if (conflicts.length > 0) {
+                    this.$log.warn('LIFECYCLE', 'Mod conflicts with already selected mods', { 
+                        modBit,
+                        conflicts,
+                        selectedMods: this.selectedMods 
+                    });
+                    // Just return early - mod will be greyed out in UI
+                    return;
+                }
+            }
+            
+            // Toggle the mod
+            if (this.selectedMods & modBit) {
+                this.selectedMods &= ~modBit;
+                this.$log.debug('LIFECYCLE', 'Mod disabled', { modBit });
+            } else {
+                this.selectedMods |= modBit;
+                this.$log.debug('LIFECYCLE', 'Mod enabled', { modBit });
+            }
+            
+            // Refetch leaderboards with new mods
+            this.refetchLeaderboards();
+        },
+        
+        /**
+         * Get mods that conflict with the given mod
+         * @param {number} modBit - The mod bit to check
+         * @returns {Array} - Array of conflicting mod bits
+         */
+        getModConflicts(modBit) {
+            const conflicts = [];
+            const selected = this.selectedMods;
+            
+            // Check each selected mod for conflicts
+            for (let i = 0; i < 31; i++) {
+                const otherModBit = 1 << i;
+                if (selected & otherModBit) {
+                    if (this.modsConflict(modBit, otherModBit)) {
+                        conflicts.push(otherModBit);
                     }
-                </style>
-                <div class="main-block">
-                    <div class="score-banner" ref="videoContainer" :style="{
-                        backgroundcolor: 'rgba(0, 0, 0, 0)',
-                        }">
-                        <div v-if="score.r_replay_id" class="replay-block" :style="{
-                            backgroundImage: 'linear-gradient(to bottom, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.5)), url(https://assets.ppy.sh/beatmaps/' + score.beatmap.set_id + '/covers/card@2x.jpg)'
-                        }">
-                            <video ref="video" id="video" class="responsive-video" @click="play" :poster="'https://assets.ppy.sh/beatmaps/' + score.beatmap.set_id + '/covers/cover@2x.jpg'">
-                                <source :src="renderedreplayurl" type="video/mp4">
-                            </video>
-                            <div class="controls">
-                                <button @click="play"><i class="fa fa-play"></i><i class="fa fa-pause"></i></button>
-                                <button @click="rewind"><i class="fa fa-fast-backward"></i></button>
-                                <div class="timeline">
-                                    <div class="bar">
-                                        <div class="inner" :style="{ width: progress + '%' }"></div>
-                                    </div>
-                                </div>
-                                <button @click="forward"><i class="fa fa-fast-forward"></i></button>
-                                <button @click="fullScreen"><i class="fa fa-expand"></i></button>
-                                <button @click="shareScore"><i class="fa fa-share-alt"></i></button>
-                                <button @click="download"><i class="fa fa-cloud-download"></i></button>
-                            </div>
-                        </div>
-                        <div class="score-banner img" :style="{
-                            backgroundImage: 'linear-gradient(to bottom, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.5)), url(https://assets.ppy.sh/beatmaps/' + score.beatmap.set_id + '/covers/card@2x.jpg)'
-                        }">
-                        </div>
-                        <div id="SongInfo">
-                            <div id="score-banner-map" class="title">{{ score.beatmap.title }}
-                            <div id="score-banner-map" class="artist-creator">{{ score.beatmap.artist }} || <a :href="'https://osu.ppy.sh/u/' + score.beatmap.creator + '/'">{{ score.beatmap.creator }}</a></div>
-                            </div>
-                        </div>
-                        <div id="render-replay" @click="DownloadReplay(score.id)" :disabled="replayIsLoading" v-if="!score.r_replay_id" class="level-left" :style="{
-                            'position': 'absolute',
-                            'left': '1',
-                            'bottom': '19%',
-                        }">
-                            <div class="map-difficulty">
-                                <span class="kawata-icon"></span>
-                                <span id="" class="difficulty-title">{{ replayIsLoading ? 'Downloading Replay...' : 'Download Replay?' }}</span>
-                            </div>
-                        </div>
-                        <div id="bm-info" class="selector">
-                            <div class="left">
-                                <div class="map-difficulty">
-                                    <span class="kawata-icon"></span>
-                                    <span class="difficulty-title">{{ score.beatmap.version }}</span>
-                                </div>
-                            </div>
-                            <div id="difficulty" class="right">
-                                <div class="map-difficulty">
-                                    <span class="difficulty-title">{{ score.beatmap.diff }}⭐</span>
-                                </div>
-                                <div class="map-difficulty">
-                                    <span class="difficulty-title">CS: {{ score.beatmap.cs }}</span>
-                                </div>
-                                <div class="map-difficulty">
-                                    <span class="difficulty-title">AR: {{ score.beatmap.ar }}</span>
-                                </div>
-                                <div class="map-difficulty">
-                                    <span class="difficulty-title">OD: {{ score.beatmap.od }}</span>
-                                </div>
-                                <div class="map-difficulty">
-                                    <span class="difficulty-title">HP: {{ score.beatmap.hp }}</span>
-                                </div>
-                                <div class="map-difficulty">
-                                    <span class="difficulty-title">BPM: {{ score.beatmap.bpm }}</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="second-block">
-                    <div id="score-info" class="content">
-                        <div id="score-perf-ext" class="score-info-block">
-                            <div class="info-container">
-                                <h5 class="title">Performance (Extended)</h5>
-                                <div class="column">
-                                    <div class="info-value">
-                                        <h3 class="title">300s:</h3>
-                                        <h1 class="value">{{ score.n300 }}</h1>
-                                    </div>
-                                    <div class="info-value">
-                                        <h3 class="title">Geki:</h3>
-                                        <h1 class="value">{{ score.ngeki }}</h1>
-                                    </div>
-                                </div>
-                                <div class="column">
-                                    <div class="info-value">
-                                        <h3 class="title">100s:</h3>
-                                        <h1 class="value">{{ score.n100 }}</h1>
-                                    </div>
-                                    <div class="info-value">
-                                        <h3 class="title">Katu:</h3>
-                                        <h1 class="value">{{ score.nkatu }}</h1>
-                                    </div>
-                                </div>
-                                <div class="column">
-                                    <div class="info-value">
-                                        <h3 class="title">50s:</h3>
-                                        <h1 class="value">{{ score.n50 }}</h1>
-                                    </div>
-                                    <div class="info-value">
-                                        <h3 class="title">Misses:</h3>
-                                        <h1 class="value">{{ score.nmiss }}</h1>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div id="score-cheats" class="score-info-block">
-                            <div id="cheats" class="info-container" v-if="score.cheat_values">
-                                <h5 class="title">Cheats</h5>
-                                <div id="cheats" class="column">
-                                    <h5 class="title">Assistance:</h5>
-                                    <div id="cheats" class="row">
-                                        <div class="info-value" v-if="score.cheat_values.Timewarp">
-                                            <h3 class="title">Timewarp:</h3>
-                                            <!--<h1 class="title" v-if="score.cheat_values.TimewarpType">Type: {{ score.cheat_values.TimewarpType }}</h1>-->
-                                            <h1 class="value" v-if="score.cheat_values.TimewarpRate">{{ score.cheat_values.TimewarpRate }}% Speed</h1>
-                                            <h1 class="value" v-if="score.cheat_values.TimewarpMultiplier">{{ score.cheat_values.TimewarpMultiplier }}x Speed</h1>
-                                        </div>
-                                        <div class="info-value" v-if="score.cheat_values.AimCorrection || (score.cheat_values.AimType == 'Correction')">
-                                            <h3 class="title">Aim Correction:</h3>
-                                            <h1 class="value" v-if="score.cheat_values.AimCorrectionRelative">Range: CS + {{ score.cheat_values.AimCorrectionValue }}</h1>
-                                            <h1 class="value" v-else>Range: {{ score.cheat_values.AimCorrectionValue }}</h1>
-                                            <h1 class="value" v-if="score.cheat_values.TimesCorrected"># of Corrections: {{ score.cheat_values.TimesCorrected }}</h1>
-                                            <h1 class="value" v-if="score.cheat_values.TapOnCorrect">Tap on Correct</h1>
-                                        </div>
-                                        <div class="info-value" v-if="score.cheat_values.AimType == 'OBAA'">
-                                            <h3 class="title">Aim Assist: (Osu!Buddy Style)</h3>
-                                            <h1 class="value" v-if="score.cheat_values.AimStrength">Strength: {{ score.cheat_values.AimStrength }}</h1>
-                                            <h1 class="value" v-if="score.cheat_values.AimStartingDistance">Starting Distance: {{ score.cheat_values.AimStartingDistance }}</h1>
-                                            <h1 class="value" v-if="score.cheat_values.AimStoppingDistance">Stopping Distance: {{ score.cheat_values.AimStoppingDistance }}</h1>
-                                            <h1 class="value" v-if="score.cheat_values.AimAssistOnSliders">Assist on Sliders</h1>
-                                        </div>
-                                        <div class="info-value" v-if="score.cheat_values.AimType == 'MapleAA'>
-                                            <h3 class="title">Aim Assist: (MapleAA: {{ this.MAAIntToStr(score.cheat_values.Algorithm) }} ) </h3>
-                                        </div>
-                                        <div class="info-value" v-if="score.cheat_values.RelaxHack">
-                                            <h3 class="title">Relax Hack</h3>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div id="cheats" class="column">
-                                    <h5 class="title">Appearance:</h5>
-                                    <div id="cheats" class="row">
-                                        <div class="info-value" v-if="score.cheat_values.ARChanger">
-                                            <h3 class="title">AR Changer:</h3>
-                                            <h1 class="value" v-if="score.cheat_values.ARChangerAR">{{ score.cheat_values.ARChangerAR.toFixed(2) }} AR</h1>
-                                        </div>
-                                        <div class="info-value" v-if="score.cheat_values.CSChanger">
-                                            <h3 class="title" v-if="score.cheat_values.CSChanger">CS Changer</h3>
-                                        </div>
-                                        <div class="info-value" v-if="score.cheat_values.HiddenRemover || score.cheat_values.FlashlightRemover">
-                                            <h3 class="title" v-if="score.cheat_values.HiddenRemover">Hidden Remover</h3>
-                                            <h3 class="title" v-if="score.cheat_values.FlashlightRemover">Flashlight Remover</h3>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div id="score-perf" class="score-info-block">
-                            <div class="info-container">
-                                <h5 class="title">Performance</h5>
-                                <div class="info-value">
-                                    <h3 class="title">PP:</h3>
-                                    <h1 class="value">{{ addCommas(score.pp) }}</h1>
-                                </div>
-                                <div class="info-value">
-                                    <h3 class="title">Score:</h3>
-                                    <h1 class="value">{{ addCommas(score.score) }}</h1>
-                                </div>
-                                <div class="info-value">
-                                    <h3 class="title">Accuracy:</h3>
-                                    <h1 class="value">{{ score.acc }}%</h1>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    </div>
-    `
+                }
+            }
+            
+            return conflicts;
+        },
+        
+        /**
+         * Check if two mods conflict
+         * @param {number} mod1 - First mod bit
+         * @param {number} mod2 - Second mod bit
+         * @returns {boolean} - True if mods conflict
+         */
+        modsConflict(mod1, mod2) {
+            // EZ and HR conflict
+            if ((mod1 === (1 << 1) && mod2 === (1 << 4)) || 
+                (mod1 === (1 << 4) && mod2 === (1 << 1))) {
+                return true;
+            }
+            
+            // DT and HT conflict
+            if ((mod1 === (1 << 6) && mod2 === (1 << 8)) || 
+                (mod1 === (1 << 8) && mod2 === (1 << 6))) {
+                return true;
+            }
+            
+            // DT and NC conflict (similar mods)
+            if ((mod1 === (1 << 6) && mod2 === (1 << 9)) || 
+                (mod1 === (1 << 9) && mod2 === (1 << 6))) {
+                return true;
+            }
+            
+            // SD and PF conflict (similar mods)
+            if ((mod1 === (1 << 5) && mod2 === (1 << 14)) || 
+                (mod1 === (1 << 14) && mod2 === (1 << 5))) {
+                return true;
+            }
+            
+            // NF and SD conflict
+            if ((mod1 === (1 << 0) && mod2 === (1 << 5)) || 
+                (mod1 === (1 << 5) && mod2 === (1 << 0))) {
+                return true;
+            }
+            
+            // NF and PF conflict
+            if ((mod1 === (1 << 0) && mod2 === (1 << 14)) || 
+                (mod1 === (1 << 14) && mod2 === (1 << 0))) {
+                return true;
+            }
+            
+            // HD and FI conflict in mania
+            if (this.selectedMode === 3 && 
+                ((mod1 === (1 << 3) && mod2 === (1 << 20)) || 
+                 (mod1 === (1 << 20) && mod2 === (1 << 3)))) {
+                return true;
+            }
+            
+            return false;
+        },
+        
+        /**
+         * Clear all selected mods
+         */
+        clearMods() {
+            this.$log.info('LIFECYCLE', 'Clearing all mods');
+            this.selectedMods = 0;
+            this.refetchLeaderboards();
+        },
+        
+        /**
+         * Filter selected mods to only include those valid for current mode
+         */
+        filterModsForMode() {
+            const valid = this.validMods;
+            const filtered = this.selectedMods & valid;
+            
+            if (filtered !== this.selectedMods) {
+                this.$log.debug('LIFECYCLE', 'Filtered mods for mode', { 
+                    oldMods: this.selectedMods,
+                    newMods: filtered,
+                    mode: this.selectedMode,
+                    ruleset: this.selectedRuleset 
+                });
+                this.selectedMods = filtered;
+            }
+        },
+        
+        /**
+         * Filter selected mods to only include those valid for current ruleset
+         */
+        filterModsForRuleset() {
+            const valid = this.validMods;
+            const filtered = this.selectedMods & valid;
+            
+            if (filtered !== this.selectedMods) {
+                this.$log.debug('LIFECYCLE', 'Filtered mods for ruleset', { 
+                    oldMods: this.selectedMods,
+                    newMods: filtered,
+                    mode: this.selectedMode,
+                    ruleset: this.selectedRuleset 
+                });
+                this.selectedMods = filtered;
+            }
+        },
+        
+        /**
+         * Refetch leaderboards with current filters
+         */
+        async refetchLeaderboards() {
+            this.$log.info('LIFECYCLE', 'Refetching leaderboards with filters', { 
+                mode: this.selectedMode,
+                ruleset: this.selectedRuleset,
+                mods: this.selectedMods 
+            });
+            
+            if (!this.selected) {
+                this.$log.warn('LIFECYCLE', 'Cannot refetch - no selected beatmap');
+                return;
+            }
+            
+            await this.fetchLeaderboards();
+        },
+        
+        /**
+         * Get the display name for a mode
+         * @param {number} mode - The mode (0-3)
+         * @returns {string} - The display name
+         */
+        getModeName(mode) {
+            const names = ['osu!', 'taiko', 'catch', 'mania'];
+            return names[mode] || 'Unknown';
+        },
+        
+        /**
+         * Get the display name for a ruleset
+         * @param {number} ruleset - The ruleset (0-2)
+         * @returns {string} - The display name
+         */
+        getRulesetName(ruleset) {
+            const names = ['Vanilla', 'Relax', 'Autopilot'];
+            return names[ruleset] || 'Unknown';
+        },
+        
+        /**
+         * Get the icon for a mode
+         * @param {number} mode - The mode (0=osu!, 1=taiko, 2=catch, 3=mania)
+         * @returns {string} - The HTML for the icon
+         */
+        getModeIcon(mode) {
+            const icons = {
+                0: '<i class="fas fa-circle"></i>',      // osu!
+                1: '<i class="fas fa-drum"></i>',        // taiko
+                2: '<i class="fas fa-apple-alt"></i>',   // catch
+                3: '<i class="fas fa-keyboard"></i>'     // mania
+            };
+            return icons[mode] || '<i class="fas fa-question"></i>';
+        },
+        
+        /**
+         * Get the icon for a ruleset
+         * @param {number} ruleset - The ruleset (0=vanilla, 1=relax, 2=autopilot)
+         * @returns {string} - The HTML for the icon
+         */
+        getRulesetIcon(ruleset) {
+            const icons = {
+                0: '<i class="fas fa-gamepad"></i>',     // Vanilla
+                1: '<i class="fas fa-couch"></i>',       // Relax
+                2: '<i class="fas fa-crosshairs"></i>'   // Autopilot
+            };
+            return icons[ruleset] || '<i class="fas fa-question"></i>';
+        },
+        
+        /**
+         * Get the display name for a mod bit
+         * @param {number} modBit - The mod bit (1 << modIndex)
+         * @returns {string} - The display name
+         */
+        getModName(modBit) {
+            const modNames = {
+                0: 'NF', 1: 'EZ', 2: 'TD', 3: 'HD', 4: 'HR', 5: 'SD', 6: 'DT',
+                7: 'RX', 8: 'HT', 9: 'NC', 10: 'FL', 11: 'AU', 12: 'SO', 13: 'AP',
+                14: 'PF', 15: '4K', 16: '5K', 17: '6K', 18: '7K', 19: '8K', 20: 'FI',
+                21: 'RN', 22: 'CN', 23: 'TP', 24: '9K', 25: 'CO', 26: '1K', 27: '3K',
+                28: '2K', 29: 'V2', 30: 'MR'
+            };
+            const bitIndex = Math.log2(modBit);
+            return modNames[bitIndex] || 'Unknown';
+        },
+        
+        /**
+         * Get the full display name for a mod bit
+         * @param {number} modBit - The mod bit (1 << modIndex)
+         * @returns {string} - The full display name
+         */
+        getModFullName(modBit) {
+            const fullNames = {
+                0: 'No Fail', 1: 'Easy', 2: 'Touchscreen', 3: 'Hidden', 4: 'Hard Rock',
+                5: 'Sudden Death', 6: 'Double Time', 7: 'Relax', 8: 'Half Time',
+                9: 'Nightcore', 10: 'Flashlight', 11: 'Autoplay', 12: 'Spun Out',
+                13: 'Autopilot', 14: 'Perfect', 15: '4K', 16: '5K', 17: '6K',
+                18: '7K', 19: '8K', 20: 'Fade In', 21: 'Random', 22: 'Cinema',
+                23: 'Target', 24: '9K', 25: 'Co-op', 26: '1K', 27: '3K', 28: '2K',
+                29: 'ScoreV2', 30: 'Mirror'
+            };
+            const bitIndex = Math.log2(modBit);
+            return fullNames[bitIndex] || 'Unknown';
+        },
+        
+        /**
+         * Get the Font Awesome icon for a mod bit
+         * @param {number} modBit - The mod bit (1 << modIndex)
+         * @returns {string} - The HTML for the icon
+         */
+        getModIcon(modBit) {
+            const icons = {
+                0: '<i class="fas fa-heart"></i>',           // NF - No Fail
+                1: '<i class="fas fa-circle"></i>',          // EZ - Easy
+                2: '<i class="fas fa-hand-pointer"></i>',    // TD - Touchscreen
+                3: '<i class="fas fa-eye"></i>',             // HD - Hidden
+                4: '<i class="fas fa-gem"></i>',             // HR - Hard Rock
+                5: '<i class="fas fa-skull"></i>',           // SD - Sudden Death
+                6: '<i class="fas fa-bolt"></i>',            // DT - Double Time
+                7: '<i class="fas fa-couch"></i>',           // RX - Relax
+                8: '<i class="fas fa-hourglass-half"></i>',  // HT - Half Time
+                9: '<i class="fas fa-moon"></i>',            // NC - Nightcore
+                10: '<i class="fas fa-bolt-lightning"></i>', // FL - Flashlight
+                11: '<i class="fas fa-robot"></i>',          // AU - Autoplay
+                12: '<i class="fas fa-circle-notch"></i>',   // SO - Spun Out
+                13: '<i class="fas fa-crosshairs"></i>',     // AP - Autopilot
+                14: '<i class="fas fa-check-circle"></i>',   // PF - Perfect
+                15: '<i class="fas fa-keyboard"></i>',       // 4K
+                16: '<i class="fas fa-keyboard"></i>',       // 5K
+                17: '<i class="fas fa-keyboard"></i>',       // 6K
+                18: '<i class="fas fa-keyboard"></i>',       // 7K
+                19: '<i class="fas fa-keyboard"></i>',       // 8K
+                20: '<i class="fas fa-fade"></i>',           // FI - Fade In
+                21: '<i class="fas fa-dice"></i>',           // RN - Random
+                22: '<i class="fas fa-film"></i>',           // CN - Cinema
+                23: '<i class="fas fa-bullseye"></i>',       // TP - Target
+                24: '<i class="fas fa-keyboard"></i>',       // 9K
+                25: '<i class="fas fa-users"></i>',          // CO - Co-op
+                26: '<i class="fas fa-keyboard"></i>',       // 1K
+                27: '<i class="fas fa-keyboard"></i>',       // 3K
+                28: '<i class="fas fa-keyboard"></i>',       // 2K
+                29: '<i class="fas fa-trophy"></i>',         // V2 - ScoreV2
+                30: '<i class="fas fa-arrows-left-right"></i>' // MR - Mirror
+            };
+            const bitIndex = Math.log2(modBit);
+            return icons[bitIndex] || '<i class="fas fa-question"></i>';
+        }
+    }
+});
+
+// ================= SCORE WINDOW =================
+bootstrapVue('score-panel', {
+    el: '#score-panel-modal',
+    templateId: 'score-panel-template',
+    data() {
+        return { 
+            show: false, 
+            scoreId: null, 
+            score: null, 
+            replayIsLoading: false, 
+            activeTab: 'Score',
+            fetchError: null,
+            fetchState: 'idle', // 'idle', 'loading', 'success', 'error'
+            isLoadingPlayer: false,
+            playerError: null
+        };
+    },
+    created() {
+        this.$log = ColorfulLogger.child('Score Panel');
+        this.$log.info('LIFECYCLE', 'Score Panel created');
+        
+        // External trigger
+        scoreBus.$on('show-score-window', this.openWithScore);
+
+        // URL-based trigger
+        try {
+            const score = new URLSearchParams(window.location.search).get('score');
+            if (score) {
+                this.$log.info('LIFECYCLE', 'URL-based trigger detected, score:', score);
+                this.openWithScore(score);
+            }
+        } catch (err) { 
+            this.$log.error('LIFECYCLE', 'Failed to parse score from URL', err); 
+        }
+    },
+    beforeDestroy() {
+        this.$log.info('LIFECYCLE', 'Score Panel destroyed, cleaning up');
+        // Clean up any pending operations
+        if (this.fetchState === 'loading') {
+            this.$log.warn('LIFECYCLE', 'Component destroyed while fetch was in progress');
+        }
+    },
+    computed: {
+        safeScore() {
+            if (!this.score) {
+                return null;
+            }
+            return this.score;
+        },
+        safeBeatmap() {
+            if (!this.score || !this.score.beatmap) {
+                return null;
+            }
+            return this.score.beatmap;
+        },
+        safePlayer() {
+            if (!this.score || !this.score.player) {
+                return null;
+            }
+            return this.score.player;
+        },
+        hasValidData() {
+            return this.score !== null && this.score !== undefined;
+        },
+        hasCheats() {
+            const cheats = this.getCheatValues();
+            if (!cheats) {
+                return false;
+            }
+            // Check if there are any non-Misc cheat values
+            const categories = this.getCheatValuesByCategory();
+            return categories.length > 0;
+        }
+    },
+    
+    watch: {
+        safePlayer: {
+            handler: function(newVal) {
+                this.$log.debug('DATA', 'safePlayer changed', {
+                    safePlayer: newVal,
+                    hasSafePlayer: !!newVal,
+                    playerName: newVal?.name,
+                    playerId: newVal?.id,
+                    playerNameInInfo: newVal?.info?.name,
+                    playerIdInInfo: newVal?.info?.id,
+                    hasInfo: !!newVal?.info
+                });
+            },
+            deep: true
+        }
+    },
+    methods: {
+        async openWithScore(scoreId) {
+            this.$log.info('LIFECYCLE', 'openWithScore called with scoreId:', scoreId);
+            
+            // Validate scoreId
+            if (!scoreId || isNaN(scoreId)) {
+                this.$log.error('LIFECYCLE', 'Invalid scoreId provided:', scoreId);
+                this.fetchError = "Invalid score ID";
+                this.fetchState = 'error';
+                this.show = true; // Show the error modal
+                return;
+            }
+            
+            this.resetState();
+            this.scoreId = scoreId;
+            this.fetchState = 'loading';
+            this.show = true; // Show loading state immediately
+            this.$log.info('LIFECYCLE', 'Starting fetch for scoreId:', scoreId);
+            
+            await this.fetchScoreInfo();
+            
+            // Only show if we have valid data
+            if (this.score && this.fetchState === 'success') {
+                this.$log.info('LIFECYCLE', 'Score modal opened successfully:', scoreId);
+            } else if (this.fetchState === 'error') {
+                this.$log.error('LIFECYCLE', 'Failed to open score modal - fetch error', {
+                    scoreId: this.scoreId,
+                    fetchError: this.fetchError,
+                    fetchState: this.fetchState
+                });
+                // Error state is already set, modal will show error
+            } else {
+                this.$log.error('LIFECYCLE', 'Failed to open score modal - no valid score data', {
+                    scoreId: this.scoreId,
+                    score: this.score,
+                    fetchState: this.fetchState
+                });
+                this.fetchError = "No score data received";
+                this.fetchState = 'error';
+            }
+        },
+        close() { 
+            this.$log.info('LIFECYCLE', 'Closing score modal', {
+                scoreId: this.scoreId,
+                fetchState: this.fetchState
+            });
+            this.show = false; 
+            this.resetUrl(); 
+        },
+        resetState() { 
+            this.$log.debug('LIFECYCLE', 'Resetting state');
+            this.score = null; 
+            this.scoreId = null; 
+            this.replayIsLoading = false; 
+            this.fetchError = null;
+            this.fetchState = 'idle';
+        },
+        resetUrl() {
+            try {
+                const url = new URL(window.location.href);
+                url.searchParams.delete('score');
+                window.history.replaceState({}, '', url);
+                this.$log.debug('LIFECYCLE', 'URL reset');
+            } catch (err) {
+                this.$log.error('LIFECYCLE', 'Failed to reset URL', err);
+            }
+        },
+        async fetchScoreInfo() {
+            if (!this.scoreId) {
+                this.$log.error('API', 'fetchScoreInfo called without scoreId');
+                this.fetchState = 'error';
+                this.fetchError = "No score ID";
+                return;
+            }
+            
+            try {
+                const url = `https://api.${domain}/v1/get_score_info?id=${this.scoreId}&b=1`;
+                this.$log.info('API', 'Fetching score info from:', url);
+                
+                const res = await fetch(url);
+                
+                // Check HTTP response
+                if (!res.ok) {
+                    this.$log.error('API', 'HTTP error fetching score info', {
+                        status: res.status,
+                        statusText: res.statusText,
+                        scoreId: this.scoreId
+                    });
+                    this.fetchState = 'error';
+                    this.fetchError = `HTTP ${res.status}: ${res.statusText}`;
+                    return;
+                }
+                
+                const data = await res.json();
+                this.$log.debug('API', 'API response received', { 
+                    hasScore: !!data.score, 
+                    hasBeatmapInfo: !!data.beatmap_info,
+                    rawData: data 
+                });
+                
+                // Validate response structure
+                if (!data || typeof data !== 'object') {
+                    this.$log.error('API', 'Invalid API response - not an object', { 
+                        scoreId: this.scoreId,
+                        response: data 
+                    });
+                    this.fetchState = 'error';
+                    this.fetchError = "Invalid API response format";
+                    return;
+                }
+                
+                if (!data.score) {
+                    this.$log.error('API', "API response missing 'score' property", { 
+                        scoreId: this.scoreId,
+                        response: data 
+                    });
+                    this.fetchState = 'error';
+                    this.fetchError = "API response missing score data";
+                    return;
+                }
+                
+                if (!data.beatmap_info) {
+                    this.$log.warn('API', "API response missing 'beatmap_info' property", { 
+                        scoreId: this.scoreId,
+                        score: data.score 
+                    });
+                    // Don't fail completely - score data might still be useful
+                }
+                
+                // Create a safe copy of the score data
+                this.score = { ...data.score };
+                
+                // Add beatmap info if available
+                if (data.beatmap_info) {
+                    this.score.beatmap = { ...data.beatmap_info };
+                    this.$log.debug('DATA', 'Beatmap info attached to score');
+                } else {
+                    this.score.beatmap = null;
+                    this.$log.warn('DATA', 'Beatmap info not available for score');
+                }
+                
+                // Validate that the score object has required properties
+                if (this.score.id === undefined || this.score.id === null) {
+                    this.$log.warn('DATA', 'Score object missing ID property', {
+                        score: this.score
+                    });
+                }
+                
+                // Fetch player info if available
+                if (this.score.userid) {
+                    this.$log.debug('API', 'Fetching player info for user_id:', this.score.userid);
+                    await this.fetchPlayerInfo(this.score.userid);
+                } else {
+                    this.$log.warn('DATA', 'No userid found in score data', {
+                        score: this.score
+                    });
+                }
+                
+                this.fetchState = 'success';
+                this.$log.info('API', 'Score info fetched successfully', {
+                    scoreId: this.scoreId,
+                    scoreIdInResponse: this.score.id,
+                    hasBeatmap: !!this.score.beatmap,
+                    hasPlayer: !!this.score.player
+                });
+                
+            } catch (err) { 
+                this.$log.error('API', 'Failed to fetch score info', {
+                    error: err,
+                    scoreId: this.scoreId,
+                    errorType: err.constructor.name,
+                    errorMessage: err.message,
+                    stack: err.stack
+                });
+                this.fetchState = 'error';
+                this.fetchError = err.message || "Unknown fetch error";
+            }
+        },
+        async fetchPlayerInfo(userId) {
+            if (!userId || this.isLoadingPlayer) {
+                this.$log.debug('API', 'fetchPlayerInfo early return', {
+                    hasUserId: !!userId,
+                    isLoadingPlayer: this.isLoadingPlayer
+                });
+                return;
+            }
+            
+            this.isLoadingPlayer = true;
+            this.playerError = null;
+            
+            this.$log.debug('API', 'fetchPlayerInfo starting for userId:', userId);
+            
+            try {
+                const url = `https://api.${domain}/v1/get_player_info?id=${userId}&scope=all`;
+                this.$log.info('API', 'Fetching player info from:', url);
+                
+                const res = await fetch(url);
+                
+                // Check HTTP response
+                if (!res.ok) {
+                    this.$log.error('API', 'HTTP error fetching player info', {
+                        status: res.status,
+                        statusText: res.statusText,
+                        userId: userId
+                    });
+                    this.playerError = `HTTP ${res.status}: ${res.statusText}`;
+                    return;
+                }
+                
+                const data = await res.json();
+                this.$log.debug('API', 'Player API response received', { 
+                    hasPlayer: !!data.player,
+                    rawData: data 
+                });
+                
+                // Validate response structure
+                if (!data || typeof data !== 'object') {
+                    this.$log.error('API', 'Invalid player API response - not an object', { 
+                        userId: userId,
+                        response: data 
+                    });
+                    this.playerError = "Invalid player API response format";
+                    return;
+                }
+                
+                if (!data.player) {
+                    this.$log.error('API', "Player API response missing 'player' property", { 
+                        userId: userId,
+                        response: data 
+                    });
+                    this.playerError = "Player API response missing player data";
+                    return;
+                }
+                
+                // Attach player info to score object
+                if (this.score) {
+                    // Create a new score object to ensure Vue's reactivity system detects the change
+                    this.score = {
+                        ...this.score,
+                        player: { ...data.player }
+                    };
+                    this.$log.debug('DATA', 'Player info attached to score', {
+                        hasPlayerId: data.player.hasOwnProperty('player_id'),
+                        hasId: data.player.hasOwnProperty('id'),
+                        playerIdValue: data.player.player_id,
+                        idValue: data.player.id,
+                        hasInfo: data.player.hasOwnProperty('info'),
+                        hasStats: data.player.hasOwnProperty('stats'),
+                        playerName: data.player.info?.name,
+                        playerIdInInfo: data.player.info?.id
+                    });
+                    this.$log.debug('DATA', 'safePlayer computed property', {
+                        safePlayer: this.safePlayer,
+                        hasSafePlayer: !!this.safePlayer
+                    });
+                } else {
+                    this.$log.warn('DATA', 'No score object to attach player info to');
+                }
+                
+            } catch (err) { 
+                this.$log.error('API', 'Failed to fetch player info', {
+                    error: err,
+                    userId: userId,
+                    errorType: err.constructor.name,
+                    errorMessage: err.message,
+                    stack: err.stack
+                });
+                this.playerError = err.message || "Unknown fetch error";
+            } finally {
+                this.isLoadingPlayer = false;
+                this.$log.debug('API', 'fetchPlayerInfo completed');
+            }
+        },
+        async DownloadReplay(scoreId) {
+            if (this.replayIsLoading) {
+                this.$log.warn('API', 'DownloadReplay called while already loading');
+                return;
+            }
+            
+            this.$log.info('API', 'Starting replay download for scoreId:', scoreId);
+            this.replayIsLoading = true;
+            
+            try { 
+                const url = `https://api.${domain}/v1/get_replay?id=${scoreId}`;
+                this.$log.debug('API', 'Redirecting to replay URL:', url);
+                window.location.href = url; 
+            } catch (err) {
+                this.$log.error('API', 'Failed to initiate replay download', {
+                    error: err,
+                    scoreId: scoreId
+                });
+            }
+            finally { 
+                this.replayIsLoading = false; 
+            }
+        },
+        shareScore() {
+            if (!this.scoreId) {
+                this.$log.error('UTIL', 'Cannot share score - no scoreId');
+                return;
+            }
+            
+            try {
+                const base = `${window.location.protocol}//${window.location.host}${window.location.pathname}`;
+                const url = `${base}?score=${this.scoreId}`;
+                this.$log.info('UTIL', 'Sharing score URL:', url);
+                
+                navigator.clipboard.writeText(url)
+                    .then(() => this.$log.info('UTIL', 'Score link copied to clipboard'))
+                    .catch(err => this.$log.error('UTIL', 'Clipboard error', err));
+            } catch (err) {
+                this.$log.error('UTIL', 'Failed to share score', err);
+            }
+        },
+        addCommas(n) {
+            if (n === null || n === undefined) {
+                this.$log.warn('UTIL', 'addCommas called with null/undefined value:', n);
+                return '0';
+            }
+            
+            try {
+                const parts = String(n).split('.');
+                parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+                return parts.join('.');
+            } catch (err) {
+                this.$log.error('UTIL', 'Failed to format number with commas', { 
+                    value: n, 
+                    error: err 
+                });
+                return String(n);
+            }
+        },
+
+        /**
+         * Formats a date string or Unix timestamp to a "time ago" string.
+         * @param {string|number} dateString - The date string from your score object (e.g., '2023-01-10T14:59:00Z') or Unix timestamp in seconds.
+         * @returns {string} - A human-readable "time ago" string.
+         */
+        formatTimeAgo(dateString) {
+            // Check if it's a Unix timestamp (number in seconds)
+            let date;
+            if (typeof dateString === 'number' || /^\d+$/.test(dateString)) {
+                // Convert Unix timestamp (seconds) to milliseconds
+                date = new Date(dateString * 1000);
+            } else {
+                // Treat as date string
+                date = new Date(dateString);
+            }
+            
+            const now = new Date();
+            const seconds = Math.floor((now - date) / 1000);
+
+            let interval = seconds / 31536000;
+            if (interval >= 1) {
+                const years = Math.floor(interval);
+                return years === 1 ? "1 year ago" : years + " years ago";
+            }
+            
+            interval = seconds / 2592000;
+            if (interval >= 1) {
+                const months = Math.floor(interval);
+                return months === 1 ? "1 month ago" : months + " months ago";
+            }
+            
+            interval = seconds / 86400;
+            if (interval >= 1) {
+                const days = Math.floor(interval);
+                return days === 1 ? "1 day ago" : days + " days ago";
+            }
+            
+            interval = seconds / 3600;
+            if (interval >= 1) {
+                const hours = Math.floor(interval);
+                return hours === 1 ? "1 hour ago" : hours + " hours ago";
+            }
+            
+            interval = seconds / 60;
+            if (interval >= 1) {
+                const minutes = Math.floor(interval);
+                return minutes === 1 ? "1 minute ago" : minutes + " minutes ago";
+            }
+            
+            return Math.floor(seconds) + " seconds ago";
+        },
+        /**
+         * Formats a date string to a more readable local date and time.
+         * @param {string} dateString - The date string from your score object.
+         * @returns {string} - A formatted date string.
+         */
+        formatDate(dateString) {
+            const options = {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: false // Use 24-hour format
+            };
+            return new Date(dateString).toLocaleString(undefined, options);
+        },
+        MAAIntToStr(val) {
+            const result = (() => {
+                switch(val) {
+                    case 0: return 'V1';
+                    case 1: return 'V2';
+                    case 2: return 'V3';
+                    case 3: return 'V-L1';
+                    default: return 'Unknown';
+                }
+            })();
+            
+            if (result === 'Unknown') {
+                this.$log.warn('UTIL', 'Unknown MAA version value:', val);
+            }
+            
+            return result;
+        },
+        
+        // Computed-like helper methods for template safety
+        hasScore() {
+            return this.score !== null && this.score !== undefined;
+        },
+        hasBeatmap() {
+            return this.hasScore() && this.score.beatmap !== null && this.score.beatmap !== undefined;
+        },
+        hasPlayer() {
+            return this.hasScore() && this.score.player !== null && this.score.player !== undefined;
+        },
+        getScoreOrEmpty() {
+            if (!this.hasScore()) {
+                this.$log.warn("DATA", "Template accessed score when null");
+                return {};
+            }
+            return this.score;
+        },
+        getBeatmapOrEmpty() {
+            if (!this.hasBeatmap()) {
+                this.$log.warn("DATA", "Template accessed beatmap when null");
+                return {};
+            }
+            return this.score.beatmap;
+        },
+        getPlayerOrEmpty() {
+            if (!this.hasPlayer()) {
+                this.$log.warn("DATA", "Template accessed player when null");
+                return {};
+            }
+            return this.score.player;
+        },
+        // Safe property accessors for template
+        getBeatmapProperty(property, defaultValue = 'Unknown') {
+            if (!this.score || !this.score.beatmap || this.score.beatmap[property] === undefined || this.score.beatmap[property] === null) {
+                this.$log.warn('DATA', `Template accessed beatmap.${property} when null/undefined`, {
+                    scoreId: this.scoreId,
+                    property: property,
+                    value: this.score?.beatmap?.[property]
+                });
+                return defaultValue;
+            }
+            return this.score.beatmap[property];
+        },
+        
+        /**
+         * Safe property accessor for player data
+         * Handles both nested (player.info.property) and direct (player.property) structures
+         */
+        getPlayerProperty(property, defaultValue = 'Unknown') {
+            if (!this.score || !this.score.player) {
+                this.$log.warn('DATA', `Template accessed player.${property} when player is null/undefined`, {
+                    scoreId: this.scoreId,
+                    property: property,
+                    value: undefined
+                });
+                return defaultValue;
+            }
+            
+            // Try player.info.property first (nested structure)
+            if (this.score.player.info && this.score.player.info[property] !== undefined && this.score.player.info[property] !== null) {
+                return this.score.player.info[property];
+            }
+            
+            // Fall back to player.property (direct structure)
+            if (this.score.player[property] !== undefined && this.score.player[property] !== null) {
+                return this.score.player[property];
+            }
+            
+            this.$log.warn('DATA', `Template accessed player.${property} when null/undefined`, {
+                scoreId: this.scoreId,
+                property: property,
+                value: undefined,
+                hasInfo: !!this.score.player.info,
+                infoValue: this.score.player.info?.[property],
+                directValue: this.score.player?.[property]
+            });
+            return defaultValue;
+        },
+        
+        /**
+         * Determines if a grade should have the "passed" class based on the score's grade.
+         * Grades are ordered from highest to lowest: SS, S, A, B, C, D
+         * @param {string} grade - The grade to check (e.g., 'SS', 'S', 'A', 'B', 'C', 'D')
+         * @returns {boolean} - True if the grade is at or below the score's grade
+         */
+        isGradePassed(grade) {
+            if (!this.score || !this.score.grade) {
+                return false;
+            }
+            
+            const scoreGrade = this.score.grade.toUpperCase();
+            const gradeOrder = ['SS', 'S', 'A', 'B', 'C', 'D'];
+            
+            const scoreIndex = gradeOrder.indexOf(scoreGrade);
+            const checkIndex = gradeOrder.indexOf(grade);
+            
+            if (scoreIndex === -1 || checkIndex === -1) {
+                this.$log.warn('DATA', 'Invalid grade value', {
+                    scoreGrade: scoreGrade,
+                    checkGrade: grade
+                });
+                return false;
+            }
+            
+            // A grade is "passed" if it's at or below the score's grade
+            // (higher index in the array means lower grade)
+            return checkIndex >= scoreIndex;
+        },
+        
+        /**
+         * Check if the score has cheat values
+         * @returns {boolean} - True if cheat values exist
+         */
+        hasCheatValues() {
+            return this.score && this.score.cheat_values && typeof this.score.cheat_values === 'object';
+        },
+        
+        /**
+         * Get the cheat values object
+         * @returns {object|null} - The cheat values object or null
+         */
+        getCheatValues() {
+            if (!this.hasCheatValues()) {
+                return null;
+            }
+            return this.score.cheat_values;
+        },
+        
+        /**
+         * Get a specific cheat value
+         * @param {string} key - The key to retrieve
+         * @param {*} defaultValue - Default value if not found
+         * @returns {*} - The cheat value or default
+         */
+        getCheatValue(key, defaultValue = null) {
+            const cheats = this.getCheatValues();
+            if (!cheats) {
+                return defaultValue;
+            }
+            return cheats[key] !== undefined ? cheats[key] : defaultValue;
+        },
+        
+        /**
+         * Check if a cheat value exists
+         * @param {string} key - The key to check
+         * @returns {boolean} - True if the key exists
+         */
+        hasCheatValue(key) {
+            const cheats = this.getCheatValues();
+            return cheats && cheats.hasOwnProperty(key);
+        },
+        
+        /**
+         * Get the cheat values as a formatted string for display
+         * @returns {string} - Formatted cheat values
+         */
+        getCheatValuesString() {
+            const cheats = this.getCheatValues();
+            if (!cheats) {
+                return 'No cheat values';
+            }
+            
+            try {
+                return JSON.stringify(cheats, null, 2);
+            } catch (err) {
+                this.$log.error('DATA', 'Failed to stringify cheat values', {
+                    error: err,
+                    cheats: cheats
+                });
+                return 'Error formatting cheat values';
+            }
+        },
+        
+        /**
+         * Get cheat values as a formatted object for display
+         * @returns {Array} - Array of cheat value objects with key and value
+         */
+        getCheatValuesArray() {
+            const cheats = this.getCheatValues();
+            if (!cheats) {
+                return [];
+            }
+            
+            const result = [];
+            
+            // Helper function to recursively process cheat values
+            const processValue = (key, value, prefix = '') => {
+                const fullKey = prefix ? `${prefix}.${key}` : key;
+                
+                if (value && typeof value === 'object' && !Array.isArray(value)) {
+                    // Recursively process nested objects
+                    Object.keys(value).forEach(nestedKey => {
+                        processValue(nestedKey, value[nestedKey], fullKey);
+                    });
+                } else {
+                    // Format the value for display
+                    let displayValue = value;
+                    
+                    if (typeof value === 'boolean') {
+                        displayValue = value ? 'Enabled' : 'Disabled';
+                    } else if (typeof value === 'number') {
+                        displayValue = value.toString();
+                    } else if (typeof value === 'string') {
+                        displayValue = value;
+                    } else if (Array.isArray(value)) {
+                        displayValue = value.join(', ');
+                    } else {
+                        displayValue = JSON.stringify(value);
+                    }
+                    
+                    result.push({
+                        key: fullKey,
+                        value: displayValue,
+                        rawValue: value
+                    });
+                }
+            };
+            
+            Object.keys(cheats).forEach(key => {
+                processValue(key, cheats[key]);
+            });
+            
+            return result;
+        },
+        
+        /**
+         * Get cheat values grouped by category (excluding Misc)
+         * @returns {Array} - Array of category objects with name and values
+         */
+        getCheatValuesByCategory() {
+            const cheats = this.getCheatValues();
+            if (!cheats) {
+                return [];
+            }
+            
+            const categories = {
+                'Timewarp': [],
+                'Aim Assist': [],
+                'Changers': [],
+                'Removers': [],
+                'Relax': []
+            };
+            
+            // Helper function to categorize cheat values
+            const categorizeValue = (key, value, parentKey = '') => {
+                const fullKey = parentKey ? `${parentKey}.${key}` : key;
+                
+                // Timewarp category
+                if (key.startsWith('Timewarp')) {
+                    categories['Timewarp'].push({ key: fullKey, value: this.formatCheatValue(value) });
+                }
+                // Aim Assist category
+                else if (key.startsWith('Aim') || key === 'Algorithm' || key.startsWith('FOV') || 
+                         key === 'AccelFactor' || key === 'AssistOnSliders' || key === 'Power' ||
+                         key === 'SliderPower' || key === 'BaseStrength' || key === 'MinProximityStrength' ||
+                         key === 'MaxProximityStrength' || key === 'MinTimingStrength' || key === 'MaxTimingStrength' ||
+                         key === 'MovementThreshold' || key === 'MovementSmoothing' || key === 'MaxOffset' ||
+                         key === 'ResyncStrength' || key === 'PredictiveAiming' || key === 'PredictionMs' ||
+                         key === 'EnhancedSliderHandling' || key === 'SliderProgressionScale' ||
+                         key === 'MinSliderStrength' || key === 'MaxSliderStrength' || key === 'AngleInfluence' ||
+                         key === 'MaxAngleInfluence' || key === 'MinAngleStrength' || key === 'MaxAngleStrength' ||
+                         key === 'UseAcceleration' || key === 'AccelerationExponent' || key === 'TapOnCorrect' ||
+                         key === 'TimesCorrected' || key === 'AimCorrectionValue' || key === 'AimCorrectionRelative' ||
+                         key === 'AimStartingDistance' || key === 'AimStoppingDistance' || key === 'AimAssistOnSliders') {
+                    categories['Aim Assist'].push({ key: fullKey, value: this.formatCheatValue(value) });
+                }
+                // Changers category
+                else if (key.includes('Changer') || key.includes('AR') || key.includes('CS') || 
+                         key.includes('FOV') || key.includes('Preempt') || key.includes('Dynamic')) {
+                    categories['Changers'].push({ key: fullKey, value: this.formatCheatValue(value) });
+                }
+                // Removers category
+                else if (key.includes('Remover') || key.includes('HD') || key.includes('FL')) {
+                    categories['Removers'].push({ key: fullKey, value: this.formatCheatValue(value) });
+                }
+                // Relax category
+                else if (key.includes('Relax') || key === 'Skooter') {
+                    categories['Relax'].push({ key: fullKey, value: this.formatCheatValue(value) });
+                }
+                // Misc category - skip it
+                else if (key === 'Misc' || key.includes('Failing') || key.includes('Misses') || 
+                         key.includes('Combo') || key.includes('Parallax') || key.includes('Trail') ||
+                         key.includes('Glow') || key.includes('Sound')) {
+                    // Skip Misc values
+                    return;
+                }
+                // Default - skip if not categorized
+                else {
+                    return;
+                }
+            };
+            
+            Object.keys(cheats).forEach(key => {
+                categorizeValue(key, cheats[key]);
+            });
+            
+            // Convert to array and remove empty categories
+            const result = [];
+            Object.keys(categories).forEach(category => {
+                if (categories[category].length > 0) {
+                    result.push({
+                        name: category,
+                        values: categories[category]
+                    });
+                }
+            });
+            
+            return result;
+        },
+        
+        /**
+         * Format a cheat value for display
+         * @param {*} value - The value to format
+         * @returns {string} - Formatted value
+         */
+        formatCheatValue(value) {
+            if (typeof value === 'boolean') {
+                return value ? '✓ Enabled' : '✗ Disabled';
+            } else if (typeof value === 'number') {
+                return value.toString();
+            } else if (typeof value === 'string') {
+                return value;
+            } else if (Array.isArray(value)) {
+                return value.join(', ');
+            } else if (value && typeof value === 'object') {
+                return JSON.stringify(value);
+            } else {
+                return String(value);
+            }
+        },
+        
+        /**
+         * Get a human-readable name for a cheat key
+         * @param {string} key - The cheat key
+         * @returns {string} - Human-readable name
+         */
+        getCheatDisplayName(key) {
+            const names = {
+                'Timewarp': 'Timewarp',
+                'TimewarpType': 'Timewarp Type',
+                'TimewarpRate': 'Timewarp Rate',
+                'TimewarpMultiplier': 'Timewarp Multiplier',
+                'AimType': 'Aim Type',
+                'Algorithm': 'Algorithm',
+                'AimStrength': 'Aim Strength',
+                'AccelFactor': 'Acceleration Factor',
+                'AssistOnSliders': 'Assist on Sliders',
+                'FOV_Base': 'Base FOV',
+                'FOV_Min': 'Minimum FOV',
+                'FOV_Max': 'Maximum FOV',
+                'FOVScale_Max': 'FOV Scale Max',
+                'ARChanger': 'AR Changer',
+                'ARChangerAR': 'AR Value',
+                'HiddenRemover': 'Hidden Remover',
+                'FlashlightRemover': 'Flashlight Remover',
+                'RelaxHack': 'Relax Hack',
+                'RelaxHackType': 'Relax Hack Type',
+                'RelaxFailing': 'Relax Failing',
+                'RelaxMisses': 'Relax Misses',
+                'RelaxComboBreakSound': 'Relax Combo Break Sound',
+                'RelaxLowHpGlow': 'Relax Low HP Glow',
+                'GameplayParallax': 'Gameplay Parallax',
+                'SmoothTrail': 'Smooth Trail',
+                'CSChanger': 'CS Changer',
+                'CSChangerType': 'CS Changer Type',
+                'CSChangerCS': 'CS Value',
+                'Power': 'Power',
+                'SliderPower': 'Slider Power',
+                'BaseStrength': 'Base Strength',
+                'MinProximityStrength': 'Min Proximity Strength',
+                'MaxProximityStrength': 'Max Proximity Strength',
+                'MinTimingStrength': 'Min Timing Strength',
+                'MaxTimingStrength': 'Max Timing Strength',
+                'MovementThreshold': 'Movement Threshold',
+                'MovementSmoothing': 'Movement Smoothing',
+                'MaxOffset': 'Max Offset',
+                'ResyncStrength': 'Resync Strength',
+                'PredictiveAiming': 'Predictive Aiming',
+                'PredictionMs': 'Prediction (ms)',
+                'EnhancedSliderHandling': 'Enhanced Slider Handling',
+                'SliderProgressionScale': 'Slider Progression Scale',
+                'MinSliderStrength': 'Min Slider Strength',
+                'MaxSliderStrength': 'Max Slider Strength',
+                'AngleInfluence': 'Angle Influence',
+                'MaxAngleInfluence': 'Max Angle Influence',
+                'MinAngleStrength': 'Min Angle Strength',
+                'MaxAngleStrength': 'Max Angle Strength',
+                'UseAcceleration': 'Use Acceleration',
+                'AccelerationExponent': 'Acceleration Exponent',
+                'TapOnCorrect': 'Tap on Correct',
+                'TimesCorrected': 'Times Corrected',
+                'AimCorrectionValue': 'Aim Correction Value',
+                'AimCorrectionRelative': 'Aim Correction Relative',
+                'AimStartingDistance': 'Aim Starting Distance',
+                'AimStoppingDistance': 'Aim Stopping Distance',
+                'AimAssistOnSliders': 'Aim Assist on Sliders',
+                'FOV_DynamicScale': 'FOV Dynamic Scale',
+                'FOV_ScaleMin': 'FOV Scale Min',
+                'FOV_ScaleMax': 'FOV Scale Max',
+                'PreemptScale': 'Preempt Scale'
+            };
+            
+            return names[key] || key;
+        }
+    }
 });

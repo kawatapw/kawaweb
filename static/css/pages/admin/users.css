@@ -1,10 +1,497 @@
-#user-search.main-block {
-    width: inherit;
-    background: hsl(var(--main), 10%, 15%);
-    display: flex; 
+/* ===== ADMIN FILTER PANEL REDESIGN ===== */
+
+.admin-filter-panel {
+    background: linear-gradient(135deg, hsl(var(--main), 12%, 16%) 0%, hsl(var(--main), 8%, 14%) 100%);
+    border: 1px solid hsl(var(--main), 15%, 25%);
+    border-radius: 12px;
+    margin-bottom: 2rem;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+.admin-filter-panel:hover {
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+    transform: translateY(-2px);
+}
+
+/* Filter Container */
+.filter-container {
+    padding: 1.5rem;
+}
+
+/* Filter Header */
+.filter-header {
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid hsl(var(--main), 15%, 25%);
+}
+
+.filter-title {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.filter-title .title {
+    margin: 0;
+    color: hsl(var(--main), 50%, 85%);
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.filter-title .title i {
+    color: hsl(var(--main), 60%, 70%);
+}
+
+.filter-stats {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+/* Filter Controls */
+.filter-controls {
+    margin-bottom: 1rem;
+}
+
+.filter-row {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 1fr;
+    gap: 1.5rem;
+    align-items: end;
+}
+
+.filter-row-expanded {
+    grid-template-columns: 2fr 1fr 0.8fr 0.8fr 1fr;
+}
+
+.filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.filter-group.search-group {
+    min-width: 0; /* Allow flex shrinking */
+}
+
+.filter-group.actions-group {
+    justify-self: end;
+}
+
+.filter-label {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: hsl(var(--main), 40%, 75%);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 0.25rem;
+}
+
+/* Enhanced Form Controls */
+.filter-controls .input,
+.filter-controls .select select {
+    background: hsl(var(--main), 15%, 20%);
+    border: 2px solid hsl(var(--main), 20%, 30%);
+    color: hsl(var(--main), 50%, 90%);
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    font-size: 0.95rem;
+}
+
+.filter-controls .input:focus,
+.filter-controls .select select:focus {
+    border-color: hsl(var(--main), 60%, 60%);
+    box-shadow: 0 0 0 3px hsla(var(--main), 60%, 60%, 0.1);
+    background: hsl(var(--main), 18%, 22%);
+}
+
+.filter-controls .input:hover,
+.filter-controls .select select:hover {
+    border-color: hsl(var(--main), 40%, 50%);
+}
+
+.filter-controls .select.is-active select {
+    border-color: hsl(var(--main), 60%, 60%);
+    background: hsl(var(--main), 18%, 22%);
+}
+
+.filter-controls .select.has-default select {
+    border-color: hsl(var(--main), 30%, 40%);
+    background: hsl(var(--main), 12%, 18%);
+    color: hsl(var(--main), 40%, 80%);
+}
+
+.filter-controls .select.has-default:hover select {
+    border-color: hsl(var(--main), 40%, 50%);
+}
+
+/* ===== PRIVILEGE SELECT WITH FONT AWESOME ICON INDICATOR ===== */
+
+.privilege-select-container {
+    position: relative;
+}
+
+.privilege-select {
+    position: relative;
+}
+
+.privilege-icon-indicator {
+    position: absolute;
+    right: 2.5rem;
+    top: 50%;
+    transform: translateY(-50%);
+    pointer-events: none;
+    z-index: 2;
+    display: flex;
+    align-items: center;
     justify-content: center;
-    transition: 0.2s ease;
-  }
+    width: 1.5rem;
+    height: 1.5rem;
+}
+
+.privilege-icon-indicator i {
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3));
+}
+
+/* Enhanced select styling for privilege dropdown */
+.privilege-select select {
+    padding-right: 4rem !important; /* Make room for both arrow and icon */
+}
+
+.privilege-select.is-active .privilege-icon-indicator i {
+    transform: scale(1.1);
+}
+
+.privilege-select.has-default .privilege-icon-indicator i {
+    opacity: 0.7;
+}
+
+.privilege-select:hover .privilege-icon-indicator i {
+    transform: scale(1.05);
+    opacity: 1;
+}
+
+/* Button Styling */
+.filter-controls .button {
+    border-radius: 8px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+}
+
+.filter-controls .button:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.filter-controls .button.is-info {
+    background: linear-gradient(135deg, hsl(var(--main), 60%, 55%) 0%, hsl(var(--main), 60%, 45%) 100%);
+    border-color: hsl(var(--main), 60%, 50%);
+}
+
+.filter-controls .button.is-warning.is-outlined {
+    border-color: hsl(48, 100%, 67%);
+    color: hsl(48, 100%, 67%);
+}
+
+.filter-controls .button.is-success.is-outlined {
+    border-color: hsl(141, 71%, 48%);
+    color: hsl(141, 71%, 48%);
+}
+
+.filter-controls .button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* Sort Direction Button Specific Styling */
+.sort-direction-btn {
+    min-height: 2.5rem; /* Match select input height */
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.sort-direction-btn .icon {
+    margin: 0 !important;
+}
+
+.sort-direction-btn span:not(.icon) {
+    font-size: 0.875rem;
+    font-weight: 700;
+}
+
+/* Ensure consistent sizing across all medium controls */
+.filter-controls .is-medium,
+.filter-controls .select.is-medium select,
+.filter-controls .button.is-medium {
+    height: 2.5rem;
+    font-size: 1rem !important;
+}
+
+
+.filter-controls .select.is-medium {
+    height: 2.5rem;
+}
+
+.filter-controls .select.is-medium select {
+    height: 2.5rem;
+    line-height: 1.5;
+}
+
+/* Active Filters Section */
+.active-filters {
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid hsl(var(--main), 15%, 25%);
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.active-filters-label {
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.active-filters-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.active-filters .tag {
+    border-radius: 6px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.active-filters .tag i {
+    font-size: 0.75rem;
+}
+
+/* Loading spinner */
+.spinner {
+    border: 4px solid hsl(var(--main), 20%, 30%);
+    border-top: 4px solid hsl(var(--main), 60%, 60%);
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 1rem;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* ===== RESPONSIVE DESIGN ===== */
+
+@media screen and (max-width: 1216px) {
+    .filter-row {
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+    }
+
+    .filter-row-expanded {
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 1rem;
+    }
+
+    .filter-group.search-group {
+        grid-column: 1 / -1;
+    }
+}
+
+@media screen and (max-width: 768px) {
+    .filter-container {
+        padding: 1rem;
+    }
+
+    .filter-row,
+    .filter-row-expanded {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+
+    .filter-title {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.75rem;
+    }
+
+    .filter-stats {
+        align-self: stretch;
+        justify-content: center;
+    }
+
+    .active-filters {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+
+    /* Mobile-specific button adjustments */
+    .sort-direction-btn {
+        justify-content: space-between;
+        padding: 0 1rem;
+    }
+
+    /* Mobile privilege select adjustments */
+    .privilege-icon-indicator {
+        right: 2rem;
+    }
+
+    .privilege-icon-indicator i {
+        font-size: 1.1rem;
+    }
+}
+
+/* ===== ENHANCED USER CARDS ===== */
+
+.users-grid-container {
+    margin-top: 2rem;
+}
+
+.users-loading-state {
+    text-align: center;
+    padding: 3rem 1rem;
+    background: hsl(var(--main), 10%, 16%);
+    border-radius: 12px;
+    border: 1px solid hsl(var(--main), 15%, 25%);
+}
+
+.users-loading-state .spinner {
+    margin-bottom: 1rem;
+}
+
+.users-loading-state p {
+    color: hsl(var(--main), 40%, 70%);
+    font-size: 1.1rem;
+    font-weight: 500;
+}
+
+.users-empty-state {
+    text-align: center;
+    padding: 3rem 1rem;
+    background: hsl(var(--main), 10%, 16%);
+    border-radius: 12px;
+    border: 1px solid hsl(var(--main), 15%, 25%);
+}
+
+.users-empty-state .is-size-5 {
+    color: hsl(var(--main), 40%, 70%);
+    margin-bottom: 0.5rem;
+}
+
+.users-empty-state .has-text-grey {
+    color: hsl(var(--main), 30%, 60%) !important;
+}
+
+/* Enhanced User Cards */
+#user.card {
+    background: linear-gradient(135deg, hsl(var(--main), 12%, 18%) 0%, hsl(var(--main), 8%, 16%) 100%);
+    border: 1px solid hsl(var(--main), 15%, 28%);
+    border-radius: 12px;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    overflow: hidden;
+    position: relative;
+}
+
+#user.card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
+    border-color: hsl(var(--main), 30%, 40%);
+}
+
+#user.card .card-content {
+    position: relative;
+    padding: 1rem;
+    width: 75%;
+    z-index: 3;
+}
+
+#user.card .card-content h3 {
+    color: hsl(var(--main), 50%, 90%);
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+}
+
+#user.card .card-content p {
+    color: hsl(var(--main), 40%, 75%);
+    font-size: 0.875rem;
+    margin-bottom: 0.25rem;
+}
+
+#user.card .card-content .has-text-info {
+    color: hsl(var(--main), 60%, 70%) !important;
+    font-weight: 600;
+}
+
+#user.card .card-content .has-text-danger {
+    color: hsl(348, 100%, 61%) !important;
+    font-weight: 600;
+}
+
+#user.card .card-content .has-text-grey {
+    color: hsl(var(--main), 30%, 65%) !important;
+}
+
+/* Pagination Enhancement */
+.pagination {
+    margin-top: 2rem;
+    background: hsl(var(--main), 10%, 16%);
+    border-radius: 12px;
+    padding: 1rem;
+    border: 1px solid hsl(var(--main), 15%, 25%);
+}
+
+.pagination-link,
+.pagination-previous,
+.pagination-next {
+    background: hsl(var(--main), 15%, 20%);
+    border: 2px solid hsl(var(--main), 20%, 30%);
+    color: hsl(var(--main), 50%, 85%);
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+
+.pagination-link:hover,
+.pagination-previous:hover,
+.pagination-next:hover {
+    background: hsl(var(--main), 18%, 25%);
+    border-color: hsl(var(--main), 40%, 50%);
+    transform: translateY(-1px);
+}
+
+.pagination-link.is-current {
+    background: linear-gradient(135deg, hsl(var(--main), 60%, 55%) 0%, hsl(var(--main), 60%, 45%) 100%);
+    border-color: hsl(var(--main), 60%, 50%);
+    color: white;
+    font-weight: 600;
+}
+
+.pagination-ellipsis {
+    color: hsl(var(--main), 40%, 60%);
+}
 
 #user.card {
     margin-bottom: 5px;
@@ -51,360 +538,1881 @@
     transition: 0.2s ease;
 }
 
-#editUser.box {
-    background-color: transparent;
-    height: 100vh;
-    padding: 1%;  
-    transition: 0.2s ease;
+/* Edit User Panel Styles */
+[data-panel="EditUser"] {
     display: flex;
     flex-direction: column;
-}
-
-#editUser.user-banner {
-  /*background-color: hsl(var(--main), 30%, 50%);*/
-  position: relative;
-  max-height: 37vh;
-  height: 380px;
-  border-radius: 8px;
-  border-top-right-radius: 8px;
-  border-top-left-radius: 8px;
-  /*overflow-y: hidden;*/
-  display: flex;
-  flex-direction: column;
-  margin-top: auto;
-  transition: 0.2s ease;
-}
-
-  #editUserBanner.user-banner-background {
-    max-height: 262px;
-    min-height: 90px;
     width: 100%;
+    max-width: 1200px;
+    background: hsl(var(--main), 10%, 15%);
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 
+        0 0 2px rgba(0, 0, 0, 0.1),
+        0 2px 4px rgba(0, 0, 0, 0.15),
+        0 4px 8px rgba(0, 0, 0, 0.12),
+        0 8px 16px rgba(0, 0, 0, 0.1),
+        0 16px 32px rgba(0, 0, 0, 0.08),
+        0 32px 64px rgba(0, 0, 0, 0.06),
+        0 0 0 1px hsla(var(--main), 100%, 100%, 0.08),
+        0 0 16px hsla(var(--main), 70%, 60%, 0.25),
+        inset 0 0 1px hsla(var(--main), 100%, 100%, 0.1);
+    border: 1px solid hsla(var(--main), 50%, 70%, 0.35);
+}
+
+[data-panel="EditUser"] .main-block {
+    background: hsl(var(--main), 10%, 15%);
+    position: relative;
+    max-height: 35vh;
+    min-height: 280px;
+    border-bottom: 1px solid hsl(var(--main), 20%, 25%);
+}
+
+[data-panel="EditUser"] .profile-bg {
+    min-height: 200px;
+    height: auto;
+    width: 100%;
+    background-size: cover !important;
+    background-position: center !important;
+    display: flex;
+    align-items: flex-end;
+    border-top-right-radius: 12px;
+    border-top-left-radius: 12px;
+    background: hsl(var(--main), 30%, 50%);
+    position: relative;
+    overflow: hidden;
+}
+
+[data-panel="EditUser"] .profile-bg::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
     background-size: cover;
     background-position: center;
-    display: flex;
-    flex-grow: 0;
-    flex-shrink: 1;
-    flex-basis: 262px; /* max-height */
-    align-items: flex-end;
-    border-top-right-radius: 20px;
-    border-top-left-radius: 20px;
-    background-color: hsl(var(--main), 30%, 50%);
-    position: relative;
-    overflow: hidden;
-    flex-grow: 1;
-    transition: 0.2s ease;
-  }
+    background-image: var(--banner-bg);
+    filter: blur(2px) brightness(0.75);
+    z-index: 0;
+}
 
-  .user-flex {
-    width: 100%;
+[data-panel="EditUser"] .profile-bg::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(180deg, 
+        hsla(var(--main), 10%, 10%, 0.3) 0%, 
+        hsla(var(--main), 10%, 10%, 0.6) 50%, 
+        hsla(var(--main), 10%, 15%, 0.9) 100%);
+    z-index: 1;
+}
+
+[data-panel="EditUser"] .info-block {
     display: flex;
     flex-direction: column;
-    flex-grow: 1;
     align-items: flex-start;
+    padding: 10px 250px;
+    width: 100%;
     transition: 0.2s ease;
-  }
+    position: relative;
+    z-index: 2;
+}
 
-    .user-avatar-area {
-      padding: 0 0 0 45px;
-      display: flex;
-      position: absolute;
-      flex-direction: row;
-      align-items: flex-start;
-    }
-      .user-avatar {
-        width: 185px;
-        height: 185px;
-        margin-top: -5.5rem;
-        border-radius: 16px;
-        object-fit: cover;
-        transition: 0.2s ease;
-      }
+[data-panel="EditUser"] .info-block .title {
+    font-size: 1.5em;
+    font-weight: 700;
+    color: white;
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
+    margin: 0;
+}
 
-    .bar-selection {
-      width: 100%;
-      height: 60px;
-      padding: 10px 10px 10px 250px;
-      display: flex;
-      align-items: center;
-      transition: 0.2s ease;
-    }
-    .mode-selects {
-      background: hsl(var(--main), 25%, 22%);
-    }
-      .select-left {
-        display: flex;
-        flex-direction: row;
-      }
-        .simple-banner-switch {
-          color: #fff !important;
-          text-shadow: -1px 2px 2px rgba(0, 0, 0, 0.33);
-          cursor: pointer;
-          transition: 0.3s ease;
-          font-size: 16px;
-          margin: 0 24px 0 0;
-          font-weight: 425;
-          opacity: 0.7;
-        }
-        .simple-banner-switch.active {
-          font-weight: 500;
-          opacity: 1;
-          pointer-events: none;
-        }
-        .simple-banner-switch.disabled {
-          opacity: 0.4;
-          pointer-events: none;
-          text-decoration: none;
-        }
+[data-panel="EditUser"] .info-block .ranks {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+}
 
+[data-panel="EditUser"] .profile-flag {
+    height: 24px;
+    width: 36px;
+    margin-right: 6px;
+    border-radius: 4px;
+    border: 1px solid hsla(var(--main), 50%, 70%, 0.8);
+}
 
-
-    .user-bg {
-      min-height: 262px;
-      width: 100%;
-      background-size: cover;
-      background-position: center;
-      display: flex;
-      align-items: flex-end;
-      border-top-right-radius: 20px;
-      border-top-left-radius: 20px;
-      background: hsl(var(--main), 30%, 50%);
-      position: relative;
-      overflow: hidden;
-      transition: 0.2s ease;
-    }
-
-    .user-stats-rank {
-      width: 20px;
-      transition: 0.2s ease;
-    }
-
-    .info-block {
-      display: flex;
-      flex-direction: column;
-      align-items: flex-start;
-      padding: 10px 250px;
-      width: 100%;
-      transition: 0.2s ease;
-    }
-
-    .select-right {
-      margin-left: auto;
-      display: flex;
-      flex-direction: row;
-    }
-
-    .user-flag {
-      height: 24px;
-      margin-right: 6px;
-    }
-
-    #userpage.textarea {
-      height: fit-content;
-      text-wrap: wrap;
-    }
-
-#editUser.main-block {
-    background-color: hsl(var(--main), 10%, 15%);
-    border-radius: 8px;
-    border-bottom-left-radius: 20px;
-    border-bottom-right-radius: 20px;
-    margin-top: 8px;
-    max-height: calc(57vh - 1%);
-    height: fit-content;
-    padding: 4px;
-    width: auto;
+[data-panel="EditUser"] .profile-flex {
+    width: 100%;
     display: flex;
     flex-direction: column;
-    margin-bottom: auto;
-    transition: 0.2s ease;
+    align-items: flex-start;
 }
 
-#editUser.main-block .content {
-    background-color: hsl(var(--main), 10%, 25%);
-    border-radius: 8px;
-    border-bottom-left-radius: 20px;
-    border-bottom-right-radius: 20px;
-    margin: 8px;
-    padding: 20px;
-    width: 100%;
-    overflow-y: auto;
+[data-panel="EditUser"] .profile-avatar-area {
+    padding: 0 0 0 45px;
     display: flex;
-    flex-direction: column;  
-    scrollbar-color: hsl(var(--main), 40%, 40%) hsl(var(--main), 40%, 20%);
-    scrollbar-width: thin;
+    position: fixed;
+    flex-direction: row;
+    align-items: flex-start;
+    z-index: 1;
+}
+
+[data-panel="EditUser"] .profile-avatar {
+    width: 185px;
+    height: 185px;
+    margin-top: -5.5rem;
+    border-radius: 16px;
+    object-fit: cover;
+    transition: 0.2s ease;
+    border: 3px solid hsla(var(--main), 50%, 70%, 0.9);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+}
+
+[data-panel="EditUser"] .profile-avatar:hover {
+    transform: scale(1.05);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.6);
+}
+
+[data-panel="EditUser"] .bar-selection {
+    width: 100%;
+    height: 60px;
+    display: flex;
+    align-items: center;
     transition: 0.2s ease;
 }
 
-.main-selector {
+[data-panel="EditUser"] .mode-selects {
+    background: hsl(var(--main), 25%, 22%);
+    padding: 10px 10px 10px 250px;
+}
+
+[data-panel="EditUser"] .select-left {
     display: flex;
     flex-direction: row;
-    align-items: flex-end;
-    width: 100%;
-    height: 42px;
-    color: #fff;
-    font-size: 14px;
-    justify-content: center;
-    position: relative;
-    transition: 0.2s ease;
+    flex-wrap: wrap;
+    gap: 8px;
 }
 
-#badges.columns.is-multiline {
-    margin-top: 8px;
-}
-
-#badge.card {
-    margin-bottom: 5px;
-    z-index: 1;
+[data-panel="EditUser"] .select-right {
+    margin-left: auto;
     display: flex;
-    background-color: hsl(var(--main), 40%, 15%);
-    border-radius: 8px;
-    border-bottom-style: ridge;
-    border-bottom-width: 4px;
-    border-bottom-color: hsl(var(--main),15%,35%);
-    transition: 0.2s ease;
+    flex-direction: row;
 }
 
-#badge.card.selected {
-    border-bottom-color: hsl(var(--main), 50%, 50%);
-    box-shadow: 0 0px 20px hsla(var(--main), 50%, 50%, 0.8);
-    border-bottom-color: hsl(var(--main), 50%, 50%);
-    scale: 1.05;
-}
-
-#badge.card-image {
-    z-index: 2;
+[data-panel="EditUser"] .simple-banner-switch {
+    color: #fff !important;
+    text-shadow: -1px 2px 2px rgba(0, 0, 0, 0.33);
+    cursor: pointer;
+    transition: 0.3s ease;
+    font-size: 16px;
+    margin: 0 12px 0 0;
+    font-weight: 425;
+    opacity: 0.7;
     position: relative;
-    width: 100px;
-    background-size: cover;
-    background-position: 50%;
-    background-repeat: no-repeat;
-    align-items: center;
-    align-content: center;
-    display: flex;
-    justify-content: center;
-    align-items: center;
+    overflow: hidden;
+    white-space: nowrap;
 }
 
-#badge.card-image .badge-icon {
+[data-panel="EditUser"] .simple-banner-switch::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
     width: 100%;
     height: 100%;
+    background: linear-gradient(90deg, transparent, hsla(var(--main), 50%, 50%, 0.15), transparent);
+    transition: left 0.4s ease;
+    z-index: 0;
+}
+
+[data-panel="EditUser"] .simple-banner-switch:hover::before {
+    left: 100%;
+}
+
+[data-panel="EditUser"] .simple-banner-switch:hover {
+    opacity: 0.9;
+    transform: translateY(-1px);
+}
+
+[data-panel="EditUser"] .simple-banner-switch.selected {
+    font-weight: 500;
+    opacity: 1;
+    pointer-events: none;
+    background: hsl(var(--main), 50%, 35%);
+    padding: 6px 12px;
+    border-radius: 6px;
+    box-shadow: 0 0 12px hsla(var(--main), 50%, 50%, 0.6), 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+[data-panel="EditUser"] .simple-banner-switch.selected::before {
+    background: linear-gradient(90deg, transparent, hsla(var(--main), 60%, 60%, 0.25), transparent);
+}
+
+[data-panel="EditUser"] .simple-banner-switch.disabled {
+    opacity: 0.4;
+    pointer-events: none;
+    text-decoration: none;
+}
+
+[data-panel="EditUser"] .simple-banner-switch i {
+    margin-right: 6px;
+    z-index: 1;
+}
+
+[data-panel="EditUser"] .simple-banner-switch .modetext {
+    z-index: 1;
+}
+
+[data-panel="EditUser"] .badge-selects {
+    background: hsl(var(--main), 20%, 20%);
+    padding: 12px;
+}
+
+[data-panel="EditUser"] .badge-block {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    width: 100%;
+}
+
+[data-panel="EditUser"] .badge-block .badge-block-spacer {
+  width: 230px;
+}
+
+/* Badge component styling (for the badge component used in the template) */
+[data-panel="EditUser"] .badge-component {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 8px;
+    background: hsl(var(--main), 25%, 25%);
+    border: 1px solid hsl(var(--main), 30%, 35%);
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    color: white;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+[data-panel="EditUser"] .badge-component i {
+    font-size: 12px;
+}
+
+[data-panel="EditUser"] .second-block {
+    display: flex;
+    background: hsl(var(--main), 12%, 16%);
+    max-height: 65vh;
+    overflow-y: auto;
+    border-radius: 0 0 12px 12px;
+}
+
+[data-panel="EditUser"] .second-block .content {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: fit-content;
+    background-color: hsl(var(--main), 15%, 18%);
+    padding: 16px;
+    margin: 0;
+    border-radius: 0 0 12px 12px;
+    transition: 0.2s ease;
+    gap: 16px;
+}
+
+[data-panel="EditUser"] .module-content {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+[data-panel="EditUser"] .module-section {
+    background: hsl(var(--main), 15%, 20%);
+    border: 1px solid hsl(var(--main), 20%, 25%);
+    border-radius: 12px;
+    padding: 16px;
+    position: relative;
+    overflow: visible;
+}
+
+[data-panel="EditUser"] .module-section::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, hsl(var(--main), 40%, 50%), transparent);
+    opacity: 0.5;
+}
+
+[data-panel="EditUser"] .section-title {
+    font-size: 1.2em;
+    font-weight: 700;
+    color: hsl(var(--main), 80%, 75%);
+    margin: 0 0 12px 0;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+[data-panel="EditUser"] .section-title::before {
+    content: '';
+    width: 4px;
+    height: 16px;
+    background: hsl(var(--main), 50%, 50%);
+    border-radius: 2px;
+}
+
+[data-panel="EditUser"] .note {
+    color: hsl(var(--main), 10%, 70%);
+    font-size: 0.9em;
+    font-style: italic;
+    margin: 0 0 12px 0;
+    padding: 8px 12px;
+    background: hsl(var(--main), 15%, 18%);
+    border-radius: 8px;
+    border-left: 3px solid hsl(var(--main), 30%, 40%);
+}
+
+
+
+[data-panel="EditUser"] .second-block {
+    display: flex;
+    background: hsl(var(--main), 12%, 16%);
+    max-height: 65vh;
+    overflow-y: auto;
+    border-radius: 0 0 12px 12px;
+}
+
+[data-panel="EditUser"] .second-block .content {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: fit-content;
+    background-color: hsl(var(--main), 15%, 18%);
+    padding: 16px;
+    margin: 0;
+    border-radius: 0 0 12px 12px;
+    transition: 0.2s ease;
+    gap: 16px;
+}
+
+[data-panel="EditUser"] .module-content {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+[data-panel="EditUser"] .module-section {
+    background: hsl(var(--main), 15%, 20%);
+    border: 1px solid hsl(var(--main), 20%, 25%);
+    border-radius: 12px;
+    padding: 16px;
+    position: relative;
+    overflow: hidden;
+}
+
+[data-panel="EditUser"] .module-section::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, hsl(var(--main), 40%, 50%), transparent);
+    opacity: 0.5;
+}
+
+[data-panel="EditUser"] .section-title {
+    font-size: 1.2em;
+    font-weight: 700;
+    color: hsl(var(--main), 80%, 75%);
+    margin: 0 0 12px 0;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+[data-panel="EditUser"] .section-title::before {
+    content: '';
+    width: 4px;
+    height: 16px;
+    background: hsl(var(--main), 50%, 50%);
+    border-radius: 2px;
+}
+
+[data-panel="EditUser"] .note {
+    color: hsl(var(--main), 10%, 70%);
+    font-size: 0.9em;
+    font-style: italic;
+    margin: 0 0 12px 0;
+    padding: 8px 12px;
+    background: hsl(var(--main), 15%, 18%);
+    border-radius: 8px;
+    border-left: 3px solid hsl(var(--main), 30%, 40%);
+}
+
+/* Quick Actions */
+[data-panel="EditUser"] .quick-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: center;
+}
+
+[data-panel="EditUser"] .quick-actions .level-item {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 120px;
+}
+
+[data-panel="EditUser"] .quick-actions .level-item .dropdown {
+    width: 100%;
+}
+
+[data-panel="EditUser"] .quick-actions .level-item .dropdown-trigger {
+    width: 100%;
+}
+
+[data-panel="EditUser"] .quick-actions .level-item .dropdown-trigger .button {
+    width: 100%;
+}
+
+[data-panel="EditUser"] .quick-actions .button {
+    background: linear-gradient(135deg, hsl(var(--main), 30%, 35%), hsl(var(--main), 25%, 30%));
+    border: 1px solid hsl(var(--main), 35%, 45%);
+    color: hsl(var(--main), 10%, 90%);
+    padding: 10px 16px;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 0.9em;
+    cursor: pointer;
+    transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+    position: relative;
+    overflow: hidden;
+    min-width: 100px;
+    text-align: center;
+}
+
+[data-panel="EditUser"] .quick-actions .button::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, hsla(var(--main), 50%, 50%, 0.2), transparent);
+    transition: left 0.4s ease;
+}
+
+[data-panel="EditUser"] .quick-actions .button:hover::before {
+    left: 100%;
+}
+
+[data-panel="EditUser"] .quick-actions .button:hover {
+    background: linear-gradient(135deg, hsl(var(--main), 35%, 40%), hsl(var(--main), 30%, 35%));
+    border-color: hsl(var(--main), 45%, 55%);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+    color: white;
+}
+
+[data-panel="EditUser"] .quick-actions .button:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+}
+
+[data-panel="EditUser"] .quick-actions .button.is-danger {
+    background: linear-gradient(135deg, hsl(0, 60%, 45%), hsl(0, 50%, 35%));
+    border-color: hsl(0, 60%, 55%);
+}
+
+[data-panel="EditUser"] .quick-actions .button.is-danger:hover {
+    background: linear-gradient(135deg, hsl(0, 70%, 50%), hsl(0, 60%, 40%));
+    border-color: hsl(0, 70%, 60%);
+}
+
+[data-panel="EditUser"] .quick-actions .button.is-warning {
+    background: linear-gradient(135deg, hsl(45, 80%, 50%), hsl(45, 70%, 40%));
+    border-color: hsl(45, 80%, 60%);
+}
+
+[data-panel="EditUser"] .quick-actions .button.is-warning:hover {
+    background: linear-gradient(135deg, hsl(45, 90%, 55%), hsl(45, 80%, 45%));
+    border-color: hsl(45, 90%, 65%);
+}
+
+[data-panel="EditUser"] .quick-actions .button.is-success {
+    background: linear-gradient(135deg, hsl(120, 50%, 45%), hsl(120, 40%, 35%));
+    border-color: hsl(120, 50%, 55%);
+}
+
+[data-panel="EditUser"] .quick-actions .button.is-success:hover {
+    background: linear-gradient(135deg, hsl(120, 60%, 50%), hsl(120, 50%, 40%));
+    border-color: hsl(120, 60%, 60%);
+}
+
+[data-panel="EditUser"] .quick-actions .button.is-info {
+    background: linear-gradient(135deg, hsl(200, 60%, 45%), hsl(200, 50%, 35%));
+    border-color: hsl(200, 60%, 55%);
+}
+
+[data-panel="EditUser"] .quick-actions .button.is-info:hover {
+    background: linear-gradient(135deg, hsl(200, 70%, 50%), hsl(200, 60%, 40%));
+    border-color: hsl(200, 70%, 60%);
+}
+
+[data-panel="EditUser"] .quick-actions .button.is-primary {
+    background: linear-gradient(135deg, hsl(var(--main), 60%, 45%), hsl(var(--main), 50%, 35%));
+    border-color: hsl(var(--main), 60%, 55%);
+}
+
+[data-panel="EditUser"] .quick-actions .button.is-primary:hover {
+    background: linear-gradient(135deg, hsl(var(--main), 70%, 50%), hsl(var(--main), 60%, 40%));
+    border-color: hsl(var(--main), 70%, 60%);
+}
+
+[data-panel="EditUser"] .quick-actions .button {
+    background: linear-gradient(135deg, hsl(var(--main), 30%, 35%), hsl(var(--main), 25%, 30%));
+    border: 1px solid hsl(var(--main), 35%, 45%);
+    color: hsl(var(--main), 10%, 90%);
+    padding: 10px 16px;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 0.9em;
+    cursor: pointer;
+    transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+    position: relative;
+    overflow: hidden;
+    min-width: 100px;
+    text-align: center;
+}
+
+[data-panel="EditUser"] .quick-actions .button::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, hsla(var(--main), 50%, 50%, 0.2), transparent);
+    transition: left 0.4s ease;
+}
+
+[data-panel="EditUser"] .quick-actions .button:hover::before {
+    left: 100%;
+}
+
+[data-panel="EditUser"] .quick-actions .button:hover {
+    background: linear-gradient(135deg, hsl(var(--main), 35%, 40%), hsl(var(--main), 30%, 35%));
+    border-color: hsl(var(--main), 45%, 55%);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+    color: white;
+}
+
+[data-panel="EditUser"] .quick-actions .button:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+}
+
+[data-panel="EditUser"] .quick-actions .button.is-danger {
+    background: linear-gradient(135deg, hsl(0, 60%, 45%), hsl(0, 50%, 35%));
+    border-color: hsl(0, 60%, 55%);
+}
+
+[data-panel="EditUser"] .quick-actions .button.is-danger:hover {
+    background: linear-gradient(135deg, hsl(0, 70%, 50%), hsl(0, 60%, 40%));
+    border-color: hsl(0, 70%, 60%);
+}
+
+[data-panel="EditUser"] .quick-actions .button.is-warning {
+    background: linear-gradient(135deg, hsl(45, 80%, 50%), hsl(45, 70%, 40%));
+    border-color: hsl(45, 80%, 60%);
+}
+
+[data-panel="EditUser"] .quick-actions .button.is-warning:hover {
+    background: linear-gradient(135deg, hsl(45, 90%, 55%), hsl(45, 80%, 45%));
+    border-color: hsl(45, 90%, 65%);
+}
+
+[data-panel="EditUser"] .quick-actions .button.is-success {
+    background: linear-gradient(135deg, hsl(120, 50%, 45%), hsl(120, 40%, 35%));
+    border-color: hsl(120, 50%, 55%);
+}
+
+[data-panel="EditUser"] .quick-actions .button.is-success:hover {
+    background: linear-gradient(135deg, hsl(120, 60%, 50%), hsl(120, 50%, 40%));
+    border-color: hsl(120, 60%, 60%);
+}
+
+[data-panel="EditUser"] .quick-actions .button.is-info {
+    background: linear-gradient(135deg, hsl(200, 60%, 45%), hsl(200, 50%, 35%));
+    border-color: hsl(200, 60%, 55%);
+}
+
+[data-panel="EditUser"] .quick-actions .button.is-info:hover {
+    background: linear-gradient(135deg, hsl(200, 70%, 50%), hsl(200, 60%, 40%));
+    border-color: hsl(200, 70%, 60%);
+}
+
+[data-panel="EditUser"] .quick-actions .button.is-primary {
+    background: linear-gradient(135deg, hsl(var(--main), 60%, 45%), hsl(var(--main), 50%, 35%));
+    border-color: hsl(var(--main), 60%, 55%);
+}
+
+[data-panel="EditUser"] .quick-actions .button.is-primary:hover {
+    background: linear-gradient(135deg, hsl(var(--main), 70%, 50%), hsl(var(--main), 60%, 40%));
+    border-color: hsl(var(--main), 70%, 60%);
+}
+
+/* Dropdowns */
+[data-panel="EditUser"] .dropdown {
+    position: relative;
+}
+
+[data-panel="EditUser"] .dropdown-trigger {
+    display: inline-block;
+}
+
+[data-panel="EditUser"] .dropdown-menu {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    z-index: 1000;
+    min-width: 200px;
+    background: hsl(var(--main), 15%, 20%);
+    border: 1px solid hsl(var(--main), 20%, 25%);
+    border-radius: 8px;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4);
+    margin-top: 4px;
+    animation: fadeIn 0.2s ease;
+}
+
+[data-panel="EditUser"] .dropdown.is-hoverable:hover .dropdown-menu,
+[data-panel="EditUser"] .dropdown-menu.show {
+    display: block;
+}
+
+[data-panel="EditUser"] .dropdown-content {
+    padding: 8px 0;
+}
+
+[data-panel="EditUser"] .dropdown-item {
+    padding: 8px 16px;
+    color: hsl(var(--main), 10%, 80%);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 14px;
+}
+
+[data-panel="EditUser"] .dropdown-item:hover {
+    background: hsl(var(--main), 20%, 25%);
+    color: white;
+}
+
+[data-panel="EditUser"] .dropdown-divider {
+    height: 1px;
+    background: hsl(var(--main), 20%, 30%);
+    margin: 4px 0;
+}
+
+[data-panel="EditUser"] .field {
+    margin: 8px 16px;
+}
+
+[data-panel="EditUser"] .label {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    color: hsl(var(--main), 10%, 70%);
+    margin-bottom: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+[data-panel="EditUser"] .control.userspanel {
+    display: block;
+    width: 100%;
+}
+
+[data-panel="EditUser"] .input {
+    width: 100%;
+    padding: 8px 12px;
+    background: hsl(var(--main), 15%, 20%);
+    border: 1px solid hsl(var(--main), 20%, 25%);
+    border-radius: 8px;
+    color: white;
+    font-size: 14px;
+    transition: all 0.2s ease;
+}
+
+[data-panel="EditUser"] .input:focus {
+    outline: none;
+    border-color: hsl(var(--main), 40%, 50%);
+    box-shadow: 0 0 0 2px hsla(var(--main), 40%, 50%, 0.3);
+}
+
+[data-panel="EditUser"] textarea.input {
+    min-height: 100px;
+    resize: vertical;
+}
+
+[data-panel="EditUser"] .select {
+    position: relative;
+    display: inline-block;
+    width: 100%;
+}
+
+[data-panel="EditUser"] .select select {
+    width: 100%;
+    padding: 8px 12px;
+    background: hsl(var(--main), 15%, 20%);
+    border: 1px solid hsl(var(--main), 20%, 25%);
+    border-radius: 8px;
+    color: white;
+    font-size: 14px;
+    cursor: pointer;
+    appearance: none;
+    transition: all 0.2s ease;
+}
+
+[data-panel="EditUser"] .select select:focus {
+    outline: none;
+    border-color: hsl(var(--main), 40%, 50%);
+    box-shadow: 0 0 0 2px hsla(var(--main), 40%, 50%, 0.3);
+}
+
+[data-panel="EditUser"] .select::after {
+    content: '▼';
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    pointer-events: none;
+    color: hsl(var(--main), 10%, 60%);
+    font-size: 10px;
+}
+
+/* Badges Grid */
+[data-panel="EditUser"] .badges-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 12px;
+}
+
+[data-panel="EditUser"] .badge-card {
+    display: flex;
+    background: hsl(var(--main), 18%, 22%);
+    border: 1px solid hsl(var(--main), 25%, 30%);
+    border-radius: 12px;
+    padding: 12px;
+    gap: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+[data-panel="EditUser"] .badge-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, hsla(var(--main), 50%, 50%, 0.1), transparent);
+    transition: left 0.4s ease;
+    z-index: 0;
+}
+
+[data-panel="EditUser"] .badge-card:hover::before {
+    left: 100%;
+}
+
+[data-panel="EditUser"] .badge-card:hover {
+    background: hsl(var(--main), 20%, 25%);
+    border-color: hsl(var(--main), 30%, 40%);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    z-index: 1;
+}
+
+[data-panel="EditUser"] .badge-card.selected {
+    background: hsl(var(--main), 30%, 28%);
+    border-color: hsl(var(--main), 50%, 55%);
+    box-shadow: 0 0 16px hsla(var(--main), 50%, 50%, 0.6), 0 4px 12px rgba(0, 0, 0, 0.4);
+    transform: translateY(-2px);
+}
+
+[data-panel="EditUser"] .badge-card-image {
+    flex-shrink: 0;
+    width: 60px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: hsl(var(--main), 15%, 18%);
+    border-radius: 8px;
+    border: 1px solid hsl(var(--main), 20%, 25%);
+}
+
+[data-panel="EditUser"] .badge-card-image .badge-icon {
+    font-size: 28px;
+    line-height: 1;
+}
+
+[data-panel="EditUser"] .badge-card-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 4px;
+}
+
+[data-panel="EditUser"] .badge-title {
+    font-size: 14px;
+    font-weight: 700;
+    margin: 0;
+    line-height: 1.2;
+}
+
+[data-panel="EditUser"] .badge-description {
+    font-size: 12px;
+    color: hsl(var(--main), 10%, 70%);
+    margin: 0;
+    line-height: 1.3;
+}
+
+/* Logs Grid */
+[data-panel="EditUser"] .logs-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 12px;
+}
+
+[data-panel="EditUser"] .log-card {
+    background: hsl(var(--main), 18%, 22%);
+    border: 1px solid hsl(var(--main), 25%, 30%);
+    border-radius: 12px;
+    padding: 12px;
+    transition: all 0.2s ease;
+}
+
+[data-panel="EditUser"] .log-card:hover {
+    background: hsl(var(--main), 20%, 25%);
+    border-color: hsl(var(--main), 30%, 40%);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+[data-panel="EditUser"] .log-card-content {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+[data-panel="EditUser"] .log-sender {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid hsl(var(--main), 20%, 25%);
+}
+
+[data-panel="EditUser"] .log-sender-avatar {
+    width: 36px;
+    height: 36px;
     border-radius: 50%;
     overflow: hidden;
-    background-size: cover;
-    background-position: 50%;
-    background-repeat: no-repeat;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    scale: 3;
+    border: 2px solid hsl(var(--main), 30%, 40%);
 }
 
-#badge.card-content {
-    z-index: 3;
-    padding: 10px;
+[data-panel="EditUser"] .log-sender-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+[data-panel="EditUser"] .log-sender-info {
+    flex: 1;
     display: flex;
     flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    pointer-events: all;
+    gap: 2px;
 }
-.card-content .title {
-    font-size: 0.85em;
+
+[data-panel="EditUser"] .log-sender-title {
+    font-size: 11px;
     font-weight: 600;
-    margin-bottom: 4px;
-    text-shadow: -1px 2px 2px rgba(0, 0, 0, 0.33);
+    color: hsl(var(--main), 10%, 60%);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin: 0;
 }
 
-.card-content .description {
-    font-size: 0.75em;
+[data-panel="EditUser"] .log-sender-info h5 {
+    font-size: 13px;
+    font-weight: 600;
+    color: hsl(var(--main), 80%, 75%);
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+[data-panel="EditUser"] .log-sender-info h5 a {
+    color: hsl(var(--main), 50%, 65%);
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+
+[data-panel="EditUser"] .log-sender-info h5 a:hover {
+    color: hsl(var(--main), 60%, 75%);
+    text-decoration: underline;
+}
+
+[data-panel="EditUser"] .log-sender-info h6 {
+    font-size: 11px;
     font-weight: 400;
-    text-shadow: -1px 2px 2px rgba(0, 0, 0, 0.33);
+    color: hsl(var(--main), 10%, 55%);
+    margin: 0;
 }
 
-.alert {
-    --alert-200: green;
-    --alert-400: rgb(193, 193, 0);
-    --alert-500: red;
-    border-radius: 20px;
-    margin-top: 8px;
-    padding: 4px;
-    width: auto;
+[data-panel="EditUser"] .log-action {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+[data-panel="EditUser"] .log-action-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: hsl(var(--main), 80%, 75%);
+    margin: 0;
+}
+
+[data-panel="EditUser"] .log-action-reason {
+    font-size: 12px;
+    color: hsl(var(--main), 10%, 70%);
+    margin: 0;
+    line-height: 1.3;
+}
+
+/* Hashes Grid */
+[data-panel="EditUser"] .hashes-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 12px;
+}
+
+[data-panel="EditUser"] .hash-card {
+    background: hsl(var(--main), 18%, 22%);
+    border: 1px solid hsl(var(--main), 25%, 30%);
+    border-radius: 12px;
+    padding: 12px;
+    transition: all 0.2s ease;
+    font-family: 'Courier New', monospace;
+}
+
+[data-panel="EditUser"] .hash-card:hover {
+    background: hsl(var(--main), 20%, 25%);
+    border-color: hsl(var(--main), 30%, 40%);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+[data-panel="EditUser"] .hash-card-content {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+[data-panel="EditUser"] .hash-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: hsl(var(--main), 80%, 75%);
+    margin: 0 0 4px 0;
+    font-family: inherit;
+}
+
+[data-panel="EditUser"] .hash-detail {
+    font-size: 11px;
+    color: hsl(var(--main), 10%, 70%);
+    margin: 0;
+    line-height: 1.3;
+    font-family: inherit;
+    word-break: break-all;
+}
+
+[data-panel="EditUser"] .hash-detail::before {
+    content: '• ';
+    color: hsl(var(--main), 30%, 50%);
+    font-weight: bold;
+}
+
+/* Alert */
+[data-panel="EditUser"] .alert {
+    --alert-200: hsl(120, 50%, 40%);
+    --alert-400: hsl(45, 80%, 45%);
+    --alert-500: hsl(0, 60%, 45%);
+    background: hsl(var(--main), 15%, 20%);
+    border: 1px solid hsl(var(--main), 25%, 30%);
+    border-radius: 12px;
+    padding: 12px;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    color: #fff;
+    color: white;
     font-size: 14px;
-    position: relative;
     transition: 0.2s ease;
+    animation: slideDown 0.3s ease;
 }
-  .alert .alert-content {
-    padding: 10px;
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+[data-panel="EditUser"] .alert .alert-content {
     width: 100%;
     display: flex;
     flex-direction: row;
     align-items: center;
     justify-content: center;
-    transition: 0.2s ease;
-  }
-
-#logs.content .title {
-  font-size: 1.5em;
-  font-weight: 600;
-  margin-bottom: 4px;
-  text-shadow: -1px 2px 2px rgba(0, 0, 0, 0.33);
+    text-align: center;
 }
 
-#logs.content .columns.is-multiline {
-  margin-top: 8px;
+[data-panel="EditUser"] .alert .alert-content p {
+    margin: 0;
+    font-weight: 600;
 }
 
-#log.card-content {
-  position: relative;
-  transition: 0.2s ease;
+[data-panel="EditUser"] .alert.success {
+    background: hsl(120, 30%, 20%);
+    border-color: hsl(120, 50%, 40%);
 }
 
-#log.card-content .Sender {
-  position: relative;
-  display: flex;
+[data-panel="EditUser"] .alert.warning {
+    background: hsl(45, 30%, 20%);
+    border-color: hsl(45, 50%, 40%);
 }
-  #log.card-content .Sender .SenderAvatar {
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    overflow: hidden;
-    background-size: cover;
-    background-position: 50%;
-    background-repeat: no-repeat;
+
+[data-panel="EditUser"] .alert.error {
+    background: hsl(0, 30%, 20%);
+    border-color: hsl(0, 50%, 40%);
+}
+
+/* Form Styles */
+[data-panel="EditUser"] .form-group {
     display: flex;
-    justify-content: center;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+[data-panel="EditUser"] .form-group .label {
+    font-size: 12px;
+    font-weight: 600;
+    color: hsl(var(--main), 10%, 70%);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin: 0;
+}
+
+[data-panel="EditUser"] .form-group .input,
+[data-panel="EditUser"] .form-group textarea {
+    width: 100%;
+    padding: 10px 12px;
+    background: hsl(var(--main), 15%, 20%);
+    border: 1px solid hsl(var(--main), 20%, 25%);
+    border-radius: 8px;
+    color: white;
+    font-size: 14px;
+    transition: all 0.2s ease;
+    font-family: inherit;
+}
+
+[data-panel="EditUser"] .form-group .input:focus,
+[data-panel="EditUser"] .form-group textarea:focus {
+    outline: none;
+    border-color: hsl(var(--main), 40%, 50%);
+    box-shadow: 0 0 0 2px hsla(var(--main), 40%, 50%, 0.3);
+}
+
+[data-panel="EditUser"] .form-group .input[readonly] {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+[data-panel="EditUser"] .form-group textarea {
+    min-height: 120px;
+    resize: vertical;
+    line-height: 1.5;
+}
+
+[data-panel="EditUser"] .form-group .select {
+    width: 100%;
+}
+
+[data-panel="EditUser"] .form-group .select select {
+    width: 100%;
+    padding: 10px 12px;
+    background: hsl(var(--main), 15%, 20%);
+    border: 1px solid hsl(var(--main), 20%, 25%);
+    border-radius: 8px;
+    color: white;
+    font-size: 14px;
+    cursor: pointer;
+    appearance: none;
+    transition: all 0.2s ease;
+}
+
+[data-panel="EditUser"] .form-group .select select:focus {
+    outline: none;
+    border-color: hsl(var(--main), 40%, 50%);
+    box-shadow: 0 0 0 2px hsla(var(--main), 40%, 50%, 0.3);
+}
+
+[data-panel="EditUser"] .form-group .select::after {
+    content: '▼';
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    pointer-events: none;
+    color: hsl(var(--main), 10%, 60%);
+    font-size: 10px;
+}
+
+/* Country select specific styling */
+[data-panel="EditUser"] .form-group .select select option {
+    background: hsl(var(--main), 15%, 20%);
+    color: white;
+    padding: 8px;
+}
+
+[data-panel="EditUser"] .form-group .select select option:checked {
+    background: hsl(var(--main), 50%, 35%);
+    color: white;
+}
+
+/* Custom country select component */
+[data-panel="EditUser"] .form-group .select select {
+    position: relative;
+    z-index: 1;
+}
+
+[data-panel="EditUser"] .form-actions {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+    margin-top: 12px;
+}
+
+[data-panel="EditUser"] .form-actions .button {
+    min-width: 100px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    [data-panel="EditUser"] {
+        max-width: 95vw;
+    }
+    
+    [data-panel="EditUser"] .badges-grid,
+    [data-panel="EditUser"] .logs-grid,
+    [data-panel="EditUser"] .hashes-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    [data-panel="EditUser"] .module-tabs {
+        min-width: 100%;
+    }
+    
+    [data-panel="EditUser"] .user-badges {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+@media (max-width: 480px) {
+    [data-panel="EditUser"] .banner-text {
+        font-size: 1.5em;
+    }
+    
+    [data-panel="EditUser"] .module-tab {
+        font-size: 12px;
+        padding: 6px 10px;
+    }
+    
+    [data-panel="EditUser"] .quick-actions {
+        flex-direction: column;
+    }
+    
+    [data-panel="EditUser"] .quick-actions .button {
+        width: 100%;
+    }
+}
+
+/* Badges Grid */
+[data-panel="EditUser"] .badges-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 12px;
+}
+
+[data-panel="EditUser"] .badge-card {
+    display: flex;
+    background: hsl(var(--main), 18%, 22%);
+    border: 1px solid hsl(var(--main), 25%, 30%);
+    border-radius: 12px;
+    padding: 12px;
+    gap: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+[data-panel="EditUser"] .badge-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, hsla(var(--main), 50%, 50%, 0.1), transparent);
+    transition: left 0.4s ease;
+    z-index: 0;
+}
+
+[data-panel="EditUser"] .badge-card:hover::before {
+    left: 100%;
+}
+
+[data-panel="EditUser"] .badge-card:hover {
+    background: hsl(var(--main), 20%, 25%);
+    border-color: hsl(var(--main), 30%, 40%);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    z-index: 1;
+}
+
+[data-panel="EditUser"] .badge-card.selected {
+    background: hsl(var(--main), 30%, 28%);
+    border-color: hsl(var(--main), 50%, 55%);
+    box-shadow: 0 0 16px hsla(var(--main), 50%, 50%, 0.6), 0 4px 12px rgba(0, 0, 0, 0.4);
+    transform: translateY(-2px);
+}
+
+[data-panel="EditUser"] .badge-card-image {
+    flex-shrink: 0;
+    width: 60px;
+    height: 60px;
+    display: flex;
     align-items: center;
-    scale: 3;
-    margin-top: 24px;
-  }
-  #log.card-content .Sender .SenderInfo {
-    margin-left: 32px;
+    justify-content: center;
+    background: hsl(var(--main), 15%, 18%);
+    border-radius: 8px;
+    border: 1px solid hsl(var(--main), 20%, 25%);
+}
+
+[data-panel="EditUser"] .badge-card-image .badge-icon {
+    font-size: 28px;
+    line-height: 1;
+}
+
+[data-panel="EditUser"] .badge-card-content {
+    flex: 1;
     display: flex;
     flex-direction: column;
     justify-content: center;
-    align-items: flex-start;
-  }
-
-#log.card-content .Action {
-  position: relative;
+    gap: 4px;
 }
 
-.control.userspanel .input {
-  /*background-color: hsl(var(--main), 10%, 25%);*/
-  border-radius: 20px;
-  transition: 0.2s ease;
+[data-panel="EditUser"] .badge-title {
+    font-size: 14px;
+    font-weight: 700;
+    margin: 0;
+    line-height: 1.2;
 }
 
-.dropdown-item {
-  transition: 0.2s ease;
+[data-panel="EditUser"] .badge-description {
+    font-size: 12px;
+    color: hsl(var(--main), 10%, 70%);
+    margin: 0;
+    line-height: 1.3;
 }
-.dropdown-item:hover {
-  color: hsl(var(--main), 100%, 50%) !important;
-  text-shadow: 0 0px 10px hsla(var(--main), 100%, 50%, 0.8);
-  transition: 0.2s ease;
+
+/* Logs Grid */
+[data-panel="EditUser"] .logs-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 12px;
+}
+
+[data-panel="EditUser"] .log-card {
+    background: hsl(var(--main), 18%, 22%);
+    border: 1px solid hsl(var(--main), 25%, 30%);
+    border-radius: 12px;
+    padding: 12px;
+    transition: all 0.2s ease;
+}
+
+[data-panel="EditUser"] .log-card:hover {
+    background: hsl(var(--main), 20%, 25%);
+    border-color: hsl(var(--main), 30%, 40%);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+[data-panel="EditUser"] .log-card-content {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+[data-panel="EditUser"] .log-sender {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid hsl(var(--main), 20%, 25%);
+}
+
+[data-panel="EditUser"] .log-sender-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    overflow: hidden;
+    border: 2px solid hsl(var(--main), 30%, 40%);
+}
+
+[data-panel="EditUser"] .log-sender-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+[data-panel="EditUser"] .log-sender-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+[data-panel="EditUser"] .log-sender-title {
+    font-size: 11px;
+    font-weight: 600;
+    color: hsl(var(--main), 10%, 60%);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin: 0;
+}
+
+[data-panel="EditUser"] .log-sender-info h5 {
+    font-size: 13px;
+    font-weight: 600;
+    color: hsl(var(--main), 80%, 75%);
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+[data-panel="EditUser"] .log-sender-info h5 a {
+    color: hsl(var(--main), 50%, 65%);
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+
+[data-panel="EditUser"] .log-sender-info h5 a:hover {
+    color: hsl(var(--main), 60%, 75%);
+    text-decoration: underline;
+}
+
+[data-panel="EditUser"] .log-sender-info h6 {
+    font-size: 11px;
+    font-weight: 400;
+    color: hsl(var(--main), 10%, 55%);
+    margin: 0;
+}
+
+[data-panel="EditUser"] .log-action {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+[data-panel="EditUser"] .log-action-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: hsl(var(--main), 80%, 75%);
+    margin: 0;
+}
+
+[data-panel="EditUser"] .log-action-reason {
+    font-size: 12px;
+    color: hsl(var(--main), 10%, 70%);
+    margin: 0;
+    line-height: 1.3;
+}
+
+/* Hashes section enhancements */
+[data-panel="EditUser"] .hash-card {
+    background: hsl(var(--main), 18%, 22%);
+    border: 1px solid hsl(var(--main), 25%, 30%);
+    border-radius: 12px;
+    padding: 12px;
+    transition: all 0.2s ease;
+    font-family: 'Courier New', monospace;
+}
+
+[data-panel="EditUser"] .hash-card:hover {
+    background: hsl(var(--main), 20%, 25%);
+    border-color: hsl(var(--main), 30%, 40%);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+[data-panel="EditUser"] .hash-card-content {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+[data-panel="EditUser"] .hash-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: hsl(var(--main), 80%, 75%);
+    margin: 0 0 4px 0;
+    font-family: inherit;
+}
+
+[data-panel="EditUser"] .hash-detail {
+    font-size: 11px;
+    color: hsl(var(--main), 10%, 70%);
+    margin: 0;
+    line-height: 1.3;
+    font-family: inherit;
+    word-break: break-all;
+}
+
+[data-panel="EditUser"] .hash-detail::before {
+    content: '• ';
+    color: hsl(var(--main), 30%, 50%);
+    font-weight: bold;
+}
+
+/* Hashes Grid */
+[data-panel="EditUser"] .hashes-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 12px;
+}
+
+[data-panel="EditUser"] .hash-card {
+    background: hsl(var(--main), 18%, 22%);
+    border: 1px solid hsl(var(--main), 25%, 30%);
+    border-radius: 12px;
+    padding: 12px;
+    transition: all 0.2s ease;
+}
+
+[data-panel="EditUser"] .hash-card:hover {
+    background: hsl(var(--main), 20%, 25%);
+    border-color: hsl(var(--main), 30%, 40%);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+[data-panel="EditUser"] .hash-card-content {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+[data-panel="EditUser"] .hash-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: hsl(var(--main), 80%, 75%);
+    margin: 0 0 4px 0;
+}
+
+[data-panel="EditUser"] .hash-detail {
+    font-size: 11px;
+    color: hsl(var(--main), 10%, 70%);
+    margin: 0;
+    line-height: 1.3;
+}
+
+/* Alert */
+[data-panel="EditUser"] .alert {
+    --alert-200: hsl(120, 50%, 40%);
+    --alert-400: hsl(45, 80%, 45%);
+    --alert-500: hsl(0, 60%, 45%);
+    background: hsl(var(--main), 15%, 20%);
+    border: 1px solid hsl(var(--main), 25%, 30%);
+    border-radius: 12px;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 14px;
+    transition: 0.2s ease;
+    animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+[data-panel="EditUser"] .alert .alert-content {
+    width: 100%;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+}
+
+[data-panel="EditUser"] .alert .alert-content p {
+    margin: 0;
+    font-weight: 600;
+}
+
+[data-panel="EditUser"] .alert.success {
+    background: hsl(120, 30%, 20%);
+    border-color: hsl(120, 50%, 40%);
+}
+
+[data-panel="EditUser"] .alert.warning {
+    background: hsl(45, 30%, 20%);
+    border-color: hsl(45, 50%, 40%);
+}
+
+[data-panel="EditUser"] .alert.error {
+    background: hsl(0, 30%, 20%);
+    border-color: hsl(0, 50%, 40%);
+}
+
+/* Form Styles */
+[data-panel="EditUser"] .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+[data-panel="EditUser"] .form-group .label {
+    font-size: 12px;
+    font-weight: 600;
+    color: hsl(var(--main), 10%, 70%);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin: 0;
+}
+
+[data-panel="EditUser"] .form-group .input,
+[data-panel="EditUser"] .form-group textarea {
+    width: 100%;
+    padding: 10px 12px;
+    background: hsl(var(--main), 15%, 20%);
+    border: 1px solid hsl(var(--main), 20%, 25%);
+    border-radius: 8px;
+    color: white;
+    font-size: 14px;
+    transition: all 0.2s ease;
+    font-family: inherit;
+}
+
+[data-panel="EditUser"] .form-group .input:focus,
+[data-panel="EditUser"] .form-group textarea:focus {
+    outline: none;
+    border-color: hsl(var(--main), 40%, 50%);
+    box-shadow: 0 0 0 2px hsla(var(--main), 40%, 50%, 0.3);
+}
+
+[data-panel="EditUser"] .form-group .input[readonly] {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+[data-panel="EditUser"] .form-group textarea {
+    min-height: 120px;
+    resize: vertical;
+    line-height: 1.5;
+}
+
+[data-panel="EditUser"] .form-group .select {
+    width: 100%;
+}
+
+[data-panel="EditUser"] .form-group .select select {
+    width: 100%;
+    padding: 10px 12px;
+    background: hsl(var(--main), 15%, 20%);
+    border: 1px solid hsl(var(--main), 20%, 25%);
+    border-radius: 8px;
+    color: white;
+    font-size: 14px;
+    cursor: pointer;
+    appearance: none;
+    transition: all 0.2s ease;
+}
+
+[data-panel="EditUser"] .form-group .select select:focus {
+    outline: none;
+    border-color: hsl(var(--main), 40%, 50%);
+    box-shadow: 0 0 0 2px hsla(var(--main), 40%, 50%, 0.3);
+}
+
+[data-panel="EditUser"] .form-group .select::after {
+    content: '▼';
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    pointer-events: none;
+    color: hsl(var(--main), 10%, 60%);
+    font-size: 10px;
+}
+
+/* Country select specific styling */
+[data-panel="EditUser"] .form-group .select select option {
+    background: hsl(var(--main), 15%, 20%);
+    color: white;
+    padding: 8px;
+}
+
+[data-panel="EditUser"] .form-group .select select option:checked {
+    background: hsl(var(--main), 50%, 35%);
+    color: white;
+}
+
+/* Custom country select component */
+[data-panel="EditUser"] .form-group .select select {
+    position: relative;
+    z-index: 1;
+}
+
+[data-panel="EditUser"] .form-actions {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+    margin-top: 12px;
+}
+
+[data-panel="EditUser"] .form-actions .button {
+    min-width: 100px;
+}
+
+/* Dropdown enhancements for edit user panel */
+[data-panel="EditUser"] .dropdown.is-hoverable:hover .dropdown-menu {
+    display: block;
+    animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+[data-panel="EditUser"] .dropdown-menu {
+    min-width: 280px;
+    max-width: 320px;
+}
+
+[data-panel="EditUser"] .dropdown-item {
+    font-size: 13px;
+    padding: 10px 16px;
+}
+
+[data-panel="EditUser"] .dropdown-item:hover {
+    background: hsl(var(--main), 20%, 25%);
+    color: white;
+}
+
+[data-panel="EditUser"] .dropdown-divider {
+    margin: 4px 0;
+}
+
+[data-panel="EditUser"] .field {
+    margin: 8px 16px;
+}
+
+[data-panel="EditUser"] .field .label {
+    font-size: 11px;
+    margin-bottom: 6px;
+}
+
+[data-panel="EditUser"] .field .input {
+    font-size: 13px;
+    padding: 8px 10px;
+}
+
+[data-panel="EditUser"] .field .input:focus {
+    border-color: hsl(var(--main), 40%, 50%);
+    box-shadow: 0 0 0 2px hsla(var(--main), 40%, 50%, 0.3);
+}
+
+[data-panel="EditUser"] .field .button {
+    width: 100%;
+    margin-top: 4px;
+}
+
+/* Level items in quick actions */
+[data-panel="EditUser"] .level-item {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Responsive */
+
+
+@media (max-width: 960px) {
+    [data-panel="EditUser"] .profile-avatar {
+        width: 140px;
+        height: 140px;
+        border-radius: 15px;
+    }
+    
+    [data-panel="EditUser"] .info-block {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        padding: 10px 200px;
+        width: 100%;
+    }
+    
+    [data-panel="EditUser"] .profile-avatar-area {
+        margin-top: -10rem;
+    }
+}
+
+@media (max-width: 770px) {
+    [data-panel="EditUser"] .modetext {
+        display: none;
+    }
+    
+    [data-panel="EditUser"] .simple-banner-switch {
+        padding: 6px 10px;
+        border-radius: 3px;
+        background: #0000008c;
+        margin: 0 8px 0 0;
+        font-size: 12px;
+    }
+    
+    [data-panel="EditUser"] .simple-banner-switch i {
+        margin-right: 0px;
+    }
+    
+    [data-panel="EditUser"] .select-left {
+        gap: 6px;
+    }
+}
+
+@media (max-width: 768px) {
+    [data-panel="EditUser"] {
+        max-width: 95vw;
+    }
+    
+    [data-panel="EditUser"] .badges-grid,
+    [data-panel="EditUser"] .logs-grid,
+    [data-panel="EditUser"] .hashes-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 600px) {
+    [data-panel="EditUser"] .info-block {
+        padding: 10px 110px 50px 195px;
+    }
+    
+    [data-panel="EditUser"] .profile-avatar-area {
+        padding: 0 0 0 20px;
+    }
+    
+    [data-panel="EditUser"] .profile-avatar {
+        width: 120px;
+        height: 120px;
+    }
+}
+
+@media (max-width: 550px) {
+    [data-panel="EditUser"] .info-block .ranks {
+        width: 235px;
+    }
+    
+    [data-panel="EditUser"] .profile-avatar-area {
+        margin-top: -8rem;
+    }
+}
+
+@media (max-width: 450px) {
+    [data-panel="EditUser"] .info-block .ranks {
+        width: 145px;
+    }
+    
+    [data-panel="EditUser"] .info-block {
+        padding: 10px 200px;
+    }
+    
+    [data-panel="EditUser"] .profile-avatar-area {
+        margin-top: -6rem;
+    }
+    
+    [data-panel="EditUser"] .quick-actions {
+        flex-direction: column;
+    }
+    
+    [data-panel="EditUser"] .quick-actions .button {
+        width: 100%;
+    }
+    
+    [data-panel="EditUser"] .select-left {
+        gap: 4px;
+    }
+    
+    [data-panel="EditUser"] .simple-banner-switch {
+        margin: 0 4px 0 0;
+        font-size: 11px;
+        padding: 5px 8px;
+    }
 }

@@ -16,406 +16,1311 @@
     position: relative;
 }
 
-
-/* Style for User Panel Vue Component */
 :root {
     --user: var(--main);  /* Default fallback to main */
     --diff-color: 255, 255, 255;
 }
-.profile-panel { /* BUG: When hovering in panel, if you hover over a parent div in the dom it will close the panel as it is technically behind the parent div even tho it is being shown on top. */
-    position: absolute;
-    display: flex !important;
-    width: fit-content;
-    min-width: 275px;
-    max-width: 640px;
-    z-index: 610;
-    opacity: 0;
-    flex-direction: column;
-    background-position: center;
-    background-size: cover;
-    border-radius: 16px;
-    margin-top: -240px; /* Adjusted to position above username */
-    margin-left: -20px; /* Offset to center better */
-    color: white;
-    background-color: hsl(var(--main), 10%, 20%);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
-    transition: 
+
+/* ============================================================================
+ * Section: User-Profile Component Styles
+ * ============================================================================
+ *
+ * Comprehensive styles for the user-profile component with multiple display
+ * styles: username, card, and search.
+ *
+ * Component Structure:
+ * - .user-profile (base container)
+ *   - .user-profile-username (username style)
+ *   - .user-profile-card (card style)
+ *   - .user-profile-search (search style)
+ *
+ * Sub-components:
+ * - .user-profile-panel (hover panel for username style)
+ * - .user-profile-badge-popup (badge information popup)
+ *
+ * States:
+ * - .loaded (component has data)
+ * - .has-data (valid user data available)
+ * - .interactive (hover/click interactions enabled)
+ * - .visible (panel is visible)
+ *
+ * Status Classes:
+ * - .online (user is online)
+ * - .playing (user is playing)
+ * - .afk (user is away from keyboard)
+ * - .offline (user is offline)
+ */
+
+    /* Base Component Styles */
+    :root {
+        --status-offline: 150, 150, 150;
+        --status-online: 0, 200, 100;
+        --status-playing: 0, 150, 255;
+        --status-afk: 255, 200, 0;
+        --status-paused: 226, 223, 210;
+        --status-idle: 255, 179, 0;
+
+        --user-status: var(--status-offline);
+    }
+
+    .user-profile {
+      position: relative;
+      display: inline-block;
+      font-family: inherit;
+    }
+
+    .user-profile.interactive {
+      cursor: pointer;
+    }
+
+    .user-profile.error {
+      color: #ff6b6b;
+    }
+
+    .user-profile-loading,
+    .user-profile-error,
+    .user-profile-no-data {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      background-color: rgba(255, 255, 255, 0.05);
+      border-radius: 8px;
+      font-size: 14px;
+      color: rgba(255, 255, 255, 0.7);
+    }
+
+    .user-profile-loading i,
+    .user-profile-error i,
+    .user-profile-no-data i {
+      font-size: 16px;
+    }
+
+    .user-profile-loading i {
+      color: #4fc0ff;
+    }
+
+    .user-profile-error i {
+      color: #ff6b6b;
+    }
+
+    .user-profile-no-data i {
+      color: #888;
+    }
+
+    /* Supporting Classes */
+    .user-profile-overlay {
+        position: absolute !important;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(
+          to bottom,
+          rgba(20, 20, 30, 0.25) 0%,
+          rgba(20, 20, 30, 0.5) 100%
+        );
+    }
+
+    .user-profile-avatar {
+        height: 56px;
+        width: 56px;
+        background-size: cover;
+        background-position: center;
+        border-radius: 50%;
+        box-shadow: 
+            0 0 2px rgba(0, 0, 0, 0.1),
+            0 2px 4px rgba(0, 0, 0, 0.15),
+            0 4px 8px rgba(0, 0, 0, 0.12),
+            0 8px 16px rgba(0, 0, 0, 0.1),
+            0 16px 32px rgba(0, 0, 0, 0.08),
+            0 32px 64px rgba(0, 0, 0, 0.06);
+    }
+    .user-profile-avatar.with-status {
+        box-shadow: 
+            0 0 2px rgba(0, 0, 0, 0.1),
+            0 2px 4px rgba(0, 0, 0, 0.15),
+            0 4px 8px rgba(0, 0, 0, 0.12),
+            0 8px 16px rgba(0, 0, 0, 0.1),
+            0 16px 32px rgba(0, 0, 0, 0.08),
+            0 32px 64px rgba(0, 0, 0, 0.06),
+            0 0 0 1px rgba(var(--user-status), 0.08),
+            0 0 16px rgba(var(--user-status), 0.25),
+            inset 0 0 1px rgba(var(--user-status), 0.1);
+    }
+
+/* ============================================================================
+ * Username Style
+ * ============================================================================
+ * Shows just the username as a clickable link with optional hover panel.
+ */
+
+    .user-profile-username-container {
+      position: relative;
+      display: inline-block;
+    }
+
+    .user-profile-username-container .user-name {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 6px;
+      border-radius: 4px;
+      transition: background-color 0.2s ease;
+    }
+
+    .user-profile-username-container.interactive .user-name:hover {
+      background-color: rgba(255, 255, 255, 0.1);
+    }
+
+    /* Country flag in username */
+    .user-profile-username-container .user-country {
+      display: inline-flex;
+      align-items: center;
+    }
+
+    .user-profile-username-container .user-flag {
+      width: 20px;
+      height: 14px;
+      border-radius: 2px;
+      margin-right: 4px;
+      object-fit: cover;
+    }
+
+    /* Clan tag in username */
+    .user-profile-username-container .user-clan {
+      display: inline-flex;
+      align-items: center;
+    }
+
+    .user-profile-username-container .user-clan-link {
+      color: hsl(var(--user), 70%, 70%);
+      text-decoration: none;
+      font-weight: 600;
+      transition: color 0.2s ease;
+    }
+
+    .user-profile-username-container.interactive .user-clan-link:hover {
+      color: hsl(var(--user), 70%, 80%);
+      text-decoration: underline;
+    }
+
+    /* Username link */
+    .user-profile-username-container .user-username-link {
+      color: hsl(var(--user), 70%, 75%);
+      text-decoration: none;
+      font-weight: 600;
+      transition: color 0.2s ease;
+    }
+
+    .user-profile-username-container.interactive .user-username-link:hover {
+      color: hsl(var(--user), 70%, 85%);
+      text-decoration: underline;
+    }
+
+/* ============================================================================
+ * Username Style - Hover Panel
+ * ============================================================================
+ * Shows detailed user information on hover.
+ */
+
+    .user-profile-panel {
+      position: absolute;
+      display: flex;
+      flex-direction: column;
+      width: 300px;
+      min-width: 275px;
+      max-width: 640px;
+      z-index: 610;
+      opacity: 0;
+      visibility: hidden;
+      background-position: center;
+      background-size: cover;
+      border-radius: 16px;
+      margin-top: 8px;
+      margin-left: -20px;
+      color: white;
+      background-color: hsl(var(--main), 10%, 20%);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+      transition:
         opacity 300ms ease-in-out,
         visibility 300ms ease-in-out,
         transform 300ms cubic-bezier(0.34, 1.56, 0.64, 1);
-    visibility: hidden;
-    transform: translateY(10px) scale(0.98);
-    backdrop-filter: blur(8px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-    .profile-panel.visible {
-        opacity: 1;
-        visibility: visible;
-        transform: translateY(0) scale(1);
+      transform: translateY(10px) scale(0.98);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
     }
 
-    .profile-panel-background {
-        height: 100%;
+    .user-profile-panel.visible {
+      opacity: 1;
+      visibility: visible;
+      transform: translateY(0) scale(1);
+    }
+
+    .user-profile-panel-background {
+      height: 100%;
+      width: 100%;
+      border-radius: 12px;
+      position: absolute !important;
+      z-index: -1;
+      background-position: center;
+      background-size: cover;
+      opacity: 0.7;
+    }
+
+    .user-profile-panel-background::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(
+        to bottom,
+        rgba(0, 0, 0, 0.4) 0%,
+        rgba(0, 0, 0, 0.7) 100%
+      );
+      border-radius: 12px;
+    }
+
+    .user-profile-panel-header {
+      display: flex;
+      padding: 12px;
+      position: relative;
+      align-items: center;
+    }
+
+    .user-profile-panel-avatar {
+      height: 72px;
+      width: 72px;
+      background-size: cover;
+      background-position: center;
+      border-radius: 50%;
+      border: 3px solid rgba(255, 255, 255, 0.3);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+      transition: transform 0.3s ease, border-color 0.3s ease;
+      flex-shrink: 0;
+    }
+
+    .user-profile-panel-avatar:hover {
+      transform: scale(1.05);
+      border-color: rgba(255, 255, 255, 0.5);
+    }
+
+    .user-profile-panel-info {
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      margin-left: 12px;
+      flex-grow: 1;
+    }
+
+    .user-profile-panel-name {
+      font-size: 22px;
+      font-weight: 700;
+      margin-bottom: 4px;
+      text-align: left;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    }
+
+    .user-profile-panel-clan {
+      margin-right: 4px;
+      color: hsl(var(--user), 70%, 70%);
+      font-weight: 600;
+    }
+
+    .user-profile-panel-rank {
+      font-size: 14px;
+      opacity: 0.9;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+    }
+
+    .user-profile-panel-global-rank::before {
+      content: '#';
+    }
+
+    .user-profile-panel-country {
+      margin-left: 4px;
+      display: flex;
+      align-items: center;
+    }
+
+    .user-profile-panel-country .user-flag {
+      width: 24px;
+      height: 16px;
+      margin-right: 4px;
+      border-radius: 15%;
+    }
+
+    .user-profile-panel-badges {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 4px;
+      margin-top: 4px;
+    }
+
+    .user-profile-panel-badges .badge {
+      text-shadow: 0 2px 2px rgba(0, 0, 0, 0.56);
+      transition: transform 0.2s ease;
+    }
+
+    .user-profile-panel-badges .badge:hover {
+      transform: scale(1.15);
+      z-index: 2;
+    }
+
+    .user-profile-panel-stats {
+      display: flex;
+      padding: 0 16px 16px;
+      justify-content: space-between;
+    }
+
+    .user-profile-panel-stat-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      flex: 1;
+    }
+
+    .user-profile-panel-stat-value {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 2px;
+    }
+
+    .user-profile-panel-stat-label {
+      font-size: 12px;
+      opacity: 0.7;
+      text-transform: uppercase;
+    }
+
+    .user-profile-panel-status {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 16px;
+      background-color: rgba(0, 0, 0, 0.3);
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .user-profile-panel-status i {
+      font-size: 8px;
+    }
+
+    .user-profile-panel-status.online i {
+      color: #4fffb8;
+    }
+
+    .user-profile-panel-status.playing i {
+      color: #4fc0ff;
+    }
+
+    .user-profile-panel-status.afk i {
+      color: #ffd93d;
+    }
+
+    .user-profile-panel-status.offline i {
+      color: #888;
+    }
+
+/* ============================================================================
+ * Card Style
+ * ============================================================================
+ * Shows a rectangular card with banner, avatar, stats, and status.
+ */
+
+    .user-profile-card-container {
+      position: relative;
+      display: inline-block;
+    }
+
+    .user-profile-card {
+      position: relative;
+      width: 100%;
+      max-width: 320px;
+      height: fit-content;
+      max-height: 180px;
+      border-radius: 12px;
+      background-color: hsl(var(--main), 10%, 20%);
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .user-profile-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+    }
+
+    .user-profile-card-background {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-size: cover;
+      background-position: center;
+      filter: blur(2px);
+      border-radius: 12px;
+      z-index: 0;
+    }
+
+    .user-profile-card-content {
+      position: relative;
+      z-index: 2;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      padding: 12px;
+    }
+
+    .user-profile-card-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 8px;
+    }
+
+    .user-profile-card-avatar-container {
+      position: relative;
+      width: 56px;
+      height: 56px;
+      flex-shrink: 0;
+    }
+
+    .user-profile-card-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .user-profile-card-name {
+      font-size: 16px;
+      font-weight: 700;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      margin-bottom: 2px;
+    }
+
+    .user-profile-card-country,
+    .user-profile-card-clan {
+      display: inline-flex;
+      align-items: center;
+      margin-right: 4px;
+    }
+
+    .user-profile-card-country .user-flag {
+      width: 20px;
+      height: 14px;
+      margin-right: 4px;
+      border-radius: 2px;
+    }
+
+    .user-profile-card-clan-link {
+      color: hsl(var(--user), 70%, 70%);
+      text-decoration: none;
+      font-weight: 600;
+      transition: color 0.2s ease;
+    }
+
+    .user-profile-card-clan-link:hover {
+      color: hsl(var(--user), 70%, 80%);
+      text-decoration: underline;
+    }
+
+    .user-profile-card-username {
+      color: white;
+      text-decoration: none;
+      font-weight: 600;
+      transition: color 0.2s ease;
+    }
+
+    .user-profile-card-username:hover {
+      color: hsl(var(--user), 70%, 85%);
+    }
+
+    .user-profile-card-ranks {
+      font-size: 12px;
+      opacity: 0.9;
+      display: flex;
+      gap: 8px;
+    }
+
+    .user-profile-card-global-rank::before {
+      content: '#';
+    }
+
+    .user-profile-card-country-rank {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .user-profile-card-country-rank .user-flag {
+      width: 16px;
+      height: 11px;
+      border-radius: 2px;
+    }
+
+    .user-profile-card-badges {
+      display: flex;
+      gap: 4px;
+      margin-bottom: 8px;
+      flex-wrap: wrap;
+    }
+
+    .user-profile-card-badges .badge {
+      transform: scale(0.8);
+    }
+
+    .user-profile-card-badges .badge:hover {
+      transform: scale(0.9);
+      z-index: 2;
+    }
+
+    .user-profile-card-stats {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 8px;
+      justify-content: center;
+      text-shadow: 1px 1px 2px rgb(0, 0, 0), 2px 2px 4px rgb(0, 0, 0);
+    }
+
+    .user-profile-card-stat-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      background-color: rgba(0, 0, 0, 0.15);
+      border-radius: 12px;
+      padding: 0 8px;
+    }
+
+    .user-profile-card-stat-value {
+      font-size: 14px;
+      font-weight: 700;
+      margin-bottom: 2px;
+    }
+
+    .user-profile-card-stat-label {
+      font-size: 10px;
+      opacity: 0.7;
+      text-transform: uppercase;
+    }
+
+    /* Status indicator on avatar */
+    .user-profile-card-status-indicator {
+      position: absolute;
+      bottom: 0;
+      right: 0;
+      width: 20px;
+      height: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background-color: hsl(var(--main), 10%, 20%);
+      border-radius: 50%;
+      border: 2px solid rgba(var(--user-status), 0.3);
+      cursor: pointer;
+      transition: transform 0.2s ease, border-color 0.2s ease;
+    }
+
+    .user-profile-card-status-indicator:hover {
+      transform: scale(1.1);
+      border-color: rgba(var(--user-status), 0.6);
+    }
+
+    .user-profile-card-status-circle {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      height: 100%;
+    }
+
+    .user-profile-card-status-circle i {
+      font-size: 6px;
+      color: rgba(var(--user-status)) !important;
+    }
+
+    .user-profile-card-status-loading i {
+      font-size: 10px;
+      color: #4fc0ff;
+    }
+
+    .user-profile-card-status-tooltip {
+      position: absolute;
+      bottom: 100%;
+      left: 0;
+      transform: translateY(-8px);
+      background-color: rgba(0, 0, 0, 0.9);
+      color: white;
+      padding: 6px 10px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 600;
+      width: max-content;
+      max-width: 240px;
+      word-wrap: break-word !important;
+      text-wrap: wrap !important;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.2s ease, visibility 0.2s ease;
+      pointer-events: none;
+      z-index: 10;
+    }
+
+    .user-profile-card-status-indicator:hover .user-profile-card-status-tooltip {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .user-profile-card-status-tooltip::after {
+      content: '';
+      position: absolute;
+      top: 100%;
+      left: 6px;
+      border: 6px solid transparent;
+      border-top-color: rgba(0, 0, 0, 0.9);
+    }
+
+/* ============================================================================
+ * Search Style
+ * ============================================================================
+ * Compact display for search results.
+ */
+
+    .user-profile-search-container {
+      position: relative;
+      display: inline-block;
+      width: 100%;
+    }
+
+    .user-profile-search {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 8px 12px;
+      background-color: hsla(var(--main), 100, 100, 0.05);
+      border-radius: 8px;
+      transition: background-color 0.2s ease;
+      position: relative;
+      overflow: hidden;
+    }
+    .user-profile-search::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-size: cover;
+        background-position: center;
+        background-image: var(--user-banner);
+        filter: blur(1.25px);
+        transition: max-height 0.4s ease;
+    }
+    .user-profile-search > * {
+        position: relative;
+    }
+
+    .user-profile-search:hover {
+      background-color: rgba(255, 255, 255, 0.1);
+    }
+
+    .user-profile-avatar.search {
+        height: 40px;
+        width: 40px;
+    }
+
+    .user-profile-search-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .user-profile-search-name {
+      font-size: 14px;
+      font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      margin-bottom: 4px;
+    }
+
+    .user-profile-search-country,
+    .user-profile-search-clan {
+      display: inline-flex;
+      align-items: center;
+      margin-right: 4px;
+    }
+
+    .user-profile-search-country .user-flag {
+      width: 16px;
+      height: 11px;
+      margin-right: 4px;
+      border-radius: 2px;
+    }
+
+    .user-profile-search-clan-link {
+      color: hsl(var(--user), 70%, 70%);
+      text-decoration: none;
+      font-weight: 600;
+      transition: color 0.2s ease;
+    }
+
+    .user-profile-search-clan-link:hover {
+      color: hsl(var(--user), 70%, 80%);
+      text-decoration: underline;
+    }
+
+    .user-profile-search-username {
+      color: white;
+      text-decoration: none;
+      font-weight: 600;
+      transition: color 0.2s ease;
+    }
+
+    .user-profile-search-username:hover {
+      color: hsl(var(--user), 70%, 85%);
+    }
+
+    .user-profile-search-stats {
+      display: flex;
+      gap: 12px;
+      font-size: 12px;
+      opacity: 0.9;
+    }
+
+    .user-profile-search-stat {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .user-profile-search-stat i {
+      font-size: 10px;
+      opacity: 0.7;
+    }
+
+/* ============================================================================
+ * Badge Popup
+ * ============================================================================
+ * Shows badge information on hover.
+ */
+
+    .user-profile-badge-popup {
+      position: absolute;
+      width: fit-content;
+      max-width: 200px;
+      padding: 8px 12px;
+      height: fit-content;
+      border-radius: 12px;
+      background: rgba(0, 0, 0, 0.7);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-wrap: wrap;
+      opacity: 0;
+      transform: translateY(5px);
+      transition: 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+      z-index: 99;
+      text-shadow: 0 2px 2px rgba(0, 0, 0, 0.56);
+      pointer-events: none;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+      backdrop-filter: blur(4px);
+    }
+
+    .user-profile-badge-popup.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .user-profile-badge-popup-title {
+      font-weight: 600;
+      margin-bottom: 4px;
+      text-align: center;
+    }
+
+    .user-profile-badge-popup-description {
+      font-size: 12px;
+      text-align: center;
+      opacity: 0.9;
+    }
+
+/* ============================================================================
+ * Responsive Adjustments
+ * ============================================================================
+ */
+
+    @media (max-width: 768px) {
+      .user-profile-card {
+        width: 280px;
+        height: 160px;
+      }
+
+      .user-profile-panel {
+        width: 260px;
+      }
+
+      .user-profile-card-stats {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    @media (max-width: 480px) {
+      .user-profile-card {
         width: 100%;
-        border-radius: 12px;
-        position: absolute !important;
-        z-index: -1;
+        max-width: 300px;
+      }
+
+      .user-profile-panel {
+        width: 240px;
+        margin-left: -10px;
+      }
+
+      .user-profile-search {
+        flex-wrap: wrap;
+      }
+
+      .user-profile-search-stats {
+        width: 100%;
+        margin-top: 4px;
+      }
+    }
+
+/* ============================================================================
+ * Utility Classes
+ * ============================================================================
+ */
+
+    /* Hide user profile when no data */
+    .user-profile:not(.has-data):not(.loaded) {
+      display: none;
+    }
+
+    /* Loading spinner animation */
+    @keyframes user-profile-spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .user-profile-loading i.fa-spin {
+      animation: user-profile-spin 1s linear infinite;
+    }
+
+    /* Fade in animation */
+    @keyframes user-profile-fade-in {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .user-profile.has-data {
+      animation: user-profile-fade-in 0.3s ease-out;
+    }
+
+/* Style for User Panel Vue Component */
+    .profile-panel { /* BUG: When hovering in panel, if you hover over a parent div in the dom it will close the panel as it is technically behind the parent div even tho it is being shown on top. */
+        position: absolute;
+        display: flex !important;
+        width: fit-content;
+        min-width: 275px;
+        max-width: 640px;
+        z-index: 610;
+        opacity: 0;
+        flex-direction: column;
         background-position: center;
         background-size: cover;
-        opacity: 0.7;
+        border-radius: 16px;
+        margin-top: -240px; /* Adjusted to position above username */
+        margin-left: -20px; /* Offset to center better */
+        color: white;
+        background-color: hsl(var(--main), 10%, 20%);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+        transition: 
+            opacity 300ms ease-in-out,
+            visibility 300ms ease-in-out,
+            transform 300ms cubic-bezier(0.34, 1.56, 0.64, 1);
+        visibility: hidden;
+        transform: translateY(10px) scale(0.98);
+        backdrop-filter: blur(8px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
     }
-        
-        .profile-panel-background::after {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
+
+        .profile-panel.visible {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0) scale(1);
+        }
+
+        .profile-panel-background {
             height: 100%;
-            background: linear-gradient(
-                to bottom,
-                rgba(0, 0, 0, 0.4) 0%,
-                rgba(0, 0, 0, 0.7) 100%
-            );
+            width: 100%;
             border-radius: 12px;
-        }
-
-    .profile-panel-header {
-        display: flex;
-        padding: 12px;
-        position: relative;
-        align-items: center;
-    }
-
-        .profile-panel-avatar {
-            height: 72px;
-            width: 72px;
-            background-size: cover;
+            position: absolute !important;
+            z-index: -1;
             background-position: center;
-            border-radius: 50%;
-            border: 3px solid rgba(255, 255, 255, 0.3);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-            transition: transform 0.3s ease, border-color 0.3s ease;
-            flex-shrink: 0;
+            background-size: cover;
+            opacity: 0.7;
         }
-            
-            .profile-panel-avatar:hover {
-                transform: scale(1.05);
-                border-color: rgba(255, 255, 255, 0.5);
+
+            .profile-panel-background::after {
+                content: '';
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: linear-gradient(
+                    to bottom,
+                    rgba(0, 0, 0, 0.4) 0%,
+                    rgba(0, 0, 0, 0.7) 100%
+                );
+                border-radius: 12px;
             }
 
-        .profile-panel-info {
+        .profile-panel-header {
             display: flex;
-            flex-direction: column;
-            justify-content: flex-start;
-            margin-left: 12px;
-            flex-grow: 1;
+            padding: 12px;
+            position: relative;
+            align-items: center;
         }
 
-            .profile-panel-info .name {
-                font-size: 22px;
-                font-weight: 700;
-                margin-bottom: 4px;
-                text-align: left;
-                white-space: nowrap;
-                overflow: hidden;
-                text-overflow: ellipsis;
-                text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+            .profile-panel-avatar {
+                height: 72px;
+                width: 72px;
+                background-size: cover;
+                background-position: center;
+                border-radius: 50%;
+                border: 3px solid rgba(255, 255, 255, 0.3);
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+                transition: transform 0.3s ease, border-color 0.3s ease;
+                flex-shrink: 0;
             }
 
-            .profile-panel-info .rank {
-                font-size: 14px;
-                opacity: 0.9;
-                margin-bottom: 8px;
-                display: flex;
-                align-items: center;
-            }
-                
-                .profile-panel-info .rank .global::before {
-                    content: '#';
+                .profile-panel-avatar:hover {
+                    transform: scale(1.05);
+                    border-color: rgba(255, 255, 255, 0.5);
                 }
-                
-                .profile-panel-info .rank .country {
-                    margin-left: 4px;
+
+            .profile-panel-info {
+                display: flex;
+                flex-direction: column;
+                justify-content: flex-start;
+                margin-left: 12px;
+                flex-grow: 1;
+            }
+
+                .profile-panel-info .name {
+                    font-size: 22px;
+                    font-weight: 700;
+                    margin-bottom: 4px;
+                    text-align: left;
+                    white-space: nowrap;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+                }
+
+                .profile-panel-info .rank {
+                    font-size: 14px;
+                    opacity: 0.9;
+                    margin-bottom: 8px;
                     display: flex;
                     align-items: center;
                 }
-                    .profile-panel-info .rank .country .flag {
-                        width: 24px;
-                        height: 16px;
-                        margin-right: 4px;
-                        border-radius: 15%;
+
+                    .profile-panel-info .rank .global::before {
+                        content: '#';
                     }
-                
-                .profile-panel-info .rank .country::before {
-                    content: '';
-                    display: inline-block;
-                    width: 16px;
-                    height: 12px;
-                    margin-right: 4px;
-                    background-size: cover;
-                    background-position: center;
-                }
 
-            .profile-panel-info .badges {
-                display: flex;
-                flex-direction: row;
-                align-items: center;
-                flex-wrap: wrap;
-                border-radius: 8px;
-                height: fit-content;
-                width: fit-content;
-                max-width: 100%;
-            }
+                    .profile-panel-info .rank .country {
+                        margin-left: 4px;
+                        display: flex;
+                        align-items: center;
+                    }
+                        .profile-panel-info .rank .country .flag {
+                            width: 24px;
+                            height: 16px;
+                            margin-right: 4px;
+                            border-radius: 15%;
+                        }
+                    
+                    .profile-panel-info .rank .country::before {
+                        content: '';
+                        display: inline-block;
+                        width: 16px;
+                        height: 12px;
+                        margin-right: 4px;
+                        background-size: cover;
+                        background-position: center;
+                    }
 
-                .badges .badge {
-                    margin-right: 4px;
-                    margin-bottom: 4px;
-                    text-shadow: 0 2px 2px rgba(0, 0, 0, 0.56);
-                    transition: transform 0.2s ease;
-                }
-                
-                .badges .badge:hover {
-                    transform: scale(1.15);
-                    z-index: 2;
-                }
-
-    .profile-panel-stats {
-        display: flex;
-        padding: 0 16px 16px;
-        justify-content: space-between;
-    }
-        /* Loading indicator */
-        .loading-indicator {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
-            font-size: 14px;
-            opacity: 0.8;
-        }
-
-        /* Mode selector */
-        .mode-selector {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 6px;
-            margin-bottom: 10px;
-            padding: 0 4px;
-        }
-
-        .mode-option {
-            font-size: 11px;
-            padding: 4px 8px;
-            border-radius: 12px;
-            background-color: rgba(0, 0, 0, 0.2);
-            cursor: pointer;
-            transition: background-color 0.2s ease, transform 0.2s ease;
-        }
-
-        .mode-option:hover {
-            background-color: rgba(255, 255, 255, 0.1);
-            transform: translateY(-1px);
-        }
-
-        .mode-option.active {
-            background-color: rgba(255, 255, 255, 0.2);
-            font-weight: 600;
-        }
-
-        /* Adjust performance stats for more items */
-        .performance-stats {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 8px;
-        }
-        .stat-item {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            flex: 1;
-        }
-            
-            .stat-value {
-                font-size: 18px;
-                font-weight: 700;
-                margin-bottom: 2px;
-            }
-            
-            .stat-label {
-                font-size: 12px;
-                opacity: 0.7;
-                text-transform: uppercase;
-            }
-
-    .profile-panel-expand {
-        padding: 12px;
-        display: flex;
-        justify-content: center;
-        border-top: 1px solid rgba(255, 255, 255, 0.1);
-        cursor: pointer;
-        transition: background-color 0.2s ease;
-    }
-        
-        .profile-panel-expand:hover {
-            background-color: rgba(255, 255, 255, 0.1);
-        }
-        
-        .profile-panel-expand .expand-icon {
-            width: 20px;
-            height: 20px;
-            transition: transform 0.3s ease;
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='white'%3E%3Cpath d='M7.41,8.59L12,13.17l4.59-4.58L18,10l-6,6l-6-6L7.41,8.59z'/%3E%3C/svg%3E");
-            background-size: contain;
-            background-position: center;
-            background-repeat: no-repeat;
-        }
-        
-        .profile-panel.expanded .profile-panel-expand .expand-icon {
-            transform: rotate(180deg);
-        }
-
-    .profile-panel-details {
-        max-height: 0;
-        transition: max-height 0.5s cubic-bezier(0, 1, 0, 1);
-    }
-        
-        .profile-panel.expanded .profile-panel-details {
-            max-height: 500px;
-            transition: max-height 0.5s ease-in-out;
-        }
-
-        .profile-panel-tabs {
-            display: flex;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-        }
-            
-            .profile-tab {
-                padding: 12px 16px;
-                cursor: pointer;
-                opacity: 0.7;
-                transition: opacity 0.2s ease, border-bottom 0.2s ease;
-                position: relative;
-                font-size: 14px;
-            }
-            
-            .profile-tab:hover {
-                opacity: 1;
-            }
-            
-            .profile-tab.active {
-                opacity: 1;
-            }
-            
-            .profile-tab.active::after {
-                content: '';
-                position: absolute;
-                bottom: -1px;
-                left: 0;
-                width: 100%;
-                height: 2px;
-                background-color: white;
-                animation: tabActivate 0.3s ease;
-            }
-            
-            @keyframes tabActivate {
-                from { transform: scaleX(0); }
-                to { transform: scaleX(1); }
-            }
-
-        .profile-panel-content {
-            padding: 16px;
-        }
-            
-            .tab-content {
-                display: none;
-                animation: fadeIn 0.3s ease;
-            }
-            
-            .tab-content.active {
-                display: block;
-            }
-            
-            @keyframes fadeIn {
-                from { opacity: 0; transform: translateY(10px); }
-                to { opacity: 1; transform: translateY(0); }
-            }
-
-            /* Performance tab */
-            .performance-stats {
-                display: grid !important;
-                grid-template-columns: repeat(2, 1fr);
-                gap: 12px;
-            }
-                
-                .performance-item {
-                    background-color: rgba(0, 0, 0, 0.2);
-                    border-radius: 8px;
-                    padding: 10px;
+                .profile-panel-info .badges {
                     display: flex;
-                    flex-direction: column;
-                }
-                
-                .performance-label {
-                    font-size: 12px;
-                    opacity: 0.7;
-                    margin-bottom: 4px;
-                }
-                
-                .performance-value {
-                    font-size: 16px;
-                    font-weight: 600;
+                    flex-direction: row;
+                    align-items: center;
+                    flex-wrap: wrap;
+                    border-radius: 8px;
+                    height: fit-content;
+                    width: fit-content;
+                    max-width: 100%;
                 }
 
-            /* Recent scores tab */
-            .most-played,
-            .best-scores,
-            .recent-scores {
+                    .badges .badge {
+                        margin-right: 4px;
+                        margin-bottom: 4px;
+                        text-shadow: 0 2px 2px rgba(0, 0, 0, 0.56);
+                        transition: transform 0.2s ease;
+                    }
+
+                    .badges .badge:hover {
+                        transform: scale(1.15);
+                        z-index: 2;
+                    }
+
+        .profile-panel-stats {
+            display: flex;
+            padding: 0 16px 16px;
+            justify-content: space-between;
+        }
+            /* Loading indicator */
+            .loading-indicator {
                 display: flex;
-                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+                padding: 20px;
+                font-size: 14px;
+                opacity: 0.8;
+            }
+
+            /* Mode selector */
+            .mode-selector {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 6px;
+                margin-bottom: 10px;
+                padding: 0 4px;
+            }
+
+            .mode-option {
+                font-size: 11px;
+                padding: 4px 8px;
+                border-radius: 12px;
+                background-color: rgba(0, 0, 0, 0.2);
+                cursor: pointer;
+                transition: background-color 0.2s ease, transform 0.2s ease;
+            }
+
+            .mode-option:hover {
+                background-color: rgba(255, 255, 255, 0.1);
+                transform: translateY(-1px);
+            }
+
+            .mode-option.active {
+                background-color: rgba(255, 255, 255, 0.2);
+                font-weight: 600;
+            }
+
+            /* Adjust performance stats for more items */
+            .performance-stats {
+                display: grid;
+                grid-template-columns: repeat(2, 1fr);
                 gap: 8px;
             }
+            .stat-item {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                flex: 1;
+            }
 
-    .badge-popup {
-        position: absolute;
-        width: fit-content;
-        max-width: 200px;
-        padding: 8px 12px;
-        height: fit-content;
-        border-radius: 12px;
-        background: rgba(0, 0, 0, .7);
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-        text-wrap: wrap;
-        opacity: 0;
-        transform: translateY(5px);
-        transition: .2s cubic-bezier(0.34, 1.56, 0.64, 1);
-        z-index: 99;
-        text-shadow: 0 2px 2px rgba(0, 0, 0, 0.56);
-        pointer-events: none;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-        backdrop-filter: blur(4px);
-    }
-        
-        .badge-popup.visible {
-            opacity: 1;
-            transform: translateY(0);
+                .stat-value {
+                    font-size: 18px;
+                    font-weight: 700;
+                    margin-bottom: 2px;
+                }
+
+                .stat-label {
+                    font-size: 12px;
+                    opacity: 0.7;
+                    text-transform: uppercase;
+                }
+
+        .profile-panel-expand {
+            padding: 12px;
+            display: flex;
+            justify-content: center;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            cursor: pointer;
+            transition: background-color 0.2s ease;
         }
-        
-        .badge-popup-title {
-            font-weight: 600;
-            margin-bottom: 4px;
-            text-align: center;
+
+            .profile-panel-expand:hover {
+                background-color: rgba(255, 255, 255, 0.1);
+            }
+
+            .profile-panel-expand .expand-icon {
+                width: 20px;
+                height: 20px;
+                transition: transform 0.3s ease;
+                background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='white'%3E%3Cpath d='M7.41,8.59L12,13.17l4.59-4.58L18,10l-6,6l-6-6L7.41,8.59z'/%3E%3C/svg%3E");
+                background-size: contain;
+                background-position: center;
+                background-repeat: no-repeat;
+            }
+
+            .profile-panel.expanded .profile-panel-expand .expand-icon {
+                transform: rotate(180deg);
+            }
+
+        .profile-panel-details {
+            max-height: 0;
+            transition: max-height 0.5s cubic-bezier(0, 1, 0, 1);
         }
-        
-        .badge-popup-description {
-            font-size: 12px;
-            text-align: center;
-            opacity: 0.9;
+
+            .profile-panel.expanded .profile-panel-details {
+                max-height: 500px;
+                transition: max-height 0.5s ease-in-out;
+            }
+
+            .profile-panel-tabs {
+                display: flex;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            }
+
+                .profile-tab {
+                    padding: 12px 16px;
+                    cursor: pointer;
+                    opacity: 0.7;
+                    transition: opacity 0.2s ease, border-bottom 0.2s ease;
+                    position: relative;
+                    font-size: 14px;
+                }
+
+                .profile-tab:hover {
+                    opacity: 1;
+                }
+
+                .profile-tab.active {
+                    opacity: 1;
+                }
+
+                .profile-tab.active::after {
+                    content: '';
+                    position: absolute;
+                    bottom: -1px;
+                    left: 0;
+                    width: 100%;
+                    height: 2px;
+                    background-color: white;
+                    animation: tabActivate 0.3s ease;
+                }
+
+                @keyframes tabActivate {
+                    from { transform: scaleX(0); }
+                    to { transform: scaleX(1); }
+                }
+
+            .profile-panel-content {
+                padding: 16px;
+            }
+
+                .tab-content {
+                    display: none;
+                    animation: fadeIn 0.3s ease;
+                    justify-content: center;
+                }
+
+                .tab-content.active {
+                    display: flex;
+                }
+
+                @keyframes fadeIn {
+                    from { opacity: 0; transform: translateY(10px); }
+                    to { opacity: 1; transform: translateY(0); }
+                }
+
+                /* Performance tab */
+                .performance-stats {
+                    display: grid !important;
+                    grid-template-columns: repeat(2, 1fr);
+                    gap: 12px;
+                }
+
+                    .performance-item {
+                        background-color: rgba(0, 0, 0, 0.2);
+                        border-radius: 8px;
+                        padding: 10px;
+                        display: flex;
+                        flex-direction: column;
+                    }
+
+                    .performance-label {
+                        font-size: 12px;
+                        opacity: 0.7;
+                        margin-bottom: 4px;
+                    }
+
+                    .performance-value {
+                        font-size: 16px;
+                        font-weight: 600;
+                    }
+
+                /* Recent scores tab */
+                .most-played,
+                .best-scores,
+                .recent-scores {
+                    display: flex;
+                    flex-direction: column;
+                    gap: 8px;
+                }
+
+        .badge-popup {
+            position: absolute;
+            width: fit-content;
+            max-width: 200px;
+            padding: 8px 12px;
+            height: fit-content;
+            border-radius: 12px;
+            background: rgba(0, 0, 0, .7);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-wrap: wrap;
+            opacity: 0;
+            transform: translateY(5px);
+            transition: .2s cubic-bezier(0.34, 1.56, 0.64, 1);
+            z-index: 99;
+            text-shadow: 0 2px 2px rgba(0, 0, 0, 0.56);
+            pointer-events: none;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            backdrop-filter: blur(4px);
         }
+
+            .badge-popup.visible {
+                opacity: 1;
+                transform: translateY(0);
+            }
+
+            .badge-popup-title {
+                font-weight: 600;
+                margin-bottom: 4px;
+                text-align: center;
+            }
+
+            .badge-popup-description {
+                font-size: 12px;
+                text-align: center;
+                opacity: 0.9;
+            }
 
 
 
@@ -1740,6 +2645,97 @@
                     height: 100px;
                 }
             }
+
+/* === Unsorted Component Styles === */
+
+    @font-face { 
+      font-family: 'Kawata icons'; 
+      src: url(/static/fonts/Kawata_icons.ttf); 
+    }
+    .kawata-icon {
+      font-family: 'Kawata icons';
+      color: #fff !important;
+      background-size: 100%;
+      font-size: 22px;
+      width: 19px;
+      height: 19px;
+      border-radius: 25px;
+      text-align: center;
+      margin-right: 8px;
+      transition: 170ms text-shadow;
+      font-weight: 400;
+      padding-top: 1px;
+    }
+    
+    
+    
+    .kawata-icon:before {
+         content: "";
+         position: relative;
+         left: -3px;
+         bottom: 7px;
+    }
+    
+    .kawata-icon.std-diff:before {
+        content: "A";
+        position: relative;
+        left: -3px;
+        bottom: 7px;
+    }
+    
+    .kawata-icon.taiko-diff:before{
+        content: "B";
+        left: -4px;
+    }
+    
+    .kawata-icon.ctb-diff:before{
+        content: "D";
+    }
+    
+    .kawata-icon.mania-diff:before{
+        content: "E";
+        left: -4.3px;
+    }
+    .diff-expert {
+        color: #bc6fff;
+    }
+    
+    .diff-insane {
+        color: rgba(255, 80, 212, 0.86);
+    }
+    
+    
+    .diff-hard {
+        color: #c57f19;
+    }
+    
+    .diff-normal {
+        color: #2f8bbd;
+    }
+    
+    .diff-easy {
+        color: #65d223;
+    }
+    
+    .kawata-icon.diff-expert {
+        background-color: rgba(147, 49, 167, 0.66);
+    }
+    
+    .kawata-icon.diff-insane {
+        background-color: rgba(255, 0, 215, 0.66);
+    }
+    
+    .kawata-icon.diff-hard {
+        background-color: rgba(255, 176, 32, 0.66);
+    }
+    
+    .kawata-icon.diff-normal {
+        background-color: rgba(0, 149, 255, 0.66);
+    }
+    
+    .kawata-icon.diff-easy {
+        background-color: rgba(71, 210, 0, 0.8);
+    }
 
 /* === Shaders === */
     /* Psychedelic Shader */

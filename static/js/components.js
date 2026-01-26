@@ -47,154 +47,314 @@ const mixin_beatmap_utils = {
     
   },
 };
-/*
-// Vue Portal Component
-  // 🧠 Simple Stack Handler
-  let popupStack = []
 
-  const mixin_popupmanager = {
-    data: function() {
-      return {
-        __popups: {},
-        activePopups: {},
-      }
-    },
-    methods: {
-      registerPopup(id, metadata = {}) {
-        if (!id) {
-          this.$log.error('[PopupManager] Missing ID.')
-          return
+/* Smaller Components */
+  // Section: Rank Change Badge Component
+    Vue.component('rank-change-badge', {
+      name: 'RankChangeBadge', // Added name for child logger
+      props: {
+        change: {
+          type: Object,
+          required: true
         }
-      
-        // Initialize __popups if it doesn't exist
-        if (!this.__popups) {
-          this.__popups = {}
-          this.$log.warn('[PopupManager] __popups was undefined, initializing.')
-        }
-      
-        if (popupStack.includes(id)) {
-          this.$log.info(`[PopupManager] Popup already in stack: ${id}`)
-        } else {
-          popupStack.push(id)
-          this.$log.debug(`[PopupManager] Stack updated: ${popupStack.join(', ')}`)
-        }
-      
-        this.__popups[id] = { ...metadata, zIndex: 1000 + popupStack.length }
-      
-        this.$log.info(`[PopupManager] Registered popup: ${id}`, this.__popups[id])
       },
-      
-      unregisterPopup(id) {
-        const index = popupStack.indexOf(id)
-        if (index !== -1) popupStack.splice(index, 1)
-
-        delete this.__popups[id]
-        this.$log.debug(`[PopupManager] Unregistered popup: ${id}`)
-      },
-
-      getPopupZIndex(id) {
-        return this.__popups[id]?.zIndex || 1000
-      },
-
-      listPopups() {
-        return popupStack.slice()
-      }
-    },
-    beforeDestroy() {
-      popupStack = []
-      this.__popups = {}
-      this.$log.debug('[PopupManager] Stack cleared.')
-    }
-  }
-
-  // 🌀 Portal Component for Vue 2
-  Vue.component('Portal', {
-    props: {
-      to: { type: String, required: true },
-      id: { type: String, default: () => `portal-${Math.random().toString(36).substr(2, 8)}` },
-      classes: { type: [String, Array, Object], default: '' },
-      render: { type: Boolean, default: true },
-      zIndex: { type: Number, default: null }
-    },
-
-    data() {
-      return {
-        targetEl: null,
-        contentEl: null,
-        mountedComponent: null
-      }
-    },
-
-    mounted() {
-      this.targetEl = document.querySelector(this.to);
-      if (!this.targetEl) {
-        this.$log.error(`[Portal:${this.id}] Target "${this.to}" not found.`);
-        return;
-      }
-  
-      this.contentEl = document.createElement('div');
-      this.contentEl.id = this.id;
-      this.contentEl.className = this.classes;
-      this.targetEl.appendChild(this.contentEl);
-      
-      this.updateContent();
-      this.$log.debug(`[Portal:${this.id}] Mounted to ${this.to}`);
-    },
-
-    updated() {
-      this.updateContent()
-    },
-
-    methods: {
-      updateContent() {
-        if (!this.contentEl || !this.render) return;
-        
-        // Clear previous content
-        if (this.mountedComponent) {
-          this.mountedComponent.$destroy();
-          this.mountedComponent = null;
+      computed: {
+        diff() {
+          // Assert that change object has expected properties
+          this.$log.assert(
+            this.change && typeof this.change.newRank === 'number' && typeof this.change.oldRank === 'number',
+            'RankChangeBadge',
+            'Invalid "change" prop structure.',
+            { change: this.change },
+            false
+          );
+          const difference = this.change.newRank - this.change.oldRank;
+          this.$log.debug('RankChangeBadge', `Calculated rank difference: ${difference}`, { change: this.change });
+          return difference;
+        },
+        icon() {
+          if (this.diff === 0) return 'fa-equals';
+          if (this.diff < 0) return 'fa-arrow-up'; // Assuming lower rank number is better (arrow up)
+          return 'fa-arrow-down'; // Assuming higher rank number is worse (arrow down)
+        },
+        color() {
+          if (this.diff === 0) return '#AAAAAA';
+          if (this.diff < 0) return '#66FF33'; // Green for improvement
+          return '#FF6666'; // Red for decline
+        },
+        text() {
+          const textValue = `#${this.change.newRank} (was #${this.change.oldRank})`;
+          this.$log.debug('RankChangeBadge', `Formatted rank change text: ${textValue}`);
+          return textValue;
         }
+      },
+      created() {
+        this.$log.debug('RankChangeBadge', 'Component created.', { change: this.change });
+      },
+      template: `
+        <div class="rank-change-badge" :style="{ backgroundColor: color }">
+          <i class="fas" :class="icon"></i>
+          <!-- You might want to display the text here too, or in a tooltip -->
+          <!-- <span class="rank-change-text">{{ text }}</span> -->
+        </div>
+      `
+    });
+
+  // Section: Difficulty Icon Component
+    Vue.component('difficulty-icon', {
+      mixins: [mixin_formatting, mixin_conversion],
+      props: {
+        diff: { type: Object, required: true },
+        setId: { type: Number, required: true },
+        rankChanges: { type: Object, default: () => ({}) },
+        interactive: { type: Boolean, default: true }
+      },
+      computed: {
+        diffColor() {
+          if (!this.diff || !this.diff.diff) return '200, 200, 200';
         
-        this.contentEl.innerHTML = '';
-        
-        if (this.$slots.default && this.$slots.default.length) {
-          // Create a new Vue instance to render the slot content
-          const ComponentClass = Vue.extend({
-            name: 'PortalContent',
-            parent: this,
-            render: (h) => h('div', this.$slots.default)
-          });
-          
-          this.mountedComponent = new ComponentClass().$mount();
-          this.contentEl.appendChild(this.mountedComponent.$el);
-          
-          // Apply z-index if provided
-          if (this.zIndex !== null) {
-            this.contentEl.style.zIndex = this.zIndex;
+          try {
+            const scale = d3.scaleLinear()
+              .domain([0.1, 1.25, 2, 2.5, 3.3, 4.2, 4.9, 5.8, 6.7, 7.7, 9])
+              .clamp(true)
+              .range([
+                '#4290FB', '#4FC0FF', '#4FFFD5', '#7CFF4F', '#F6F05C',
+                '#FF8068', '#FF4E6F', '#C645B8', '#6563DE', '#18158E', '#000000'
+              ])
+              .interpolate(d3.interpolateRgb.gamma(2.2));
+            
+            const stars = parseFloat(this.diff.diff || 0);
+            const color = d3.color(scale(stars));
+            return color ? `${color.r}, ${color.g}, ${color.b}` : '200, 200, 200';
+          } catch (e) {
+            this.$log.error('difficulty-icon color error:', e);
+            return '200, 200, 200';
           }
-          
-          this.$log.debug(`[Portal:${this.id}] Content updated`, this.contentEl);
+        },
+        rankChange() {
+          return this.rankChanges[this.diff.id] || null;
         }
-      }
-    },
+      },
+      methods: {
+        handleClick(e) {
+          e.stopPropagation();
+          if (!this.interactive) return;
+          beatmapBus.$emit('show-beatmap-panel', this.diff.id, this.setId);
+        }
+      },
+      template: `
+        <div class="beatmap-mini-difficulty-icon-container"
+             :style="{ '--diff-color': diffColor }">
+    
+          <div class="beatmap-mini-difficulty-icon"
+               @click="handleClick"
+               data-popup-trigger>
+    
+            <i :class="getModeIcon(diff.mode)"
+               class="beatmap-mini-mode-icon"></i>
+    
+            <rank-change-indicator
+              v-if="rankChange"
+              :change="rankChange" />
+          </div>
+    
+          <slot></slot>
+        </div>
+      `
+    });
+  // Section: Difficulty Popup Component
+    Vue.component('difficulty-popup', {
+      mixins: [mixin_formatting, mixin_conversion],
+      props: {
+        mapData: {
+          type: Object,
+          required: true
+        },
+        diff: {
+          type: Object,
+          required: true
+        },
+        setDifficulties: {
+          type: Array,
+          default: () => []
+        },
+        rankChanges: {
+          type: Object,
+          default: () => ({})
+        },
+        showStatus: {
+          type: Boolean,
+          default: true
+        },
+        loading: {
+          type: Boolean,
+          default: false
+        }
+      },
+      computed: {
+        statusName() {
+          return this.mapData.status != null
+            ? ({
+                "-2": "Graveyard",
+                "-1": "WIP",
+                "0": "Pending",
+                "2": "Ranked",
+                "3": "Approved",
+                "4": "Qualified",
+                "5": "Loved"
+              }[this.mapData.status] || "Unknown")
+            : "Unknown";
+        },
+        statusColor() {
+          return ({
+            "-2": "hsl(0, 0%, 40%)",
+            "-1": "hsl(0, 0%, 40%)",
+            "0": "hsl(0, 0.00%, 45%)",
+            "1": "hsl(120, 100%, 40%)",
+            "2": "hsl(199, 100.00%, 50.00%)",
+            "3": "hsl(155, 100.00%, 50.00%)",
+            "4": "hsl(144, 100.00%, 50.00%)",
+            "5": "hsl(320, 100%, 50%)"
+          }[this.mapData.status] || "hsl(0, 0%, 40%)");
+        },
+        rankChange() {
+          return this.rankChanges[this.diff.id] || null;
+        },
+        rankDiff() {
+          if (!this.rankChange) return 0;
+          return this.rankChange.newRank - this.rankChange.oldRank;
+        },
+        rankIcon() {
+          if (!this.rankChange) return null;
+          if (this.rankDiff === 0) return 'fa-equals';
+          if (this.rankDiff < 0) return 'fa-arrow-up';
+          return 'fa-arrow-down';
+        },
+        rankColor() {
+          if (!this.rankChange) return null;
+          if (this.rankDiff === 0) return '#AAAAAA';
+          if (this.rankDiff < 0) return '#66FF33';
+          return '#FF6666';
+        }
+      },
+      methods: {
+        handleDiffClick(diff, e) {
+          e.stopPropagation();
+          beatmapBus.$emit('show-beatmap-panel', diff.id, this.mapData.set_id);
+        }
+      },
+      template: `
+        <div class="beatmap-mini-popup position-top" data-popup>
+          <div class="beatmap-mini-popup-header">
+            <div class="beatmap-mini-popup-title" :title="mapData.title">
+              {{ mapData.title || 'Loading...' }}
+            </div>
+            <div class="beatmap-mini-popup-artist" :title="mapData.artist">
+              {{ mapData.artist || '' }}
+            </div>
+            <div class="beatmap-mini-popup-version" :title="diff.version">
+              {{ diff.version || '' }}
+            </div>
+          </div>
+    
+          <div class="beatmap-mini-popup-details">
+            <div class="beatmap-mini-popup-creator"
+                 :title="'Mapped by ' + mapData.creator">
+              Mapped by {{ mapData.creator || '' }}
+            </div>
+    
+            <div class="beatmap-mini-popup-stats">
+              <div v-if="diff.bpm" class="beatmap-mini-popup-stat">
+                <i class="fas fa-heartbeat"></i>
+                {{ Math.round(diff.bpm) }}bpm
+              </div>
+    
+              <div v-if="diff.hit_length" class="beatmap-mini-popup-stat">
+                <i class="fas fa-clock"></i>
+                {{ formatLength(diff.hit_length) }}
+              </div>
+    
+              <div v-if="diff.difficulty_rating" class="beatmap-mini-popup-stat">
+                <difficulty-stars :stars="diff.difficulty_rating" />
+              </div>
+    
+              <div v-if="showStatus" class="beatmap-mini-popup-stat">
+                <span class="beatmap-mini-status"
+                      :style="{ backgroundColor: statusColor }">
+                  {{ statusName }}
+                </span>
+              </div>
+            </div>
+    
+            <!-- Rank change -->
+            <div v-if="rankChange" class="beatmap-mini-popup-rank-change">
+              <div class="beatmap-mini-popup-rank-label">Rank:</div>
+              <div class="beatmap-mini-popup-rank-value"
+                   :style="{ color: rankColor }">
+                #{{ rankChange.newRank }} (was #{{ rankChange.oldRank }})
+                <i class="fas" :class="rankIcon"></i>
+              </div>
+            </div>
+    
+            <!-- Other difficulties -->
+            <div v-if="setDifficulties.length > 1"
+                 class="beatmap-mini-popup-other-diffs">
+              <div class="beatmap-mini-popup-diffs-header">
+                Other difficulties:
+              </div>
+    
+              <div v-if="loading" class="beatmap-mini-popup-loading">
+                Loading...
+              </div>
+    
+              <div v-else class="beatmap-mini-popup-diffs-list">
+                <div v-for="d in setDifficulties.filter(x => x.id !== diff.id)"
+                     :key="d.id"
+                     class="beatmap-mini-popup-diff"
+                     @click="handleDiffClick(d, $event)">
+                  <span class="beatmap-mini-popup-diff-name"
+                        :title="d.version">
+                    {{ d.version }}
+                  </span>
+                  <span v-if="d.difficulty_rating"
+                        class="beatmap-mini-popup-diff-stars">
+                    {{ parseFloat(d.difficulty_rating).toFixed(2) }}
+                  </span>
+                  <span v-if="rankChanges[d.id]"
+                        class="beatmap-mini-popup-diff-rank"
+                        :style="{ color: rankColor }">
+                    <i class="fas" :class="rankIcon"></i>
+                  </span>
+                </div>
+              </div>
+            </div>
+    
+            <!-- Actions -->
+            <div class="beatmap-mini-popup-actions">
+              <a :href="'https://osu.ppy.sh/b/' + diff.id"
+                 target="_blank"
+                 class="beatmap-mini-popup-action"
+                 @click.stop>
+                <i class="fas fa-external-link-alt"></i> osu!
+              </a>
+    
+              <a class="beatmap-mini-popup-action"
+                 @click.stop="handleDiffClick(diff, $event)">
+                <i class="fas fa-info-circle"></i> Details
+              </a>
+    
+              <a :href="'/d/' + mapData.set_id"
+                 class="beatmap-mini-popup-action"
+                 @click.stop>
+                <i class="fas fa-download"></i> Download
+              </a>
+            </div>
+          </div>
+        </div>
+      `
+    });
+  // Section: 
 
-    beforeDestroy() {
-      if (this.mountedComponent) {
-        this.mountedComponent.$destroy();
-      }
-      
-      if (this.contentEl && this.targetEl) {
-        this.targetEl.removeChild(this.contentEl);
-      }
-      
-      this.$log.debug(`[Portal:${this.id}] Removed from ${this.to}`);
-    },
-
-    render(h) {
-      return null // this component renders nothing in-place
-    }
-  })
-*/
 
 Vue.component('badge', {
   props: {
@@ -222,7 +382,6 @@ Vue.component('badge', {
   },
   data: function () {
     return {
-      showPanel: false,
       badgeId: 'badge-' + Math.random().toString(36).substr(2, 9)
     }
   },
@@ -258,17 +417,6 @@ Vue.component('badge', {
       return this.badge.description || `${this.badge.name} badge`;
     }
   },
-  methods: {
-    showPanelInfo() {
-      this.showPanel = true;
-    },
-    hidePanelInfo() {
-      this.showPanel = false;
-    },
-    togglePanelInfo() {
-      this.showPanel = !this.showPanel;
-    }
-  },
   created() {
     if (this.test === 1) {
       this.$log.debug('Type:', this.type);
@@ -277,50 +425,10 @@ Vue.component('badge', {
       this.$log.debug('Type === 1:', this.type === 1);
     }
   },
-  template: `
-  <span data-popup="badge">
-    <!-- Regular badge -->
-    <div v-if="type === 0"  class="badge"  :class="badge.styles.customClass"  :style="badgeStyle"  @mouseover="showPanelInfo"  @mouseleave="hidePanelInfo" @focus="showPanelInfo" @blur="hidePanelInfo"
-     @keydown.enter="togglePanelInfo" @keydown.space="togglePanelInfo" tabindex="0" role="button" :aria-label="badge.name" :aria-describedby="badgeId + '-desc'" :aria-expanded="showPanel">
-      <bg-effect-psy :settings="{ hue: badge.styles.color / 360, hueVariation: badge.styles.psyHueVar ? badge.styles.psyHueVar : 0.001, density: badge.styles.psyDensity ? badge.styles.psyDensity : 0, displacement: badge.styles.psyDisp ? badge.styles.psyDisp : 0.1, speed: badge.styles.psySpeed ? badge.styles.psySpeed : 0.2, gradient: badge.styles.psyGradient ? badge.styles.psyGradient : 0.15 }" :show-gui="false" :debug-level="0" v-if="badge.styles.customClass && badge.styles.customClass.includes('psy')"></bg-effect-psy>
-      <span class="icon"  v-if="badge.styles.icon"  :class="badge.styles.iconClass" aria-hidden="true">
-        <i v-bind:class="'' + badge.styles.icon"></i>
-      </span>
-      
-      <span class="badge-name"  :class="badge.styles.nameClass" :id="badgeId">
-        {{ badge.name }}
-      </span>
-      
-      <div class="badge-panel"  :class="badge.styles.panelClass"  :style="panelStyle" :id="badgeId + '-desc'" role="tooltip" aria-live="polite">
-        <h3>{{ badge.name }}</h3>
-        <p>{{ badge.description }}</p>
-        <div v-if="badge.styles.panelFooter" class="badge-panel-footer">
-          {{ badge.styles.panelFooter }}
-        </div>
-      </div>
-    </div>
-    
-    <!-- Icon badge -->
-    <div v-if="type === 1"  class="iconBadge"  :class="badge.styles.customClass"  :style="badgeStyle"  @mouseover="showPanelInfo"  @mouseleave="hidePanelInfo" @focus="showPanelInfo" @blur="hidePanelInfo" 
-     @keydown.enter="togglePanelInfo" @keydown.space="togglePanelInfo" tabindex="0" role="button" :aria-label="badge.name" :aria-describedby="badgeId + '-desc'" :aria-expanded="showPanel">
-      <span class="icon"  v-if="badge.styles.icon"  :class="badge.styles.iconClass" aria-hidden="true">
-        <i v-bind:class="'' + badge.styles.icon"></i>
-      </span>
-      
-      <div class="badge-panel"  :class="badge.styles.panelClass"  :style="panelStyle" :id="badgeId + '-desc'" role="tooltip" aria-live="polite">
-        <h3>{{ badge.name }}</h3>
-        <p>{{ badge.description }}</p>
-        <div v-if="badge.styles.panelFooter" class="badge-panel-footer">
-          {{ badge.styles.panelFooter }}
-        </div>
-      </div>
-    </div>
-  </span>
-  `
+  template: `#badge-template`
 });
 
-
-Vue.component('user-profile', {
+Vue.component('user-profile-old', {
   props: ['user'],
   data: function() {
       return {
@@ -333,9 +441,6 @@ Vue.component('user-profile', {
               mostPlayed: false
           },
           profileVisible: false,
-          badgePopupVisible: false,
-          badgePopupTop: 0,
-          badgePopupLeft: 0,
           isExpanded: false,
           activeTab: 'performance',
           mouseOverPanel: false,
@@ -390,7 +495,7 @@ Vue.component('user-profile', {
           best: []
         };
       }
-      this.$log.debug("User info initialized:", this.user);
+      this.$log.debug('Data', "User info initialized:", this.user);
       this.loaded = true;
     }
   },
@@ -427,7 +532,6 @@ Vue.component('user-profile', {
         mostPlayed: false
       };
       this.profileVisible = false;
-      this.badgePopupVisible = false;
       this.isExpanded = false;
       // Re-initialize if needed
       this.created();
@@ -453,19 +557,7 @@ Vue.component('user-profile', {
         this.profileVisible = false;
         this.isExpanded = false;
     },
-    showBadgePopup: function(event, badge) {
-        if (this.badgePopupVisible != badge.id) {
-            this.badgePopupVisible = badge.id;
-            // Calculate the position of the badge popup relative to the badge icon
-            const badgeIcon = event.target;
-            const badgeIconRect = badgeIcon.getBoundingClientRect();
-            this.badgePopupTop = badgeIconRect.top + badgeIconRect.height + 6 + 'px';
-            this.badgePopupLeft = badgeIconRect.left + 'px';
-        }
-    },
-    hideBadgePopup: function() {
-        this.badgePopupVisible = false;
-    },
+
     toggleExpand: async function() {
         this.isExpanded = !this.isExpanded;
         
@@ -521,10 +613,10 @@ Vue.component('user-profile', {
                     ...this.user.stats,
                     ...data.player.stats
                 };
-                this.$log.debug("Player data loaded:", this.user);
+                this.$log.debug('Data', "Player data loaded:", this.user);
             })
             .catch(error => {
-              this.$log.error("Error fetching player data:", error);
+              this.$log.error('Data', "Error fetching player data:", error);
             })
             .finally(() => {
               this.isLoading.stats = false;
@@ -532,7 +624,7 @@ Vue.component('user-profile', {
               // Force Vue to re-render after data updates
               this.$nextTick(() => {
                 this.$forceUpdate();
-                this.$log.info("DOM updated with new player data");
+                this.$log.info('Lifecycle', "DOM updated with new player data");
               });
             });
     },
@@ -548,10 +640,10 @@ Vue.component('user-profile', {
               } else {
                     this.user.scores.best = data.scores;
               }
-              this.$log.debug(`${type} scores loaded:`, data.scores);
+              this.$log.debug('DATA', `${type} scores loaded:`, data.scores);
             })
             .catch(error => {
-              this.$log.error(`Error fetching ${type} scores:`, error);
+              this.$log.error('API', `Error fetching ${type} scores:`, error);
             })
             .finally(() => {
                 this.isLoading[type] = false;
@@ -559,7 +651,7 @@ Vue.component('user-profile', {
                 // Force Vue to re-render after data updates
                 this.$nextTick(() => {
                   this.$forceUpdate();
-                  this.$log.info("DOM updated with new player data");
+                  this.$log.info('LIFECYCLE', "DOM updated with new player data");
                 });
             });
     },
@@ -571,10 +663,10 @@ Vue.component('user-profile', {
             .then(response => response.json())
             .then(data => {
                 this.user.info.mostPlayedMaps = data.maps;
-                this.$log.info("Most played maps loaded:", this.user.info.mostPlayedMaps);
+                this.$log.info('DATA', "Most played maps loaded:", this.user.info.mostPlayedMaps);
             })
             .catch(error => {
-              this.$log.error("Error fetching most played maps:", error);
+              this.$log.error('API', "Error fetching most played maps:", error);
             })
             .finally(() => {
                 this.isLoading.mostPlayed = false;
@@ -582,7 +674,7 @@ Vue.component('user-profile', {
                 // Force Vue to re-render after data updates
                 this.$nextTick(() => {
                   this.$forceUpdate();
-                  this.$log.info("DOM updated with new player data");
+                  this.$log.info('LIFECYCLE', "DOM updated with new player data");
                 });
             });
     },
@@ -742,9 +834,7 @@ Vue.component('user-profile', {
               </span>
             </div>
             <div class="badge-block compact">
-              <badge v-for="badge in user.info?.badges" :badge="badge" :type="1" 
-                     @mouseover="showBadgePopup($event, badge)" 
-                     @mouseout="hideBadgePopup"></badge>
+              <badge v-for="badge in user.info?.badges" :badge="badge" :type="1"></badge>
             </div>
           </div>
         </div>
@@ -871,13 +961,1304 @@ Vue.component('user-profile', {
           </div>
         </div>
       </div>
-      
-      <div class="badge-popup" :class="{ visible: badgePopupVisible }" :style="{ top: badgePopupTop, left: badgePopupLeft }" v-if="badgePopupVisible">
-        <div class="badge-popup-title">{{ user.info?.badges?.find(b => b.id === badgePopupVisible)?.name }}</div>
-        <div class="badge-popup-description">{{ user.info?.badges?.find(b => b.id === badgePopupVisible)?.description }}</div>
-      </div>
     </span>
   `,
+});
+
+/**
+ * ============================================================================
+ * Section: User-Profile Sub-Components
+ * ============================================================================
+ *
+ * Sub-components for the user-profile master component.
+ * These components handle specific display styles and functionality.
+ */
+
+/**
+ * ============================================================================
+ * Component: UserProfileHoverPanel
+ * ============================================================================
+ *
+ * Hover panel for username style that shows detailed user information.
+ *
+ * Props:
+ * @param {Object} user - User data object
+ * @param {Object} statusData - User status data
+ * @param {Boolean} showCountry - Whether to show country
+ * @param {Boolean} showClan - Whether to show clan tag
+ * @param {Boolean} showBadges - Whether to show badges
+ * @param {Boolean} showStatus - Whether to show status
+ * @param {Boolean} visible - Whether panel is visible
+ * @param {Boolean} interactive - Whether to enable interactions
+ * @param {String} avatarUrl - Avatar image URL
+ * @param {String} bannerUrl - Banner image URL
+ * @param {String} flagUrl - Flag image URL
+ * @param {String} clanUrl - Clan page URL
+ * @param {String} profileUrl - Profile page URL
+ * @param {Object} currentStats - Current mode stats
+ * @param {Function} formatNumber - Number formatting function
+ * @param {Function} formatAccuracy - Accuracy formatting function
+ * @param {Function} statusText - Status text getter
+ * @param {Function} statusClasses - Status CSS classes getter
+ * @param {Function} mouseEnterPanel - Mouse enter handler
+ * @param {Function} mouseLeavePanel - Mouse leave handler
+ *
+ * @component user-profile-hover-panel
+ */
+Vue.component('user-profile-hover-panel', {
+  props: {
+    user: { type: Object, required: true },
+    statusData: { type: Object, default: null },
+    showCountry: { type: Boolean, default: false },
+    showClan: { type: Boolean, default: true },
+    showBadges: { type: Boolean, default: true },
+    showStatus: { type: Boolean, default: true },
+    visible: { type: Boolean, default: false },
+    interactive: { type: Boolean, default: true },
+    avatarUrl: { type: String, required: true },
+    bannerUrl: { type: String, required: true },
+    flagUrl: { type: String, required: true },
+    clanUrl: { type: String, required: true },
+    profileUrl: { type: String, required: true },
+    currentStats: { type: Object, default: null },
+    formatNumber: { type: Function, required: true },
+    formatAccuracy: { type: Function, required: true },
+    statusText: { type: String, required: true },
+    statusClasses: { type: Object, required: true },
+    mouseEnterPanel: { type: Function, required: true },
+    mouseLeavePanel: { type: Function, required: true }
+  },
+  created() {
+    this.$log.debug('UserProfileHoverPanel', 'Component created', {
+      hasUser: !!this.user,
+      hasAvatarUrl: !!this.avatarUrl,
+      hasBannerUrl: !!this.bannerUrl,
+      hasFlagUrl: !!this.flagUrl,
+      hasClanUrl: !!this.clanUrl,
+      hasProfileUrl: !!this.profileUrl,
+      hasCurrentStats: !!this.currentStats,
+      avatarUrl: this.avatarUrl,
+      bannerUrl: this.bannerUrl,
+      flagUrl: this.flagUrl,
+      clanUrl: this.clanUrl,
+      profileUrl: this.profileUrl
+    });
+  },
+  computed: {
+    panelClasses() {
+      return {
+        'user-profile-panel': true,
+        'visible': this.visible,
+        'interactive': this.interactive
+      };
+    }
+  },
+  template: `
+    <div :class="panelClasses"
+         @mouseenter="mouseEnterPanel"
+         @mouseleave="mouseLeavePanel">
+      
+      <!-- Panel background -->
+      <div class="user-profile-panel-background"
+           :style="'background-image: url(' + bannerUrl + ')'"></div>
+      
+      <!-- Panel header -->
+      <div class="user-profile-panel-header">
+        <div class="user-profile-panel-avatar"
+             :style="'background-image: url(' + avatarUrl + ')'"></div>
+        
+        <div class="user-profile-panel-info">
+          <div class="user-profile-panel-name">
+            <span v-if="showClan && user.info.clan_tag" class="user-profile-panel-clan">
+              [{{ user.info.clan_tag }}]
+            </span>
+            {{ user.info.name }}
+          </div>
+          
+          <div v-if="currentStats" class="user-profile-panel-rank">
+            <span class="user-profile-panel-global-rank">
+              #{{ currentStats.rank || '?' }}
+            </span>
+            <span v-if="showCountry && user.info.country" class="user-profile-panel-country">
+              <img :src="flagUrl" :alt="user.info.country" class="user-flag" />
+              #{{ currentStats.country_rank || '?' }}
+            </span>
+          </div>
+          
+          <div v-if="showBadges && user.info.badges && user.info.badges.length > 0"
+               class="user-profile-panel-badges">
+            <badge v-for="badge in user.info.badges"
+                   :key="badge.id"
+                   :badge="badge"
+                   :type="1"></badge>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Panel stats -->
+      <div v-if="currentStats" class="user-profile-panel-stats">
+        <div class="user-profile-panel-stat-item">
+          <div class="user-profile-panel-stat-value">
+            {{ formatNumber(currentStats.pp) || '0' }}
+          </div>
+          <div class="user-profile-panel-stat-label">PP</div>
+        </div>
+        
+        <div class="user-profile-panel-stat-item">
+          <div class="user-profile-panel-stat-value">
+            {{ formatAccuracy(currentStats.acc) }}%
+          </div>
+          <div class="user-profile-panel-stat-label">Accuracy</div>
+        </div>
+        
+        <div class="user-profile-panel-stat-item">
+          <div class="user-profile-panel-stat-value">
+            {{ formatNumber(currentStats.plays) || '0' }}
+          </div>
+          <div class="user-profile-panel-stat-label">Plays</div>
+        </div>
+      </div>
+      
+      <!-- Panel status -->
+      <div v-if="showStatus && statusData" class="user-profile-panel-status" :class="statusClasses">
+        <i class="fas fa-circle"></i>
+        <span>{{ statusText }}</span>
+      </div>
+    </div>
+  `
+});
+
+/**
+ * ============================================================================
+ * Component: UserProfileUsername
+ * ============================================================================
+ *
+ * Username style component with hover panel.
+ *
+ * Props:
+ * @param {Object} user - User data object
+ * @param {Object} statusData - User status data
+ * @param {Boolean} showCountry - Whether to show country
+ * @param {Boolean} showClan - Whether to show clan tag
+ * @param {Boolean} showBadges - Whether to show badges
+ * @param {Boolean} showStatus - Whether to show status
+ * @param {Boolean} interactive - Whether to enable interactions
+ * @param {String} avatarUrl - Avatar image URL
+ * @param {String} bannerUrl - Banner image URL
+ * @param {String} flagUrl - Flag image URL
+ * @param {String} clanUrl - Clan page URL
+ * @param {String} profileUrl - Profile page URL
+ * @param {Object} currentStats - Current mode stats
+ * @param {Boolean} profileVisible - Whether profile panel is visible
+ * @param {Function} formatNumber - Number formatting function
+ * @param {Function} formatAccuracy - Accuracy formatting function
+ * @param {Function} statusText - Status text getter
+ * @param {Function} statusClasses - Status CSS classes getter
+ * @param {Function} showProfile - Show profile handler
+ * @param {Function} hideProfile - Hide profile handler
+ * @param {Function} handleUsernameClick - Username click handler
+ * @param {Function} handleClanClick - Clan click handler
+ *
+ * @component user-profile-username
+ */
+Vue.component('user-profile-username', {
+  props: {
+    user: { type: Object, required: true },
+    statusData: { type: Object, default: null },
+    showCountry: { type: Boolean, default: false },
+    showClan: { type: Boolean, default: true },
+    showBadges: { type: Boolean, default: true },
+    showStatus: { type: Boolean, default: true },
+    interactive: { type: Boolean, default: true },
+    avatarUrl: { type: String, required: true },
+    bannerUrl: { type: String, required: true },
+    flagUrl: { type: String, required: true },
+    clanUrl: { type: String, required: true },
+    profileUrl: { type: String, required: true },
+    currentStats: { type: Object, default: null },
+    profileVisible: { type: Boolean, default: false },
+    formatNumber: { type: Function, required: true },
+    formatAccuracy: { type: Function, required: true },
+    statusText: { type: String, required: true },
+    statusClasses: { type: Object, required: true },
+    statusString: { type: String, required: true },
+    showProfile: { type: Function, required: true },
+    hideProfile: { type: Function, required: true },
+    handleUsernameClick: { type: Function, required: true },
+    handleClanClick: { type: Function, required: true },
+    mouseEnterPanel: { type: Function, required: true },
+    mouseLeavePanel: { type: Function, required: true }
+  },
+  created() {
+    this.$log.debug('UserProfileUsername', 'Component created', {
+      hasUser: !!this.user,
+      hasAvatarUrl: !!this.avatarUrl,
+      hasBannerUrl: !!this.bannerUrl,
+      hasFlagUrl: !!this.flagUrl,
+      hasClanUrl: !!this.clanUrl,
+      hasProfileUrl: !!this.profileUrl,
+      hasCurrentStats: !!this.currentStats,
+      avatarUrl: this.avatarUrl,
+      bannerUrl: this.bannerUrl,
+      flagUrl: this.flagUrl,
+      clanUrl: this.clanUrl,
+      profileUrl: this.profileUrl
+    });
+  },
+  template: `#user-profile-username-template`
+});
+
+/**
+ * ============================================================================
+ * Component: UserProfileCard
+ * ============================================================================
+ *
+ * Card style component with banner, avatar, stats, and status strip.
+ *
+ * Props:
+ * @param {Object} user - User data object
+ * @param {Object} statusData - User status data
+ * @param {Boolean} showCountry - Whether to show country
+ * @param {Boolean} showClan - Whether to show clan tag
+ * @param {Boolean} showBadges - Whether to show badges
+ * @param {Boolean} showStatus - Whether to show status
+ * @param {Boolean} isLoadingStatus - Whether status is loading
+ * @param {String} avatarUrl - Avatar image URL
+ * @param {String} bannerUrl - Banner image URL
+ * @param {String} flagUrl - Flag image URL
+ * @param {String} clanUrl - Clan page URL
+ * @param {String} profileUrl - Profile page URL
+ * @param {Object} currentStats - Current mode stats
+ * @param {Function} formatNumber - Number formatting function
+ * @param {Function} formatAccuracy - Accuracy formatting function
+ * @param {Function} statusText - Status text getter
+ * @param {Function} statusClasses - Status CSS classes getter
+ *
+ * @component user-profile-card
+ */
+Vue.component('user-profile-card', {
+  props: {
+    user: { type: Object, required: true },
+    statusData: { type: Object, default: null },
+    showCountry: { type: Boolean, default: true },
+    showClan: { type: Boolean, default: true },
+    showBadges: { type: Boolean, default: true },
+    showStatus: { type: Boolean, default: true },
+    isLoadingStatus: { type: Boolean, default: false },
+    avatarUrl: { type: String, required: true },
+    bannerUrl: { type: String, required: true },
+    flagUrl: { type: String, required: true },
+    clanUrl: { type: String, required: true },
+    profileUrl: { type: String, required: true },
+    currentStats: { type: Object, default: null },
+    formatNumber: { type: Function, required: true },
+    formatAccuracy: { type: Function, required: true },
+    statusText: { type: String, required: true },
+    statusClasses: { type: Object, required: true },
+    statusString: { type: String, required: true }
+  },
+  created() {
+    this.$log.debug('UserProfileCard', 'Component created', {
+      hasUser: !!this.user,
+      hasAvatarUrl: !!this.avatarUrl,
+      hasBannerUrl: !!this.bannerUrl,
+      hasFlagUrl: !!this.flagUrl,
+      hasClanUrl: !!this.clanUrl,
+      hasProfileUrl: !!this.profileUrl,
+      hasCurrentStats: !!this.currentStats,
+      avatarUrl: this.avatarUrl,
+      bannerUrl: this.bannerUrl,
+      flagUrl: this.flagUrl,
+      clanUrl: this.clanUrl,
+      profileUrl: this.profileUrl
+    });
+  },
+  template: `#user-profile-card-template`
+});
+
+/**
+ * ============================================================================
+ * Component: UserProfileSearch
+ * ============================================================================
+ *
+ * Search style component for compact display in lists.
+ *
+ * Props:
+ * @param {Object} user - User data object
+ * @param {Boolean} showCountry - Whether to show country
+ * @param {Boolean} showClan - Whether to show clan tag
+ * @param {String} avatarUrl - Avatar image URL
+ * @param {String} flagUrl - Flag image URL
+ * @param {String} clanUrl - Clan page URL
+ * @param {String} profileUrl - Profile page URL
+ * @param {Object} currentStats - Current mode stats
+ * @param {Function} formatNumber - Number formatting function
+ * @param {Function} formatAccuracy - Accuracy formatting function
+ *
+ * @component user-profile-search
+ */
+Vue.component('user-profile-search', {
+  props: {
+    user: { type: Object, required: true },
+    showCountry: { type: Boolean, default: false },
+    showClan: { type: Boolean, default: true },
+    avatarUrl: { type: String, required: true },
+    bannerUrl: { type: String, required: false },
+    flagUrl: { type: String, required: true },
+    clanUrl: { type: String, required: true },
+    profileUrl: { type: String, required: true },
+    currentStats: { type: Object, default: null },
+    formatNumber: { type: Function, required: true },
+    formatAccuracy: { type: Function, required: true }
+  },
+  created() {
+    this.$log.debug('UserProfileSearch', 'Component created', {
+      hasUser: !!this.user,
+      hasAvatarUrl: !!this.avatarUrl,
+      hasFlagUrl: !!this.flagUrl,
+      hasClanUrl: !!this.clanUrl,
+      hasProfileUrl: !!this.profileUrl,
+      hasCurrentStats: !!this.currentStats,
+      avatarUrl: this.avatarUrl,
+      flagUrl: this.flagUrl,
+      clanUrl: this.clanUrl,
+      profileUrl: this.profileUrl
+    });
+  },
+  template: `#user-profile-search-template`
+});
+
+/**
+ * ============================================================================
+ * Component: User-Profile (Master Component)
+ * ============================================================================
+ *
+ * Master component that orchestrates sub-components for different display styles.
+ *
+ * Features:
+ * - Multiple display styles: username, card, search
+ * - Automatic data fetching when only userid is provided
+ * - Dynamic name formatting: [country] [clan] [username]
+ * - Status fetching from API
+ * - Badge display with popups
+ * - Clan tag linking (future: clan flag/image display)
+ * - Username linking to profile page
+ * - Optional country display
+ *
+ * Props:
+ * @param {Object} user - User data object (optional if userid provided)
+ * @param {String} userid - User ID to fetch data from (required if no user prop)
+ * @param {String} displayStyle - Display style: 'username', 'card', or 'search' (default: 'username')
+ * @param {Boolean} showCountry - Whether to show country in name display (default: false)
+ * @param {Boolean} showClan - Whether to show clan tag (default: true)
+ * @param {Boolean} showBadges - Whether to show badges (default: true)
+ * @param {Boolean} showStatus - Whether to show user status (default: true)
+ * @param {Boolean} interactive - Whether to enable hover/click interactions (default: true)
+ * @param {String} domain - API domain (default: 'kawata.pw')
+ *
+ * Usage Examples:
+ *
+ * <!-- Username style (default) - shows just the username as a link -->
+ * <user-profile userid="12345" display-style="username" />
+ *
+ * <!-- Card style - shows banner, avatar, stats, and status -->
+ * <user-profile :user="userData" display-style="card" showCountry showBadges />
+ *
+ * <!-- Search style - compact display for search results -->
+ * <user-profile :user="userData" display-style="search" />
+ *
+ * <!-- With only userid (fetches data automatically) -->
+ * <user-profile userid="12345" display-style="card" showCountry showClan showBadges showStatus />
+ *
+ * @component user-profile
+ */
+
+/**
+ * ============================================================================
+ * Component: User-Profile (Master Component)
+ * ============================================================================
+ *
+ * Master component that orchestrates sub-components for different display styles.
+ *
+ * Features:
+ * - Multiple display styles: username, card, search
+ * - Automatic data fetching when only userid is provided
+ * - Dynamic name formatting: [country] [clan] [username]
+ * - Status fetching from API
+ * - Badge display with popups
+ * - Clan tag linking (future: clan flag/image display)
+ * - Username linking to profile page
+ * - Optional country display
+ *
+ * Props:
+ * @param {Object} user - User data object (optional if userid provided)
+ * @param {String} userid - User ID to fetch data from (required if no user prop)
+ * @param {String} displayStyle - Display style: 'username', 'card', or 'search' (default: 'username')
+ * @param {Boolean} showCountry - Whether to show country in name display (default: false)
+ * @param {Boolean} showClan - Whether to show clan tag (default: true)
+ * @param {Boolean} showBadges - Whether to show badges (default: true)
+ * @param {Boolean} showStatus - Whether to show user status (default: true)
+ * @param {Boolean} interactive - Whether to enable hover/click interactions (default: true)
+ * @param {String} domain - API domain (default: 'kawata.pw')
+ *
+ * Usage Examples:
+ *
+ * <!-- Username style (default) - shows just the username as a link -->
+ * <user-profile userid="12345" display-style="username" />
+ *
+ * <!-- Card style - shows banner, avatar, stats, and status -->
+ * <user-profile :user="userData" display-style="card" showCountry showBadges />
+ *
+ * <!-- Search style - compact display for search results -->
+ * <user-profile :user="userData" display-style="search" />
+ *
+ * <!-- With only userid (fetches data automatically) -->
+ * <user-profile userid="12345" display-style="card" showCountry showClan showBadges showStatus />
+ *
+ * @component user-profile
+ */
+Vue.component('user-profile', {
+  props: {
+    /**
+     * User data object (optional if userid provided)
+     * @type {Object}
+     */
+    user: { type: Object, default: null },
+    
+    /**
+     * User ID to fetch data from (required if no user prop)
+     * @type {String|Number}
+     */
+    userid: { type: [String, Number], default: null },
+    
+    /**
+     * Display style: 'username', 'card', or 'search'
+     * @type {String}
+     * @default 'username'
+     */
+    displayStyle: {
+      type: String,
+      default: 'username',
+      validator: function(value) {
+        return ['username', 'card', 'search'].includes(value);
+      }
+    },
+    
+    /**
+     * Whether to show country in name display
+     * @type {Boolean}
+     * @default false
+     */
+    showCountry: { type: Boolean, default: false },
+    
+    /**
+     * Whether to show clan tag
+     * @type {Boolean}
+     * @default true
+     */
+    showClan: { type: Boolean, default: true },
+    
+    /**
+     * Whether to show badges
+     * @type {Boolean}
+     * @default true
+     */
+    showBadges: { type: Boolean, default: true },
+    
+    /**
+     * Whether to show user status
+     * @type {Boolean}
+     * @default true
+     */
+    showStatus: { type: Boolean, default: true },
+    
+    /**
+     * Whether to enable hover/click interactions
+     * @type {Boolean}
+     * @default true
+     */
+    interactive: { type: Boolean, default: true },
+    
+    /**
+     * API domain
+     * @type {String}
+     * @default 'kawata.pw'
+     */
+    domain: { type: String, default: domain || 'kawata.pw' }
+  },
+  
+  data: function() {
+    return {
+      // Internal user data (fetched if only userid provided)
+      internalUser: null,
+      
+      // Loading states
+      isLoadingUser: false,
+      isLoadingStatus: false,
+      
+      // Status data
+      statusData: null,
+      
+      // UI state
+      profileVisible: false,
+      
+      // Mouse tracking for hover panel
+      mouseOverPanel: false,
+      
+      // Error state
+      error: null,
+      
+      // Interval for periodic status checking
+      statusInterval: null
+    };
+  },
+  
+  computed: {
+    /**
+     * Get the user data to use (internal or prop)
+     */
+    userData() {
+      return this.internalUser || this.user;
+    },
+    
+    /**
+     * Normalized user data in standard format
+     */
+    normalizedUserData() {
+      return this.normalizeUser(this.userData);
+    },
+    
+    /**
+     * Check if we have user data
+     */
+    hasUserData() {
+      return this.userData !== null && this.userData !== undefined;
+    },
+    
+    /**
+     * Check if we have full user data (not just leaderboard)
+     */
+    isFullData() {
+      return this.normalizedUserData && this.normalizedUserData.info && this.normalizedUserData.stats;
+    },
+    
+    /**
+     * Get current mode stats
+     * Handles multiple possible data structures from API
+     */
+    currentStats() {
+      if (!this.normalizedUserData) {
+        this.$log.debug('UserProfile', 'No userData for currentStats');
+        return null;
+      }
+      
+      // Try stats.current first (new structure)
+      if (this.normalizedUserData.stats?.current) {
+        const firstMode = Object.keys(this.normalizedUserData.stats.current)[0];
+        const stats = this.normalizedUserData.stats.current[firstMode] || null;
+        this.$log.debug('UserProfile', 'Current stats (stats.current)', { firstMode, stats });
+        return stats;
+      }
+      
+      // Try stats directly (old structure) - use preferred_mode to get the right stats
+      if (this.normalizedUserData.stats) {
+        const preferredMode = this.normalizedUserData.info?.preferred_mode || 0;
+        const stats = this.normalizedUserData.stats[preferredMode] || null;
+        this.$log.debug('UserProfile', 'Current stats (direct stats)', { preferredMode, stats });
+        return stats;
+      }
+      
+      this.$log.debug('UserProfile', 'No stats found', { userData: this.normalizedUserData });
+      return null;
+    },
+    
+    /**
+     * Get avatar URL
+     * Handles multiple possible ID field names from API
+     */
+    avatarUrl() {
+      if (!this.normalizedUserData) {
+        this.$log.debug('UserProfile', 'No userData for avatarUrl');
+        return '';
+      }
+      
+      // Try multiple possible ID field names
+      const userId = this.normalizedUserData.info.id || this.normalizedUserData.player_id || this.normalizedUserData.id || this.normalizedUserData.user_id;
+      this.$log.debug('UserProfile', 'Avatar URL', {
+        userId,
+        player_id: this.normalizedUserData.player_id,
+        id: this.normalizedUserData.id,
+        user_id: this.normalizedUserData.user_id,
+        domain: this.domain
+      });
+      
+      if (!userId) {
+        this.$log.error('UserProfile', 'No userId found for avatar', { userData: this.normalizedUserData });
+        return '';
+      }
+      
+      return `https://a.${this.domain}/${userId}`;
+    },
+    
+    /**
+     * Get banner URL
+     * Handles multiple possible ID field names from API
+     */
+    bannerUrl() {
+      if (!this.normalizedUserData) {
+        this.$log.debug('UserProfile', 'No userData for bannerUrl');
+        return '';
+      }
+      
+      // Try multiple possible ID field names
+      const userId = this.normalizedUserData.info.id || this.normalizedUserData.player_id || this.normalizedUserData.id || this.normalizedUserData.user_id;
+      this.$log.debug('UserProfile', 'Banner URL', {
+        userId,
+        player_id: this.normalizedUserData.player_id,
+        id: this.normalizedUserData.id,
+        user_id: this.normalizedUserData.user_id
+      });
+      
+      if (!userId) {
+        this.$log.error('UserProfile', 'No userId found for banner', { userData: this.normalizedUserData });
+        return '';
+      }
+      
+      return `/banners/${userId}`;
+    },
+
+    /**
+     * Get banner URL
+     * Handles multiple possible ID field names from API
+     */
+    backgroundUrl() {
+      if (!this.normalizedUserData) {
+        this.$log.debug('UserProfile', 'No userData for bannerUrl');
+        return '';
+      }
+      
+      // Try multiple possible ID field names
+      const userId = this.normalizedUserData.info.id || this.normalizedUserData.player_id || this.normalizedUserData.id || this.normalizedUserData.user_id;
+      this.$log.debug('UserProfile', 'Banner URL', {
+        userId,
+        player_id: this.normalizedUserData.player_id,
+        id: this.normalizedUserData.id,
+        user_id: this.normalizedUserData.user_id
+      });
+      
+      if (!userId) {
+        this.$log.error('UserProfile', 'No userId found for banner', { userData: this.normalizedUserData });
+        return '';
+      }
+      
+      return `/backgrounds/${userId}`;
+    },
+    
+    /**
+     * Get flag URL
+     * Handles country field in multiple possible locations
+     */
+    flagUrl() {
+      if (!this.normalizedUserData) {
+        this.$log.debug('UserProfile', 'No userData for flagUrl');
+        return '';
+      }
+      
+      // Try country in info first, then at root level
+      const country = this.normalizedUserData.info?.country || this.normalizedUserData.country;
+      this.$log.debug('UserProfile', 'Flag URL', {
+        country,
+        infoCountry: this.normalizedUserData.info?.country,
+        rootCountry: this.normalizedUserData.country
+      });
+      
+      if (!country) {
+        this.$log.debug('UserProfile', 'No country found', { userData: this.normalizedUserData });
+        return '';
+      }
+      
+      return `/static/images/flags/${country.toUpperCase()}.png`;
+    },
+    
+    /**
+     * Get clan URL
+     * Handles clan_id field in multiple possible locations
+     */
+    clanUrl() {
+      if (!this.normalizedUserData) {
+        this.$log.debug('UserProfile', 'No userData for clanUrl');
+        return '';
+      }
+      
+      // Try clan_id in info first, then at root level
+      const clanId = this.normalizedUserData.info?.clan_id || this.normalizedUserData.clan_id;
+      this.$log.debug('UserProfile', 'Clan URL', {
+        clanId,
+        infoClanId: this.normalizedUserData.info?.clan_id,
+        rootClanId: this.normalizedUserData.clan_id
+      });
+      
+      if (!clanId) {
+        this.$log.debug('UserProfile', 'No clan_id found', { userData: this.normalizedUserData });
+        return '';
+      }
+      
+      return `/clans/${clanId}`;
+    },
+    
+    /**
+     * Get profile URL
+     * Handles multiple possible ID field names from API
+     */
+    profileUrl() {
+      if (!this.normalizedUserData) {
+        this.$log.debug('UserProfile', 'No userData for profileUrl');
+        return '';
+      }
+      
+      // Try multiple possible ID field names
+      const userId = this.normalizedUserData.info.id || this.normalizedUserData.player_id || this.normalizedUserData.id || this.normalizedUserData.user_id;
+      this.$log.debug('UserProfile', 'Profile URL', {
+        userId,
+        player_id: this.normalizedUserData.player_id,
+        id: this.normalizedUserData.id,
+        user_id: this.normalizedUserData.user_id
+      });
+      
+      if (!userId) {
+        this.$log.error('UserProfile', 'No userId found for profile', { userData: this.normalizedUserData });
+        return '';
+      }
+      
+      return `/u/${userId}`;
+    },
+    
+    /**
+     * Status text getter
+     */
+    statusText() {
+      if (!this.statusData || this.statusData.online === 'false' || this.statusData.online === false) {
+        if (this.statusData && this.statusData.last_seen) {
+          return `Offline | Last seen ${this.formatTimeAgo(this.statusData.last_seen)}`;
+        }
+        return 'Offline';
+      }
+      
+      // Check if status object exists
+      if (!this.statusData.status) {
+        return 'Online';
+      }
+      
+      // Use actionIntToStr from profile.js logic
+      const action = this.statusData.status.action;
+      const infoText = this.statusData.status.info_text;
+      
+      switch (action) {
+        case 0:
+          return 'Idle: 🔍 Song Select';
+        case 1:
+          return '🌙 AFK';
+        case 2:
+          return `Playing: 🎶 ${infoText}`;
+        case 3:
+          return `Editing: 🔨 ${infoText}`;
+        case 4:
+          return `Modding: 🔨 ${infoText}`;
+        case 5:
+          return 'In Multiplayer: Song Select';
+        case 6:
+          return `Watching: 👓 ${infoText}`;
+        // 7 not used
+        case 8:
+          return `Testing: 🎾 ${infoText}`;
+        case 9:
+          return `Submitting: 🧼 ${infoText}`;
+        // 10 paused, never used
+        case 11:
+          return 'Idle: 🏢 In multiplayer lobby';
+        case 12:
+          return `In Multiplayer: Playing 🌍 ${infoText} 🎶`;
+        case 13:
+          return 'Idle: 🔍 Searching for beatmaps in osu!direct';
+        default:
+          return 'Unknown: 🚔 not yet implemented!';
+      }
+    },
+    
+    /**
+     * Status CSS classes getter
+     */
+    statusClasses() {
+      if (!this.statusData || this.statusData.online === 'false' || this.statusData.online === false) return { 'offline': true };
+      
+      // Check if status object exists
+      if (!this.statusData.status) return { 'online': true };
+      
+      const action = this.statusData.status.action;
+      
+      if (action === 2 || action === 9) return { 'playing': true };
+      if (action === 8) return { 'paused': true };
+      if (action === 0) return { 'idle': true };
+      if (action === 1) return { 'afk': true };
+      
+      return { 'online': true };
+    },
+    
+    /**
+     * Status string getter for CSS variable
+     * Returns the status name as a string (e.g., "playing", "offline")
+     */
+    statusString() {
+      if (!this.statusData || this.statusData.online === 'false' || this.statusData.online === false) return 'offline';
+      
+      // Check if status object exists
+      if (!this.statusData.status) return 'online';
+      
+      const action = this.statusData.status.action;
+      
+      if (action === 2 || action === 9) return 'playing';
+      if (action === 8) return 'paused';
+      if (action === 0) return 'idle';
+      if (action === 1) return 'afk';
+      
+      return 'online';
+    },
+    
+    /**
+     * Format accuracy
+     */
+    formatAccuracy() {
+      return (acc) => {
+        if (!acc) return '0.00';
+        return parseFloat(acc).toFixed(2);
+      };
+    },
+    
+    /**
+     * Format number
+     */
+    formatNumber() {
+      return (num) => {
+        if (!num) return '0';
+        return num.toLocaleString();
+      };
+    }
+  },
+  
+  watch: {
+    /**
+     * Watch for user prop changes
+     */
+    user: {
+      handler: function(newUser) {
+        if (newUser && !this.internalUser) {
+          // Reset internal user if new user prop is provided
+          this.internalUser = null;
+          this.statusData = null;
+          this.error = null;
+          
+          // Fetch status if needed
+          if (this.showStatus) {
+            this.fetchStatus();
+          }
+        }
+      },
+      deep: true
+    },
+    
+    /**
+     * Watch for userid changes
+     */
+    userid: {
+      handler: function(newUserid) {
+        if (newUserid && !this.user) {
+          // Fetch user data if only userid is provided
+          this.fetchUserData();
+        }
+      }
+    },
+    
+    /**
+     * Watch for showStatus changes
+     */
+    showStatus: {
+      handler: function(newVal) {
+        this.$log.debug('UserProfile', 'showStatus changed', { newVal, hasNormalizedUserData: !!this.normalizedUserData });
+        if (newVal && this.normalizedUserData) {
+          this.fetchStatus();
+          this.startStatusInterval();
+        } else {
+          this.stopStatusInterval();
+        }
+      }
+    }
+  },
+  
+  created() {
+    this.$log.debug('UserProfile', 'Component created', {
+      userid: this.userid,
+      hasUser: !!this.user,
+      showStatus: this.showStatus,
+      hasUserData: !!this.userData,
+      userData: this.userData
+    });
+    
+    // Fetch user data if only userid is provided
+    if (this.userid && !this.user) {
+      this.$log.debug('UserProfile', 'Fetching user data (userid provided, no user prop)', { userid: this.userid });
+      this.fetchUserData();
+    } else if (this.userid && this.user) {
+      this.$log.debug('UserProfile', 'Both userid and user provided, using user prop', { userid: this.userid });
+    } else if (!this.userid && this.user) {
+      this.$log.debug('UserProfile', 'Only user prop provided');
+    } else {
+      this.$log.debug('UserProfile', 'No userid or user provided');
+    }
+    
+    // Fetch status if needed (when user prop is provided directly)
+    if (this.showStatus && this.normalizedUserData) {
+      this.$log.debug('UserProfile', 'Starting initial status fetch and interval');
+      this.fetchStatus();
+      this.startStatusInterval();
+    }
+  },
+  
+  beforeDestroy() {
+    // Clean up interval when component is destroyed
+    this.stopStatusInterval();
+  },
+  
+  methods: {
+    /**
+     * Normalize user data to standard format
+     */
+    normalizeUser(user) {
+      if (!user) return null;
+      
+      const normalized = { ...user };
+      
+      // Ensure info object exists
+      if (!normalized.info) {
+        normalized.info = {
+          id: normalized.player_id || normalized.id,
+          name: normalized.name,
+          country: normalized.country,
+          clan_id: normalized.clan_id,
+          clan_tag: normalized.clan_tag,
+          badges: normalized.badges || [],
+          preferred_mode: 0, // default
+        };
+      }
+      
+      // Ensure stats object exists
+      if (!normalized.stats) {
+        normalized.stats = {
+          current: {
+            0: {
+              pp: normalized.pp,
+              acc: normalized.acc,
+              plays: normalized.plays,
+              tscore: normalized.tscore,
+              rscore: normalized.rscore,
+              playtime: normalized.playtime,
+              max_combo: normalized.max_combo,
+              total_hits: normalized.total_hits,
+              replay_views: normalized.replay_views,
+              xh_count: normalized.xh_count,
+              x_count: normalized.x_count,
+              sh_count: normalized.sh_count,
+              s_count: normalized.s_count,
+              a_count: normalized.a_count,
+              rank: normalized.rank,
+              country_rank: normalized.country_rank,
+            }
+          }
+        };
+      }
+      
+      return normalized;
+    },
+    
+    /**
+     * Get user ID from user data
+     */
+    getUserId() {
+      if (!this.userData) return null;
+      return this.userData.info?.id || this.userData.player_id || this.userData.id;
+    },
+    
+    /**
+     * Fetch user data from API
+     */
+    async fetchUserData() {
+      if (!this.userid || this.isLoadingUser) {
+        this.$log.debug('UserProfile', 'fetchUserData early return', {
+          hasUserid: !!this.userid,
+          isLoadingUser: this.isLoadingUser
+        });
+        return;
+      }
+      
+      this.isLoadingUser = true;
+      this.error = null;
+      
+      this.$log.debug('UserProfile', 'fetchUserData starting');
+      
+      try {
+        const response = await fetch(
+          `${window.location.protocol}//api.${this.domain}/v1/get_player_info?id=${this.userid}&scope=all`
+        );
+        
+        if (!response.ok) {
+          throw new Error(`API request failed with status ${response.status}`);
+        }
+        
+        const data = await response.json();
+        
+        this.$log.debug('API', 'Raw API response:', data);
+        
+        if (data.status === 'success' && data.player) {
+          this.internalUser = data.player;
+          this.$log.debug('API', 'User data loaded:', data.player);
+          this.$log.debug('API', 'User data structure:', {
+            hasPlayerId: data.player.hasOwnProperty('player_id'),
+            hasId: data.player.hasOwnProperty('id'),
+            playerIdValue: data.player.player_id,
+            idValue: data.player.id,
+            hasInfo: data.player.hasOwnProperty('info'),
+            hasStats: data.player.hasOwnProperty('stats'),
+            infoStructure: data.player.info,
+            statsStructure: data.player.stats
+          });
+          
+          // Fetch status if needed
+          if (this.showStatus) {
+            this.$log.debug('UserProfile', 'Fetching status after user data loaded');
+            await this.fetchStatus();
+            // Start periodic status checking after fetching user data
+            this.$log.debug('UserProfile', 'Starting status interval after user data loaded');
+            this.startStatusInterval();
+          }
+        } else {
+          throw new Error('No user data found');
+        }
+      } catch (error) {
+        this.$log.error('API', 'Error fetching user data:', error);
+        this.error = error.message;
+      } finally {
+        this.isLoadingUser = false;
+        this.$log.debug('UserProfile', 'fetchUserData completed');
+      }
+    },
+    
+    /**
+     * Fetch user status from API
+     */
+    async fetchStatus() {
+      if (!this.normalizedUserData || this.isLoadingStatus) {
+        this.$log.debug('UserProfile', 'fetchStatus early return', {
+          hasNormalizedUserData: !!this.normalizedUserData,
+          isLoadingStatus: this.isLoadingStatus
+        });
+        return;
+      }
+      
+      const userId = this.normalizedUserData.info.id;
+      if (!userId) {
+        this.$log.debug('UserProfile', 'fetchStatus early return - no userId');
+        return;
+      }
+      
+      this.isLoadingStatus = true;
+      
+      this.$log.debug('UserProfile', 'fetchStatus starting');
+      
+      try {
+        const response = await fetch(
+          `${window.location.protocol}//api.${this.domain}/v1/get_player_status?id=${userId}`
+        );
+        
+        if (!response.ok) {
+          throw new Error(`API request failed with status ${response.status}`);
+        }
+        
+        const data = await response.json();
+        
+        if (data.status === 'success') {
+          const oldStatus = this.statusData;
+          this.statusData = data.player_status;
+          this.$log.debug('API', 'Status data loaded:', data);
+          this.$log.debug('UserProfile', 'Status data changed', { 
+            oldStatus, 
+            newStatus: this.statusData,
+            online: this.statusData?.online,
+            hasStatus: !!this.statusData?.status
+          });
+        } else {
+          this.statusData = null;
+          this.$log.warn('API', 'No status data found in response', data);
+        }
+      } catch (error) {
+        this.$log.error('API', 'Error fetching status:', error);
+        this.statusData = null;
+      } finally {
+        this.isLoadingStatus = false;
+        this.$log.debug('UserProfile', 'fetchStatus completed');
+      }
+    },
+    
+    /**
+     * Start periodic status checking
+     */
+    startStatusInterval() {
+      // Clear any existing interval
+      this.stopStatusInterval();
+      
+      this.$log.debug('UserProfile', 'Starting status interval');
+      
+      // Check status every 30 seconds
+      this.statusInterval = setInterval(() => {
+        this.$log.debug('UserProfile', 'Status interval tick', {
+          hasNormalizedUserData: !!this.normalizedUserData,
+          showStatus: this.showStatus,
+          hasInterval: !!this.statusInterval
+        });
+        if (this.normalizedUserData && this.showStatus) {
+          this.$log.debug('UserProfile', 'Fetching status due to interval');
+          this.fetchStatus();
+        }
+      }, 30000);
+    },
+    
+    /**
+     * Stop periodic status checking
+     */
+    stopStatusInterval() {
+      if (this.statusInterval) {
+        clearInterval(this.statusInterval);
+        this.statusInterval = null;
+      }
+    },
+    
+    /**
+     * Show profile panel (for username style)
+     */
+    showProfile() {
+      if (!this.interactive) return;
+      
+      // Lazy load full user data if not available
+      if (!this.isFullData) {
+        const userId = this.getUserId();
+        if (userId && !this.userid) {
+          this.userid = userId;
+        }
+        if (this.userid && !this.isLoadingUser) {
+          this.fetchUserData();
+        }
+      }
+      
+      this.profileVisible = true;
+    },
+    
+    /**
+     * Hide profile panel (for username style)
+     */
+    hideProfile() {
+      if (!this.interactive) return;
+      // Only hide if not hovering over the panel
+      if (!this.mouseOverPanel) {
+        this.profileVisible = false;
+      }
+    },
+    
+    /**
+     * Mouse enter panel handler
+     */
+    mouseEnterPanel() {
+      this.mouseOverPanel = true;
+    },
+    
+    /**
+     * Mouse leave panel handler
+     */
+    mouseLeavePanel() {
+      this.mouseOverPanel = false;
+      this.profileVisible = false;
+    },
+    
+
+    /**
+     * Formats a date string or Unix timestamp to a "time ago" string.
+     * @param {string|number} dateString - The date string from your score object (e.g., '2023-01-10T14:59:00Z') or Unix timestamp in seconds.
+     * @returns {string} - A human-readable "time ago" string.
+     */
+    formatTimeAgo(dateString) {
+        // Check if it's a Unix timestamp (number in seconds)
+        let date;
+        if (typeof dateString === 'number' || /^\d+$/.test(dateString)) {
+            // Convert Unix timestamp (seconds) to milliseconds
+            date = new Date(dateString * 1000);
+        } else {
+            // Treat as date string
+            date = new Date(dateString);
+        }
+        
+        const now = new Date();
+        const seconds = Math.floor((now - date) / 1000);
+
+        let interval = seconds / 31536000;
+        if (interval >= 1) {
+            const years = Math.floor(interval);
+            return years === 1 ? "1 year ago" : years + " years ago";
+        }
+        
+        interval = seconds / 2592000;
+        if (interval >= 1) {
+            const months = Math.floor(interval);
+            return months === 1 ? "1 month ago" : months + " months ago";
+        }
+        
+        interval = seconds / 86400;
+        if (interval >= 1) {
+            const days = Math.floor(interval);
+            return days === 1 ? "1 day ago" : days + " days ago";
+        }
+        
+        interval = seconds / 3600;
+        if (interval >= 1) {
+            const hours = Math.floor(interval);
+            return hours === 1 ? "1 hour ago" : hours + " hours ago";
+        }
+        
+        interval = seconds / 60;
+        if (interval >= 1) {
+            const minutes = Math.floor(interval);
+            return minutes === 1 ? "1 minute ago" : minutes + " minutes ago";
+        }
+        
+        return Math.floor(seconds) + " seconds ago";
+    },
+    
+
+    
+    /**
+     * Handle username click
+     */
+    handleUsernameClick(event) {
+      if (!this.interactive) return;
+      // Allow default navigation
+    },
+    
+    /**
+     * Handle clan click
+     */
+    handleClanClick(event) {
+      if (!this.interactive) return;
+      // Allow default navigation
+    }
+  },
+  
+  template: `#user-profile-template`
 });
 
 Vue.component('score-card', {
@@ -930,7 +2311,7 @@ Vue.component('score-card', {
       }
       if (obj.HiddenRemover === true) htmlString += `<div>No HD</div>`;
       if (obj.FlashlightRemover === true) htmlString += `<div>No FL</div>`;
-      this.$log.debug("Score", this.score);
+      this.$log.debug("Score", `Displaying score card for score: ${this.score.id}`, this.score);
       return htmlString;
     },
     MAAIntToStr(int) {
@@ -1082,61 +2463,7 @@ Vue.component('score-card', {
       return value;
     }
   },
-  template: `
-    <div class="map-single"
-      :style="\`background: linear-gradient(hsl(var(--main), 25%, 25%, 90%), hsl(var(--main), 25%, 25%, 90%)), url(https://assets.ppy.sh/beatmaps/\${score.beatmap.set_id}/covers/cover.jpg)\`"
-      @click="scoreBus.$emit('show-score-window', score.id)">
-      <div class="map-data">
-        <div class="map-image">
-          <img :src="'https://assets.ppy.sh/beatmaps/' + score.beatmap.set_id + '/covers/card.jpg'"
-            class="map-image-picture">
-        </div>
-        <div class="map-content1">
-          <div class="map-title-block">
-            <div class="map-title">
-              <a class="beatmap-link" @click.stop="beatmapBus.$emit('show-beatmap-panel', score.beatmap.id, score.beatmap.set_id)">
-                <% score.beatmap.title %> [<% score.beatmap.version %>] <span v-if="score.mods != 0">+<% score.mods_readable %></span>
-              </a>
-            </div>
-            <div class="map-creators">
-              By <a class=""><% score.beatmap.artist %></a>
-              |
-              Mapped by <a><% score.beatmap.creator %></a>
-            </div>
-          </div>
-          <div class="play-stats-block">
-            <div class="play-stats">
-              <% formatNumber(score.score) %> / <% score.max_combo %><b>x</b> <span class="cheat_values" v-html="DisplayCheats(score.cheat_values)"></span>
-            </div>
-            <div class="map-date">
-              <time><% timeago ? timeago.format(score.play_time) : new Date(score.play_time).toLocaleString() %></time>
-            </div>
-          </div>
-        </div>
-        <div class="map-content2">
-          <div class="score-details d-flex">
-            <div class="score-details_right-block">
-              <div class="score-details_pp-block">
-                <div class="map-pp">
-                  <% score.pp.toFixed() %><span class="map-pp-unit">pp</span>
-                </div>
-                <div class="map-acc">accuracy:&nbsp;<b>
-                    <% score.acc.toFixed(2) %>%
-                  </b></div>
-              </div>
-              <div class="score-details_grade-block">
-                <div class="rank-single">
-                  <div :class="'map-rank rank-'+score.grade">
-                    <% score.grade.replace("X", "SS" ).replace("H", "" ) %>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  `
+  template: `#score-card-template`
 });
 
 Vue.component('score-list', {
@@ -1171,38 +2498,7 @@ Vue.component('score-list', {
       this.$emit('load-more');
     }
   },
-  template: `
-    <div class="log-block" :class="{ 'load': loading }">
-      <div class="header">
-        <div class="title">
-          <i class="fas fa-trophy"></i> {{ title }}
-        </div>
-      </div>
-      <div v-if="scores.length > 0" class="scores">
-        <score-card 
-          v-for="(score, index) in scores" 
-          :key="score.id" 
-          :score="score"
-          @score-click="$emit('score-click', score.id)"
-          @beatmap-click="$emit('beatmap-click', $event[0], $event[1])">
-        </score-card>
-      </div>
-      <div v-else-if="scores.length === 0" class="stats-block">
-        <div class="columns is-marginless">
-          <div class="column is-1">
-            <h1 class="title">: (</h1>
-          </div>
-          <div class="column">
-            <h1 class="title is-6">{{ emptyMessage }}</h1>
-            <p class="subtitle is-7">{{ emptySubMessage }}</p>
-          </div>
-        </div>
-      </div>
-      <div v-if="showMore" class="extra-block" id="hina-stats-block">
-        <a class="show-button" @click="loadMore">Show more</a>
-      </div>
-    </div>
-  `
+  template: `#score-list-template`
 });
 
 Vue.component('bmap-card', {
@@ -1542,7 +2838,7 @@ Vue.component('bmap-card', {
     
     difficultyColor(diff) {
       if (!diff || !diff.diff) {
-        this.$log.debug('using default grey due to lack of diff info:', diff);
+        this.$log.debug('diff', 'Using default grey due to lack of diff info:', diff);
         return '200, 200, 200'; // Default gray RGB values
       }
   
@@ -1561,7 +2857,7 @@ Vue.component('bmap-card', {
         const color = d3.color(difficultyColourSpectrum(stars));
         return color ? `${color.r}, ${color.g}, ${color.b}` : '200, 200, 200';
       } catch (error) {
-        this.$log.error('Error calculating difficulty color:', error);
+        this.$log.error('Diff', 'Error calculating difficulty color:', error);
         return '200, 200, 200'; // Fallback color
       }
     }
@@ -1572,271 +2868,5 @@ Vue.component('bmap-card', {
       this.loadSetDifficulties();
     }
   },
-  template: `
-  <div :class="['beatmap-card', 'mode-' + mode, { 'expanded': expanded, 'interactive': interactive }]" 
-       @click="handleClick">
-    <!-- Loading state -->
-    <div v-if="dataLoading" class="beatmap-loading-overlay">
-      <div class="beatmap-loading-spinner"></div>
-      <div class="beatmap-loading-text">Loading beatmap...</div>
-    </div>
-    
-    <!-- Error state -->
-    <div v-else-if="error" class="beatmap-error">
-      <i class="fas fa-exclamation-circle"></i>
-      <span>{{ error }}</span>
-      <button @click.stop="loadMapData" class="beatmap-retry-btn">Retry</button>
-    </div>
-    
-    <!-- Mini Mode -->
-    <div v-else-if="mode === 'mini'" class="beatmap-mini">
-      <div class="beatmap-mini-background">
-        <img :src="cardUrl" alt="Beatmap Cover">
-        <div class="beatmap-mini-overlay"></div>
-      </div>
-      
-      <div class="beatmap-mini-content">
-        <!-- Single difficulty mode - show icon on the left -->
-        <div v-if="!showAllDifficulties" class="beatmap-mini-single-diff">
-          <div class="beatmap-mini-diff-icon-container" :style="{ '--diff-color': difficultyColor(selectedDifficulty) }" v-data-popup
-              :class="[selectedDifficulty.difficulty_rating ? 'difficulty-' + Math.floor(parseFloat(selectedDifficulty.difficulty_rating)) : '']">
-            
-            <!-- Difficulty icon with rank change indicator if available -->
-            <div class="beatmap-mini-diff-icon" @click.stop="beatmapBus.$emit('show-beatmap-panel', selectedDifficulty.id, mapData.set_id)" data-popup-trigger>
-              <i :class="getModeIcon(selectedDifficulty.mode)" class="beatmap-mini-mode-icon"></i>
-              
-              <div v-if="rankChanges && rankChanges[selectedDifficulty.id]" class="beatmap-mini-rank-change"
-                   :style="{ backgroundColor: getRankChangeInfo(selectedDifficulty.id).color }">
-                <i :class="['fas', getRankChangeInfo(selectedDifficulty.id).icon]"></i>
-              </div>
-            </div>
-            
-            <!-- Popup panel with position based on screen location -->
-              <div :class="['beatmap-mini-popup', 'position-' + 'top']" data-popup> <!-- Remake Dynamic Position Logic -->
-                <div class="beatmap-mini-popup-header">
-                  <div class="beatmap-mini-popup-title" :title="mapData.title">{{ mapData.title || 'Loading...' }}</div>
-                  <div class="beatmap-mini-popup-artist" :title="mapData.artist">{{ mapData.artist || '' }}</div>
-                  <div class="beatmap-mini-popup-version" :title="selectedDifficulty.version">{{ selectedDifficulty.version || '' }}</div>
-                </div>
-
-                <div class="beatmap-mini-popup-details">
-                  <div class="beatmap-mini-popup-creator" :title="'Mapped by ' + mapData.creator">
-                    Mapped by {{ mapData.creator || '' }}
-                  </div>
-
-                  <div class="beatmap-mini-popup-stats">
-                    <div v-if="selectedDifficulty.bpm" class="beatmap-mini-popup-stat">
-                      <i class="fas fa-heartbeat"></i> {{ Math.round(selectedDifficulty.bpm) }}bpm
-                    </div>
-                    <div v-if="selectedDifficulty.hit_length" class="beatmap-mini-popup-stat">
-                      <i class="fas fa-clock"></i> {{ formatLength(selectedDifficulty.hit_length) }}
-                    </div>
-                    <div v-if="selectedDifficulty.difficulty_rating" class="beatmap-mini-popup-stat">
-                      <i class="fas fa-star" :style="{ color: difficultyStars ? difficultyStars.color : '#FFCC22' }"></i> 
-                      {{ parseFloat(selectedDifficulty.difficulty_rating).toFixed(2) }}
-                    </div>
-                    <div v-if="showStatus" class="beatmap-mini-popup-stat">
-                      <span class="beatmap-mini-status" :style="{ backgroundColor: statusColor }">{{ statusName }}</span>
-                    </div>
-                  </div>
-
-                  <!-- Rank change info if available -->
-                  <div v-if="rankChanges && rankChanges[selectedDifficulty.id]" class="beatmap-mini-popup-rank-change">
-                    <div class="beatmap-mini-popup-rank-label">Rank:</div>
-                    <div class="beatmap-mini-popup-rank-value" 
-                         :style="{ color: getRankChangeInfo(selectedDifficulty.id).color }">
-                      {{ formatRankChange(selectedDifficulty.id) }}
-                      <i :class="['fas', getRankChangeInfo(selectedDifficulty.id).icon]"></i>
-                    </div>
-                  </div>
-
-                  <!-- Other difficulties in the set -->
-                  <div v-if="hasMultipleDifficulties" class="beatmap-mini-popup-other-diffs">
-                    <div class="beatmap-mini-popup-diffs-header">Other difficulties:</div>
-                    <div v-if="loading" class="beatmap-mini-popup-loading">Loading...</div>
-                    <div v-else-if="setDifficulties.length <= 1" class="beatmap-mini-popup-no-diffs">None</div>
-                    <div v-else class="beatmap-mini-popup-diffs-list">
-                      <div v-for="diff in setDifficulties.filter(d => d.id !== selectedDifficulty.id)" 
-                           :key="diff.id" 
-                           class="beatmap-mini-popup-diff"
-                           @click.stop="handleDifficultyClick(diff, $event)">
-                        <span class="beatmap-mini-popup-diff-name" :title="diff.version">{{ diff.version }}</span>
-                        <span v-if="diff.difficulty_rating" class="beatmap-mini-popup-diff-stars">
-                          {{ parseFloat(diff.difficulty_rating).toFixed(2) }}
-                        </span>
-
-                        <!-- Rank change for other difficulties if available -->
-                        <span v-if="rankChanges && rankChanges[diff.id]" 
-                              class="beatmap-mini-popup-diff-rank"
-                              :style="{ color: getRankChangeInfo(diff.id).color }">
-                          <i :class="['fas', getRankChangeInfo(diff.id).icon]"></i>
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <!-- Actions -->
-                  <div class="beatmap-mini-popup-actions">
-                    <a :href="'https://osu.ppy.sh/b/' + selectedDifficulty.id" target="_blank" class="beatmap-mini-popup-action" @click.stop>
-                      <i class="fas fa-external-link-alt"></i> osu!
-                    </a>
-                    <a class="beatmap-mini-popup-action" @click.stop="console.log('Beatmap ID:', selectedDifficulty.id)">
-                      <i class="fas fa-info-circle"></i> Details
-                    </a>
-                    <a :href="'/d/' + mapData.set_id" class="beatmap-mini-popup-action" @click.stop>
-                      <i class="fas fa-download"></i> Download
-                    </a>
-                  </div>
-                </div>
-              </div>
-          </div>
-        </div>
-        
-        <!-- Map info (center section) -->
-        <div class="beatmap-mini-info" :class="{ 'with-single-diff': !showAllDifficulties }">
-          <div class="beatmap-mini-title" :title="mapData.title">{{ mapData.title || 'Loading...' }}</div>
-          <div class="beatmap-mini-artist" :title="mapData.artist">{{ mapData.artist || '' }}</div>
-          <div class="beatmap-mini-creator" :title="'Mapped by ' + mapData.creator">{{ mapData.creator || '' }}</div>
-        </div>
-        
-        <!-- Status indicator (right side) -->
-        <div class="content-right">
-          <div v-if="showStatus" class="beatmap-mini-status-indicator" :style="{ backgroundColor: statusColor }">
-            {{ statusName }}
-          </div>
-          <div v-if="showPlays && mapData.plays" class="beatmap-mini-plays">
-            <i class="fas fa-play"></i> {{ formatNumber(mapData.plays) }}
-          </div>
-        </div>
-      </div>
-    </div>
-    <!-- Difficulty icons section (when showing all difficulties) -->
-    <div v-if="showAllDifficulties && hasMultipleDifficulties && mode === 'mini'" 
-         :class="['beatmap-mini-difficulties']">
-      <div class="beatmap-mini-difficulties-container">
-        <!-- Loading state -->
-        <div v-if="loading" class="beatmap-mini-difficulties-loading">
-          <div class="beatmap-mini-loading-spinner"></div>
-          <span>Loading...</span>
-        </div>
-        
-        <!-- No difficulties found -->
-        <div v-else-if="setDifficulties.length === 0" class="beatmap-mini-no-difficulties">
-          No difficulties found
-        </div>
-        
-        <!-- Difficulties list with scroll controls -->
-        <div v-else class="beatmap-mini-difficulties-scroll-container">
-          <!-- Left scroll button -->
-          <button v-if="canScrollBack" 
-                  class="beatmap-mini-difficulties-scroll-btn left" 
-                  @click.stop="scrollDifficultiesLeft">
-            <i class="fas fa-chevron-left"></i>
-          </button>
-          
-          <!-- Difficulties -->
-          <div class="beatmap-mini-difficulties-list">
-            <div v-for="diff in visibleDifficulties" v-portal-popup
-                 :key="diff.id" 
-                 :class="['beatmap-mini-difficulty-icon-container']" :style="{ '--diff-color': difficultyColor(diff) }">
-              
-              <!-- Difficulty icon -->
-              <div class="beatmap-mini-difficulty-icon" @click.stop="beatmapBus.$emit('show-beatmap-panel', diff.id, mapData.set_id)" data-popup-trigger>
-                <i :class="getModeIcon(diff.mode)" class="beatmap-mini-mode-icon"></i>
-                
-                <!-- Rank change indicator if available -->
-                <div v-if="rankChanges && rankChanges[diff.id]" class="beatmap-mini-rank-change"
-                     :style="{ backgroundColor: getRankChangeInfo(diff.id).color }">
-                  <i :class="['fas', getRankChangeInfo(diff.id).icon]"></i>
-                </div>
-              </div>
-              
-              <!-- Difficulty name (shown when expanded) -->
-              <div v-if="difficultyExpanded" class="beatmap-mini-difficulty-name" :title="diff.version">
-                {{ diff.version }}
-              </div>
-              
-              <!-- Popup panel (same as single difficulty mode) -->
-                <div :class="['beatmap-mini-popup', 'position-' + 'top' ]" data-popup> <!-- Remake Dynamic Position Logic -->
-                  <div class="beatmap-mini-popup-header">
-                    <div class="beatmap-mini-popup-title" :title="mapData.title">{{ mapData.title || 'Loading...' }}</div>
-                    <div class="beatmap-mini-popup-artist" :title="mapData.artist">{{ mapData.artist || '' }}</div>
-                    <div class="beatmap-mini-popup-version" :title="diff.version">{{ diff.version || '' }}</div>
-                  </div>
-
-                  <div class="beatmap-mini-popup-details">
-                    <div class="beatmap-mini-popup-creator" :title="'Mapped by ' + mapData.creator">
-                      Mapped by {{ mapData.creator || '' }}
-                    </div>
-
-                    <div class="beatmap-mini-popup-stats">
-                      <div v-if="diff.bpm" class="beatmap-mini-popup-stat">
-                        <i class="fas fa-heartbeat"></i> {{ Math.round(diff.bpm) }}bpm
-                      </div>
-                      <div v-if="diff.hit_length" class="beatmap-mini-popup-stat">
-                        <i class="fas fa-clock"></i> {{ formatLength(diff.hit_length) }}
-                      </div>
-                      <div v-if="diff.difficulty_rating" class="beatmap-mini-popup-stat">
-                        <i class="fas fa-star" :style="{ color: difficultyStars ? difficultyStars.color : '#FFCC22' }"></i> 
-                        {{ parseFloat(diff.difficulty_rating).toFixed(2) }}
-                      </div>
-                      <div v-if="showStatus" class="beatmap-mini-popup-stat">
-                        <span class="beatmap-mini-status" :style="{ backgroundColor: statusColor }">{{ statusName }}</span>
-                      </div>
-                    </div>
-
-                    <!-- Rank change info if available -->
-                    <div v-if="rankChanges && rankChanges[diff.id]" class="beatmap-mini-popup-rank-change">
-                      <div class="beatmap-mini-popup-rank-label">Rank:</div>
-                      <div class="beatmap-mini-popup-rank-value" 
-                           :style="{ color: getRankChangeInfo(diff.id).color }">
-                        {{ formatRankChange(diff.id) }}
-                        <i :class="['fas', getRankChangeInfo(diff.id).icon]"></i>
-                      </div>
-                    </div>
-
-                    <!-- Actions -->
-                    <div class="beatmap-mini-popup-actions">
-                      <a :href="'https://osu.ppy.sh/b/' + diff.id" target="_blank" class="beatmap-mini-popup-action" @click.stop>
-                        <i class="fas fa-external-link-alt"></i> osu!
-                      </a>
-                      <a class="beatmap-mini-popup-action" @click.stop="beatmapBus.$emit('show-beatmap-panel', diff.id, mapData.set_id)">
-                        <i class="fas fa-info-circle"></i> Details
-                      </a>
-                      <a :href="'/d/' + mapData.set_id" class="beatmap-mini-popup-action" @click.stop>
-                        <i class="fas fa-download"></i> Download
-                      </a>
-                    </div>
-                  </div>
-                </div>
-            </div>
-          </div>
-          
-          <!-- Right scroll button -->
-          <button v-if="hasMoreDifficulties" class="beatmap-mini-difficulties-scroll-btn right" 
-                  @click.stop="scrollDifficultiesRight">
-            <i class="fas fa-chevron-right"></i>
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Compact Mode -->
-    <div v-else-if="mode === 'compact'" class="beatmap-compact">
-      <div class="beatmap-thumbnail" :style="{ backgroundImage: 'url(' + thumbnailUrl + ')' }">
-        <div v-if="!isSet && difficultyStars" class="beatmap-stars-small" :style="{ color: difficultyStars.color }">
-          <i class="fas fa-star"></i> {{ difficultyStars.value }}
-        </div>
-      </div>
-      <div class="beatmap-info">
-        <div class="beatmap-title">{{ mapData.title || 'Loading...' }}</div>
-        <div class="beatmap-artist">{{ mapData.artist || '' }}</div>
-        <div v-if="!isSet" class="beatmap-version">{{ mapData.version || '' }}</div>
-        <div v-if="showPlays && mapData.plays" class="beatmap-plays">
-          <i class="fas fa-play"></i> {{ formatNumber(mapData.plays) }}
-        </div>
-      </div>
-    </div>
-  </div>
-`
+  template: `#bmap-card-template`
 });

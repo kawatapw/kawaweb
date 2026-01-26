@@ -23,7 +23,7 @@
 <div class="lb-stars" id="stars3"></div>
 <div id="app" :class="(load ? 'load' : '')">
     <div class="leaderboard-banner main-banner">
-        <div class="main-selector">
+        <div class="main-selector" style="align-items: center;">
             <a class="mode-select" v-bind:class="{ 'active': mode === 'std' }"
             @click="LoadLeaderboard(sort, 'std', mods)">
                 <i class="mode-icon mode-osu"></i><span class="modetext"> osu!</span>
@@ -42,7 +42,7 @@
             </a>
         </div>
         <div class="banner-text">Leaderboard</div>
-        <div class="selector">
+        <div class="selector" style="margin: 0 0 4px; padding: 0 24px;">
             <div class="left">
                 <a class="simple-banner-switch" v-bind:class="{ 'active': sort === 'pp' }"
                 @click="LoadLeaderboard('pp', mode, mods, '')">PP</a>
@@ -90,7 +90,7 @@
                                         <% flags[user.country.toUpperCase()] %>
                                     </div>
                                 </a>
-                                <user-profile :user="user" :key="user.player_id" :domain="domain"></user-profile>
+                                <user-profile :user="user"></user-profile>
                             </td>
                             <td id="clan-tag" >
                                 <span v-if="user.clan_tag">

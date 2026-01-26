@@ -42,6 +42,7 @@ new Vue({
                     limit: this.pageSize // Use 'limit' instead of 'pageSize'
                 }
             }).then(res => {
+                this.$log.debug("LB-DATA", "Leaderboard data loaded", res.data);
                 this.boards = res.data.leaderboard;
                 this.$set(this, 'load', false);
             });

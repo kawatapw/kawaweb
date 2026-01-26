@@ -1998,7 +1998,7 @@ async def home():
 @admin.route('/users/<int:page>')
 @error_catcher
 async def users(page=None):
-    """Render the homepage of guweb's admin panel."""
+    """Render the admin users panel with pagination and filtering."""
     if not 'authenticated' in session:
         return await flash('error', 'Please login first.', 'login')
 
@@ -2008,42 +2008,106 @@ async def users(page=None):
     # Check if update query parameter is present
     update = request.args.get('update') == 'true'
     search = str(request.args.get('search') or '')
-    # fetch data from database
+    sort_by = str(request.args.get('sort') or 'id')  # id, name, creation_time, latest_activity
+    sort_order = str(request.args.get('order') or 'ASC')  # ASC or DESC
+    filter_priv = str(request.args.get('priv') or '')  # Filter by privilege level - default to empty string for "All Users"
+    filter_country = str(request.args.get('country') or '')  # Filter by country
+
+    # Validate inputs
     if page == None or page < 1:
         page = 1
-    Offset = 50 * (page - 1)  # for the page system to work
+    if sort_by not in ['id', 'name', 'creation_time', 'latest_activity', 'priv']:
+        sort_by = 'id'
+    if sort_order not in ['ASC', 'DESC']:
+        sort_order = 'ASC'
 
-    if search is not None and search != "":
+    items_per_page = 50
+    offset = items_per_page * (page - 1)
+
+    # Build the query
+    base_query = "SELECT id, name, priv, country, creation_time, latest_activity FROM users"
+    count_query = "SELECT COUNT(*) as total FROM users"
+    conditions = []
+    params = []
+
+    # Add search conditions
+    if search and search.strip():
         if search.isdigit():
-            # search is an id
-            users = await glob.db.fetchall(
-                "SELECT id, name, priv, country FROM users WHERE id = %s",
-                (search,),
-            )
+            conditions.append("id = %s")
+            params.append(int(search))
         else:
-            # search is a name
-            users = await glob.db.fetchall(
-                "SELECT id, name, priv, country FROM users WHERE name LIKE %s",
-                (f"%{search}%",),
-            )
-    else:
-        users = await glob.db.fetchall(
-            "SELECT id, name, priv, country FROM users LIMIT 50 OFFSET %s",
-            (Offset,),
-        )
-    
+            conditions.append("name LIKE %s")
+            params.append(f"%{search}%")
+
+    # Add privilege filter
+    if filter_priv:
+        if filter_priv == 'normal':
+            conditions.append("priv = 1")
+        elif filter_priv == 'supporter':
+            conditions.append("priv & 4 != 0")  # Has supporter privilege
+        elif filter_priv == 'mod':
+            conditions.append("priv & 1023 != 0 AND priv < 2047")  # Mod but not admin
+        elif filter_priv == 'admin':
+            conditions.append("priv & 2047 != 0")  # Admin privileges
+        elif filter_priv == 'restricted':
+            conditions.append("NOT priv & 1")  # Not normal (restricted)
+
+    # Add country filter
+    if filter_country and filter_country.strip():
+        conditions.append("country = %s")
+        params.append(filter_country.upper())
+
+    # Build WHERE clause
+    where_clause = ""
+    if conditions:
+        where_clause = " WHERE " + " AND ".join(conditions)
+
+    # Get total count for pagination
+    total_users = await glob.db.fetch(count_query + where_clause, params)
+    total_count = total_users['total'] if total_users else 0
+    total_pages = (total_count + items_per_page - 1) // items_per_page
+
+    # Get users with sorting and pagination
+    order_clause = f" ORDER BY {sort_by} {sort_order}"
+    limit_clause = f" LIMIT {items_per_page} OFFSET {offset}"
+
+    users = await glob.db.fetchall(
+        base_query + where_clause + order_clause + limit_clause,
+        params
+    )
+
+    # Get customizations for each user
     for user in users:
         user['customisations'] = await glob.db.fetch(
             "SELECT * FROM user_customisations WHERE userid = %s",
             [user['id']]
         )
+
     if update:
-        # Return JSON response
-        return jsonify(users)
+        # Return JSON response with pagination info
+        return jsonify({
+            'users': users,
+            'pagination': {
+                'current_page': page,
+                'total_pages': total_pages,
+                'total_count': total_count,
+                'items_per_page': items_per_page
+            }
+        })
 
     return await render_template(
-        'admin/users.html', users=users, page=page, search=search,
-        datetime=datetime, timeago=timeago
+        'admin/users.html',
+        users=users,
+        page=page,
+        total_pages=total_pages,
+        total_count=total_count,
+        search=search,
+        sort_by=sort_by,
+        sort_order=sort_order,
+        filter_priv=filter_priv,
+        filter_country=filter_country,
+        datetime=datetime,
+        timeago=timeago
     )
 
 @error_catcher

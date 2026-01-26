@@ -39,6 +39,16 @@
     z-index: 3;
 }
 
+.card-content .mini-icons {
+    display: flex;
+    height: 24px;
+}
+
+.card-content .mini-icons div,
+.card-content .mini-icons img {
+    height: inherit;
+}
+
 [data-panel="changeBeatmapStatus"] {
     width: 92vw;
     max-height: 95vh;
@@ -58,7 +68,6 @@
     }
 }
     [data-panel="changeBeatmapStatus"] .main-block {
-        width: inherit;
         background: hsl(var(--main), 10%, 15%);
         position: relative;
     }
@@ -249,9 +258,6 @@
         display: flex;
         flex-direction: column;
         overflow-y: auto;
-        border-bottom-right-radius: 20px;
-        border-bottom-left-radius: 20px;
-        margin-bottom: 10px;
     }
         [data-panel="changeBeatmapStatus"] .alert {
             --alert-200: green;
@@ -377,8 +383,6 @@
     /*background-color: hsl(var(--main), 30%, 50%);*/
     max-height: fit-content;
     min-height: 194px;
-    border-top-right-radius: 20px;
-    border-top-left-radius: 20px;
     display: flex;
     position: relative;
     flex-direction: column;

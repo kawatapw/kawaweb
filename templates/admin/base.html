@@ -11,9 +11,15 @@
   <!-- VueJS -->
   <script src="/static/js/asserts/vue.js"></script>
   <script src="/static/js/asserts/vue-axios.js"></script>
+  <script src="/static/js/vue-bootstrap.js"></script>
+  <script src="https://unpkg.com/portal-vue@2.1.7/dist/portal-vue.umd.min.js"></script>
+  
+  <!-- Logger -->
+  <script src="/static/js/comps/logger.js" crossorigin="anonymous"></script>
+
   <script src="https://unpkg.com/htmx.org@1.9.10" integrity="sha384-D1Kt99CQMDuVetoL1lrYwg5t+9QdHe7NLX/SoJYkXDFfX37iInKRy5xLSi8nO7UC" crossorigin="anonymous"></script>
 
-  <!-- favicon -->
+  <!-- Favicon -->
   <link rel="apple-touch-icon" sizes="180x180" href="/static/favicon/apple-touch-icon.png">
   <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon/favicon-32x32.png">
   <link rel="icon" type="image/png" sizes="16x16" href="/static/favicon/favicon-16x16.png">
@@ -24,27 +30,30 @@
   <meta name="msapplication-config" content="/static/favicon/browserconfig.xml">
   <meta name="theme-color" content="#000000">
 
-  <!-- metadata -->
+  <!-- Metadata -->
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
-  <!-- jquery -->
+  <!-- JQuery -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.slim.min.js"
     integrity="sha512-/DXTXr6nQodMUiq+IUJYCt2PPOUjrHJ9wFrqpJ3XkgPNOZVfMok7cRw6CSxyCQxXn6ozlESsSh1/sMCTF1rL/g=="
     crossorigin="anonymous"></script>
 
-  <!-- bulma -->
+  <!-- Bulma no not from Dragon Ball you DWEEB -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/HakuraSukinoe/bulma-hsl/bulma.min-v6.css" />
 
-  <!-- font awesome -->
+  <!-- Font awesome -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
 
-  <!-- custom style -->
+  <!-- TimeAgo -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/timeago.js/4.0.2/timeago.min.js"></script>
+  <!-- Custom style -->
   <link rel="stylesheet" href="/static/css/style.css">
   <link rel="stylesheet" href="/static/css/components.css">
   <link rel="stylesheet" href="/static/css/components/badges.css">
+  <link rel="stylesheet" href="/static/css/components/panels.css">
   <link rel="stylesheet" href="/static/css/pages/generic.css">
+  <link rel="stylesheet" href="/static/css/hina_import.css">
   <link rel="stylesheet" href="/static/css/pages/admin/style.css">
-  <link rel="stylesheet" href="/static/css/pages/panel.css">
 
   {% block header %}
   {% endblock %}
@@ -54,27 +63,20 @@
 </head>
 
 <body>
+  {% include 'components/vue-templates.html' %}
+  {% include 'admin/components/vue-templates.html' %}
   <!-- Header -->
-  {% include './components/navbar.html' %}
+  {% include 'components/navbar.html' %}
+
+  <div id="search-panel"></div>
+  <div id="docs-panel"></div>
+  <div id="beatmap-panel"></div>
+  <div id="score-panel-modal" style="z-index: 20;"></div>
+  <div id="popup-container" style="position: fixed; top: 0; left: 0; width: 100%; height: 0; z-index: 9999;"></div>
 
   <!-- content -->
   <div class="content admin-con">
     <div class="columns is-marginless is-paddingless">
-      <!--<div class="colmun">
-        <div class="sidebar">
-          <div id="style-3" class="sidebar-wrapper">
-            <div class="logo"><a class="simple-text logo-normal">{{ appName() }} Admin Panel</a></div>
-            <ul class="nav">
-              <li class="nav-item"><a class="nav-link" href="/admin/dashboard"><span class="icon"><i class="fa fa-home"></i></span> <span
-                class="name">Dashboard</span></a></li>
-              <li class="nav-item"><a class="nav-link" href="/admin/users/1"><span class="icon"><i class="fa fa-users"></i></span> <span
-                class="name">Users</span></a></li>
-                <li class="nav-item"><a class="nav-link" href="/admin/badges"><span class="icon"><i class="fa fa-certificate"></i></span> <span
-                  class="name">Badges</span></a></li>
-            </ul>
-          </div>
-        </div>
-      </div>-->
       <div class="column content">
         <div class="main-content">
           <div class="columns is-marginless">
@@ -97,17 +99,17 @@
     </div>
   </div>
 
-  <!-- footer -->
-  <footer class="footer">
-    <div class="content">
-      <span>{{ appName() }} <strong>v{{ appVersion() }}</strong></span>
-      <a class="foot-link" href="/github"><i class="fa fa-github"></i> GitHub</a>
-      <a class="foot-link" href="/discord"><i class="fab fa-discord"></i> Discord</a>
-      <a class="foot-link" href="/youtube"><i class="fab fa-youtube"></i> YouTube</a>
-      <a class="foot-link" href="/twitter"><i class="fab fa-twitter"></i> Twitter</a>
-      <a class="foot-link" href="/instagram"><i class="fab fa-instagram"></i> Instagram</a>
-    </div>
-  </footer>
+  <!-- Footer -->
+  {% include 'components/footer.html' %}
+
+  <!-- Main JS scripts -->
+  <script src="/static/js/main.js" crossorigin="anonymous"></script>
+  <script src="/static/js/components.js" crossorigin="anonymous"></script>
+  <script src="/static/js/comps/shaders.js" crossorigin="anonymous"></script>
+  <script src="/static/js/panels.js" crossorigin="anonymous"></script>
+
+  <!-- Customisation -->
+  {% block bottom %}
   <style>
     :root {
       {% if 'user_data' in session and 'hue' in session['user_data'] and session['user_data']['hue'] %}
@@ -115,14 +117,9 @@
       {% else %}
         --main: 180;
       {% endif %}
-  }
+    }
   </style>
-  <!-- main js script -->
-  <script src="/static/js/main.js" crossorigin="anonymous"></script>
-  <script src="/static/js/components.js" crossorigin="anonymous"></script>
-  <script src="/static/js/comps/shaders.js" crossorigin="anonymous"></script>
-  <script src="/static/js/navbar.js" crossorigin="anonymous"></script>
-  <script src="/static/js/panels.js" crossorigin="anonymous"></script>
+  {% endblock %}
 </body>
 
 </html>

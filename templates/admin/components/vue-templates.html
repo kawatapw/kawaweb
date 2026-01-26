@@ -1,0 +1,371 @@
+<!-- Section: Admin templates -->
+
+<!-- Smaller Components -->
+
+<!-- Panels -->
+    <script type="text/x-template" id="admin-edit-user-panel-template">
+        <div id="editUserWindow" class="modal" v-bind:class="{ 'is-active': show }">
+            <div class="modal-background" @click="close"></div>
+            <div id="editUserWindow" class="modal-content" v-if="show" data-panel="EditUser">
+                <div class="main-block">
+                    <div class="profile-bg" :style="'background-image: url(/banners/' + userid + ')'">
+                        <div class="info-block">
+                            <h1 class="title">
+                                <p class="ranks">
+                                    <img :src="'/static/images/flags/' + user.country.toUpperCase() + '.png'" class="profile-flag">
+                                    <span class="bgf"><% user.name %></span>
+                                </p>
+                            </h1>
+                        </div>
+                    </div>
+                    <div class="profile-flex">
+                        <div class="profile-avatar-area">
+                            <img :src="'https://a.' + domain + '/' + userid" alt="avatar" class="rounded-avatar profile-avatar"
+                                onError="this.src='/static/images/avatar_notwork.png';">
+                        </div>
+                        <div class="bar-selection mode-selects">
+                            <div class="select-left">
+                                <a class="simple-banner-switch" v-bind:class="{ 'selected': module === 'Account' }"
+                                @click="LoadUserEditor('Account', module)">
+                                    <i class="fas fa-user"></i><span class="modetext"> Account </span>
+                                </a>
+                                <a class="simple-banner-switch" v-bind:class="{ 'selected': module === 'Badges' }"
+                                @click="LoadUserEditor('Badges', module)">
+                                    <i class="fas fa-shield"></i><span class="modetext"> Badges </span>
+                                </a>
+                                <a class="simple-banner-switch" v-bind:class="{ 'selected': module === 'Privileges' }"
+                                @click="LoadUserEditor('Privileges', module)">
+                                    <i class="fas fa-lock"></i><span class="modetext"> Privileges </span>
+                                </a>
+                                <a class="simple-banner-switch" v-bind:class="{ 'selected': module === 'Logs' }"
+                                @click="LoadUserEditor('Logs', module)">
+                                    <i class="fas fa-book"></i><span class="modetext"> Logs </span>
+                                </a>
+                            </div>
+                        </div>
+                        <div class="bar-selection badge-selects">
+                            <div v-if="user.badges.length != 0" class="select-left badge-block">
+                                <div class="badge-block-spacer"></div>
+                                <badge v-for="badge in user.badges" :badge="badge"></badge>
+                            </div>
+                            <div v-else class="select-left">
+                                <div class="badge-block">
+                                    <span>
+                                        This user has no badges.
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="second-block">
+                    <div class="content">
+                        <div class="alert" v-if="postresponse" :style="'background-color: var(--alert-' + postresponsestatus + ');'">
+                            <div class="alert-content">
+                                <p><% postresponse.message %></p>
+                            </div>
+                        </div>
+                        <div class="module-content" v-if="module === 'Account'">
+                        <div class="module-section">
+                            <h3 class="section-title">Quick Actions</span>
+                            <div id="quickActions" class="quick-actions">
+                                <div class="level-item">
+                                    <div class="dropdown is-hoverable">
+                                        <div class="dropdown-trigger">
+                                            <button class="button is-danger" aria-haspopup="true" aria-controls="wipe-dropdown-menu">
+                                                Wipe
+                                            </button>
+                                        </div>
+                                        <div class="dropdown-menu" id="wipe-dropdown-menu" role="menu">
+                                            <div class="dropdown-content">
+                                                <a class="dropdown-item" @click="postAction('/admin/action/wipe', { user: user.id, reason: 'Auto mod' })">
+                                                    Auto mod
+                                                </a>
+                                                <a class="dropdown-item" @click="postAction('/admin/action/wipe', { user: user.id, reason: 'FL abuse' })">
+                                                    FL abuse
+                                                </a>
+                                                <a class="dropdown-item" @click="postAction('/admin/action/wipe', { user: user.id, reason: 'Requested Wipe' })">
+                                                    Requested Wipe
+                                                </a>
+                                                <a class="dropdown-item" @click="postAction('/admin/action/wipe', { user: user.id, reason: 'Overcheating' })">
+                                                    Overcheating
+                                                </a>
+                                                <div class="dropdown-divider"></div>
+                                                <a class="dropdown-item" @click="showdropdown('customwipe', subdropdown)">
+                                                    Custom Reason
+                                                </a>
+                                                <span v-if="subdropdown === 'customwipe'">
+                                                    <div class="field">
+                                                        <label class="label">Custom Wipe Reason</label>
+                                                        <div class="control userspanel">
+                                                            <input class="input" type="reason" ref="wipeReasonInput">
+                                                        </div>
+                                                    </div>
+                                                    <div class="field">
+                                                        <div class="control userspanel">
+                                                            <button class="button is-success" @click="postAction('/admin/action/wipe', { user: user.id, reason: $refs.wipeReasonInput.value })">
+                                                                Wipe
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </span>
+                                                <div class="dropdown-divider"></div>
+                                                <a class="dropdown-item" @click="showdropdown('removescore', subdropdown)">
+                                                    Score Removal
+                                                </a>
+                                                <span v-if="subdropdown === 'removescore'">
+                                                    <div class="field">
+                                                        <label class="label">Score Removal Reason</label>
+                                                        <div class="control userspanel">
+                                                            <input class="input" type="reason" ref="wipescoreReasonInput">
+                                                        </div>
+                                                    </div>
+                                                    <div class="field">
+                                                        <label class="label">Score ID</label>
+                                                        <div class="control userspanel">
+                                                            <input class="input" type="id" ref="wipescoreIdInput">
+                                                        </div>
+                                                    </div>
+                                                    <div class="field">
+                                                        <div class="control userspanel">
+                                                            <button class="button is-success" @click="postAction('/admin/action/removescore', { user: user.id, reason: $refs.wipescoreReasonInput.value, score: $refs.wipescoreIdInput.value })">
+                                                                Remove Score
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="level-item">
+                                    <div class="dropdown is-hoverable">
+                                        <div class="dropdown-trigger">
+                                            <button class="button is-warning" aria-haspopup="true" aria-controls="silence-dropdown-menu">
+                                                Restrict
+                                            </button>
+                                        </div>
+                                        <div class="dropdown-menu" id="wipe-dropdown-menu" role="menu">
+                                            <div class="dropdown-content">
+                                                <a class="dropdown-item" @click="postAction('/admin/action/restrict', { user: user.id, reason: 'Repeated Offenses' })">
+                                                    Repeated Offenses
+                                                </a>
+                                                <a class="dropdown-item" @click="postAction('/admin/action/restrict', { user: user.id, reason: '3rd Wipe' })">
+                                                    3rd Wipe
+                                                </a>
+                                                <div class="dropdown-divider"></div>
+                                                <a class="dropdown-item" @click="showdropdown('customrestrict', subdropdown)">
+                                                    Custom Reason
+                                                </a>
+                                                <span v-if="subdropdown === 'customrestrict'">
+                                                    <div class="field">
+                                                        <label class="label">Custom Restrict Reason</label>
+                                                        <div class="control userspanel">
+                                                            <input class="input" type="reason" ref="restrictReasonInput">
+                                                        </div>
+                                                    </div>
+                                                    <div class="field">
+                                                        <div class="control userspanel">
+                                                            <button class="button is-success" @click="postAction('/admin/action/restrict', { user: user.id, reason: $refs.restrictReasonInput.value })">
+                                                                Restrict
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="level-item">
+                                    <button class="button is-success" @click="postAction('/admin/action/unrestrict', { user: user.id })">Unrestrict</button>
+                                </div>
+                                <div class="level-item">
+                                    <div class="dropdown is-hoverable">
+                                        <div class="dropdown-trigger">
+                                            <button class="button is-info" aria-haspopup="true" aria-controls="silence-dropdown-menu">
+                                                Silence
+                                            </button>
+                                        </div>
+                                        <div class="dropdown-menu" id="wipe-dropdown-menu" role="menu">
+                                            <div class="dropdown-content">
+                                                <a class="dropdown-item" @click="postAction('/admin/action/silence', { user: user.id, duration: '2', reason: 'Spam' })">
+                                                    Spam
+                                                </a>
+                                                <a class="dropdown-item" @click="postAction('/admin/action/silence', { user: user.id, duration: '6', reason: 'Consistent usage of inappropriate language' })">
+                                                    Consistent usage of inappropriate language
+                                                </a>
+                                                <div class="dropdown-divider"></div>
+                                                <a class="dropdown-item" @click="showdropdown('customsilence', subdropdown)">
+                                                    Custom Reason
+                                                </a>
+                                                <span v-if="subdropdown === 'customsilence'">
+                                                    <div class="field">
+                                                        <label class="label">Custom Silence Reason</label>
+                                                        <div class="control userspanel">
+                                                            <input class="input" type="reason" ref="silenceReasonInput">
+                                                        </div>
+                                                    </div>
+                                                    <div class="field">
+                                                        <label class="label">Silence Duration (in hours)</label>
+                                                        <div class="control userspanel">
+                                                            <input class="input" type="number" ref="silenceDurationInput">
+                                                        </div>
+                                                    </div>
+                                                    <div class="field">
+                                                        <div class="control userspanel">
+                                                            <button class="button is-success" @click="postAction('/admin/action/silence', { user: user.id, duration: $refs.silenceDurationInput.value, reason: $refs.silenceReasonInput.value })">
+                                                                Silence
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="level-item">
+                                    <button class="button is-primary" @click="postAction('/admin/action/unsilence', { user: user.id })">Unsilence</button>
+                                </div>
+                                <div class="level-item">
+                                    <div class="dropdown is-hoverable">
+                                        <div class="dropdown-trigger">
+                                            <button class="button is-primary" aria-haspopup="true" aria-controls="change-password-dropdown-menu">
+                                                Change Password
+                                            </button>
+                                        </div>
+                                        <div class="dropdown-menu" id="change-password-dropdown-menu" role="menu">
+                                            <div class="dropdown-content">
+                                                <div class="field">
+                                                    <label class="label">New Password</label>
+                                                    <div class="control userspanel">
+                                                        <input class="input" type="password" ref="newPasswordInput">
+                                                    </div>
+                                                </div>
+                                                <div class="field">
+                                                    <div class="control userspanel">
+                                                        <button class="button is-success" @click="postAction('/admin/action/changepassword', { user: user.id, password: $refs.newPasswordInput.value })">
+                                                            Save
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <form @submit.prevent="postAction('/admin/action/editaccount', {
+                            user: user.id,
+                            username: user.name,
+                            email: user.email,
+                            country: user.country,
+                            userpage_content: user.userpage_content
+                        })">
+                            <div class="form-group">
+                                <label class="label">User ID</label>
+                                <div class="control userspanel">
+                                    <input class="input" type="text" :value="user.id" readonly>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label class="label">Username</label>
+                                <div class="control userspanel">
+                                    <input class="input" type="text" name="username" v-model="user.name">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label class="label">Email</label>
+                                <div class="control userspanel">
+                                    <input class="input" type="email" name="email" v-model="user.email">
+                                </div>
+                            </div>
+                            <div class="form-group" v-if="user.country">
+                                <label class="label">Country</label>
+                                <div class="control userspanel">
+                                    <div class="select is-fullwidth">
+                                        <country-select v-model="user.country"></country-select>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label class="label">User Page Content</label>
+                                <div class="control userspanel">
+                                    <textarea id="userpage_content" class="input" name="userpage_content" v-model="user.userpage_content"></textarea>
+                                </div>
+                            </div>
+                            <div class="form-actions">
+                                <div class="control userspanel">
+                                    <button class="button is-primary" type="submit">Save</button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="module-content" v-if="module === 'Badges'">
+                        <div class="module-section">
+                            <p class="note">Note: You must leave and re-enter this page to undo any badge changes. Will be fixed eventually.</p>
+                            <div id="badges" class="badges-grid">
+                                <div v-for="(badge, index) in badges" :key="badge.id" class="badge-card" :class="{ 'selected': user.badges.find(b => b.id === badge.id) }" :ref="badge.id" @click="toggleBadgeSelection(badge.id)">
+                                    <div class="badge-card-image">
+                                        <i :class="'badge-icon ' + badge.styles.icon" :style="'color: hsl('+ badge.styles.color +', 80%, 80%);'"></i>
+                                    </div>
+                                    <div class="badge-card-content">
+                                        <h3 class="badge-title" :style="'color: hsl('+ badge.styles.color +', 80%, 80%);'"><% badge.name %></h3>
+                                        <p class="badge-description"><% badge.description %></p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="module-content" v-if="module === 'Privileges'">
+                        <div class="module-section">
+                            <p class="note">Privileges editor placeholder</p>
+                        </div>
+                    </div>
+                    <div class="module-content" v-if="module === 'Logs'">
+                        <div class="module-section">
+                            <h3 class="section-title">Admin Logs</h3>
+                            <div id="logs" class="logs-grid">
+                                <div v-for="(log, index) in user.logs.admin_logs" :key="log.id" class="log-card">
+                                    <div class="log-card-content">
+                                        <div class="log-sender">
+                                            <div class="log-sender-avatar">
+                                                <img :src="'https://a.' + domain + '/' + log.mod.id" alt="avatar" class="rounded-avatar">
+                                            </div>
+                                            <div class="log-sender-info">
+                                                <h4 class="log-sender-title">Action taken by:</h4>
+                                                <h5>
+                                                    <img :src="'/static/images/flags/' + log.mod.country.toUpperCase() + '.png'" class="user-flag">
+                                                    <a :href="'/u/' + log.mod.id"><% log.mod.name %></a>
+                                                </h5>
+                                                <h6>On: <% log.time %></h6>
+                                            </div>
+                                        </div>
+                                        <div class="log-action">
+                                            <h4 class="log-action-title">Action: <% log.action %></h4>
+                                            <p class="log-action-reason">Reason: <% log.reason %></p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="module-section">
+                            <h3 class="section-title">Client Hashes</h3>
+                            <div id="hashes" class="hashes-grid">
+                                <div v-for="(hash, index) in user.logs.hashes" :key="index" class="hash-card">
+                                    <div class="hash-card-content">
+                                        <h4 class="hash-title">Client Hashes:</h4>
+                                        <p class="hash-detail">Occurrences: <% hash.occurrences %></p>
+                                        <p class="hash-detail">Last Occurance: <% hash.latest_time %></p>
+                                        <p class="hash-detail">Adapters Hash: <% hash.adapters %></p>
+                                        <p class="hash-detail">Disk Serial: <% hash.disk_serial %></p>
+                                        <p class="hash-detail">OSU Path Hash: <% hash.osupath %></p>
+                                        <p class="hash-detail">Uninstall ID: <% hash.uninstall_id %></p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </script>

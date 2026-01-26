@@ -11,7 +11,8 @@ new Vue({
     async beforeCreate() {
     },
     created() {
-        this.$log.info('Beatmaps.js Beatmaps Page Created');
+        this.$log = ColorfulLogger.child('Admin | Beatmaps Page');
+        this.$log.info('LIFECYCLE', 'Beatmaps.js Beatmaps Page Created');
     },
     methods: {
         
@@ -35,6 +36,16 @@ new Vue({
             postresponsestatus: null,
             postresponsetimer: 0,
         }
+    },
+    created: function() {
+        this.$log = ColorfulLogger.child('Admin | Edit Beatmap Panel');
+        editMapBus.$on('showEditBeatmapPanel', (map) => {
+            this.$log.debug('EVENT', 'Edit Beatmap Window Triggered')
+            this.$log.debug('DATA', 'Map data:', map);
+            this.beatmap = map;
+            this.$log.debug('DATA', 'Beatmap set:', this.beatmap);
+            this.show = true;
+        });
     },
     methods: {
         close: function() {
@@ -69,15 +80,6 @@ new Vue({
 
             return message; // Return the message from the JSON response
         },
-    },
-    created: function() {
-        editMapBus.$on('showEditBeatmapPanel', (map) => {
-            this.$log.debug('Edit Beatmap Window Triggered')
-            this.$log.debug(map);
-            this.beatmap = map;
-            this.$log.debug(this.beatmap);
-            this.show = true;
-        });
     },
     computed: {
         statusInfo() {

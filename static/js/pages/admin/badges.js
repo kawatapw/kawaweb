@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', function () {
-    new Vue({
+    bootstrapVue('edit-badge-bus-listener', {
         el: "#badges",
         delimiters: ["<%", "%>"],
         data() {
@@ -9,8 +9,11 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         },
         created() {
-            this.$log.info('Badges.js Badges Page Created');
-            this.$log.debug('Badges:', this.badges);
+            if (!this.$log) {
+                this.$log = ColorfulLogger.child('Admin | Edit Badge Bus Listener');
+            }
+            this.$log.info('LIFECYCLE', 'Badges.js Badges Page Created');
+            this.$log.debug('DATA', 'Badges:', this.badges);
         },
         methods: {
 
@@ -23,7 +26,7 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 });
 var editBadgeBus = new Vue();
-new Vue({
+bootstrapVue('edit-badge-panel', {
     el: "#editBadgeWindow",
     delimiters: ["<%", "%>"],
     data() {
@@ -33,6 +36,21 @@ new Vue({
             badge: {},
             isNewBadge: false,
         }
+    },
+    created: function() {
+        if (!this.$log) {
+            this.$log = ColorfulLogger.child('Admin | Edit Badge Panel');
+        }
+        editBadgeBus.$on('showEditBadgePanel', (badgeid) => {
+            this.$log.debug('EVENT', 'Edit Badge Window Triggered')
+            this.isNewBadge = false;
+            this.fetchSelectedBadge(badgeid);
+            this.show = true;
+        });
+        editBadgeBus.$on('showNewBadgePanel', () => {
+            this.$log.debug('EVENT', 'New Badge Window Triggered')
+            this.newBadge();
+        });
     },
     methods: {
         close: function() {
@@ -44,10 +62,10 @@ new Vue({
                 .then(response => response.json())
                 .then(data => {
                     this.badge = data;
-                    this.$log.debug('Badge:', this.badge);
+                    this.$log.debug('DATA', 'Badge:', this.badge);
                 })
                 .catch(error => {
-                    this.$log.error('Error:', error);
+                    this.$log.error('API', 'Error:', error);
                 });
         },
         saveBadge() {
@@ -61,11 +79,11 @@ new Vue({
             })
             .then(response => response.json())
             .then(data => {
-                this.$log.info('Success:', data);
+                this.$log.info('API', 'Success:', data);
                 this.close();
             })
             .catch((error) => {
-                this.$log.error('Error:', error);
+                this.$log.error('API', 'Error:', error);
             });
         },
         addStyle() {
@@ -81,18 +99,6 @@ new Vue({
             this.isNewBadge = true;
             this.show = true;
         },
-    },
-    created: function() {
-        editBadgeBus.$on('showEditBadgePanel', (badgeid) => {
-            this.$log.debug('Edit Badge Window Triggered')
-            this.isNewBadge = false;
-            this.fetchSelectedBadge(badgeid);
-            this.show = true;
-        });
-        editBadgeBus.$on('showNewBadgePanel', () => {
-            this.$log.debug('New Badge Window Triggered')
-            this.newBadge();
-        });
     },
     template: `
         <div id="editBadgeWindow" class="modal" v-bind:class="{ 'is-active': show }">

@@ -365,9 +365,6 @@
     .badge-panel {
         display: none;
         position: absolute;
-        bottom: 100%;
-        left: 50%;
-        transform: translateX(-50%);
         background-color: var(--panel-bg-color);
         padding: var(--panel-padding);
         border-radius: var(--panel-border-radius);
@@ -380,12 +377,134 @@
         text-wrap: wrap !important;
         line-height: 18px;
         font-weight: 400;
+        height: auto !important;
+        min-height: auto !important;
+        max-height: none !important;
+        opacity: 0;
+        transform: translateY(-10px) scale(0.95);
+        transition: opacity 0.2s ease, transform 0.2s ease;
     }
 
-    .badge:hover .badge-panel,
-    .iconBadge:hover .badge-panel {
+    /* Active state for smooth appearance */
+    .badge-panel.active {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+
+    /* Position-specific animations */
+    .badge-panel.position-top.active {
+        transform: translateY(0) scale(1);
+    }
+
+    .badge-panel.position-bottom.active {
+        transform: translateY(0) scale(1);
+    }
+
+    .badge-panel.position-left.active {
+        transform: translateX(0) scale(1);
+    }
+
+    .badge-panel.position-right.active {
+        transform: translateX(0) scale(1);
+    }
+
+    /* Default position: above the badge (for portal popup system) */
+    .badge-panel.position-top,
+    .iconBadge-panel.position-top {
+        bottom: 100%;
+        left: 50%;
+        transform: translateX(-50%);
+    }
+
+    /* Position: below the badge */
+    .badge-panel.position-bottom,
+    .iconBadge-panel.position-bottom {
+        top: 100%;
+        left: 50%;
+        transform: translateX(-50%);
+    }
+
+    /* Position: to the left of the badge */
+    .badge-panel.position-left,
+    .iconBadge-panel.position-left {
+        right: 100%;
+        top: 50%;
+        transform: translateY(-50%);
+    }
+
+    /* Position: to the right of the badge */
+    .badge-panel.position-right,
+    .iconBadge-panel.position-right {
+        left: 100%;
+        top: 50%;
+        transform: translateY(-50%);
+    }
+
+    /* When positioned by portal popup system, the panel is no longer a child of the badge */
+    .badge-panel[data-popup],
+    .iconBadge-panel[data-popup] {
         display: flex;
         flex-direction: column;
+        opacity: 0;
+        transform: translateY(-10px) scale(0.95);
+        transition: opacity 0.2s ease, transform 0.2s ease;
+    }
+
+    /* Override position styles when positioned by portal popup system */
+    .badge-panel[data-popup].position-top,
+    .iconBadge-panel[data-popup].position-top {
+        bottom: auto;
+        top: auto;
+        left: auto;
+        right: auto;
+        transform: translateY(-10px) scale(0.95);
+    }
+
+    .badge-panel[data-popup].position-top.active,
+    .iconBadge-panel[data-popup].position-top.active {
+        transform: translateY(0) scale(1);
+    }
+
+    .badge-panel[data-popup].position-bottom,
+    .iconBadge-panel[data-popup].position-bottom {
+        bottom: auto;
+        top: auto;
+        left: auto;
+        right: auto;
+        transform: translateY(10px) scale(0.95);
+    }
+
+    .badge-panel[data-popup].position-bottom.active,
+    .iconBadge-panel[data-popup].position-bottom.active {
+        transform: translateY(0) scale(1);
+    }
+
+    .badge-panel[data-popup].position-left,
+    .iconBadge-panel[data-popup].position-left {
+        bottom: auto;
+        top: auto;
+        left: auto;
+        right: auto;
+        transform: translateX(-10px) scale(0.95);
+    }
+
+    .badge-panel[data-popup].position-left.active,
+    .iconBadge-panel[data-popup].position-left.active {
+        transform: translateX(0) scale(1);
+    }
+
+    .badge-panel[data-popup].position-right,
+    .iconBadge-panel[data-popup].position-right {
+        bottom: auto;
+        top: auto;
+        left: auto;
+        right: auto;
+        transform: translateX(10px) scale(0.95);
+    }
+
+    .badge-panel[data-popup].position-right.active,
+    .iconBadge-panel[data-popup].position-right.active {
+        transform: translateX(0) scale(1);
     }
 
     .badge-panel h3 {
@@ -441,6 +560,12 @@
                 transition: none !important;
                 animation: none !important;
                 transform: none !important;
+            }
+
+            .badge-panel, .badge-panel.active {
+                transition: none !important;
+                transform: none !important;
+                opacity: 1 !important;
             }
 
             .badge:hover .badge-panel, .iconBadge:hover .badge-panel {
