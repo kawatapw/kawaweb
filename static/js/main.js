@@ -429,7 +429,7 @@ const logger = ColorfulLogger.init({
         clonedPopup.style.opacity = '0';
         clonedPopup.style.visibility = 'hidden';
         clonedPopup.style.pointerEvents = 'auto';
-        clonedPopup.style.transition = `opacity ${this.options.animationDuration}ms ease, visibility ${this.options.animationDuration}ms ease`;
+        clonedPopup.style.transition = `all ${this.options.animationDuration}ms ease, transform 0ms ease`;
         
         // Store references
         this.popups.set(popupId, {
