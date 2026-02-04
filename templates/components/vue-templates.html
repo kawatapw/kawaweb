@@ -2087,7 +2087,7 @@
     </script>
     
     <script type="text/x-template" id="score-panel-template">
-        <div id="score-panel-modal" class="modal" :class="{ 'is-active': show }" style="z-index: 40;" @keydown.esc="panelKeydown($event)">
+        <div id="score-panel-modal" class="modal" :class="{ 'is-active': show }" style="z-index: 40;">
             <div class="modal-background" @click="close"></div>
     
             <!-- Loading State -->
@@ -2341,7 +2341,6 @@
                         v-if="showActionSheet"
                         class="action-sheet-overlay"
                         @click.self="closeActionSheet"
-                        @keydown="actionSheetKeydown"
                         role="dialog"
                         aria-modal="true"
                         aria-labelledby="action-sheet-title"

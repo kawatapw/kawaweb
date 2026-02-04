@@ -1354,9 +1354,21 @@ bootstrapVue('score-panel', {
     created() {
         this.$log = ColorfulLogger.child('Score Panel');
         this.$log.info('LIFECYCLE', 'Score Panel created');
-        
+
         // External trigger
         scoreBus.$on('show-score-window', this.openWithScore);
+
+        // Global Escape key handler
+        this._onDocKeydown = (e) => {
+            if (e.key === 'Escape' && this.show) {
+                if (this.showActionSheet) {
+                    this.closeActionSheet();
+                } else {
+                    this.close();
+                }
+            }
+        };
+        document.addEventListener('keydown', this._onDocKeydown);
 
         // URL-based trigger
         try {
@@ -1365,13 +1377,13 @@ bootstrapVue('score-panel', {
                 this.$log.info('LIFECYCLE', 'URL-based trigger detected, score:', score);
                 this.openWithScore(score);
             }
-        } catch (err) { 
-            this.$log.error('LIFECYCLE', 'Failed to parse score from URL', err); 
+        } catch (err) {
+            this.$log.error('LIFECYCLE', 'Failed to parse score from URL', err);
         }
     },
     beforeDestroy() {
         this.$log.info('LIFECYCLE', 'Score Panel destroyed, cleaning up');
-        // Clean up any pending operations
+        document.removeEventListener('keydown', this._onDocKeydown);
         if (this.fetchState === 'loading') {
             this.$log.warn('LIFECYCLE', 'Component destroyed while fetch was in progress');
         }
@@ -1494,17 +1506,6 @@ bootstrapVue('score-panel', {
                 var trigger = this.$el.querySelector('.action-sheet-trigger');
                 if (trigger) trigger.focus();
             });
-        },
-        actionSheetKeydown(e) {
-            if (e.key === 'Escape') {
-                e.stopPropagation();
-                this.closeActionSheet();
-            }
-        },
-        panelKeydown(e) {
-            if (e.key === 'Escape' && !this.showActionSheet) {
-                this.close();
-            }
         },
         resetState() { 
             this.$log.debug('LIFECYCLE', 'Resetting state');
