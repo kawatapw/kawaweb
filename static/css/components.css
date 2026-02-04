@@ -861,11 +861,6 @@
  */
 
     @media (max-width: 768px) {
-      .user-profile-card {
-        width: 280px;
-        height: 160px;
-      }
-
       .user-profile-panel {
         width: 260px;
       }

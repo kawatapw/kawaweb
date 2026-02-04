@@ -2318,7 +2318,6 @@
                 flex-direction: row;
                 gap: 8px;
                 align-items: flex-start;
-                flex-wrap: wrap;
             }
             [data-panel="Score"] .score-info .player-info .info-key,
             [data-panel="Score"] .score-info .player-info .info-value {
@@ -2541,20 +2540,13 @@
     /* Responsive improvements for mobile */
     @media (max-width: 768px) {
         [data-panel="Score"] .score-info {
-            flex-direction: column;
             gap: 12px;
             padding: 12px 14px;
         }
         
         [data-panel="Score"] .score-info .score-buttons {
-            flex-direction: row;
             flex-wrap: wrap;
             min-width: unset;
-            width: 100%;
-        }
-        
-        [data-panel="Score"] .score-overview {
-            flex-direction: column;
         }
         
         [data-panel="Score"] .score-overview .score-player {
