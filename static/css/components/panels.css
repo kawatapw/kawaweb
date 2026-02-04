@@ -1312,6 +1312,98 @@
                     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
                     border: 1px solid hsl(var(--main), 25%, 35%);
                 }
+
+                /* ================= DIFFICULTY STRIP (Mobile only) ================= */
+                [data-panel="Beatmap"] .info-hina-block {
+                    display: none; /* Hidden on desktop, shown on mobile */
+                    width: 100%;
+                    background: hsl(var(--main), 18%, 18%);
+                    border-bottom: 1px solid hsl(var(--main), 25%, 30%);
+                }
+
+                [data-panel="Beatmap"] .difficulty-strip {
+                    display: flex;
+                    gap: 0.5rem;
+                    padding: 0.75rem 1rem;
+                    overflow-x: auto;
+                    overflow-y: hidden;
+                    white-space: nowrap;
+                    -webkit-overflow-scrolling: touch;
+                    scrollbar-width: thin;
+                    scrollbar-color: hsl(var(--main), 30%, 40%) transparent;
+                }
+
+                [data-panel="Beatmap"] .difficulty-strip::-webkit-scrollbar {
+                    height: 6px;
+                }
+
+                [data-panel="Beatmap"] .difficulty-strip::-webkit-scrollbar-track {
+                    background: transparent;
+                }
+
+                [data-panel="Beatmap"] .difficulty-strip::-webkit-scrollbar-thumb {
+                    background: hsl(var(--main), 30%, 35%);
+                    border-radius: 3px;
+                }
+
+                [data-panel="Beatmap"] .difficulty-pill {
+                    display: inline-flex;
+                    align-items: center;
+                    gap: 0.375rem;
+                    padding: 0.5rem 1rem;
+                    background: rgba(255, 255, 255, 0.08);
+                    border: 1px solid rgba(255, 255, 255, 0.15);
+                    border-radius: 16px;
+                    color: rgba(255, 255, 255, 0.85);
+                    font-size: 13px;
+                    cursor: pointer;
+                    transition: all 0.2s ease;
+                    white-space: nowrap;
+                    flex-shrink: 0;
+                }
+
+                [data-panel="Beatmap"] .difficulty-pill:hover {
+                    background: rgba(255, 255, 255, 0.15);
+                    border-color: rgba(255, 255, 255, 0.3);
+                }
+
+                [data-panel="Beatmap"] .difficulty-pill.active {
+                    background: hsla(var(--main), 45%, 45%, 0.6);
+                    border-color: hsla(var(--main), 60%, 60%, 0.8);
+                    color: white;
+                    font-weight: 600;
+                    box-shadow: 0 0 12px hsla(var(--main), 50%, 50%, 0.4);
+                }
+
+                [data-panel="Beatmap"] .difficulty-pill .diff-icon {
+                    width: 20px;
+                    height: 20px;
+                    flex-shrink: 0;
+                }
+
+                [data-panel="Beatmap"] .difficulty-pill .diff-icon img {
+                    width: 20px;
+                    height: 20px;
+                }
+
+                [data-panel="Beatmap"] .difficulty-pill .diff-name {
+                    font-weight: 500;
+                    max-width: 150px;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                }
+
+                [data-panel="Beatmap"] .difficulty-pill .diff-stars {
+                    font-size: 11px;
+                    opacity: 0.8;
+                    font-weight: 600;
+                }
+
+                /* ================= INFO BLOCKS WRAPPER ================= */
+                [data-panel="Beatmap"] .info-blocks-wrapper {
+                    display: contents; /* On desktop, let children flow into parent flex */
+                }
+
                     [data-panel="Beatmap"] .beatmap-info .info-block {
                         display: flex;
                         flex-direction: column;
@@ -2173,6 +2265,48 @@
                     }
                     .stat-pill-stars .stat-pill-value {
                         color: hsl(45, 90%, 80%);
+                    }
+
+                    /* Hide desktop selector on mobile */
+                    [data-panel="Beatmap"] .selector-desktop {
+                        display: none !important;
+                    }
+
+                    /* Show mobile difficulty strip */
+                    [data-panel="Beatmap"] .info-hina-block {
+                        display: block;
+                    }
+
+                    /* Mobile beatmap-info layout */
+                    [data-panel="Beatmap"] .beatmap-info {
+                        flex-direction: column;
+                        padding: 0;
+                        gap: 0;
+                        overflow: hidden;
+                    }
+
+                    /* Mobile difficulty strip adjustments */
+                    [data-panel="Beatmap"] .difficulty-strip {
+                        scrollbar-width: none;
+                        -ms-overflow-style: none;
+                    }
+                    [data-panel="Beatmap"] .difficulty-strip::-webkit-scrollbar {
+                        display: none;
+                    }
+                    [data-panel="Beatmap"] .difficulty-pill {
+                        min-height: 44px;
+                        padding: 0.625rem 1rem;
+                    }
+
+                    /* Mobile info blocks wrapper */
+                    [data-panel="Beatmap"] .info-blocks-wrapper {
+                        display: flex;
+                        flex-direction: column;
+                        padding: 16px;
+                        gap: 16px;
+                    }
+                    [data-panel="Beatmap"] .beatmap-info .info-block {
+                        width: 100%;
                     }
 
                     /* Hide desktop table, show mobile cards */

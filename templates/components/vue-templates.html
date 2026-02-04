@@ -1854,9 +1854,9 @@
                                 </div>
                             </div>
                         </div>
-    
-                        <!-- ================= DIFFICULTY SELECTOR ================= -->
-                        <div class="selector">
+
+                        <!-- ================= DIFFICULTY SELECTOR (Desktop) ================= -->
+                        <div class="selector selector-desktop">
                             <a
                                 v-for="map in beatmaps"
                                 :key="map.id"
@@ -1874,40 +1874,60 @@
                         </div>
                     </div>
                 </div>
-        
+
                 <!-- ================= SECOND BLOCK ================= -->
                 <div class="second-block">
                     <div class="content" v-if="selected">
-                    
+
                         <!-- ================= BEATMAP INFO ================= -->
                         <div class="beatmap-info">
-                            <div class="info-block">
-                                <h2 v-text="selectedStats.title"></h2>
-                                <h4 v-text="selectedStats.artist"></h4>
-
-                                <div class="divider"></div>
-
-                                <div class="buttons">
-                                    <button class="button" @click="window.location.href = 'https://osu.direct/d/' + set_id">
-                                        <i class="fas fa-download"></i> Download
-                                    </button>
-                                    <button class="button" @click="window.location.href = 'osu://dl/' + set_id">
-                                        <i class="fas fa-external-link-alt"></i> osu!direct
-                                    </button>
-                                    <button class="button" @click="window.location.href = 'https://osu.ppy.sh/b/' + selectedStats.id">
-                                        <i class="fas fa-external-link-alt"></i> View on ppy.sh
+                            <!-- ================= DIFFICULTY SELECTOR STRIP (Mobile) ================= -->
+                            <div class="info-hina-block">
+                                <div class="difficulty-strip">
+                                    <button
+                                        v-for="diff in beatmaps"
+                                        :key="diff.id"
+                                        class="difficulty-pill"
+                                        :class="{ 'active': selected && selected.id === diff.id }"
+                                        @click="beatmapBus.$emit('select-beatmap', diff.id)"
+                                    >
+                                        <difficulty-icon :diff="diff" :set-id="set_id" :interactive="false" class="diff-icon"></difficulty-icon>
+                                        <span class="diff-name" v-text="diff.version"></span>
+                                        <span class="diff-stars"><span v-text="diff.diff"></span>★</span>
                                     </button>
                                 </div>
                             </div>
 
-                            <div class="info-block">
-                                <span>
-                                    Mapped by
-                                    <a
-                                        :href="'https://osu.ppy.sh/u/' + selectedStats.creator"
-                                        v-text="selectedStats.creator"
-                                    ></a>
-                                </span>
+                            <!-- ================= TITLE/ARTIST + MAPPER INFO ================= -->
+                            <div class="info-blocks-wrapper">
+                                <div class="info-block">
+                                    <h2 v-text="selectedStats.title"></h2>
+                                    <h4 v-text="selectedStats.artist"></h4>
+
+                                    <div class="divider"></div>
+
+                                    <div class="buttons">
+                                        <button class="button" @click="window.location.href = 'https://osu.direct/d/' + set_id">
+                                            <i class="fas fa-download"></i> Download
+                                        </button>
+                                        <button class="button" @click="window.location.href = 'osu://dl/' + set_id">
+                                            <i class="fas fa-external-link-alt"></i> osu!direct
+                                        </button>
+                                        <button class="button" @click="window.location.href = 'https://osu.ppy.sh/b/' + selectedStats.id">
+                                            <i class="fas fa-external-link-alt"></i> View on ppy.sh
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div class="info-block">
+                                    <span>
+                                        Mapped by
+                                        <a
+                                            :href="'https://osu.ppy.sh/u/' + selectedStats.creator"
+                                            v-text="selectedStats.creator"
+                                        ></a>
+                                    </span>
+                                </div>
                             </div>
                         </div>
                         <!-- ================= LEADERBOARD FILTERS ================= -->
