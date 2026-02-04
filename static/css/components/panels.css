@@ -2106,6 +2106,39 @@
         overflow-y: auto;
         display: flex;
         flex-direction: column;
+        position: relative;
+    }
+
+    /* Panel close button — top-right corner */
+    [data-panel="Score"] .panel-close-btn {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        z-index: 10;
+        width: 36px;
+        height: 36px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid hsla(var(--main), 20%, 30%, 0.5);
+        background: hsla(var(--main), 15%, 12%, 0.75);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        color: hsl(var(--main), 10%, 70%);
+        border-radius: 50%;
+        font-size: 14px;
+        cursor: pointer;
+        transition: all 150ms ease;
+        padding: 0;
+        line-height: 1;
+    }
+    [data-panel="Score"] .panel-close-btn:hover {
+        background: hsla(var(--main), 15%, 18%, 0.9);
+        color: hsl(var(--main), 10%, 90%);
+        border-color: hsla(var(--main), 30%, 40%, 0.6);
+    }
+    [data-panel="Score"] .panel-close-btn:active {
+        transform: scale(0.92);
     }
 
     [data-panel="Score"] .main-block {
@@ -2591,6 +2624,15 @@
             scroll-margin-top: 4rem;
         }
 
+        /* Close button: 44px touch target on mobile */
+        [data-panel="Score"] .panel-close-btn {
+            width: 44px;
+            height: 44px;
+            top: 6px;
+            right: 6px;
+            font-size: 16px;
+        }
+
         /* --- Banner: content-sized, no clipping --- */
         [data-panel="Score"] .main-block {
             max-height: none;
@@ -2735,7 +2777,7 @@
             border-top: 1px solid hsla(var(--main), 20%, 20%, 0.3);
         }
 
-        /* Trigger button */
+        /* Trigger button — ghost/outline style, visually secondary */
         [data-panel="Score"] .action-sheet-trigger {
             display: flex;
             align-items: center;
@@ -2744,25 +2786,26 @@
             width: 100%;
             min-height: 44px;
             padding: 10px 16px;
-            font-size: 13px;
-            font-weight: 600;
-            color: hsl(var(--main), 10%, 80%);
-            background: linear-gradient(180deg,
-                hsla(var(--main), 20%, 18%, 0.9) 0%,
-                hsla(var(--main), 18%, 14%, 0.9) 100%);
-            border: 1px solid hsla(var(--main), 30%, 25%, 0.5);
+            font-size: 12px;
+            font-weight: 500;
+            letter-spacing: 0.3px;
+            color: hsl(var(--main), 10%, 55%);
+            background: transparent;
+            border: 1px solid hsla(var(--main), 15%, 25%, 0.4);
             border-radius: 10px;
             cursor: pointer;
             transition: all 200ms ease;
         }
         [data-panel="Score"] .action-sheet-trigger:active {
             transform: scale(0.98);
-            background: linear-gradient(180deg,
-                hsla(var(--main), 22%, 20%, 0.95) 0%,
-                hsla(var(--main), 20%, 16%, 0.95) 100%);
+            background: hsla(var(--main), 15%, 18%, 0.4);
+            color: hsl(var(--main), 10%, 70%);
         }
         [data-panel="Score"] .action-sheet-trigger i {
-            font-size: 16px;
+            font-size: 14px;
+            opacity: 0.5;
+        }
+        [data-panel="Score"] .action-sheet-trigger span {
             opacity: 0.7;
         }
 

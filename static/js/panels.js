@@ -1477,15 +1477,21 @@ bootstrapVue('score-panel', {
         },
         openActionSheet() {
             this.showActionSheet = true;
+            // Lock scroll on the panel content behind the sheet
+            var panel = this.$el.querySelector('[data-panel="Score"]');
+            if (panel) panel.style.overflow = 'hidden';
             this.$nextTick(() => {
-                const first = this.$el.querySelector('.action-sheet-item');
+                var first = this.$el.querySelector('.action-sheet-item:not([disabled])');
                 if (first) first.focus();
             });
         },
         closeActionSheet() {
             this.showActionSheet = false;
+            // Restore scroll on the panel content
+            var panel = this.$el.querySelector('[data-panel="Score"]');
+            if (panel) panel.style.overflow = '';
             this.$nextTick(() => {
-                const trigger = this.$el.querySelector('.action-sheet-trigger');
+                var trigger = this.$el.querySelector('.action-sheet-trigger');
                 if (trigger) trigger.focus();
             });
         },
@@ -1493,6 +1499,11 @@ bootstrapVue('score-panel', {
             if (e.key === 'Escape') {
                 e.stopPropagation();
                 this.closeActionSheet();
+            }
+        },
+        panelKeydown(e) {
+            if (e.key === 'Escape' && !this.showActionSheet) {
+                this.close();
             }
         },
         resetState() { 
