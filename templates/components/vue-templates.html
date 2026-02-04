@@ -1749,8 +1749,8 @@
                 <div class="main-block">
                     <div class="main-banner" :style="{'--banner-bg': `url(https://assets.ppy.sh/beatmaps/` + set_id + `/covers/cover.jpg)`}">
                     
-                        <!-- ================= MAP STATS ================= -->
-                        <div class="map-stats" v-if="selected">
+                        <!-- ================= MAP STATS (Desktop) ================= -->
+                        <div class="map-stats map-stats-desktop" v-if="selected">
                             <a class="stat-block map-play top" @click="playMapAudio(set_id)">
                                 <i :class="currentAudio && currentAudio.paused === false && currentAudio.id === 'audio-' + set_id ? 'fas fa-pause' : 'fas fa-play'" :id="'play-' + set_id">
                                     <audio
@@ -1759,7 +1759,7 @@
                                     ></audio>
                                 </i>
                             </a>
-        
+
                             <div class="stat-block">
                                 <div style="width: 100%; display: flex; flex-direction: row; justify-content: space-between;">
                                     <span class="level-left" style="margin-right: auto;">Circle Size</span><span class="level-right" v-text="selected.cs"></span>
@@ -1774,7 +1774,7 @@
                                     <span class="level-left" style="margin-right: auto;">HP Drain</span><span class="level-right" v-text="selected.hp"></span>
                                 </div>
                             </div>
-    
+
                             <div class="stat-block row-stats bottom">
                                 <div data-stat="length" class="stat-item">
                                     <span class="stat-icon">
@@ -1793,6 +1793,54 @@
                                         <i class="fas fa-music"></i>
                                     </span>
                                     <span class="stat-value" v-text="selected.bpm"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- ================= MOBILE STATS OVERLAY ================= -->
+                        <div class="map-stats-mobile-overlay" v-if="selected">
+                            <!-- Audio player row with progress bar -->
+                            <div class="mobile-player-row" :id="'mobile-player-' + set_id">
+                                <button class="mobile-play-btn" @click="playMapAudio(set_id)">
+                                    <i :class="currentAudio && currentAudio.paused === false && currentAudio.id === 'audio-' + set_id ? 'fas fa-pause' : 'fas fa-play'"></i>
+                                </button>
+                                <div class="mobile-player-info">
+                                    <span class="mobile-player-title" v-text="selectedStats.title"></span>
+                                    <span class="mobile-player-artist" v-text="selectedStats.artist"></span>
+                                </div>
+                                <div class="mobile-player-duration">
+                                    <span v-text="formatDuration(selected.total_length)"></span>
+                                </div>
+                                <!-- Progress bar -->
+                                <div class="mobile-player-progress">
+                                    <div class="mobile-player-progress-fill"></div>
+                                </div>
+                            </div>
+                            <!-- Stat pills row -->
+                            <div class="mobile-stats-row">
+                                <div class="stat-pill">
+                                    <span class="stat-pill-label">CS</span>
+                                    <span class="stat-pill-value" v-text="selected.cs"></span>
+                                </div>
+                                <div class="stat-pill">
+                                    <span class="stat-pill-label">AR</span>
+                                    <span class="stat-pill-value" v-text="selected.ar"></span>
+                                </div>
+                                <div class="stat-pill">
+                                    <span class="stat-pill-label">OD</span>
+                                    <span class="stat-pill-value" v-text="selected.od"></span>
+                                </div>
+                                <div class="stat-pill">
+                                    <span class="stat-pill-label">HP</span>
+                                    <span class="stat-pill-value" v-text="selected.hp"></span>
+                                </div>
+                                <div class="stat-pill">
+                                    <span class="stat-pill-label">BPM</span>
+                                    <span class="stat-pill-value" v-text="selected.bpm"></span>
+                                </div>
+                                <div class="stat-pill stat-pill-stars">
+                                    <span class="stat-pill-label"><i class="fas fa-star"></i></span>
+                                    <span class="stat-pill-value" v-text="selected.diff"></span>
                                 </div>
                             </div>
                         </div>
@@ -1836,9 +1884,9 @@
                             <div class="info-block">
                                 <h2 v-text="selectedStats.title"></h2>
                                 <h4 v-text="selectedStats.artist"></h4>
-        
+
                                 <div class="divider"></div>
-        
+
                                 <div class="buttons">
                                     <button class="button" @click="window.location.href = 'https://osu.direct/d/' + set_id">
                                         <i class="fas fa-download"></i> Download
@@ -1851,7 +1899,7 @@
                                     </button>
                                 </div>
                             </div>
-        
+
                             <div class="info-block">
                                 <span>
                                     Mapped by

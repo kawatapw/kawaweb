@@ -782,11 +782,12 @@ bootstrapVue('beatmap-panel', {
         },
         playMapAudio(setId) {
             this.$log.info('LIFECYCLE', 'Playing map audio', { setId });
-            
+
             const audio = document.getElementById(`audio-${setId}`);
             const playButton = document.getElementById(`play-${setId}`);
             const mapPlayDiv = playButton ? playButton.parentElement : null;
-            
+            const mobilePlayerRow = document.getElementById(`mobile-player-${setId}`);
+
             // Assert that audio element exists
             this.$log.assert(
                 audio !== null,
@@ -795,16 +796,18 @@ bootstrapVue('beatmap-panel', {
                 { setId, elementId: `audio-${setId}` },
                 false
             );
-            
+
             if (!audio) return;
-            
+
             // If clicking the same audio that's already playing, pause it
             if (this.currentAudio && this.currentAudio === audio && !audio.paused) {
                 this.$log.debug('LIFECYCLE', 'Pausing current audio');
                 audio.pause();
                 if (mapPlayDiv) {
                     mapPlayDiv.classList.remove('playing');
-                    // Don't reset progress - keep it at current position
+                }
+                if (mobilePlayerRow) {
+                    mobilePlayerRow.classList.remove('playing');
                 }
                 // Cancel any pending animation frame
                 if (audio.animationFrameId) {
@@ -814,14 +817,16 @@ bootstrapVue('beatmap-panel', {
                 this.currentAudio = null;
                 return;
             }
-            
+
             // Pause any other audio that's playing
             if (this.currentAudio && this.currentAudio !== audio) {
                 this.$log.debug('LIFECYCLE', 'Pausing previous audio');
                 this.currentAudio.pause();
-                // Remove playing class from previous button and cancel animation frame
+                // Remove playing class from previous elements
                 const prevAudio = this.currentAudio;
-                const prevPlayButton = document.getElementById(`play-${prevAudio.id.replace('audio-', '')}`);
+                const prevSetId = prevAudio.id.replace('audio-', '');
+                const prevPlayButton = document.getElementById(`play-${prevSetId}`);
+                const prevMobilePlayer = document.getElementById(`mobile-player-${prevSetId}`);
                 if (prevPlayButton) {
                     const prevMapPlayDiv = prevPlayButton.parentElement;
                     if (prevMapPlayDiv) {
@@ -829,33 +834,46 @@ bootstrapVue('beatmap-panel', {
                         prevMapPlayDiv.style.setProperty('--audio-progress', '0%');
                     }
                 }
+                if (prevMobilePlayer) {
+                    prevMobilePlayer.classList.remove('playing');
+                    prevMobilePlayer.style.setProperty('--audio-progress', '0%');
+                }
                 if (prevAudio.animationFrameId) {
                     cancelAnimationFrame(prevAudio.animationFrameId);
                     prevAudio.animationFrameId = null;
                 }
             }
-            
+
             // Play the new audio
             this.$log.debug('LIFECYCLE', 'Playing audio');
             audio.play();
-            
+
             // Add playing class and set up progress tracking
             if (mapPlayDiv) {
                 mapPlayDiv.classList.add('playing');
                 mapPlayDiv.style.setProperty('--audio-progress', '0%');
             }
-            
-            // Store reference to mapPlayDiv for cleanup
+            if (mobilePlayerRow) {
+                mobilePlayerRow.classList.add('playing');
+                mobilePlayerRow.style.setProperty('--audio-progress', '0%');
+            }
+
+            // Store references for cleanup
             audio.mapPlayDiv = mapPlayDiv;
-            
+            audio.mobilePlayerRow = mobilePlayerRow;
+
             // Start smooth progress animation
             this.startSmoothProgress(audio);
-            
+
             // Reset progress when audio ends
             audio.addEventListener('ended', () => {
                 if (mapPlayDiv) {
                     mapPlayDiv.classList.remove('playing');
                     mapPlayDiv.style.setProperty('--audio-progress', '0%');
+                }
+                if (audio.mobilePlayerRow) {
+                    audio.mobilePlayerRow.classList.remove('playing');
+                    audio.mobilePlayerRow.style.setProperty('--audio-progress', '0%');
                 }
                 // Cancel animation frame
                 if (audio.animationFrameId) {
@@ -867,12 +885,16 @@ bootstrapVue('beatmap-panel', {
                     this.$forceUpdate();
                 }
             });
-            
+
             // Reset progress only when paused at the beginning
             audio.addEventListener('pause', () => {
                 if (mapPlayDiv && audio.currentTime === 0) {
                     mapPlayDiv.classList.remove('playing');
                     mapPlayDiv.style.setProperty('--audio-progress', '0%');
+                }
+                if (audio.mobilePlayerRow && audio.currentTime === 0) {
+                    audio.mobilePlayerRow.classList.remove('playing');
+                    audio.mobilePlayerRow.style.setProperty('--audio-progress', '0%');
                 }
                 // Cancel animation frame
                 if (audio.animationFrameId) {
@@ -880,25 +902,30 @@ bootstrapVue('beatmap-panel', {
                     audio.animationFrameId = null;
                 }
             });
-            
+
             this.currentAudio = audio;
         },
-        
+
         /**
          * Starts smooth progress animation using requestAnimationFrame
          * @param {HTMLAudioElement} audio - The audio element
          */
         startSmoothProgress(audio) {
             const updateProgress = () => {
-                if (!audio || !audio.mapPlayDiv || audio.paused) return;
-                
+                if (!audio || audio.paused) return;
+
                 const progress = (audio.currentTime / audio.duration) * 100;
-                audio.mapPlayDiv.style.setProperty('--audio-progress', `${progress}%`);
-                
+                if (audio.mapPlayDiv) {
+                    audio.mapPlayDiv.style.setProperty('--audio-progress', `${progress}%`);
+                }
+                if (audio.mobilePlayerRow) {
+                    audio.mobilePlayerRow.style.setProperty('--audio-progress', `${progress}%`);
+                }
+
                 // Continue animation frame
                 audio.animationFrameId = requestAnimationFrame(updateProgress);
             };
-            
+
             // Start the animation loop
             audio.animationFrameId = requestAnimationFrame(updateProgress);
         },
