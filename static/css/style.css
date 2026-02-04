@@ -42,6 +42,17 @@ html {
   scrollbar-width: thin;
 }
 
+.hidden {
+  visibility: hidden;
+  pointer-events: none;
+  opacity: 0;
+}
+.hidden > div {
+  visibility: hidden;
+  pointer-events: none;
+  opacity: 0;
+}
+
 .footer {
   padding: 20px;
   margin-top: 39px;

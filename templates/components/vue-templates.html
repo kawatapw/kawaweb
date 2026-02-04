@@ -752,7 +752,7 @@
         <div id="search-panel" class="modal" :class="{ 'is-active': show }" style="z-index: 21;">
             <div class="modal-background" @click="close"></div>
     
-            <div id="search" data-panel="Search" class="modal-content" v-show="show">
+            <div id="search" data-panel="Search" class="modal-content" :class="{ 'hidden': !show }">
                 <div class="search-fg">
                     <!-- Header -->
                     <div class="search-header">
@@ -921,7 +921,7 @@
     <script type="text/x-template" id="docs-panel-template">
         <div id="docs-panel" class="modal" v-bind:class="{ 'is-active': show }">
             <div class="modal-background" @click="close"></div>
-            <div data-panel="Docs" id="docs-window" class="modal-content">
+            <div data-panel="Docs" id="docs-window" class="modal-content" :class="{ 'hidden': !show }">
                 <div class="main-block">
                     <div class="docs-banner">
                         <div class="docs-banner img" style="height: fit-content" :style="{
@@ -1745,7 +1745,7 @@
         <div id="beatmap-panel" class="modal" :class="{ 'is-active': show }" style="z-index: 25;">
             <div class="modal-background" @click="close"></div>
         
-            <div id="beatmap-window" data-panel="Beatmap" class="modal-content" v-show="show">
+            <div id="beatmap-window" data-panel="Beatmap" class="modal-content" :class="{ 'hidden': !show }" >
                 <div class="main-block">
                     <div class="main-banner" :style="{'--banner-bg': `url(https://assets.ppy.sh/beatmaps/` + set_id + `/covers/cover.jpg)`}">
                     
@@ -2117,7 +2117,7 @@
             </div>
     
             <!-- Main Content - Only show when data is ready -->
-            <div v-if="fetchState === 'success'" id="score-panel" data-panel="Score" class="modal-content" style="animation: scaleIn 0.3s ease-out;">
+            <div v-if="fetchState === 'success'" id="score-panel" data-panel="Score" class="modal-content" :class="{ 'hidden': !show && fetchState !== 'success' }" style="animation: scaleIn 0.3s ease-out;">
                 <!-- ================= MAIN BANNER ================= -->
                 <div class="main-block">
                     <div class="main-banner" :style="{'--banner-bg': safeBeatmap && safeBeatmap.set_id ? `url(https://assets.ppy.sh/beatmaps/` + safeBeatmap.set_id + `/covers/cover@2x.jpg)` : 'none'}">
