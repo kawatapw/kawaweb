@@ -335,7 +335,7 @@ bootstrapVue('docs-panel', {
 
 // ================= BEATMAP URL HANDLER =================
 bootstrapVue('beatmap', {
-    el: '#beatmap',
+    el: '#beatmap-panel',
     data: { id: null, set_id: null },
     async created() {
         this.$log = ColorfulLogger.child('BeatmapURL');
@@ -2234,6 +2234,9 @@ bootstrapVue('score-panel', {
                 'FlashlightRemover': 'Flashlight Remover',
                 'RelaxHack': 'Relax Hack',
                 'RelaxHackType': 'Relax Hack Type',
+                'RelaxNoEarlyHits': 'No Early Hits',
+                'RelaxNoWaitLate': 'No Late Hits',
+                'RelaxStrictTiming': 'Strict Timing',
                 'RelaxFailing': 'Relax Failing',
                 'RelaxMisses': 'Relax Misses',
                 'RelaxComboBreakSound': 'Relax Combo Break Sound',
