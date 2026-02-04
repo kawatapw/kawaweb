@@ -2087,7 +2087,7 @@
     </script>
     
     <script type="text/x-template" id="score-panel-template">
-        <div id="score-panel-modal" class="modal" :class="{ 'is-active': show }" style="z-index: 26;">
+        <div id="score-panel-modal" class="modal" :class="{ 'is-active': show }" style="z-index: 40;">
             <div class="modal-background" @click="close"></div>
     
             <!-- Loading State -->
@@ -2186,20 +2186,6 @@
                                             <span v-text="safeScore ? formatDate(safeScore.play_time) : '-'"></span>
                                         </div>
                                     </div>
-                                </div>
-                                <div class="score-buttons">
-                                    <button class="button score-button is-primary" @click="DownloadReplay(safeScore.id)" :disabled="!safeScore">
-                                        Download Replay
-                                    </button>
-                                    <button class="button score-button" @click="" :disabled="!safeScore">
-                                        View Beatmap Page
-                                    </button>
-                                    <button class="button score-button not-ready" @click="" :disabled="!safeScore" tooltip="You can use this to watch a replay of this score in your browser!">
-                                        Open Beatmap in JoSu!
-                                    </button>
-                                    <button class="button score-button" @click="shareScore()" :disabled="!safeScore">
-                                        Share Score
-                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -2312,6 +2298,82 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- ================= ACTIONS ================= -->
+                <!-- Desktop: inline button row (hidden on mobile) -->
+                <div class="score-actions score-actions--desktop">
+                    <div class="score-buttons">
+                        <button class="button score-button is-primary" @click="DownloadReplay(safeScore.id)" :disabled="!safeScore">
+                            Download Replay
+                        </button>
+                        <button class="button score-button" @click="" :disabled="!safeScore">
+                            View Beatmap Page
+                        </button>
+                        <button class="button score-button not-ready" @click="" :disabled="!safeScore" tooltip="You can use this to watch a replay of this score in your browser!">
+                            Open Beatmap in JoSu!
+                        </button>
+                        <button class="button score-button" @click="shareScore()" :disabled="!safeScore">
+                            Share Score
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Mobile: compact trigger button (hidden on desktop) -->
+                <div class="score-actions score-actions--mobile">
+                    <button
+                        class="action-sheet-trigger"
+                        @click="openActionSheet"
+                        aria-label="Open score actions menu"
+                        role="button"
+                    >
+                        <i class="fas fa-ellipsis-h"></i>
+                        <span>Score Actions</span>
+                    </button>
+                </div>
+
+                <!-- Mobile: bottom sheet overlay -->
+                <transition name="action-sheet">
+                    <div
+                        v-if="showActionSheet"
+                        class="action-sheet-overlay"
+                        @click.self="closeActionSheet"
+                        @keydown="actionSheetKeydown"
+                        role="dialog"
+                        aria-modal="true"
+                        aria-labelledby="action-sheet-title"
+                    >
+                        <div class="action-sheet">
+                            <div class="action-sheet-header">
+                                <span id="action-sheet-title" class="action-sheet-title">Score Actions</span>
+                                <button class="action-sheet-close" @click="closeActionSheet" aria-label="Close actions menu">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                            <div class="action-sheet-body">
+                                <button class="action-sheet-item" @click="DownloadReplay(safeScore.id); closeActionSheet()" :disabled="!safeScore">
+                                    <i class="fas fa-download"></i>
+                                    <span>Download Replay</span>
+                                    <i class="fas fa-chevron-right action-sheet-chevron"></i>
+                                </button>
+                                <button class="action-sheet-item" @click="closeActionSheet()" :disabled="!safeScore">
+                                    <i class="fas fa-info-circle"></i>
+                                    <span>View Beatmap Page</span>
+                                    <i class="fas fa-chevron-right action-sheet-chevron"></i>
+                                </button>
+                                <button class="action-sheet-item" disabled>
+                                    <i class="fas fa-external-link-alt"></i>
+                                    <span>Open Beatmap in JoSu!</span>
+                                    <i class="fas fa-chevron-right action-sheet-chevron"></i>
+                                </button>
+                                <button class="action-sheet-item" @click="shareScore(); closeActionSheet()" :disabled="!safeScore">
+                                    <i class="fas fa-share-alt"></i>
+                                    <span>Share Score</span>
+                                    <i class="fas fa-chevron-right action-sheet-chevron"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </transition>
             </div>
         </div>
     </script>

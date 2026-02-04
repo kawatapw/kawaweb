@@ -143,7 +143,7 @@ bootstrapVue('search-panel', {
                 // Fetch players
                 try {
                     const playersResponse = await fetch(
-                        `https://api.${domain}/v1/search_players?limit=10&q=${encodeURIComponent(this.query)}`,
+                        `${window.location.protocol}//api.${domain}/v1/search_players?limit=10&q=${encodeURIComponent(this.query)}`,
                         { signal: AbortSignal.timeout(5000) }
                     );
                     
@@ -357,7 +357,7 @@ bootstrapVue('beatmap', {
         },
         async fetchSetIdFromMap(id) {
             try {
-                const res = await fetch(`https://api.${domain}/v2/maps/${id}`);
+                const res = await fetch(`${window.location.protocol}//api.${domain}/v2/maps/${id}`);
                 const json = await res.json();
                 return json.data.set_id;
             } catch (err) {
@@ -596,7 +596,7 @@ bootstrapVue('beatmap-panel', {
             this.$log.info('API', 'Fetching beatmaps', { set_id: this.set_id });
             
             try {
-                const url = `https://api.${domain}/v2/maps?set_id=${this.set_id}`;
+                const url = `${window.location.protocol}//api.${domain}/v2/maps?set_id=${this.set_id}`;
                 this.$log.debug('API', 'Fetching from URL', { url });
                 
                 const res = await fetch(url);
@@ -695,7 +695,7 @@ bootstrapVue('beatmap-panel', {
             
             try {
                 // Build URL with filters
-                let url = `https://api.${domain}/v1/get_map_scores?id=${this.selected.id}&scope=best`;
+                let url = `${window.location.protocol}//api.${domain}/v1/get_map_scores?id=${this.selected.id}&scope=best`;
                 
                 // Add mode parameter (full game mode including ruleset)
                 const fullMode = this.fullGameMode;
@@ -1338,16 +1338,17 @@ bootstrapVue('score-panel', {
     el: '#score-panel-modal',
     templateId: 'score-panel-template',
     data() {
-        return { 
-            show: false, 
-            scoreId: null, 
-            score: null, 
-            replayIsLoading: false, 
+        return {
+            show: false,
+            scoreId: null,
+            score: null,
+            replayIsLoading: false,
             activeTab: 'Score',
             fetchError: null,
             fetchState: 'idle', // 'idle', 'loading', 'success', 'error'
             isLoadingPlayer: false,
-            playerError: null
+            playerError: null,
+            showActionSheet: false
         };
     },
     created() {
@@ -1465,13 +1466,34 @@ bootstrapVue('score-panel', {
                 this.fetchState = 'error';
             }
         },
-        close() { 
+        close() {
             this.$log.info('LIFECYCLE', 'Closing score modal', {
                 scoreId: this.scoreId,
                 fetchState: this.fetchState
             });
-            this.show = false; 
-            this.resetUrl(); 
+            this.showActionSheet = false;
+            this.show = false;
+            this.resetUrl();
+        },
+        openActionSheet() {
+            this.showActionSheet = true;
+            this.$nextTick(() => {
+                const first = this.$el.querySelector('.action-sheet-item');
+                if (first) first.focus();
+            });
+        },
+        closeActionSheet() {
+            this.showActionSheet = false;
+            this.$nextTick(() => {
+                const trigger = this.$el.querySelector('.action-sheet-trigger');
+                if (trigger) trigger.focus();
+            });
+        },
+        actionSheetKeydown(e) {
+            if (e.key === 'Escape') {
+                e.stopPropagation();
+                this.closeActionSheet();
+            }
         },
         resetState() { 
             this.$log.debug('LIFECYCLE', 'Resetting state');
@@ -1500,7 +1522,7 @@ bootstrapVue('score-panel', {
             }
             
             try {
-                const url = `https://api.${domain}/v1/get_score_info?id=${this.scoreId}&b=1`;
+                const url = `${window.location.protocol}//api.${domain}/v1/get_score_info?id=${this.scoreId}&b=1`;
                 this.$log.info('API', 'Fetching score info from:', url);
                 
                 const res = await fetch(url);
@@ -1617,7 +1639,7 @@ bootstrapVue('score-panel', {
             this.$log.debug('API', 'fetchPlayerInfo starting for userId:', userId);
             
             try {
-                const url = `https://api.${domain}/v1/get_player_info?id=${userId}&scope=all`;
+                const url = `${window.location.protocol}//api.${domain}/v1/get_player_info?id=${userId}&scope=all`;
                 this.$log.info('API', 'Fetching player info from:', url);
                 
                 const res = await fetch(url);
@@ -1707,7 +1729,7 @@ bootstrapVue('score-panel', {
             this.replayIsLoading = true;
             
             try { 
-                const url = `https://api.${domain}/v1/get_replay?id=${scoreId}`;
+                const url = `${window.location.protocol}//api.${domain}/v1/get_replay?id=${scoreId}`;
                 this.$log.debug('API', 'Redirecting to replay URL:', url);
                 window.location.href = url; 
             } catch (err) {
