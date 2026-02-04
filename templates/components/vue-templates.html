@@ -2003,25 +2003,25 @@
                                 </div>
                             </div>
         
-                            <!-- ===== FULL LEADERBOARD ===== -->
-                            <div class="bm-lb-bg table-responsive" v-if="hasLeaderboards">
+                            <!-- ===== FULL LEADERBOARD (Desktop table) ===== -->
+                            <div class="bm-lb-bg table-responsive bm-lb-desktop" v-if="hasLeaderboards">
                                 <table class="bm-lb-table table-responsive">
                                     <thead class="leaderboard-thead">
                                         <tr>
-                                            <th class="leaderboard-table__heading table-header-rank"> Rank</th> 
-                                            <th class="leaderboard-table__heading table-header-grade"></th> 
-                                            <th class="leaderboard-table__heading table-header-flag"></th> 
-                                            <th class="leaderboard-table__heading table-header-player">Player</th> 
-                                            <th class="leaderboard-table__heading table-header-pp">PP</th> 
-                                            <th class="leaderboard-table__heading table-header-score">Score</th> 
-                                            <th class="leaderboard-table__heading table-header-acc">Accuracy</th> 
+                                            <th class="leaderboard-table__heading table-header-rank"> Rank</th>
+                                            <th class="leaderboard-table__heading table-header-grade"></th>
+                                            <th class="leaderboard-table__heading table-header-flag"></th>
+                                            <th class="leaderboard-table__heading table-header-player">Player</th>
+                                            <th class="leaderboard-table__heading table-header-pp">PP</th>
+                                            <th class="leaderboard-table__heading table-header-score">Score</th>
+                                            <th class="leaderboard-table__heading table-header-acc">Accuracy</th>
                                             <th class="leaderboard-table__heading table-header-combo">Combo</th>
                                             <th class="leaderboard-table__heading table-header-hitstat">300</th>
-                                            <th class="leaderboard-table__heading table-header-hitstat">100</th> 
-                                            <th class="leaderboard-table__heading table-header-hitstat">50</th> 
-                                            <th class="leaderboard-table__heading table-header-miss">Miss</th> 
-                                            <th class="leaderboard-table__heading table-header-mods">Mods</th> 
-                                            <th class="leaderboard-table__heading table-header-date">Date</th> 
+                                            <th class="leaderboard-table__heading table-header-hitstat">100</th>
+                                            <th class="leaderboard-table__heading table-header-hitstat">50</th>
+                                            <th class="leaderboard-table__heading table-header-miss">Miss</th>
+                                            <th class="leaderboard-table__heading table-header-mods">Mods</th>
+                                            <th class="leaderboard-table__heading table-header-date">Date</th>
                                             <th class="leaderboard-table__heading table-header-report"></th>
                                         </tr>
                                     </thead>
@@ -2069,6 +2069,89 @@
                                         </tr>
                                     </tbody>
                                 </table>
+                            </div>
+
+                            <!-- ===== MOBILE LEADERBOARD (Card-based) ===== -->
+                            <div class="bm-lb-mobile" v-if="hasLeaderboards">
+                                <div
+                                    v-for="(score, index) in leaderboards"
+                                    :key="'mobile-' + score.id"
+                                    class="lb-score-card"
+                                    :class="[index % 2 === 0 ? 'row2p' : 'row1p', { 'is-expanded': expandedScoreId === score.id }]"
+                                >
+                                    <!-- Primary row: rank, grade, player, PP -->
+                                    <div class="lb-card-primary" @click="toggleScoreExpand(score.id)">
+                                        <div class="lb-card-rank-grade">
+                                            <span class="lb-card-rank" @click.stop="scoreBus.$emit('show-score-window', score.id)" v-text="'#' + (index + 1)"></span>
+                                            <span class="lb-card-grade" :class="'rank-' + score.grade" v-text="score.grade"></span>
+                                        </div>
+                                        <div class="lb-card-player">
+                                            <img class="lb-card-flag" :src="'/static/images/flags/' + score.player_country.toUpperCase() + '.png'">
+                                            <a class="lb-card-name" :href="'/u/' + score.userid" @click.stop>
+                                                <span v-if="score.clan_id != null" v-text="'[' + score.clan_tag + '] '"></span><span v-text="score.player_name"></span>
+                                            </a>
+                                        </div>
+                                        <div class="lb-card-pp">
+                                            <span class="lb-card-pp-value" v-text="Math.round(score.pp)"></span>
+                                            <span class="lb-card-pp-label">pp</span>
+                                        </div>
+                                    </div>
+
+                                    <!-- Secondary row: acc, combo, score, mods, time -->
+                                    <div class="lb-card-secondary">
+                                        <span class="lb-card-stat">
+                                            <span class="lb-card-stat-value" v-text="score.acc.toFixed(2) + '%'"></span>
+                                        </span>
+                                        <span class="lb-card-stat">
+                                            <span class="lb-card-stat-value" v-text="score.max_combo + 'x'"></span>
+                                        </span>
+                                        <span class="lb-card-stat lb-card-stat-score">
+                                            <span class="lb-card-stat-value" v-text="score.score.toLocaleString()"></span>
+                                        </span>
+                                        <span class="lb-card-stat lb-card-stat-mods" v-if="score.mods_readable !== 'NM'">
+                                            <span class="lb-card-stat-value" v-text="score.mods_readable"></span>
+                                        </span>
+                                        <span class="lb-card-stat lb-card-stat-time">
+                                            <span class="lb-card-stat-value" v-text="formatTimeAgo(score.play_time)"></span>
+                                        </span>
+                                        <button class="lb-card-expand-btn" @click.stop="toggleScoreExpand(score.id)" :aria-expanded="expandedScoreId === score.id ? 'true' : 'false'" aria-label="Show details">
+                                            <i class="fas" :class="expandedScoreId === score.id ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
+                                        </button>
+                                    </div>
+
+                                    <!-- Expandable details: hitcounts, exact date, report -->
+                                    <transition name="lb-card-expand">
+                                        <div class="lb-card-details" v-if="expandedScoreId === score.id">
+                                            <div class="lb-card-hitcounts">
+                                                <div class="lb-card-hit">
+                                                    <span class="lb-card-hit-label">300</span>
+                                                    <span class="lb-card-hit-value" v-text="score.n300 + score.ngeki"></span>
+                                                </div>
+                                                <div class="lb-card-hit">
+                                                    <span class="lb-card-hit-label">100</span>
+                                                    <span class="lb-card-hit-value" v-text="score.n100 + score.nkatu"></span>
+                                                </div>
+                                                <div class="lb-card-hit">
+                                                    <span class="lb-card-hit-label">50</span>
+                                                    <span class="lb-card-hit-value" v-text="score.n50"></span>
+                                                </div>
+                                                <div class="lb-card-hit lb-card-hit-miss">
+                                                    <span class="lb-card-hit-label">Miss</span>
+                                                    <span class="lb-card-hit-value" v-text="score.nmiss"></span>
+                                                </div>
+                                            </div>
+                                            <div class="lb-card-details-row">
+                                                <span class="lb-card-exact-date" v-text="formatDate(score.play_time)"></span>
+                                                <button class="lb-card-view-btn" @click="scoreBus.$emit('show-score-window', score.id)">
+                                                    <i class="fas fa-external-link-alt"></i> View Score
+                                                </button>
+                                                <button class="lb-card-report-btn" aria-label="Report score">
+                                                    <i class="fa-solid fa-triangle-exclamation"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </transition>
+                                </div>
                             </div>
                         </div>
                     </div>

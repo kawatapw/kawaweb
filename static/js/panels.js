@@ -383,7 +383,9 @@ bootstrapVue('beatmap-panel', {
         // Filter state
         selectedMode: 0, // 0: osu, 1: taiko, 2: catch, 3: mania
         selectedRuleset: 0, // 0: vanilla, 1: relax, 2: autopilot
-        selectedMods: 0 // Bitmask of selected mods
+        selectedMods: 0, // Bitmask of selected mods
+        // Mobile leaderboard expansion state
+        expandedScoreId: null
     },
     created() {
         this.$log = ColorfulLogger.child('Beatmap Panel');
@@ -588,9 +590,14 @@ bootstrapVue('beatmap-panel', {
                 hasSelected: !!this.selected 
             });
         },
-        close() { 
+        close() {
             this.$log.info('LIFECYCLE', 'Closing beatmap panel');
-            this.show = false; 
+            this.show = false;
+            this.expandedScoreId = null;
+        },
+        // Toggle expanded state for mobile score cards (accordion pattern)
+        toggleScoreExpand(scoreId) {
+            this.expandedScoreId = this.expandedScoreId === scoreId ? null : scoreId;
         },
         async fetchBeatmaps() {
             this.$log.info('API', 'Fetching beatmaps', { set_id: this.set_id });
