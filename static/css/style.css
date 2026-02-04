@@ -854,3 +854,38 @@ body::-webkit-scrollbar-thumb {
           font-size: 20px;
           top: 50%;
         }
+/*! Hina was here below code adjusted none .scss*/
+/* Mobile dropdown toggle fix */
+@media screen and (max-width: 1023px) {
+  .navbar-item.has-dropdown > .navbar-dropdown {
+    display: none;
+  }
+
+  .navbar-item.has-dropdown.is-active > .navbar-dropdown {
+    display: block;
+  }
+
+  /* Show dropdown arrow on mobile */
+  .navbar-link::after {
+    display: inline-block !important;
+    border-color: #fff;
+    border-style: solid;
+    border-width: 0 0.125em 0.125em 0;
+    content: " ";
+    pointer-events: none;
+    transform: rotate(45deg);
+    transform-origin: center;
+    width: 0.625em;
+    height: 0.625em;
+    margin-top: -0.4375em;
+    right: 1.125em;
+    position: absolute;
+    top: 50%;
+    transition: transform 0.2s ease;
+  }
+
+  .navbar-item.has-dropdown.is-active > .navbar-link::after {
+    transform: rotate(225deg);
+    margin-top: -0.125em;
+  }
+}

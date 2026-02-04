@@ -17,6 +17,25 @@ function togglenavbar() {
     document.getElementById('navbar-burger').classList.toggle("is-active");
 }
 
+// Mobile dropdown toggle
+document.addEventListener('click', function(e) {
+  var link = e.target.closest('.navbar-item.has-dropdown > .navbar-link');
+  if (!link) return;
+
+  // Only on mobile (when hamburger is visible)
+  if (window.innerWidth >= 1024) return;
+
+  e.preventDefault();
+  var parent = link.parentElement;
+
+  // Close other open dropdowns
+  document.querySelectorAll('.navbar-item.has-dropdown.is-active').forEach(function(el) {
+    if (el !== parent) el.classList.remove('is-active');
+  });
+
+  parent.classList.toggle('is-active');
+});
+
 // Initialize ColorfulLogger
 window.kawataLogger = ColorfulLogger;
 const logger = ColorfulLogger.init({
