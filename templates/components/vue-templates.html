@@ -1927,8 +1927,8 @@
                             <!-- ===== FIRST PLACE ===== -->
                             <div class="table-responsive" v-if="topScore">
                                 <div class="lb-first-place-header">
-                                    <div class="user-block">
-                                    
+                                    <!-- Left: rank + avatar -->
+                                    <div class="lb-fp-identity">
                                         <div class="play-rank">
                                             <span class="score-rank">#1</span>
                                             <span
@@ -1936,13 +1936,16 @@
                                                 v-text="topScore.grade"
                                             ></span>
                                         </div>
-        
+
                                         <a
                                             class="user-avatar"
                                             :href="'/u/' + topScore.userid"
                                             :style="'background-image: url(https://a.' + domain + '/' + topScore.userid + ');'"
                                         ></a>
-        
+                                    </div>
+
+                                    <!-- Right: name + stats -->
+                                    <div class="lb-fp-details">
                                         <div class="user">
                                             <span v-if="topScore.clan_id != null"
                                                   v-text="'[' + topScore.clan_tag + ']'"></span>
@@ -1951,16 +1954,14 @@
                                                 :href="'/u/' + topScore.userid"
                                                 v-text="topScore.player_name"
                                             ></a>
-        
+
                                             <div
                                                 class="user-flag"
                                                 :style="'background-image: url(/static/images/flags/' + topScore.player_country.toUpperCase() + '.png);'"
                                             ></div>
                                         </div>
-                                    </div>
-        
-                                    <div class="playstats-block">
-                                        <div class="beatmap-score-top__stats">
+
+                                        <div class="playstats-block">
                                             <div class="stat-block stat-bolder">
                                                 <div class="stat-title">PP</div>
                                                 <span v-text="topScore.pp.toFixed(2)"></span>
@@ -1977,8 +1978,6 @@
                                                 <div class="stat-title">Mods</div>
                                                 <span v-text="topScore.mods_readable"></span>
                                             </div>
-                                        </div>
-                                        <div class="beatmap-score-top__stats">
                                             <div class="stat-block">
                                                 <div class="stat-title">Score</div>
                                                 <span v-text="topScore.score"></span>
