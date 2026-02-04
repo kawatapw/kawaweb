@@ -335,7 +335,7 @@ bootstrapVue('docs-panel', {
 
 // ================= BEATMAP URL HANDLER =================
 bootstrapVue('beatmap', {
-    el: '#beatmap',
+    el: '#beatmap-panel',
     data: { id: null, set_id: null },
     async created() {
         this.$log = ColorfulLogger.child('BeatmapURL');
