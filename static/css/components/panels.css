@@ -1502,6 +1502,98 @@
                         text-decoration: underline;
                     }
 
+                    /* Info block details - base (mobile) */
+                    [data-panel="Beatmap"] .info-block-details {
+                        display: flex;
+                        flex-direction: column;
+                        gap: 6px;
+                        margin-top: 8px;
+                    }
+                    [data-panel="Beatmap"] .info-detail {
+                        display: flex;
+                        align-items: baseline;
+                        gap: 6px;
+                    }
+                    [data-panel="Beatmap"] .info-label {
+                        color: hsl(var(--main), 10%, 55%);
+                        font-size: 0.875rem;
+                        font-weight: 400;
+                    }
+                    [data-panel="Beatmap"] .info-value {
+                        color: hsl(var(--main), 10%, 88%);
+                        font-size: 0.875rem;
+                        font-weight: 400;
+                    }
+                    [data-panel="Beatmap"] .info-link {
+                        color: hsl(var(--main), 50%, 65%) !important;
+                        text-decoration: none;
+                        transition: color 200ms ease;
+                    }
+                    [data-panel="Beatmap"] .info-link:hover {
+                        color: hsl(var(--main), 60%, 75%) !important;
+                        text-decoration: underline;
+                    }
+                    /* Secondary text (passes count) */
+                    [data-panel="Beatmap"] .info-value .sub {
+                        color: hsl(var(--main), 10%, 55%);
+                    }
+                    /* Status colors */
+                    [data-panel="Beatmap"] .status-2 { color: hsl(120, 55%, 55%); } /* Ranked - green */
+                    [data-panel="Beatmap"] .status-3 { color: hsl(120, 55%, 55%); } /* Approved - green */
+                    [data-panel="Beatmap"] .status-4 { color: hsl(200, 60%, 60%); } /* Qualified - blue */
+                    [data-panel="Beatmap"] .status-5 { color: hsl(330, 60%, 65%); } /* Loved - pink */
+                    [data-panel="Beatmap"] .status-0 { color: hsl(40, 60%, 58%); }  /* Pending - yellow */
+                    [data-panel="Beatmap"] .status--1 { color: hsl(0, 0%, 55%); }   /* Not Submitted - gray */
+                    /* Mobile label toggle */
+                    [data-panel="Beatmap"] .label-desktop { display: none; }
+                    [data-panel="Beatmap"] .label-mobile { display: inline; }
+
+                    /* Info block details - Desktop (≥768px) */
+                    @media (min-width: 768px) {
+                        [data-panel="Beatmap"] .info-block-details {
+                            display: grid;
+                            grid-template-columns: auto 1fr;
+                            gap: 4px 12px;
+                            margin-top: 0;
+                        }
+
+                        [data-panel="Beatmap"] .info-detail {
+                            display: contents;
+                        }
+
+                        [data-panel="Beatmap"] .info-label {
+                            font-size: 0.8rem;
+                            color: hsl(var(--main), 10%, 55%);
+                        }
+
+                        [data-panel="Beatmap"] .info-value {
+                            font-size: 0.85rem;
+                            color: hsl(var(--main), 10%, 85%);
+                        }
+
+                        /* Toggle labels */
+                        [data-panel="Beatmap"] .label-desktop { display: inline; }
+                        [data-panel="Beatmap"] .label-mobile { display: none; }
+                    }
+
+                    /* Info block details - Wide Desktop (≥1024px) */
+                    @media (min-width: 1024px) {
+                        [data-panel="Beatmap"] .info-block-details {
+                            grid-template-columns: repeat(4, minmax(0, 1fr));
+                            gap: 8px 16px;
+                        }
+
+                        [data-panel="Beatmap"] .info-detail {
+                            display: flex;
+                            flex-direction: column;
+                            gap: 2px;
+                        }
+
+                        [data-panel="Beatmap"] .info-detail:nth-child(4) {
+                            align-items: normal;
+                        }
+                    }
+
                 /* ================= LEADERBOARD FILTERS ================= */
                     [data-panel="Beatmap"] .leaderboard-filter {
                         display: flex;

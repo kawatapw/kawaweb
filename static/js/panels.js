@@ -1009,7 +1009,55 @@ bootstrapVue('beatmap-panel', {
             const formattedSeconds = String(seconds).padStart(2, '0');
             return `${formattedMinutes}:${formattedSeconds}`;
         },
-        
+
+        /**
+         *! @Hinamizawa remove if it in future for something else
+         * Converts beatmap status number to readable text.
+         * @param {number} status - The status code.
+         * @returns {string} - Status name like "Ranked", "Loved", etc.
+         */
+        getStatusName(status) {
+            const statusMap = {
+                '-1': 'Not Submitted',
+                '0': 'Pending',
+                '1': 'Update Available',
+                '2': 'Ranked',
+                '3': 'Approved',
+                '4': 'Qualified',
+                '5': 'Loved'
+            };
+            return statusMap[String(status)] || 'Unknown';
+        },
+
+        /**
+         * Formats a date string into a readable format.
+         * @param {string} dateString - ISO date string.
+         * @returns {string} - Formatted date like "Mar 10, 2024".
+         */
+        formatDate(dateString) {
+            if (!dateString) return 'Unknown';
+            try {
+                const date = new Date(dateString);
+                return date.toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'short',
+                    day: 'numeric'
+                });
+            } catch (e) {
+                return 'Unknown';
+            }
+        },
+
+        /**
+         * Formats a number with thousand separators.
+         * @param {number} num - The number to format.
+         * @returns {string} - Formatted number like "123,456".
+         */
+        formatNumber(num) {
+            if (num === null || num === undefined) return '0';
+            return Number(num).toLocaleString('en-US');
+        },
+
         // ================= FILTER METHODS =================
         
         /**

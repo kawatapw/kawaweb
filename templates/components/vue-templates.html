@@ -1919,14 +1919,30 @@
                                     </div>
                                 </div>
 
-                                <div class="info-block">
-                                    <span>
-                                        Mapped by
+                                <div class="info-block info-block-details">
+                                    <div class="info-detail">
+                                        <span class="info-label">Status:</span>
+                                        <span class="info-value" :class="'status-' + selectedStats.status" v-text="getStatusName(selectedStats.status)"></span>
+                                    </div>
+                                    <div class="info-detail">
+                                        <span class="info-label">Mapped by:</span>
                                         <a
                                             :href="'https://osu.ppy.sh/u/' + selectedStats.creator"
                                             v-text="selectedStats.creator"
+                                            class="info-value info-link"
                                         ></a>
-                                    </span>
+                                    </div>
+                                    <div class="info-detail">
+                                        <span class="info-label"><span class="label-mobile">Updated:</span><span class="label-desktop">Last Updated:</span></span>
+                                        <span class="info-value" v-text="formatDate(selectedStats.last_update)"></span>
+                                    </div>
+                                    <div class="info-detail">
+                                        <span class="info-label">Plays:</span>
+                                        <span class="info-value">
+                                            <span v-text="formatNumber(selectedStats.plays)"></span>
+                                            <span class="sub"> (<span v-text="formatNumber(selectedStats.passes)"></span> passes)</span>
+                                        </span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
