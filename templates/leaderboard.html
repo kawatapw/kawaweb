@@ -17,10 +17,12 @@
 {% endblock %}
 
 {% block content %}
-<div class="lb-stars" id="stars"></div>
-<div class="lb-stars" id="stars1"></div>
-<div class="lb-stars" id="stars2"></div>
-<div class="lb-stars" id="stars3"></div>
+<div class="stars-wrapper">
+  <div class="lb-stars" id="stars"></div>
+  <div class="lb-stars" id="stars1"></div>
+  <div class="lb-stars" id="stars2"></div>
+  <div class="lb-stars" id="stars3"></div>
+</div>
 <div id="app" :class="(load ? 'load' : '')">
     <div class="leaderboard-banner main-banner">
         <div class="main-selector" style="align-items: center;">

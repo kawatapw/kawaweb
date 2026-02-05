@@ -6,15 +6,13 @@
     visibility: visible !important;
     opacity: 1 !important;
     position: relative;
-    margin-top: 2rem !important;
+    margin-top: 2rem; // Space from content above
     padding: 0 !important; // Override default padding
-    min-height: 300px; // Ensure minimum height
-    background: linear-gradient(180deg, 
-        hsl(var(--main), 12%, 12%) 0%, 
-        hsl(var(--main), 15%, 10%) 100%);
+    min-height: 200px; // Ensure visibility
+    background: hsl(var(--main), 12%, 10%); // Unified dark background
     color: hsl(var(--main), 10%, 85%);
-    overflow: hidden;
-    border-top: 1px solid hsl(var(--main), 20%, 20%);
+    overflow: visible; // Allow content to show
+    border-top: 1px solid hsl(var(--main), 20%, 18%); // Subtle top border
 
     // Container
     .footer-container {
@@ -30,8 +28,8 @@
         display: grid;
         grid-template-columns: 1fr auto;
         gap: 4rem;
-        padding: 3.5rem 0 3rem;
-        border-bottom: 1px solid hsl(var(--main), 15%, 18%);
+        padding: 3rem 0 2.5rem;
+        border-bottom: 1px solid hsl(var(--main), 15%, 18%); // Subtle separator to bottom bar
 
         @media (max-width: 968px) {
             grid-template-columns: 1fr;
@@ -92,6 +90,13 @@
                     color: hsl(var(--main), 15%, 65%);
                     max-width: 380px;
                 }
+
+                .brand-tagline-secondary {
+                    margin: 0.5rem 0 0;
+                    font-size: 0.875rem;
+                    font-style: italic;
+                    color: hsl(var(--main), 25%, 55%);
+                }
             }
         }
     }
@@ -112,25 +117,12 @@
     .footer-column {
         .column-title {
             position: relative;
-            margin: 0 0 1.5rem;
-            padding-bottom: 0.75rem;
-            font-size: 0.875rem;
+            margin: 0 0 1.25rem;
+            font-size: 0.75rem;
+            font-variant: small-caps;
             font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.08em;
-            color: hsl(var(--main), 20%, 75%);
-
-            .title-accent {
-                position: absolute;
-                bottom: 0;
-                left: 0;
-                width: 40px;
-                height: 2px;
-                background: linear-gradient(90deg,
-                    hsl(var(--main), 60%, 50%) 0%,
-                    transparent 100%);
-                border-radius: 1px;
-            }
+            letter-spacing: 0.15em;
+            color: hsl(var(--main), 35%, 60%);
         }
 
         .column-links {
@@ -163,11 +155,6 @@
                 color: hsl(var(--main), 60%, 60%);
                 transform: scale(1.1);
             }
-
-            .link-arrow {
-                opacity: 1;
-                transform: translateX(4px);
-            }
         }
 
         &:focus-visible {
@@ -195,10 +182,9 @@
             font-weight: 500;
         }
 
+        // Hide arrows via CSS (backup if HTML still has them)
         .link-arrow {
-            opacity: 0;
-            font-size: 1rem;
-            transition: all 0.2s ease;
+            display: none;
         }
 
         // Interactive variant for Vue.js bindings
@@ -211,106 +197,66 @@
         }
     }
 
-    // Bottom Bar - Full Width
+    // Bottom Bar - compact and centered
     .footer-bottom {
-        padding: 1.5rem 0;
-        background: hsl(var(--main), 15%, 8%);
-        border-top: 1px solid hsl(var(--main), 20%, 15%);
-        width: 100%; // Ensure full width
+        padding: 1rem 0;
+        background: transparent;
+        width: 100%;
 
         .footer-bottom-content {
-            max-width: 1280px; // Match footer-container max-width
-            margin: 0 auto; // Center the content
-            padding: 0 2rem; // Match footer-container padding
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 0 2rem;
             display: flex;
-            justify-content: space-between;
+            flex-direction: column;
             align-items: center;
-            flex-wrap: wrap;
-            gap: 1.5rem;
-
-            @media (max-width: 640px) {
-                justify-content: center;
-                text-align: center;
-                padding: 0 1.5rem; // Match mobile padding
-            }
+            text-align: center;
+            gap: 0.5rem;
         }
 
         .footer-copyright {
             display: flex;
+            flex-direction: column;
             align-items: center;
-            gap: 0.75rem;
-            font-size: 0.875rem;
-            color: hsl(var(--main), 15%, 55%);
+            gap: 0.125rem;
 
-            .separator {
-                color: hsl(var(--main), 20%, 30%);
+            .copyright-main {
+                font-size: 0.8rem;
+                color: hsl(var(--main), 15%, 50%);
+            }
+
+            .copyright-attribution {
+                font-size: 0.7rem;
+                color: hsl(var(--main), 10%, 38%);
             }
         }
 
         .footer-status {
             display: flex;
             align-items: center;
-            gap: 0.5rem;
-            font-size: 0.875rem;
-            color: hsl(var(--main), 15%, 60%);
+            gap: 0.4rem;
+            font-size: 0.75rem;
+            color: hsl(var(--main), 15%, 45%);
 
             .status-indicator {
-                width: 8px;
-                height: 8px;
+                width: 6px;
+                height: 6px;
                 border-radius: 50%;
                 animation: pulse 2s infinite;
 
                 &--online {
                     background: #10b981;
-                    box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
+                    box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.15);
                 }
 
                 &--offline {
                     background: #ef4444;
-                    box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.2);
+                    box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.15);
                 }
             }
         }
     }
 
-    // Background Decoration
-    .footer-decoration {
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        pointer-events: none;
-        overflow: hidden;
-        opacity: 0.03;
-
-        .decoration-line {
-            position: absolute;
-            background: linear-gradient(90deg, 
-                transparent 0%, 
-                hsl(var(--main), 50%, 50%) 50%, 
-                transparent 100%);
-            height: 1px;
-            width: 200%;
-            animation: slide 20s linear infinite;
-
-            &--1 {
-                top: 20%;
-                animation-duration: 25s;
-            }
-
-            &--2 {
-                top: 50%;
-                animation-duration: 30s;
-                animation-direction: reverse;
-            }
-
-            &--3 {
-                top: 80%;
-                animation-duration: 35s;
-            }
-        }
-    }
 }
 
 // Animations
@@ -323,14 +269,6 @@
     }
 }
 
-@keyframes slide {
-    0% {
-        transform: translateX(-50%);
-    }
-    100% {
-        transform: translateX(0);
-    }
-}
 
 // Mobile Responsive Styles
 @media (max-width: 768px) {
@@ -340,7 +278,7 @@
         }
 
         .footer-top {
-            padding: 2.5rem 0 2rem;
+            padding: 2rem 0 1.5rem;
         }
 
         .footer-brand {
@@ -369,13 +307,6 @@
         .footer-column {
             text-align: center;
 
-            .column-title {
-                .title-accent {
-                    left: 50%;
-                    transform: translateX(-50%);
-                }
-            }
-
             .column-links {
                 align-items: stretch;
             }
@@ -383,13 +314,9 @@
 
         .footer-link {
             justify-content: center;
-            
+
             &:hover {
                 transform: none;
-            }
-
-            .link-arrow {
-                display: none;
             }
         }
     }
@@ -403,24 +330,15 @@
         }
 
         .footer-top {
-            gap: 2rem;
-            padding: 2rem 0 1.5rem;
+            gap: 1.5rem;
+            padding: 1.5rem 0 1.25rem;
         }
 
         .footer-bottom {
-            padding: 1.25rem 0;
+            padding: 1rem 0 1.25rem;
 
             .footer-bottom-content {
-                padding: 0 1rem; // Match small mobile container padding
-            }
-
-            .footer-copyright {
-                flex-direction: column;
-                gap: 0.25rem;
-
-                .separator {
-                    display: none;
-                }
+                padding: 0 1rem;
             }
         }
     }
@@ -439,7 +357,9 @@
 // High Contrast Mode Support
 @media (prefers-contrast: high) {
     .footer {
-        border-top: 2px solid hsl(var(--main), 30%, 40%);
+        .footer-top {
+            border-top: 2px solid hsl(var(--main), 30%, 40%);
+        }
 
         .footer-link {
             &:hover {
