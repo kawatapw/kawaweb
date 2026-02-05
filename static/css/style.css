@@ -855,6 +855,17 @@ body::-webkit-scrollbar-thumb {
           top: 50%;
         }
 /*! Hina was here below code adjusted none .scss*/
+/* Desktop dropdown arrow animation (hover) */
+@media screen and (min-width: 1024px) {
+  .navbar-link:not(.is-arrowless)::after {
+    transition: transform 0.25s ease;
+  }
+
+  .navbar-item.has-dropdown.is-hoverable:hover > .navbar-link::after {
+    transform: rotate(225deg);
+  }
+}
+
 /* Mobile dropdown toggle fix */
 @media screen and (max-width: 1023px) {
   .navbar-item.has-dropdown > .navbar-dropdown {
@@ -877,15 +888,14 @@ body::-webkit-scrollbar-thumb {
     transform-origin: center;
     width: 0.625em;
     height: 0.625em;
-    margin-top: -0.4375em;
+    margin-top: -0.3em;
     right: 1.125em;
     position: absolute;
     top: 50%;
-    transition: transform 0.2s ease;
+    transition: transform 0.25s ease;
   }
 
   .navbar-item.has-dropdown.is-active > .navbar-link::after {
-    transform: rotate(225deg);
-    margin-top: -0.125em;
+    transform: rotate(-135deg);
   }
 }
