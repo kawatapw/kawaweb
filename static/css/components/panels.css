@@ -1281,6 +1281,7 @@
             background: var(--container-bg);
             display: flex;
             overflow-y: auto;
+            overflow-x: hidden; /* Prevent horizontal scroll from difficulty strip */
             position: relative;
         }
             [data-panel="Beatmap"] .second-block .content {
@@ -1319,6 +1320,7 @@
                     width: 100%;
                     background: hsl(var(--main), 18%, 18%);
                     border-bottom: 1px solid hsl(var(--main), 25%, 30%);
+                    overflow: hidden; /* Contain difficulty strip overflow */
                 }
 
                 [data-panel="Beatmap"] .difficulty-strip {
@@ -2274,6 +2276,7 @@
                         background: linear-gradient(180deg, rgba(0, 0, 0, 0.85) 0%, rgba(0, 0, 0, 0.6) 70%, transparent 100%);
                         padding: 12px;
                         gap: 10px;
+                        pointer-events: none; /* Allow clicks to pass through to difficulty pills */
                     }
 
                     /* Ensure banner has enough height for overlay + difficulty selector */
@@ -2287,6 +2290,7 @@
                         align-items: center;
                         gap: 12px;
                         position: relative;
+                        pointer-events: auto; /* Re-enable clicks for player row */
                     }
                     .mobile-play-btn {
                         width: 44px;
@@ -2374,6 +2378,7 @@
                         flex-wrap: wrap;
                         gap: 6px;
                         justify-content: center;
+                        pointer-events: auto; /* Re-enable clicks for stat pills */
                     }
 
                     /* Stat pills - improved contrast for mobile visibility */
@@ -2782,6 +2787,12 @@
         backdrop-filter: blur(4px);
     }
 
+    /* Desktop score panel modal centering */
+    #score-panel-modal.modal {
+        justify-content: center;
+        align-items: center;
+    }
+
     [data-panel="Score"].modal-content {
         width: 750px;
         max-width: 95vw;
@@ -2790,6 +2801,7 @@
         display: flex;
         flex-direction: column;
         position: relative;
+        transform-origin: center center; /* Ensure scale animation is from center */
     }
 
     /* Panel close button — top-right corner */
