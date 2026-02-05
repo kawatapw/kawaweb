@@ -392,12 +392,21 @@ bootstrapVue('beatmap-panel', {
         this.$log.info('LIFECYCLE', 'Beatmap Panel created');
         beatmapBus.$on('show-beatmap-panel', this.openPanel);
         beatmapBus.$on('select-beatmap', this.selectMap);
+
+        // Global Escape key handler
+        this._onDocKeydown = (e) => {
+            if (e.key === 'Escape' && this.show) {
+                this.close();
+            }
+        };
+        document.addEventListener('keydown', this._onDocKeydown);
     },
     beforeDestroy() {
         this.$log.info('LIFECYCLE', 'Beatmap Panel destroyed, cleaning up');
         beatmapBus.$off('show-beatmap-panel', this.openPanel);
         beatmapBus.$off('select-beatmap', this.selectMap);
-        
+        document.removeEventListener('keydown', this._onDocKeydown);
+
         // Clean up audio references
         if (this.currentAudio) {
             this.currentAudio.pause();

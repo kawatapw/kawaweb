@@ -1742,10 +1742,14 @@
     </script>
     
     <script type="text/x-template" id="beatmap-panel-template">
-        <div id="beatmap-panel" class="modal" :class="{ 'is-active': show }" style="z-index: 25;">
+        <div id="beatmap-panel" class="modal" :class="{ 'is-active': show }" style="z-index: 40;">
             <div class="modal-background" @click="close"></div>
         
             <div id="beatmap-window" data-panel="Beatmap" class="modal-content" :class="{ 'hidden': !show }" >
+                <!-- Panel close button -->
+                <button class="panel-close-btn" @click="close" aria-label="Close beatmap panel">
+                    <i class="fas fa-times"></i>
+                </button>
                 <div class="main-block">
                     <div class="main-banner" :style="{'--banner-bg': `url(https://assets.ppy.sh/beatmaps/` + set_id + `/covers/cover.jpg)`}">
                     
