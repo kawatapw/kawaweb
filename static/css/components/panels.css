@@ -932,6 +932,9 @@
                         border: 1px solid hsl(var(--main), 25%, 35%);
                         text-align: center;
                     }
+                        .doc-block .doc-notice .content {
+                            height: unset;
+                        }
                     .doc-block .doc-section {
                         background-color: hsl(var(--main), 20%, 20%);
                         border-radius: 8px;
