@@ -64,59 +64,103 @@
     <div class="main-block">
         <div class="leaderboard-main-bg table-responsive">
             <div v-if="boards.length != undefined && boards.length != 0">
-                <table class="leaderboard-table table-responsive">
-                    <thead>
-                        <tr>
-                            <th class="t-heading"> </th>
-                            <th class="t-heading t-heading--main"></th>
-                            <th class="t-heading"> Clan </th>
-                            <th v-if="sort == 'pp' || sort == 'rscore'" class="t-heading table--selected">
-                                <% (sort=='pp' ? "PP" : "" ) %>
-                                    <% (sort=='rscore' ? "Score" : "" ) %>
-                            </th>
-                            <th class="t-heading"> Accuracy </th>
-                            <th class="t-heading"> Playcount </th>
-                            <th class="t-heading"> Max Combo </th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr v-for="(user, index) in boards" class="leaderboard-column">
-                            <td :class="{'column-player-rank': true, 'champ': getRank(index) === 1, 'leader': getRank(index) > 1 && getRank(index) <= 10}">
-                                #<% getRank(index) %>
-                            </td>
-                            <td class="column-player-name text-left">
-                                <a :title="flags[user.country.toUpperCase()]"
-                                    :style="'background-image: url(/static/images/flags/' + user.country.toUpperCase() + '.png)'"
-                                    class="player-flag">
-                                    <div class="flag-dropdown">
-                                        <% flags[user.country.toUpperCase()] %>
-                                    </div>
-                                </a>
-                                <user-profile :user="user"></user-profile>
-                            </td>
-                            <td id="clan-tag" >
-                                <span v-if="user.clan_tag">
-                                    <a>
-                                        [<% user.clan_tag %>]
-                                    </a>
+                <!-- ===== MOBILE CARDS ===== -->
+                <div class="lb-mobile">
+                    <a
+                        v-for="(user, index) in boards"
+                        :key="'mobile-' + user.player_id"
+                        :href="'/u/' + user.player_id"
+                        class="lb-player-card"
+                        :class="index % 2 === 0 ? 'row2p' : 'row1p'"
+                    >
+                        <!-- Primary row -->
+                        <div class="lb-card-main">
+                            <div class="lb-card-rank" :class="{'champ': getRank(index) === 1, 'leader': getRank(index) > 1 && getRank(index) <= 10}">
+                                <span class="lb-rank-hash">#</span><span class="lb-rank-num" v-text="getRank(index)"></span>
+                            </div>
+                            <div class="lb-card-player">
+                                <img class="lb-card-flag"
+                                    :src="'/static/images/flags/' + user.country.toUpperCase() + '.png'"
+                                    :alt="flags[user.country.toUpperCase()]"
+                                    :title="flags[user.country.toUpperCase()]">
+                                <span class="lb-card-name">
+                                    <span v-text="user.name"></span>
+                                    <span v-if="user.clan_tag" class="lb-card-clan" v-text="' [' + user.clan_tag + ']'"></span>
                                 </span>
-                            </td>
-                            <td id="pp-score"  v-if="sort == 'pp' || sort == 'rscore'">
-                                <% (sort=='pp' ? user.pp+'pp' : "" ) %>
-                                    <% (sort=='rscore' ? scoreFormat(user.rscore) : "" ) %>
-                            </td>
-                            <td id="accuracy" >
-                                <% user.acc.toFixed(2) %>%
-                            </td>
-                            <td id="playcount" >
-                                <% addCommas(user.plays) %>
-                            </td>
-                            <td id="max-combo">
-                                <% addCommas(user.max_combo) %>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
+                            </div>
+                            <div class="lb-card-value">
+                                <span class="lb-card-value-num" v-if="sort === 'pp'" v-text="addCommas(user.pp)"></span>
+                                <span class="lb-card-value-num" v-else v-text="scoreFormat(user.rscore)"></span>
+                                <span class="lb-card-value-label" v-text="sort === 'pp' ? 'pp' : ''"></span>
+                            </div>
+                        </div>
+                        <!-- Secondary row -->
+                        <div class="lb-card-stats">
+                            <span class="lb-card-stat"><span class="lb-card-stat-value" v-text="user.acc.toFixed(2) + '%'"></span></span>
+                            <span class="lb-card-stat-sep">·</span>
+                            <span class="lb-card-stat"><span class="lb-card-stat-value" v-text="addCommas(user.plays)"></span><span class="lb-card-stat-label"> plays</span></span>
+                            <span class="lb-card-stat-sep">·</span>
+                            <span class="lb-card-stat"><span class="lb-card-stat-value" v-text="addCommas(user.max_combo) + 'x'"></span><span class="lb-card-stat-label"> combo</span></span>
+                        </div>
+                    </a>
+                </div>
+
+                <!-- ===== DESKTOP TABLE ===== -->
+                <div class="lb-desktop">
+                    <table class="leaderboard-table table-responsive">
+                        <thead>
+                            <tr>
+                                <th class="t-heading"> </th>
+                                <th class="t-heading t-heading--main"></th>
+                                <th class="t-heading"> Clan </th>
+                                <th v-if="sort == 'pp' || sort == 'rscore'" class="t-heading table--selected">
+                                    <% (sort=='pp' ? "PP" : "" ) %>
+                                        <% (sort=='rscore' ? "Score" : "" ) %>
+                                </th>
+                                <th class="t-heading"> Accuracy </th>
+                                <th class="t-heading"> Playcount </th>
+                                <th class="t-heading"> Max Combo </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-for="(user, index) in boards" class="leaderboard-column">
+                                <td :class="{'column-player-rank': true, 'champ': getRank(index) === 1, 'leader': getRank(index) > 1 && getRank(index) <= 10}">
+                                    #<% getRank(index) %>
+                                </td>
+                                <td class="column-player-name text-left">
+                                    <a :title="flags[user.country.toUpperCase()]"
+                                        :style="'background-image: url(/static/images/flags/' + user.country.toUpperCase() + '.png)'"
+                                        class="player-flag">
+                                        <div class="flag-dropdown">
+                                            <% flags[user.country.toUpperCase()] %>
+                                        </div>
+                                    </a>
+                                    <user-profile :user="user"></user-profile>
+                                </td>
+                                <td id="clan-tag" >
+                                    <span v-if="user.clan_tag">
+                                        <a>
+                                            [<% user.clan_tag %>]
+                                        </a>
+                                    </span>
+                                </td>
+                                <td id="pp-score"  v-if="sort == 'pp' || sort == 'rscore'">
+                                    <% (sort=='pp' ? user.pp+'pp' : "" ) %>
+                                        <% (sort=='rscore' ? scoreFormat(user.rscore) : "" ) %>
+                                </td>
+                                <td id="accuracy" >
+                                    <% user.acc.toFixed(2) %>%
+                                </td>
+                                <td id="playcount" >
+                                    <% addCommas(user.plays) %>
+                                </td>
+                                <td id="max-combo">
+                                    <% addCommas(user.max_combo) %>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
             <div v-else>
                 <div class="text-center">

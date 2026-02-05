@@ -211,3 +211,118 @@ table th {
   visibility: visible;
   opacity: 1;
 }
+
+/* =============================================================================
+ * MOBILE LEADERBOARD (≤768px)
+ * ============================================================================= */
+
+.lb-mobile { display: none; }
+
+@media (max-width: 768px) {
+    .lb-desktop { display: none !important; }
+    .lb-mobile { display: block; padding: 8px; }
+
+    /* Card container (entire card is an anchor) */
+    a.lb-player-card {
+        display: block;
+        border-radius: 8px;
+        margin-bottom: 8px;
+        overflow: hidden;
+        transition: background-color 150ms ease;
+        text-decoration: none;
+        color: inherit;
+        cursor: pointer;
+        -webkit-tap-highlight-color: transparent;
+    }
+    .lb-player-card:last-child { margin-bottom: 0; }
+    .lb-player-card.row1p { background-color: hsl(var(--main), 10%, 22%); }
+    .lb-player-card.row2p { background-color: hsl(var(--main), 10%, 18%); }
+    .lb-player-card:active { background-color: hsl(var(--main), 15%, 25%); }
+
+    /* Primary row */
+    .lb-card-main {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 12px;
+        min-height: 48px;
+    }
+
+    /* Rank */
+    .lb-card-rank {
+        display: flex;
+        align-items: baseline;
+        min-width: 44px;
+        font-size: 14px;
+        font-weight: 700;
+        color: hsl(var(--main), 10%, 70%);
+        flex-shrink: 0;
+    }
+    .lb-rank-hash { font-size: 12px; opacity: 0.7; margin-right: 1px; }
+    .lb-card-rank.champ { font-size: 16px; color: #10c7ff; }
+    .lb-card-rank.champ .lb-rank-hash { color: #10c7ff; }
+    .lb-card-rank.leader { font-size: 15px; color: #e7c500; }
+    .lb-card-rank.leader .lb-rank-hash { color: #e7c500; }
+
+    /* Player info */
+    .lb-card-player {
+        flex: 1;
+        min-width: 0;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .lb-card-flag { width: 22px; height: 15px; flex-shrink: 0; border-radius: 2px; }
+    .lb-card-name {
+        font-size: 14px;
+        font-weight: 600;
+        color: #fff;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .lb-card-clan { color: hsl(var(--main), 70%, 65%); font-weight: 500; }
+
+    /* PP/Score value */
+    .lb-card-value { display: flex; align-items: baseline; gap: 2px; flex-shrink: 0; }
+    .lb-card-value-num { font-size: 18px; font-weight: 700; color: hsl(var(--main), 70%, 70%); }
+    .lb-card-value-label { font-size: 11px; font-weight: 500; color: hsl(var(--main), 10%, 55%); }
+
+    /* Stats row - left padding aligns with player name (rank width + gap + offset) */
+    .lb-card-stats {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 0 12px 10px calc(44px + 10px + 10px);
+        flex-wrap: wrap;
+    }
+    .lb-card-stat { font-size: 12px; color: hsl(var(--main), 10%, 60%); }
+    .lb-card-stat-value { font-weight: 500; color: hsl(var(--main), 10%, 70%); }
+    .lb-card-stat-label { font-weight: 400; color: hsl(var(--main), 10%, 50%); }
+    .lb-card-stat-sep { color: hsl(var(--main), 10%, 40%); font-size: 12px; }
+
+    /* Banner adjustments */
+    .leaderboard-banner { height: auto; min-height: 160px; padding-bottom: 12px; }
+    .leaderboard-banner .main-selector { flex-wrap: wrap; height: auto; gap: 4px; padding: 8px 12px; }
+    .leaderboard-banner .selector { flex-direction: column; gap: 8px; }
+    .leaderboard-banner .selector .left,
+    .leaderboard-banner .selector .right { justify-content: center; }
+    .mode-select { margin: 4px 8px; font-size: 14px; }
+
+    /* Pagination */
+    .leaderboard-pagination { padding: 12px; }
+    .leaderboard-pagination .pagination { flex-wrap: nowrap; gap: 8px; }
+    .leaderboard-pagination .pagination-previous,
+    .leaderboard-pagination .pagination-next { flex: 1; min-height: 44px; font-size: 14px; }
+}
+
+/* Extra small (≤480px) */
+@media (max-width: 480px) {
+    .lb-card-main { padding: 10px; gap: 8px; }
+    .lb-card-rank { min-width: 40px; font-size: 13px; }
+    .lb-card-name { font-size: 13px; }
+    .lb-card-value-num { font-size: 16px; }
+    .lb-card-stats { padding: 0 10px 8px calc(40px + 8px + 10px); gap: 4px; }
+    .lb-card-stat { font-size: 11px; }
+    .simple-banner-switch { font-size: 12px; padding: 4px 8px; }
+}
