@@ -7,14 +7,15 @@
 <script src="/static/js/asserts/vue.js"></script>
 <script src="/static/js/asserts/vue-axios.js"></script>
 
-    <script>
-        var domain = "{{ domain() }}";
-        var changelogs = JSON.parse('{{ changelogs|tojson }}');
-        var type = "{{ type }}";
-        var category = "{{ category }}";
-    </script>
-<link rel="stylesheet" href="/static/css/pages/generic.css">
-<link rel="stylesheet" href="/static/css/pages/changelog.css">
+<script>
+    var domain = "{{ domain() }}";
+    var changelogs = JSON.parse('{{ changelogs|tojson }}');
+    var type = "{{ type }}";
+    var category = "{{ category }}";
+</script>
+<style>
+    @import url("/static/css/pages/changelog.css") layer(styles);
+</style>
 {% endblock %}
 
 {% block content %}

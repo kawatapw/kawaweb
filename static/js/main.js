@@ -1,41 +1,4 @@
 
-// sticky header
-$(window).scroll(() => {
-    var header = document.getElementById("navbar");
-    var sticky = header.offsetTop;
-
-    if (window.pageYOffset > sticky) {
-        header.classList.add("minimized");
-    } else {
-        header.classList.remove("minimized");
-    }
-});
-
-//toggle navbar for mobile
-function togglenavbar() {
-    document.getElementById('navbar').classList.toggle("is-active");
-    document.getElementById('navbar-burger').classList.toggle("is-active");
-}
-
-// Mobile dropdown toggle
-document.addEventListener('click', function(e) {
-  var link = e.target.closest('.navbar-item.has-dropdown > .navbar-link');
-  if (!link) return;
-
-  // Only on mobile (when hamburger is visible)
-  if (window.innerWidth >= 1024) return;
-
-  e.preventDefault();
-  var parent = link.parentElement;
-
-  // Close other open dropdowns
-  document.querySelectorAll('.navbar-item.has-dropdown.is-active').forEach(function(el) {
-    if (el !== parent) el.classList.remove('is-active');
-  });
-
-  parent.classList.toggle('is-active');
-});
-
 // Initialize ColorfulLogger
 window.kawataLogger = ColorfulLogger;
 const logger = ColorfulLogger.init({
@@ -43,6 +6,15 @@ const logger = ColorfulLogger.init({
     name: 'Kawata-Web',
     showTimestamp: true,
 });
+
+// Load navbar component
+const navbarScript = document.createElement('script');
+navbarScript.src = '/static/js/components/navbar.js';
+navbarScript.onload = () => {
+    logger.info('NAVBAR', 'Navbar component loaded');
+};
+document.head.appendChild(navbarScript);
+
 
 /**
  * Portal Popup System

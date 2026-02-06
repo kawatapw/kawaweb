@@ -366,6 +366,7 @@ a.foot-link {
   flex-direction: row;
   text-align: center;
   justify-content: center;
+  margin-bottom: 8px;
 }
 
 .noti-column {
@@ -583,7 +584,7 @@ a.foot-link {
   height: 100%;
   width: 100%;
   content: "";
-  background-color: hsla(var(--main), 40%, 40%, 0.7) !important;
+  background-color: hsla(var(--main), 40%, 40%, 0.7);
 }
 
 @media (min-width: 900px) {

@@ -60,7 +60,9 @@
 </div>
 {% endmacro %}
 {% block header %}
-<link rel="stylesheet" href="/static/css/pages/profile.css">
+<style>
+    @import url("/static/css/pages/profile.css") layer(styles);
+</style>
 <script src="https://cdn.socket.io/4.2.0/socket.io.min.js"></script>
 <script>
     var userid = Number("{{ user['id'] }}"); //For text editor doesn't dizzy lmao

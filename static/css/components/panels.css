@@ -1633,7 +1633,7 @@
                     @media (max-width: 767px) {
                         /* Fix navbar overlap: offset content below the fixed navbar (4rem) */
                         #beatmap-panel.modal {
-                            align-items: flex-start;
+                            /*align-items: flex-start; Commented out as causes modal to show from left and not centered. */
                             padding-top: 4rem;
                         }
 
@@ -2708,87 +2708,87 @@
 
 /* Score Panel Styles */
     /* Animations for loading and error states */
-    @keyframes fadeIn {
-        from {
-            opacity: 0;
-            transform: translateY(-10px);
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
-    }
 
-    @keyframes slideIn {
-        from {
-            opacity: 0;
-            transform: translateX(-20px);
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
         }
-        to {
-            opacity: 1;
-            transform: translateX(0);
-        }
-    }
 
-    @keyframes scaleIn {
-        from {
-            opacity: 0;
-            transform: scale(0.95);
+        @keyframes scaleIn {
+            from {
+                opacity: 0;
+                transform: scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
         }
-        to {
-            opacity: 1;
-            transform: scale(1);
-        }
-    }
 
-    @keyframes pulse {
-        0%, 100% {
-            opacity: 1;
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.6;
+            }
         }
-        50% {
-            opacity: 0.6;
-        }
-    }
 
-    @keyframes shake {
-        0%, 100% {
-            transform: translateX(0);
+        @keyframes shake {
+            0%, 100% {
+                transform: translateX(0);
+            }
+            20%, 60% {
+                transform: translateX(-5px);
+            }
+            40%, 80% {
+                transform: translateX(5px);
+            }
         }
-        20%, 60% {
-            transform: translateX(-5px);
-        }
-        40%, 80% {
-            transform: translateX(5px);
-        }
-    }
 
     /* Loading state styling */
-    .loading-state {
-        background: linear-gradient(180deg, 
-            hsl(var(--main), 22%, 16%) 0%, 
-            hsl(var(--main), 20%, 14%) 100%) !important;
-        border: 1px solid hsla(var(--main), 50%, 70%, 0.25);
-        border-radius: 12px;
-        box-shadow: 
-            0 4px 12px rgba(0, 0, 0, 0.25),
-            0 8px 24px rgba(0, 0, 0, 0.2),
-            inset 0 1px 0 hsla(var(--main), 50%, 80%, 0.1);
-        backdrop-filter: blur(4px);
-    }
+        .loading-state {
+            background: linear-gradient(180deg, 
+                hsl(var(--main), 22%, 16%) 0%, 
+                hsl(var(--main), 20%, 14%) 100%) !important;
+            border: 1px solid hsla(var(--main), 50%, 70%, 0.25);
+            border-radius: 12px;
+            box-shadow: 
+                0 4px 12px rgba(0, 0, 0, 0.25),
+                0 8px 24px rgba(0, 0, 0, 0.2),
+                inset 0 1px 0 hsla(var(--main), 50%, 80%, 0.1);
+            backdrop-filter: blur(4px);
+        }
 
     /* Error state styling */
-    .error-state {
-        background: linear-gradient(180deg, 
-            hsl(var(--main), 16%, 13%) 0%, 
-            hsl(var(--main), 14%, 11%) 100%) !important;
-        border: 1px solid hsla(var(--main), 0%, 50%, 0.35);
-        border-radius: 12px;
-        box-shadow: 
-            0 4px 12px rgba(0, 0, 0, 0.3),
-            0 8px 24px rgba(0, 0, 0, 0.25),
-            inset 0 1px 0 hsla(var(--main), 30%, 40%, 0.1);
-        backdrop-filter: blur(4px);
-    }
+        .error-state {
+            background: linear-gradient(180deg, 
+                hsl(var(--main), 16%, 13%) 0%, 
+                hsl(var(--main), 14%, 11%) 100%) !important;
+            border: 1px solid hsla(var(--main), 0%, 50%, 0.35);
+            border-radius: 12px;
+            box-shadow: 
+                0 4px 12px rgba(0, 0, 0, 0.3),
+                0 8px 24px rgba(0, 0, 0, 0.25),
+                inset 0 1px 0 hsla(var(--main), 30%, 40%, 0.1);
+            backdrop-filter: blur(4px);
+        }
 
     /* Desktop score panel modal centering */
     #score-panel-modal.modal {
@@ -2840,7 +2840,6 @@
     }
 
     [data-panel="Score"] .main-block {
-        max-height: 220px;
         min-height: 180px;
         flex-shrink: 0;
     }
@@ -3309,7 +3308,7 @@
         /* Fix navbar overlap: modal above navbar (z-index 40 in template),
            offset content below the fixed navbar (4rem / 64px) */
         #score-panel-modal.modal {
-            align-items: flex-start;
+            /*align-items: flex-start; Commented out cause causes panel to show from left instead of centered. */
             padding-top: 4rem;
         }
 

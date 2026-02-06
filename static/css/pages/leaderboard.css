@@ -302,9 +302,9 @@ table th {
     .lb-card-stat-sep { color: hsl(var(--main), 10%, 40%); font-size: 12px; }
 
     /* Banner adjustments */
-    .leaderboard-banner { height: auto; min-height: 160px; padding-bottom: 12px; }
+    .leaderboard-banner { height: auto; min-height: 160px; }
     .leaderboard-banner .main-selector { flex-wrap: wrap; height: auto; gap: 4px; padding: 8px 12px; }
-    .leaderboard-banner .selector { flex-direction: column; gap: 8px; }
+    .leaderboard-banner .selector { gap: 8px; }
     .leaderboard-banner .selector .left,
     .leaderboard-banner .selector .right { justify-content: center; }
     .mode-select { margin: 4px 8px; font-size: 14px; }

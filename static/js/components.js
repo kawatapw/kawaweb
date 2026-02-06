@@ -1895,6 +1895,7 @@ Vue.component('user-profile', {
   },
   
   created() {
+    this.$log = ColorfulLogger.child('Comp | User Profile');
     this.$log.debug('UserProfile', 'Component created', {
       userid: this.userid,
       hasUser: !!this.user,
@@ -2269,6 +2270,9 @@ Vue.component('score-card', {
       required: true
     }
   },
+  created () {
+    this.$log = ColorfulLogger.child('Comp | Score Card');
+  },
   methods: {
     formatNumber(num) {
       if (!num) return '0';
@@ -2595,6 +2599,7 @@ Vue.component('bmap-card', {
     };
   },
   async created() {
+    this.$log = ColorfulLogger.child('Comp | Beatmap Card');
     // Auto-load complete data if needed
     if (this.autoLoad && !this.hasCompleteData) {
       this.loadMapData();

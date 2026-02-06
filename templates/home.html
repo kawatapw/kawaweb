@@ -4,11 +4,23 @@
 {% block header %}
 <script src="/static/js/asserts/vue.js"></script>
 <script src="/static/js/asserts/vue-axios.js"></script>
-<link rel="stylesheet" href="/static/css/pages/home.css">
-<link rel="stylesheet" href="/static/css/pages/changelog.css">
+<style>
+  @import url("/static/css/pages/home.css") layer(styles);
+  @import url("/static/css/pages/changelog.css") layer(styles);
+</style>
 
 {% endblock %}
-
+<!--
+Ideas for homepage redesign:
+Review section like gatari,
+Most Played Map of the Week??,
+Top 3 score hunters,
+Better newly ranked Display,
+Top Supporters,
+Showing Multi Lobbies in Progress,
+Top Clan,
+Open to more ideas.
+-->
 {% block content %}
 
 <div class="hero splash p-less is-fullheight-with-navbar" id="home-hero">

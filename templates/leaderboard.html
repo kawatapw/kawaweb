@@ -11,9 +11,9 @@
     var sort = "{{ sort }}";
     var domain = "{{ domain() }}";
 </script>
-
-<link rel="stylesheet" href="/static/css/pages/generic.css">
-<link rel="stylesheet" href="/static/css/pages/leaderboard.css">
+<style>
+    @import url("/static/css/pages/leaderboard.css") layer(styles);
+</style>
 {% endblock %}
 
 {% block content %}

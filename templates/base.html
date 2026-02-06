@@ -14,8 +14,11 @@
   <script src="/static/js/asserts/vue-axios.js"></script>
   <script src="/static/js/vue-bootstrap.js"></script>
   <script src="https://unpkg.com/portal-vue@2.1.7/dist/portal-vue.umd.min.js"></script>
-  
+
   <script src="https://unpkg.com/htmx.org@1.9.10" integrity="sha384-D1Kt99CQMDuVetoL1lrYwg5t+9QdHe7NLX/SoJYkXDFfX37iInKRy5xLSi8nO7UC" crossorigin="anonymous"></script>
+
+  <!-- Core JS scripts -->
+  <script src="/static/js/comps/logger.js" crossorigin="anonymous"></script>
 
   <!-- Favicon -->
   <link rel="apple-touch-icon" sizes="180x180" href="/static/favicon/apple-touch-icon.png">
@@ -36,22 +39,11 @@
     integrity="sha512-/DXTXr6nQodMUiq+IUJYCt2PPOUjrHJ9wFrqpJ3XkgPNOZVfMok7cRw6CSxyCQxXn6ozlESsSh1/sMCTF1rL/g=="
     crossorigin="anonymous"></script>
 
-  <!-- Bulma no not from Dragon Ball you DWEEB -->
-  <link rel="stylesheet" href="/static/css/bulma.min-v7.css" />
-
-  <!-- Font awesome -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
-
   <!-- TimeAgo -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/timeago.js/4.0.2/timeago.min.js"></script>
-  <!-- Custom style -->
-  <link rel="stylesheet" href="/static/css/style.css">
-  <link rel="stylesheet" href="/static/css/components.css">
-  <link rel="stylesheet" href="/static/css/components/badges.css">
-  <link rel="stylesheet" href="/static/css/components/panels.css">
-  <link rel="stylesheet" href="/static/css/pages/generic.css">
-  <link rel="stylesheet" type="text/css" href="/static/css/stars.css">
-  <link rel="stylesheet" href="/static/css/hina_import.css">
+
+  <!-- Custom style with Layers -->
+  <link rel="stylesheet" href="/static/css/main.css">
 
   {% block header %}
   {% endblock %}
@@ -130,7 +122,6 @@
   {% include 'components/footer.html' %}
 
   <!-- Main JS scripts -->
-  <script src="/static/js/comps/logger.js" crossorigin="anonymous"></script>
   <script src="/static/js/main.js" crossorigin="anonymous"></script>
   <script src="/static/js/components.js" crossorigin="anonymous"></script>
   <script src="/static/js/comps/shaders.js" crossorigin="anonymous"></script>

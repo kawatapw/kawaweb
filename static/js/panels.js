@@ -2059,7 +2059,7 @@ bootstrapVue('score-panel', {
             }
             
             const scoreGrade = this.score.grade.toUpperCase();
-            const gradeOrder = ['SS', 'S', 'A', 'B', 'C', 'D'];
+            const gradeOrder = ['SS', 'S', 'A', 'B', 'C', 'D', 'F'];
             
             const scoreIndex = gradeOrder.indexOf(scoreGrade);
             const checkIndex = gradeOrder.indexOf(grade);

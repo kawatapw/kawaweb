@@ -85,7 +85,7 @@
     padding: 4px 5px 4px 5px;
   }
     .home-stats .stat span {
-      font-size: 0.25em;
+      font-size: 0.75rem;
       font-weight: 400;
     }
 
@@ -101,7 +101,7 @@
   transform: translateX(-50%);
   color: white;
   cursor: pointer;
-  font-size: 0.5em;
+  font-size: 1rem;
   align-content: center;
   white-space: nowrap;
 }
