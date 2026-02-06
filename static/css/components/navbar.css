@@ -390,7 +390,7 @@
     bottom: 0;
     left: 0;
     right: 0;
-    max-height: calc(85vh - var(--navbar-mobile-height));
+    max-height: calc(90vh - var(--navbar-mobile-height));
     background: var(--navbar-bg);
     border-top-left-radius: 24px;
     border-top-right-radius: 24px;
@@ -810,14 +810,14 @@
 
 .navbar-mobile-dropdown-menu {
     max-height: 0;
-    overflow: hidden;
+    overflow: scroll;
     transition: max-height 0.3s ease;
     background: hsl(var(--main), 8%, 18%);
 }
 
 .navbar-mobile-dropdown:hover .navbar-mobile-dropdown-menu,
 .navbar-mobile-dropdown.active .navbar-mobile-dropdown-menu {
-    max-height: 200px;
+    max-height: 240px;
 }
 
 .navbar-mobile-dropdown-item {
@@ -825,7 +825,7 @@
     padding: 12px 16px 12px 48px;
     color: var(--navbar-text);
     text-decoration: none;
-    font-size: 0.9rem;
+    font-size: 0.711rem; /* Sets height to 40px */
     transition: all 0.2s ease;
 }
 

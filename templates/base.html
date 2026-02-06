@@ -6,21 +6,20 @@
 
   <!-- Three.js -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-  <!-- D3 -->
-  <script src="https://d3js.org/d3.v7.min.js"></script>
-  <!-- VueJS -->
-  <!--<script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>-->
+  
+  <!-- VueJS (if needed for legacy components) -->
   <script src="/static/js/asserts/vue.js"></script>
   <script src="/static/js/asserts/vue-axios.js"></script>
-  <script src="/static/js/vue-bootstrap.js"></script>
+  <script src="/static/js/utils/vue-bootstrap.js"></script>
   <script src="https://unpkg.com/portal-vue@2.1.7/dist/portal-vue.umd.min.js"></script>
 
+  <!-- HTMX -->
   <script src="https://unpkg.com/htmx.org@1.9.10" integrity="sha384-D1Kt99CQMDuVetoL1lrYwg5t+9QdHe7NLX/SoJYkXDFfX37iInKRy5xLSi8nO7UC" crossorigin="anonymous"></script>
 
-  <!-- Core JS scripts -->
-  <script src="/static/js/comps/logger.js" crossorigin="anonymous"></script>
+  <!-- Core Logger (loaded first) -->
+  <script src="/static/js/utils/logger.js" crossorigin="anonymous"></script>
 
-  <!-- Favicon -->
+  <!-- Favicon & Metadata -->
   <link rel="apple-touch-icon" sizes="180x180" href="/static/favicon/apple-touch-icon.png">
   <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon/favicon-32x32.png">
   <link rel="icon" type="image/png" sizes="16x16" href="/static/favicon/favicon-16x16.png">
@@ -30,23 +29,14 @@
   <meta name="msapplication-TileColor" content="#000000">
   <meta name="msapplication-config" content="/static/favicon/browserconfig.xml">
   <meta name="theme-color" content="#000000">
-
-  <!-- Metadata -->
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
-  <!-- JQuery -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.slim.min.js"
-    integrity="sha512-/DXTXr6nQodMUiq+IUJYCt2PPOUjrHJ9wFrqpJ3XkgPNOZVfMok7cRw6CSxyCQxXn6ozlESsSh1/sMCTF1rL/g=="
-    crossorigin="anonymous"></script>
-
-  <!-- TimeAgo -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/timeago.js/4.0.2/timeago.min.js"></script>
-
-  <!-- Custom style with Layers -->
+  <!-- Custom style -->
   <link rel="stylesheet" href="/static/css/main.css">
 
   {% block header %}
   {% endblock %}
+  
   <script>
     var domain = "{{ domain() }}";
   </script>
@@ -54,7 +44,6 @@
 
 <body>
   {% include 'components/vue-templates.html' %}
-  <!-- Header -->
   {% include 'components/navbar.html' %}
 
   <div id="search-panel"></div>
@@ -71,16 +60,10 @@
         <div class="noti-column">
           <div class='noti-col noti-col-icon'></div>
           <div class='noti-col noti-col-label'>
-            <div class='noti-bannertype'>
-              Global
-            </div>
-            <div class='noti-bannertext'>
-              Notice
-            </div>
+            <div class='noti-bannertype'>Global</div>
+            <div class='noti-bannertext'>Notice</div>
           </div>
-          <div class='noti-banner-text'>
-            {{ globalNotice | safe }}
-          </div>
+          <div class='noti-banner-text'>{{ globalNotice | safe }}</div>
         </div>
       </div>
     </div>
@@ -92,23 +75,13 @@
           <div class='noti-col noti-col-icon'></div>
           <div class='noti-col noti-col-label'>
             <div class='noti-bannertype'>
-              {% if status=='error' %}
-              Warning
-              {% elif status=='success' %}
-              Notice
-              {% endif %}
+              {% if status=='error' %}Warning{% elif status=='success' %}Notice{% endif %}
             </div>
             <div class='noti-bannertext'>
-              {% if status=='error' %}
-              Uh oh! Be careful!
-              {% elif status=='success' %}
-              Hey! Listen!
-              {% endif %}
+              {% if status=='error' %}Uh oh! Be careful!{% elif status=='success' %}Hey! Listen!{% endif %}
             </div>
           </div>
-          <div class='noti-banner-text'>
-            {{ flash | safe }}
-          </div>
+          <div class='noti-banner-text'>{{ flash | safe }}</div>
         </div>
       </div>
     </div>
@@ -121,11 +94,8 @@
   <!-- Footer -->
   {% include 'components/footer.html' %}
 
-  <!-- Main JS scripts -->
+  <!-- Main Application Script (handles all loading) -->
   <script src="/static/js/main.js" crossorigin="anonymous"></script>
-  <script src="/static/js/components.js" crossorigin="anonymous"></script>
-  <script src="/static/js/comps/shaders.js" crossorigin="anonymous"></script>
-  <script src="/static/js/panels.js" crossorigin="anonymous"></script>
 
   <!-- Customisation -->
   {% block bottom %}
