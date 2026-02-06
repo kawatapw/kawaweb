@@ -204,5 +204,11 @@ Vue.component('score-card', {
       return value;
     }
   },
+  beforeDestroy() {
+    // Clean up any resources
+    if (this.$log) {
+      this.$log.debug('LIFECYCLE', 'Score card component destroyed');
+    }
+  },
   template: `#score-card-template`
 });

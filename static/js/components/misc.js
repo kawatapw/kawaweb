@@ -735,12 +735,27 @@ Vue.component('user-profile-old', {
           return modes;
       }
   },
+  beforeDestroy() {
+    // Clean up status interval
+    this.stopStatusInterval();
+    
+    // Clean up any pending fetch requests
+    if (this.isLoadingUser || this.isLoadingStatus) {
+      if (this.$log) {
+        this.$log.warn('LIFECYCLE', 'Component destroyed while data was loading');
+      }
+    }
+    
+    if (this.$log) {
+      this.$log.debug('LIFECYCLE', 'User profile old component destroyed');
+    }
+  },
   template: `
     <span :id="user.player_id" class="user-name" @mouseover="showProfile" @mouseout="hideProfile">
       <a :href="'/u/'+user.player_id+'?mode='+mode+'&mods='+mods">
           {{ user.info.name }}
       </a>
-      <div :id="user.player_id" class="profile-panel" :class="profileClasses" 
+      <div :id="user.player_id" class="profile-panel" :class="profileClasses"
            @mouseenter="mouseEnterPanel" @mouseleave="mouseLeavePanel">
         <div class="profile-panel-background" :style="'background-image: url(/backgrounds/' + user.player_id + ')'"></div>
         
@@ -788,8 +803,8 @@ Vue.component('user-profile-old', {
         <div class="profile-panel-details" v-show="isExpanded">
           <!-- Mode selector -->
           <div v-if="availableModes.length > 0" class="mode-selector">
-            <div v-for="modeOption in availableModes" 
-                 :key="modeOption.mode + '|' + modeOption.mods" 
+            <div v-for="modeOption in availableModes"
+                 :key="modeOption.mode + '|' + modeOption.mods"
                  @click="changeMode(modeOption.mode, modeOption.mods)"
                  :class="['mode-option', { active: currentMode === modeOption.mode && currentMods === modeOption.mods }]">
               {{ modeOption.display }}
@@ -797,17 +812,17 @@ Vue.component('user-profile-old', {
           </div>
           
           <div class="profile-panel-tabs">
-            <div class="profile-tab" 
-                 :class="{ active: activeTab === 'performance' }" 
+            <div class="profile-tab"
+                 :class="{ active: activeTab === 'performance' }"
                  @click="setActiveTab('performance')">Performance</div>
-            <div class="profile-tab" 
-                 :class="{ active: activeTab === 'recent' }" 
+            <div class="profile-tab"
+                 :class="{ active: activeTab === 'recent' }"
                  @click="setActiveTab('recent')">Recent</div>
-            <div class="profile-tab" 
-                 :class="{ active: activeTab === 'best' }" 
+            <div class="profile-tab"
+                 :class="{ active: activeTab === 'best' }"
                  @click="setActiveTab('best')">Best</div>
-            <div class="profile-tab" 
-                 :class="{ active: activeTab === 'most' }" 
+            <div class="profile-tab"
+                 :class="{ active: activeTab === 'most' }"
                  @click="setActiveTab('most')">Most Played</div>
           </div>
           

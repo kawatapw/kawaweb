@@ -367,5 +367,11 @@ Vue.component('bmap-card', {
       this.loadSetDifficulties();
     }
   },
+  beforeDestroy() {
+    // Clean up any resources
+    if (this.$log) {
+      this.$log.debug('LIFECYCLE', 'Beatmap card component destroyed');
+    }
+  },
   template: `#bmap-card-template`
 });

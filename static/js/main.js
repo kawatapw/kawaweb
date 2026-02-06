@@ -246,6 +246,12 @@ class KawataApp {
         this.isInitialized = false;
         this.initPromise = null;
         
+        // Remove DOMContentLoaded event listener if it exists
+        if (domContentLoadedHandler) {
+            document.removeEventListener('DOMContentLoaded', domContentLoadedHandler);
+            domContentLoadedHandler = null;
+        }
+        
         if (this.logger) {
             this.logger.info('APP', 'Kawata-Web cleanup completed');
         }
@@ -411,38 +417,6 @@ window.getDifficultyRGB = function(stars) {
 // ============================================================================
 // 4. MEMORY MONITOR
 // ============================================================================
-class MemoryMonitor {
-    constructor(logger) {
-        this.logger = logger;
-        this.interval = null;
-        this.maxMemory = 500 * 1024 * 1024; // 500MB
-    }
-
-    start() {
-        if (this.interval) return;
-        
-        this.interval = setInterval(() => {
-            if (performance.memory) {
-                const usedMB = performance.memory.usedJSHeapSize / (1024 * 1024);
-                if (usedMB > this.maxMemory / (1024 * 1024)) {
-                    this.logger.warn('MEMORY', `High memory usage: ${usedMB.toFixed(2)}MB`);
-                    // Trigger cleanup if memory is too high
-                    if (window.kawataApp) {
-                        window.kawataApp.cleanup();
-                    }
-                }
-            }
-        }, 5000);
-    }
-
-    stop() {
-        if (this.interval) {
-            clearInterval(this.interval);
-            this.interval = null;
-        }
-    }
-}
-
 // ============================================================================
 // 5. APPLICATION BOOTSTRAP
 // ============================================================================
@@ -450,13 +424,20 @@ class MemoryMonitor {
 // Create and initialize the application
 window.kawataApp = new KawataApp();
 
+// Store DOMContentLoaded handler for cleanup
+let domContentLoadedHandler = null;
+
 // Auto-initialize when DOM is ready
 if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => {
+    domContentLoadedHandler = () => {
         window.kawataApp.init().catch(error => {
             console.error('Failed to initialize Kawata-Web:', error);
         });
-    });
+        // Remove the event listener after it fires
+        document.removeEventListener('DOMContentLoaded', domContentLoadedHandler);
+        domContentLoadedHandler = null;
+    };
+    document.addEventListener('DOMContentLoaded', domContentLoadedHandler);
 } else {
     window.kawataApp.init().catch(error => {
         console.error('Failed to initialize Kawata-Web:', error);
