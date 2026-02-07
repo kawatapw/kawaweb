@@ -1,4 +1,4 @@
-const scoreBus = new EventBus();
+window.scoreBus = new EventBus();
 // ================= SCORE WINDOW =================
 bootstrapVue('score-panel', {
     el: '#score-panel-modal',

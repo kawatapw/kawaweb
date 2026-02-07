@@ -1,4 +1,4 @@
-const beatmapBus = new EventBus();
+window.beatmapBus = new EventBus();
 // ================= BEATMAP URL HANDLER =================
 bootstrapVue('beatmap', {
     el: '#beatmap-panel',

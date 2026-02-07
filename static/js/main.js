@@ -118,18 +118,23 @@ class KawataApp {
     }
 
     async _initComponents() {
-        // Load navbar first (critical component)
+        // Load event bus first — panels depend on EventBus class
+        try {
+            await this._loadComponent('/static/js/utils/eventBus.js', 'eventBus');
+        } catch (error) {
+            this.logger.error('COMPONENT', 'EventBus failed to load', error);
+        }
+
+        // Load navbar second (critical component)
         try {
             await this._loadComponent('/static/js/components/navbar.js', 'navbar');
         } catch (error) {
             this.logger.error('COMPONENT', 'Navbar failed to load', error);
-            // Don't throw - continue with other components
         }
 
         // Load other components in parallel with proper error handling
         const componentPromises = [
             this._loadComponent('/static/js/utils/portal.js', 'portal').catch(() => {}),
-            this._loadComponent('/static/js/utils/eventBus.js', 'eventBus').catch(() => {}),
             this._loadComponent('/static/js/components/shaders.js', 'shaders').catch(() => {}),
             this._loadComponent('/static/js/components/misc.js', 'misc-components').catch(() => {}),
             this._loadComponent('/static/js/components/userProfile.js', 'userProfile').catch(() => {}),

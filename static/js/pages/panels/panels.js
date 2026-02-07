@@ -1,5 +1,5 @@
-const searchBus = new EventBus();
-const docsBus = new EventBus();
+window.searchBus = new EventBus();
+window.docsBus = new EventBus();
 
 // ================= SEARCH ICON =================
 bootstrapVue('search-icon', {

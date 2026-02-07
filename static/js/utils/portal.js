@@ -66,12 +66,6 @@
  * @todo Add support for multiple popups on same trigger
  */
 (function() {
-    if (window.Vue && !window.beatmapBus) {
-        window.beatmapBus = new Vue();
-    }
-    if (window.Vue && !window.scoreBus) {
-        window.scoreBus = new Vue();
-    }
     // Create a container for all portaled popups
     const createPortalContainer = () => {
       const container = document.createElement('div');
