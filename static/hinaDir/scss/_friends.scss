@@ -1,0 +1,329 @@
+// Friends page styles
+// Compiled separately: npx sass scss/_friends.scss compiled/friends.css --no-source-map
+
+$accent: hsla(var(--main), 70%, 55%, 1);
+$accent-dim: hsla(var(--main), 70%, 55%, 0.15);
+$bg-card: hsla(0, 0%, 100%, 0.04);
+$bg-card-hover: hsla(0, 0%, 100%, 0.07);
+$border: hsla(0, 0%, 100%, 0.08);
+$text-primary: hsla(0, 0%, 100%, 0.92);
+$text-secondary: hsla(0, 0%, 100%, 0.55);
+$text-muted: hsla(0, 0%, 100%, 0.35);
+
+// ── Header ──
+
+.friends-header {
+  padding: 32px 0 16px;
+}
+
+.friends-title {
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: $text-primary;
+  margin: 0;
+}
+
+// ── Tabs ──
+
+.friends-tabs {
+  display: flex;
+  gap: 4px;
+  border-bottom: 1px solid $border;
+  margin-bottom: 24px;
+  padding-bottom: 0;
+}
+
+.friends-tab {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: $text-secondary;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+  margin-bottom: -1px;
+
+  &:hover {
+    color: $text-primary;
+  }
+
+  &.active {
+    color: $accent;
+    border-bottom-color: $accent;
+  }
+
+  i {
+    font-size: 0.85rem;
+  }
+}
+
+.friends-tab-count {
+  background: $accent-dim;
+  color: $accent;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 1px 7px;
+  border-radius: 10px;
+  min-width: 20px;
+  text-align: center;
+}
+
+// ── Loading / Error / Empty states ──
+
+.friends-loading,
+.friends-error {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 48px 16px;
+  color: $text-secondary;
+  font-size: 0.95rem;
+}
+
+.friends-error {
+  color: hsla(0, 70%, 60%, 1);
+}
+
+.friends-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 64px 16px;
+  text-align: center;
+
+  i {
+    font-size: 2.5rem;
+    color: $text-muted;
+    margin-bottom: 16px;
+  }
+
+  p {
+    font-size: 1.05rem;
+    color: $text-secondary;
+    margin: 0 0 6px;
+  }
+}
+
+.friends-empty-hint {
+  font-size: 0.8rem;
+  color: $text-muted;
+}
+
+// ── Card grid ──
+
+.friends-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 12px;
+}
+
+.friends-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: $bg-card;
+  border: 1px solid $border;
+  border-radius: 10px;
+  transition: background 0.15s, border-color 0.15s;
+
+  &:hover {
+    background: $bg-card-hover;
+    border-color: hsla(0, 0%, 100%, 0.12);
+  }
+}
+
+.friends-card-avatar-link {
+  flex-shrink: 0;
+}
+
+.friends-card-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: hsla(0, 0%, 100%, 0.06);
+}
+
+.friends-card-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.friends-card-name {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: $text-primary;
+  text-decoration: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+
+  &:hover {
+    color: $accent;
+    text-decoration: underline;
+  }
+}
+
+.friends-card-clan {
+  font-size: 0.78rem;
+  color: $accent;
+  font-weight: 500;
+}
+
+.friends-card-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 2px;
+}
+
+.friends-card-flag {
+  width: 20px;
+  height: 14px;
+  object-fit: cover;
+  border-radius: 2px;
+}
+
+.friends-card-activity {
+  font-size: 0.78rem;
+  color: $text-muted;
+}
+
+// ── Action buttons ──
+
+.friends-card-actions {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.friends-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 12px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s, opacity 0.15s;
+  white-space: nowrap;
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  i {
+    font-size: 0.78rem;
+  }
+}
+
+.friends-btn--success {
+  background: hsla(140, 60%, 45%, 0.15);
+  color: hsla(140, 60%, 55%, 1);
+  border-color: hsla(140, 60%, 45%, 0.25);
+
+  &:hover:not(:disabled) {
+    background: hsla(140, 60%, 45%, 0.25);
+  }
+}
+
+.friends-btn--danger {
+  background: hsla(0, 60%, 45%, 0.15);
+  color: hsla(0, 60%, 60%, 1);
+  border-color: hsla(0, 60%, 45%, 0.25);
+
+  &:hover:not(:disabled) {
+    background: hsla(0, 60%, 45%, 0.25);
+  }
+}
+
+.friends-btn--neutral {
+  background: hsla(0, 0%, 100%, 0.06);
+  color: $text-secondary;
+  border-color: $border;
+
+  &:hover:not(:disabled) {
+    background: hsla(0, 0%, 100%, 0.1);
+    color: $text-primary;
+  }
+}
+
+// ── Mobile responsive ──
+
+@media (max-width: 768px) {
+  .friends-header {
+    padding: 20px 0 12px;
+  }
+
+  .friends-title {
+    font-size: 1.3rem;
+  }
+
+  .friends-tabs {
+    gap: 0;
+  }
+
+  .friends-tab {
+    flex: 1;
+    justify-content: center;
+    padding: 10px 8px;
+    font-size: 0.82rem;
+    gap: 6px;
+
+    // Hide text labels on very small screens, keep icons
+    span:first-of-type {
+      display: none;
+    }
+  }
+
+  .friends-grid {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .friends-card {
+    padding: 10px 12px;
+  }
+
+  .friends-card-avatar {
+    width: 40px;
+    height: 40px;
+  }
+
+  .friends-btn span {
+    display: none;
+  }
+
+  .friends-btn {
+    padding: 8px 10px;
+  }
+
+  .friends-empty {
+    padding: 40px 16px;
+
+    i {
+      font-size: 2rem;
+    }
+  }
+}
+
+// Very small mobile: show tab text again at slightly larger breakpoint
+@media (min-width: 480px) and (max-width: 768px) {
+  .friends-tab span:first-of-type {
+    display: inline;
+  }
+}

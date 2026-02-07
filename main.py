@@ -112,8 +112,28 @@ def captchaKey() -> str:
 def domain() -> str:
     return glob.config.domain
 
+@app.before_request
+async def inject_globals():
+    """App-wide defaults for g — ensures all blueprints have these set."""
+    g.globalNotice = None
+    g.isDevEnv = False
+    g.maintenance = False
+
+    try:
+        if glob.sys.get('globalNotice'):
+            g.globalNotice = glob.sys['globalNotice']
+        if glob.sys.get('isDevEnv') == "True":
+            g.isDevEnv = True
+        if glob.sys.get('maintenance') == "True":
+            g.maintenance = True
+    except Exception:
+        pass
+
 from blueprints.frontend import frontend
 app.register_blueprint(frontend)
+
+from blueprints.hinaDir import hina_friends
+app.register_blueprint(hina_friends)
 
 from blueprints.admin import admin
 app.register_blueprint(admin, url_prefix='/admin')

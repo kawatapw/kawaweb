@@ -1,0 +1,146 @@
+{% extends 'base.html' %}
+{% block title %}Friends{% endblock %}
+
+{% block header %}
+<link rel="stylesheet" href="/static/hinaDir/compiled/friends.css">
+{% endblock %}
+
+{% block content %}
+<div id="friends-app">
+  <!-- Header -->
+  <div class="friends-header">
+    <h1 class="friends-title">Friends</h1>
+  </div>
+
+  <!-- Tab bar -->
+  <div class="friends-tabs">
+    <button class="friends-tab" :class="{ active: tab === 'mutuals' }" @click="switchTab('mutuals')">
+      <i class="fas fa-user-friends"></i>
+      <span>Mutuals</span>
+      <span class="friends-tab-count" v-if="mutuals.length" v-text="mutuals.length"></span>
+    </button>
+    <button class="friends-tab" :class="{ active: tab === 'followers' }" @click="switchTab('followers')">
+      <i class="fas fa-heart"></i>
+      <span>Followers</span>
+      <span class="friends-tab-count" v-if="followers.length" v-text="followers.length"></span>
+    </button>
+    <button class="friends-tab" :class="{ active: tab === 'blocked' }" @click="switchTab('blocked')">
+      <i class="fas fa-ban"></i>
+      <span>Blocked</span>
+      <span class="friends-tab-count" v-if="blocked.length" v-text="blocked.length"></span>
+    </button>
+  </div>
+
+  <!-- Loading state -->
+  <div class="friends-loading" v-if="loading">
+    <i class="fas fa-spinner fa-spin"></i>
+    <span>Loading...</span>
+  </div>
+
+  <!-- Error state -->
+  <div class="friends-error" v-if="error">
+    <i class="fas fa-exclamation-triangle"></i>
+    <span v-text="error"></span>
+  </div>
+
+  <!-- Mutuals panel -->
+  <div class="friends-content" v-show="!loading && tab === 'mutuals'">
+    <div class="friends-empty" v-if="!mutuals.length">
+      <i class="fas fa-user-friends"></i>
+      <p>No mutual friends yet.</p>
+      <span class="friends-empty-hint">When someone you added also adds you back, they'll appear here.</span>
+    </div>
+    <div class="friends-grid" v-else>
+      <div class="friends-card" v-for="user in mutuals" :key="user.id">
+        <a class="friends-card-avatar-link" :href="profileUrl(user.id)">
+          <img class="friends-card-avatar" :src="avatarUrl(user.id)" :alt="user.name">
+        </a>
+        <div class="friends-card-info">
+          <a class="friends-card-name" :href="profileUrl(user.id)" v-text="user.name"></a>
+          <span class="friends-card-clan" v-if="user.clan_tag">
+            [<span v-text="user.clan_tag"></span>]
+          </span>
+          <div class="friends-card-meta">
+            <img class="friends-card-flag" :src="'/static/images/flags/' + user.country.toUpperCase() + '.png'" v-if="user.country">
+            <span class="friends-card-activity" v-text="lastSeen(user.latest_activity)"></span>
+          </div>
+        </div>
+        <div class="friends-card-actions">
+          <button class="friends-btn friends-btn--danger" @click="removeFriend(user.id)" :disabled="actionLoading[user.id]">
+            <i class="fas fa-user-minus"></i>
+            <span>Remove</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Followers panel -->
+  <div class="friends-content" v-show="!loading && tab === 'followers'">
+    <div class="friends-empty" v-if="!followers.length">
+      <i class="fas fa-heart"></i>
+      <p>No followers yet.</p>
+      <span class="friends-empty-hint">People who add you as a friend will appear here.</span>
+    </div>
+    <div class="friends-grid" v-else>
+      <div class="friends-card" v-for="user in followers" :key="user.id">
+        <a class="friends-card-avatar-link" :href="profileUrl(user.id)">
+          <img class="friends-card-avatar" :src="avatarUrl(user.id)" :alt="user.name">
+        </a>
+        <div class="friends-card-info">
+          <a class="friends-card-name" :href="profileUrl(user.id)" v-text="user.name"></a>
+          <span class="friends-card-clan" v-if="user.clan_tag">
+            [<span v-text="user.clan_tag"></span>]
+          </span>
+          <div class="friends-card-meta">
+            <img class="friends-card-flag" :src="'/static/images/flags/' + user.country.toUpperCase() + '.png'" v-if="user.country">
+            <span class="friends-card-activity" v-text="lastSeen(user.latest_activity)"></span>
+          </div>
+        </div>
+        <div class="friends-card-actions">
+          <button class="friends-btn friends-btn--success" @click="addFriend(user.id)" :disabled="actionLoading[user.id]">
+            <i class="fas fa-user-plus"></i>
+            <span>Add</span>
+          </button>
+          <button class="friends-btn friends-btn--danger" @click="blockUser(user.id)" :disabled="actionLoading[user.id]">
+            <i class="fas fa-ban"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Blocked panel -->
+  <div class="friends-content" v-show="!loading && tab === 'blocked'">
+    <div class="friends-empty" v-if="!blocked.length">
+      <i class="fas fa-ban"></i>
+      <p>No blocked users.</p>
+      <span class="friends-empty-hint">Users you block will appear here.</span>
+    </div>
+    <div class="friends-grid" v-else>
+      <div class="friends-card" v-for="user in blocked" :key="user.id">
+        <a class="friends-card-avatar-link" :href="profileUrl(user.id)">
+          <img class="friends-card-avatar" :src="avatarUrl(user.id)" :alt="user.name">
+        </a>
+        <div class="friends-card-info">
+          <a class="friends-card-name" :href="profileUrl(user.id)" v-text="user.name"></a>
+          <div class="friends-card-meta">
+            <img class="friends-card-flag" :src="'/static/images/flags/' + user.country.toUpperCase() + '.png'" v-if="user.country">
+          </div>
+        </div>
+        <div class="friends-card-actions">
+          <button class="friends-btn friends-btn--neutral" @click="unblockUser(user.id)" :disabled="actionLoading[user.id]">
+            <i class="fas fa-unlock"></i>
+            <span>Unblock</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  var userId = {{ session.user_data['id'] }};
+</script>
+<script src="/static/hinaDir/compiled/friends.js"></script>
+{% endblock %}

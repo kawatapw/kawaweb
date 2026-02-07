@@ -2,6 +2,8 @@
 hina_import.css.map
 static/css/scss/*.css
 static/css/scss/*.css.map
+node_modules/
+static/hinaDir/node_modules/
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
