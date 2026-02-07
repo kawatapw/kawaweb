@@ -242,9 +242,10 @@
   transition: transform 0.2s ease-out, box-shadow 0.2s ease-out, background 0.15s;
 }
 .friend-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+  transform: translateY(-6px);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.25);
   background: hsla(0, 0%, 100%, 0.07);
+  border-color: rgba(255, 255, 255, 0.12);
 }
 .friend-card--offline {
   opacity: 0.7;
@@ -277,7 +278,8 @@
 }
 .friend-avatar-ring.ring--playing {
   background: conic-gradient(#ff6b6b, #ffd93d, #6bcb77, #4d96ff, #ff6b6b);
-  animation: ring-hue 4s linear infinite;
+  animation: ring-hue 4s linear infinite, ring-pulse 2s ease-in-out infinite;
+  transform-origin: center;
 }
 .friend-avatar-ring.ring--online {
   background: #00D26A;
@@ -301,6 +303,16 @@
   }
   to {
     filter: hue-rotate(360deg);
+  }
+}
+@keyframes ring-pulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.05);
+    opacity: 0.85;
   }
 }
 .friend-avatar {
@@ -330,6 +342,7 @@
 .friend-status-badge.badge--playing {
   background: #00D26A;
   color: #000;
+  box-shadow: 0 0 8px rgba(0, 210, 106, 0.4);
 }
 .friend-status-badge.badge--online {
   background: rgba(0, 210, 106, 0.15);
@@ -339,6 +352,7 @@
 .friend-status-badge.badge--lobby {
   background: #5865F2;
   color: white;
+  box-shadow: 0 0 8px rgba(88, 101, 242, 0.4);
 }
 .friend-status-badge.badge--away {
   background: rgba(250, 166, 26, 0.15);
@@ -483,6 +497,15 @@
   background: hsla(0, 0%, 100%, 0.18);
   transform: scale(1.08);
 }
+.action-bar-btn--compare {
+  background: hsla(var(--main), 70%, 55%, 0.15);
+  color: hsla(var(--main), 70%, 55%, 1);
+  border: 1px solid hsla(var(--main), 70%, 55%, 0.3);
+}
+.action-bar-btn--compare:hover:not(:disabled) {
+  background: hsla(var(--main), 70%, 55%, 0.25);
+  transform: scale(1.08);
+}
 
 .friends-loading {
   padding: 0;
@@ -595,6 +618,276 @@
   background: rgba(250, 166, 26, 0.3);
 }
 
+.friends-leaderboard-link {
+  margin: 16px 0;
+}
+
+.friends-lb-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 20px;
+  background: hsla(0, 0%, 100%, 0.04);
+  border: 1px solid hsla(0, 0%, 100%, 0.08);
+  border-radius: 12px;
+  color: hsla(0, 0%, 100%, 0.92);
+  font-size: 0.9rem;
+  font-weight: 500;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+.friends-lb-btn > .fa-trophy {
+  color: #FFD700;
+  font-size: 1rem;
+}
+.friends-lb-btn > span {
+  flex: 1;
+}
+.friends-lb-btn > .fa-chevron-right {
+  color: hsla(0, 0%, 100%, 0.35);
+  font-size: 0.75rem;
+  transition: transform 0.2s;
+}
+.friends-lb-btn:hover {
+  background: hsla(0, 0%, 100%, 0.07);
+  border-color: rgba(255, 255, 255, 0.12);
+  color: hsla(0, 0%, 100%, 0.92);
+}
+.friends-lb-btn:hover > .fa-chevron-right {
+  transform: translateX(4px);
+}
+
+.compare-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.compare-modal {
+  width: 90%;
+  max-width: 600px;
+  background: #1a1a2e;
+  border-radius: 16px;
+  border: 1px solid hsla(0, 0%, 100%, 0.08);
+  padding: 28px;
+  max-height: 90vh;
+  overflow-y: auto;
+  position: relative;
+}
+
+.compare-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: hsla(0, 0%, 100%, 0.08);
+  border: none;
+  color: hsla(0, 0%, 100%, 0.55);
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: background 0.15s;
+}
+.compare-close:hover {
+  background: hsla(0, 0%, 100%, 0.15);
+  color: hsla(0, 0%, 100%, 0.92);
+}
+
+.compare-title {
+  text-align: center;
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: hsla(0, 0%, 100%, 0.92);
+  margin: 0 0 16px;
+}
+
+.compare-modes {
+  display: flex;
+  justify-content: center;
+  gap: 4px;
+  margin-bottom: 20px;
+}
+
+.compare-mode-btn {
+  padding: 6px 14px;
+  background: hsla(0, 0%, 100%, 0.04);
+  border: 1px solid hsla(0, 0%, 100%, 0.08);
+  border-radius: 6px;
+  color: hsla(0, 0%, 100%, 0.55);
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.compare-mode-btn:hover {
+  color: hsla(0, 0%, 100%, 0.92);
+  background: hsla(0, 0%, 100%, 0.07);
+}
+.compare-mode-btn.active {
+  background: hsla(var(--main), 50%, 40%, 0.3);
+  border-color: hsla(var(--main), 70%, 55%, 1);
+  color: hsla(var(--main), 70%, 55%, 1);
+}
+
+.compare-loading {
+  text-align: center;
+  padding: 40px 20px;
+  color: hsla(0, 0%, 100%, 0.35);
+}
+.compare-loading i {
+  margin-bottom: 12px;
+}
+.compare-loading p {
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+.compare-error {
+  text-align: center;
+  padding: 32px 20px;
+  color: #FAA61A;
+}
+.compare-error i {
+  font-size: 1.8rem;
+  margin-bottom: 10px;
+}
+.compare-error p {
+  margin: 0 0 14px;
+  font-size: 0.9rem;
+}
+
+.compare-retry {
+  padding: 6px 14px;
+  background: rgba(250, 166, 26, 0.15);
+  border: 1px solid rgba(250, 166, 26, 0.4);
+  border-radius: 6px;
+  color: #FAA61A;
+  cursor: pointer;
+  font-size: 0.82rem;
+}
+.compare-retry:hover {
+  background: rgba(250, 166, 26, 0.25);
+}
+
+.compare-no-stats {
+  text-align: center;
+  padding: 32px 20px;
+  color: #8B9EFF;
+}
+.compare-no-stats i {
+  font-size: 1.5rem;
+  margin-bottom: 8px;
+}
+.compare-no-stats p {
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+.compare-players {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  margin-bottom: 24px;
+}
+
+.compare-p {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+}
+
+.compare-avatar {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+.compare-avatar--left {
+  border: 3px solid #4d96ff;
+}
+.compare-avatar--right {
+  border: 3px solid #ff6b6b;
+}
+
+.compare-name {
+  font-size: 0.92rem;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+}
+.compare-name--blue {
+  color: #4d96ff;
+}
+.compare-name--red {
+  color: #ff6b6b;
+}
+
+.compare-vs {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: hsla(0, 0%, 100%, 0.35);
+  flex-shrink: 0;
+}
+
+.compare-body {
+  border-top: 1px solid hsla(0, 0%, 100%, 0.08);
+  padding-top: 16px;
+}
+
+.compare-row {
+  display: flex;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.5);
+}
+.compare-row:last-child {
+  border-bottom: none;
+}
+
+.compare-val {
+  flex: 1;
+  font-size: 0.95rem;
+  color: hsla(0, 0%, 100%, 0.55);
+  font-weight: 500;
+}
+.compare-val--left {
+  text-align: right;
+  padding-right: 12px;
+}
+.compare-val--right {
+  text-align: left;
+  padding-left: 12px;
+}
+.compare-val.compare-win {
+  color: #00D26A;
+  font-weight: 700;
+}
+
+.compare-label {
+  width: 100px;
+  text-align: center;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: hsla(0, 0%, 100%, 0.35);
+  flex-shrink: 0;
+}
+
 @media (max-width: 1024px) {
   .friends-grid {
     grid-template-columns: repeat(3, 1fr);
@@ -658,6 +951,26 @@
     height: 30px;
     font-size: 0.72rem;
   }
+  .friends-lb-btn {
+    width: 100%;
+  }
+  .compare-modal {
+    padding: 20px;
+  }
+  .compare-avatar {
+    width: 48px;
+    height: 48px;
+  }
+  .compare-vs {
+    font-size: 1rem;
+  }
+  .compare-label {
+    width: 80px;
+    font-size: 0.7rem;
+  }
+  .compare-val {
+    font-size: 0.88rem;
+  }
 }
 @media (max-width: 480px) {
   .friends-tab span:not(.tab-count) {
@@ -679,5 +992,11 @@
     width: 28px;
     height: 28px;
     font-size: 0.68rem;
+  }
+  .compare-modal {
+    padding: 16px 12px;
+  }
+  .compare-mode-btn span {
+    font-size: 0.75rem;
   }
 }

@@ -26,6 +26,15 @@
     </div>
   </div>
 
+  <!-- Leaderboard link -->
+  <div class="friends-leaderboard-link">
+    <a href="/friends/leaderboard" class="friends-lb-btn">
+      <i class="fas fa-trophy"></i>
+      <span>Friends Leaderboards</span>
+      <i class="fas fa-chevron-right"></i>
+    </a>
+  </div>
+
   <!-- Search bar -->
   <div class="friends-search">
     <i class="fas fa-search"></i>
@@ -176,6 +185,11 @@
                 <a class="action-bar-btn action-bar-btn--primary" :href="profileUrl(user.id)" title="Profile">
                   <i class="fas fa-user"></i>
                 </a>
+                <button class="action-bar-btn action-bar-btn--compare"
+                        @click="openCompare(user.id)" title="Compare Stats"
+                        aria-label="Compare stats">
+                  <i class="fas fa-chart-bar"></i>
+                </button>
                 <template v-if="tab === 'mutuals'">
                   <button class="action-bar-btn action-bar-btn--danger"
                           @click="removeFriend(user.id)"
@@ -243,6 +257,11 @@
                 <a class="action-bar-btn action-bar-btn--primary" :href="profileUrl(user.id)" title="Profile">
                   <i class="fas fa-user"></i>
                 </a>
+                <button class="action-bar-btn action-bar-btn--compare"
+                        @click="openCompare(user.id)" title="Compare Stats"
+                        aria-label="Compare stats">
+                  <i class="fas fa-chart-bar"></i>
+                </button>
                 <template v-if="tab === 'mutuals'">
                   <button class="action-bar-btn action-bar-btn--danger"
                           @click="removeFriend(user.id)"
@@ -313,6 +332,73 @@
 
   </div>
 
+  <!-- Compare Modal -->
+  <div v-if="compareVisible" class="compare-overlay" @click.self="closeCompare"
+       role="dialog" aria-modal="true" aria-label="Stats comparison">
+    <div class="compare-modal">
+      <button class="compare-close" @click="closeCompare" aria-label="Close">
+        <i class="fas fa-times"></i>
+      </button>
+      <h2 class="compare-title">Head to Head</h2>
+
+      <!-- Mode tabs -->
+      <div class="compare-modes">
+        <button v-for="m in compareModes" :key="'cmp-' + m.value"
+                class="compare-mode-btn"
+                :class="{ active: compareMode === m.value }"
+                @click="loadCompare(compareUser, m.value)">
+          <span v-text="m.short"></span>
+        </button>
+      </div>
+
+      <!-- Loading -->
+      <div v-if="compareLoading" class="compare-loading">
+        <i class="fas fa-spinner fa-spin fa-2x"></i>
+        <p>Loading comparison...</p>
+      </div>
+
+      <!-- Error -->
+      <div v-else-if="compareError" class="compare-error">
+        <i class="fas fa-exclamation-triangle"></i>
+        <p v-text="compareError"></p>
+        <button class="compare-retry" @click="loadCompare(compareUser, compareMode)">Retry</button>
+      </div>
+
+      <!-- No stats for mode -->
+      <div v-else-if="compareData && compareData.players && !compareData.players[0].has_stats && !compareData.players[1].has_stats"
+           class="compare-no-stats">
+        <i class="fas fa-info-circle"></i>
+        <p>Neither player has played this mode</p>
+      </div>
+
+      <!-- Stats content -->
+      <div v-else-if="compareData && compareData.players" class="compare-body">
+        <!-- Player headers -->
+        <div class="compare-players">
+          <div class="compare-p compare-p--left">
+            <img :src="avatarUrl(compareData.players[0].id)" class="compare-avatar compare-avatar--left">
+            <span class="compare-name compare-name--blue" v-text="compareData.players[0].name"></span>
+          </div>
+          <div class="compare-vs">VS</div>
+          <div class="compare-p compare-p--right">
+            <img :src="avatarUrl(compareData.players[1].id)" class="compare-avatar compare-avatar--right">
+            <span class="compare-name compare-name--red" v-text="compareData.players[1].name"></span>
+          </div>
+        </div>
+
+        <!-- Stat rows -->
+        <div v-for="stat in compareStats" :key="stat.key" class="compare-row">
+          <div class="compare-val compare-val--left"
+               :class="{ 'compare-win': stat.winner === 1 }"
+               v-text="stat.left"></div>
+          <div class="compare-label" v-text="stat.label"></div>
+          <div class="compare-val compare-val--right"
+               :class="{ 'compare-win': stat.winner === 2 }"
+               v-text="stat.right"></div>
+        </div>
+      </div>
+    </div>
+  </div>
 
 </div>
 

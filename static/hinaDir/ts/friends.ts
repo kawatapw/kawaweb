@@ -1,7 +1,8 @@
-declare const Vue: any;
-declare const domain: string;
-declare const userId: number;
-declare const timeago: any;
+(function() {
+var Vue = (window as any).Vue;
+var domain = (window as any).domain;
+var userId = (window as any).userId;
+var timeago = (window as any).timeago;
 
 interface PlayerStatus {
     action: number;
@@ -36,6 +37,19 @@ new Vue({
         actionLoading: {} as Record<number, boolean>,
         searchQuery: '' as string,
         sections: { online: true, offline: true } as Record<string, boolean>,
+        // Compare modal
+        compareVisible: false,
+        compareLoading: false,
+        compareError: null as string | null,
+        compareUser: 0,
+        compareMode: 0,
+        compareData: null as any,
+        compareModes: [
+            { value: 0, name: 'osu!standard', short: 'std' },
+            { value: 1, name: 'osu!taiko', short: 'taiko' },
+            { value: 2, name: 'osu!catch', short: 'catch' },
+            { value: 3, name: 'osu!mania', short: 'mania' },
+        ],
         pollTimer: null as number | null,
         pollAttempts: 0,
         pollError: false,
@@ -80,6 +94,57 @@ new Vue({
         totalFollowers(): number {
             return this.followers.length;
         },
+
+        compareStats(): any[] {
+            if (!this.compareData || !this.compareData.players) return [];
+            var p1 = this.compareData.players[0];
+            var p2 = this.compareData.players[1];
+            var stats: any[] = [];
+
+            function addCommas(n: number): string {
+                return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+            }
+
+            // Rank: lower is better (skip if both 0)
+            if (p1.rank > 0 || p2.rank > 0) {
+                var rw = 0;
+                if (p1.rank > 0 && p2.rank > 0) rw = p1.rank < p2.rank ? 1 : (p2.rank < p1.rank ? 2 : 0);
+                else if (p1.rank > 0) rw = 1;
+                else rw = 2;
+                stats.push({ key: 'rank', label: 'Rank', left: p1.rank > 0 ? '#' + addCommas(p1.rank) : '-', right: p2.rank > 0 ? '#' + addCommas(p2.rank) : '-', winner: rw });
+            }
+
+            // Higher-is-better stats
+            var higherBetter = [
+                { key: 'pp', label: 'PP', fmt: function(v: number) { return addCommas(Math.round(v)); } },
+                { key: 'acc', label: 'Accuracy', fmt: function(v: number) { return v.toFixed(2) + '%'; } },
+                { key: 'plays', label: 'Playcount', fmt: function(v: number) { return addCommas(v); } },
+                { key: 'max_combo', label: 'Max Combo', fmt: function(v: number) { return addCommas(v) + 'x'; } },
+            ];
+
+            for (var i = 0; i < higherBetter.length; i++) {
+                var s = higherBetter[i];
+                var v1 = p1[s.key] || 0;
+                var v2 = p2[s.key] || 0;
+                var w = v1 > v2 ? 1 : (v2 > v1 ? 2 : 0);
+                stats.push({ key: s.key, label: s.label, left: s.fmt(v1), right: s.fmt(v2), winner: w });
+            }
+
+            // Grade counts
+            var ss1 = (p1.xh_count || 0) + (p1.x_count || 0);
+            var ss2 = (p2.xh_count || 0) + (p2.x_count || 0);
+            stats.push({ key: 'ss', label: 'SS', left: addCommas(ss1), right: addCommas(ss2), winner: ss1 > ss2 ? 1 : (ss2 > ss1 ? 2 : 0) });
+
+            var sc1 = (p1.sh_count || 0) + (p1.s_count || 0);
+            var sc2 = (p2.sh_count || 0) + (p2.s_count || 0);
+            stats.push({ key: 's', label: 'S', left: addCommas(sc1), right: addCommas(sc2), winner: sc1 > sc2 ? 1 : (sc2 > sc1 ? 2 : 0) });
+
+            var a1 = p1.a_count || 0;
+            var a2 = p2.a_count || 0;
+            stats.push({ key: 'a', label: 'A', left: addCommas(a1), right: addCommas(a2), winner: a1 > a2 ? 1 : (a2 > a1 ? 2 : 0) });
+
+            return stats;
+        },
     },
     created() {
         this.loadAll();
@@ -88,6 +153,12 @@ new Vue({
         var self = this;
         this._visHandler = function() { self._handleVisibility(); };
         document.addEventListener('visibilitychange', this._visHandler);
+
+        document.addEventListener('keydown', function(e: KeyboardEvent) {
+            if (e.key === 'Escape' && self.compareVisible) {
+                self.closeCompare();
+            }
+        });
     },
     beforeDestroy() {
         this.stopPolling();
@@ -396,5 +467,53 @@ new Vue({
         profileUrl(id: number): string {
             return '/u/' + id;
         },
+
+        // ── Compare modal ──
+        openCompare(targetId: number) {
+            this.compareVisible = true;
+            this.compareUser = targetId;
+            this.compareMode = 0;
+            this.compareData = null;
+            this.compareError = null;
+            document.body.style.overflow = 'hidden';
+            this.loadCompare(targetId, 0);
+        },
+
+        closeCompare() {
+            this.compareVisible = false;
+            this.compareLoading = false;
+            this.compareError = null;
+            this.compareUser = 0;
+            this.compareData = null;
+            document.body.style.overflow = '';
+        },
+
+        loadCompare(targetId: number, mode: number) {
+            this.compareMode = mode;
+            this.compareLoading = true;
+            this.compareError = null;
+            var self = this;
+
+            fetch(location.protocol + '//api.' + domain + '/v1/compare_stats?users=' + userId + ',' + targetId + '&mode=' + mode)
+                .then(function(res: Response) {
+                    if (!res.ok) throw new Error('HTTP ' + res.status);
+                    return res.json();
+                })
+                .then(function(data: any) {
+                    if (data.status !== 'success') throw new Error(data.status || 'Unknown error');
+                    self.compareData = data;
+                    self.compareLoading = false;
+                })
+                .catch(function(e: any) {
+                    self.compareError = 'Failed to load comparison.';
+                    console.error('[Compare]', e);
+                    self.compareLoading = false;
+                });
+        },
+
+        addCommas(n: number): string {
+            return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+        },
     }
 });
+})();

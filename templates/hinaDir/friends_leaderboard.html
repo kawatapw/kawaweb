@@ -1,0 +1,244 @@
+{% extends 'base.html' %}
+{% block title %}Friend Leaderboards{% endblock %}
+
+{% block header %}
+<link rel="stylesheet" href="/static/hinaDir/compiled/friends_leaderboard.css">
+{% endblock %}
+
+{% block content %}
+<div id="friends-leaderboard-app" v-cloak>
+
+  <!-- Back link -->
+  <a href="/friends" class="flb-back">
+    <i class="fas fa-arrow-left"></i>
+    <span>Back to Friends</span>
+  </a>
+
+  <!-- Header -->
+  <div class="flb-header">
+    <h1 class="flb-title">Friends Leaderboards</h1>
+    <p class="flb-subtitle" v-if="!loading && leaderboard.length > 0">
+      Compare your stats with your <strong v-text="leaderboard.length - 1"></strong> friends
+    </p>
+  </div>
+
+  <!-- Mode tabs -->
+  <div class="flb-mode-tabs">
+    <button v-for="m in modes" :key="'mode-' + m.value"
+            class="flb-mode-btn"
+            :class="{ active: mode === m.value }"
+            @click="switchMode(m.value)">
+      <span v-text="m.short"></span>
+    </button>
+  </div>
+
+  <!-- No stats banner -->
+  <div v-if="!loading && !userHasStats && leaderboard.length > 0" class="flb-no-stats-banner">
+    <i class="fas fa-info-circle"></i>
+    <span>You haven't played this mode yet</span>
+  </div>
+
+  <!-- Loading -->
+  <div v-if="loading" class="flb-loading">
+    <i class="fas fa-spinner fa-spin fa-2x"></i>
+    <p>Loading leaderboard...</p>
+  </div>
+
+  <!-- Error -->
+  <div v-if="error" class="flb-error">
+    <i class="fas fa-exclamation-triangle"></i>
+    <p v-text="error"></p>
+    <button class="flb-retry" @click="loadLeaderboard(mode)">Retry</button>
+  </div>
+
+  <!-- Empty state -->
+  <div v-if="!loading && !error && leaderboard.length === 0" class="flb-empty">
+    <i class="fas fa-trophy fa-4x"></i>
+    <h2>No friends yet!</h2>
+    <p>Add players to compete on private leaderboards</p>
+    <a href="/leaderboard" class="flb-empty-cta">
+      <i class="fas fa-users"></i> Find Players to Add
+    </a>
+  </div>
+
+  <!-- Competitive Summary Banner -->
+  <div v-if="!loading && !error && selfRank" class="flb-summary-banner">
+    <div class="flb-summary-item">
+      <span class="flb-summary-label">Your Position</span>
+      <span class="flb-summary-value" v-text="'#' + selfRank.rank + ' of ' + leaderboard.length"></span>
+    </div>
+    <div v-if="selfRank.rank > 1" class="flb-summary-item flb-summary-item--chase">
+      <span class="flb-summary-label" v-text="'PP to #' + (selfRank.rank - 1)"></span>
+      <span class="flb-summary-value" v-text="'+' + addCommas(selfRank.ppGapAbove) + 'pp needed'"></span>
+    </div>
+    <div v-if="selfRank.rank === 1 && leaderboard.length > 1" class="flb-summary-item flb-summary-item--lead">
+      <span class="flb-summary-label">Leading by</span>
+      <span class="flb-summary-value" v-text="addCommas(selfRank.ppLead) + 'pp'"></span>
+    </div>
+    <div v-if="selfRank.rank < leaderboard.length" class="flb-summary-item">
+      <span class="flb-summary-label" v-text="'#' + (selfRank.rank + 1) + ' behind you'"></span>
+      <span class="flb-summary-value" v-text="'-' + addCommas(selfRank.ppGapBelow) + 'pp'"></span>
+    </div>
+  </div>
+
+  <!-- Compare bar -->
+  <div v-if="selectedPlayers.length > 0" class="flb-compare-bar">
+    <div class="flb-compare-info">
+      <span class="flb-compare-count" v-text="selectedPlayers.length + ' selected'"></span>
+      <span class="flb-compare-max">(max 3)</span>
+    </div>
+    <div class="flb-compare-actions">
+      <button class="flb-compare-clear" @click="clearSelection">
+        <i class="fas fa-times"></i> Clear
+      </button>
+      <button class="flb-compare-btn" @click="openCompare"
+              :disabled="selectedPlayers.length < 1">
+        <i class="fas fa-chart-bar"></i>
+        <span v-text="'Compare ' + (selectedPlayers.length + 1) + ' Players'"></span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Table -->
+  <div v-if="!loading && !error && leaderboard.length > 0" class="flb-table-wrapper">
+    <table class="flb-table" role="table" aria-label="Friends leaderboard rankings">
+      <thead>
+        <tr>
+          <th role="columnheader" class="flb-th flb-th--check">
+            <span class="flb-check-label">Select</span>
+          </th>
+          <th role="columnheader" class="flb-th flb-th--rank">#</th>
+          <th role="columnheader" class="flb-th flb-th--player">Player</th>
+          <th role="columnheader" class="flb-th flb-th--global flb-hide-mobile">Global Rank</th>
+          <th role="columnheader" class="flb-th flb-th--pp">PP</th>
+          <th role="columnheader" class="flb-th flb-th--acc">Accuracy</th>
+          <th role="columnheader" class="flb-th flb-th--plays flb-hide-mobile">Plays</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr v-for="(entry, idx) in leaderboard" :key="entry.id" role="row"
+            class="flb-row"
+            :class="{ 'flb-row--self': entry.id === selfId, 'flb-row--selected': isSelected(entry.id) }"
+            :ref="entry.id === selfId ? 'selfRow' : undefined">
+          <td class="flb-cell flb-cell--check">
+            <label class="flb-checkbox" v-if="entry.id !== selfId">
+              <input type="checkbox"
+                     :checked="isSelected(entry.id)"
+                     :disabled="!isSelected(entry.id) && selectedPlayers.length >= 3"
+                     @change="togglePlayer(entry.id)">
+              <span class="flb-checkmark"></span>
+            </label>
+            <span v-else class="flb-check-self">
+              <i class="fas fa-lock"></i>
+            </span>
+          </td>
+          <td class="flb-cell flb-cell--rank">
+            <span v-if="idx < 3" class="flb-medal" :class="rankClass(idx)">
+              <i class="fas" :class="idx === 0 ? 'fa-crown' : 'fa-medal'"></i>
+            </span>
+            <span v-else v-text="entry.rank"></span>
+          </td>
+          <td class="flb-cell flb-cell--player">
+            <a :href="profileUrl(entry.id)" class="flb-player-link">
+              <img class="flb-avatar" :src="avatarUrl(entry.id)" :alt="entry.name"
+                   @error="$event.target.src='/static/images/avatar_notwork.png'">
+              <span class="flb-online-dot" v-if="entry.is_online"></span>
+              <span class="flb-player-name" v-text="entry.name"></span>
+              <span class="flb-player-clan" v-if="entry.clan_tag"
+                    v-text="'[' + entry.clan_tag + ']'"></span>
+            </a>
+          </td>
+          <td class="flb-cell flb-cell--global flb-hide-mobile">
+            <span v-if="entry.global_rank > 0" v-text="'#' + addCommas(entry.global_rank)"></span>
+            <span v-else class="flb-muted">-</span>
+          </td>
+          <td class="flb-cell flb-cell--pp">
+            <div class="flb-pp-value" v-text="addCommas(Math.round(entry.pp))"></div>
+            <div v-if="entry.pp_delta"
+                 class="flb-pp-delta"
+                 :class="'flb-pp-delta--' + entry.pp_delta.type">
+              <span v-if="entry.pp_delta.type === 'lead'">
+                <i class="fas fa-shield-alt"></i>
+                <span v-text="'-' + addCommas(entry.pp_delta.value) + 'pp lead'"></span>
+              </span>
+              <span v-else-if="entry.pp_delta.type === 'chase'">
+                <i class="fas fa-arrow-up"></i>
+                <span v-text="'+' + addCommas(entry.pp_delta.value) + 'pp'"></span>
+              </span>
+              <span v-else-if="entry.pp_delta.type === 'tie'">
+                <i class="fas fa-equals"></i>
+                <span>TIE</span>
+              </span>
+            </div>
+          </td>
+          <td class="flb-cell flb-cell--acc" v-text="entry.acc.toFixed(2) + '%'"></td>
+          <td class="flb-cell flb-cell--plays flb-hide-mobile" v-text="addCommas(entry.plays)"></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Compare Modal -->
+  <div v-if="compareVisible" class="flb-cmp-overlay" @click.self="closeCompare">
+    <div class="flb-cmp-modal">
+      <button class="flb-cmp-close" @click="closeCompare"><i class="fas fa-times"></i></button>
+      <h2 class="flb-cmp-title">Player Comparison</h2>
+
+      <!-- Mode tabs -->
+      <div class="flb-cmp-modes">
+        <button v-for="m in modes" :key="'cmp-' + m.value"
+                class="flb-cmp-mode-btn"
+                :class="{ active: compareMode === m.value }"
+                @click="loadCompare(m.value)">
+          <span v-text="m.short"></span>
+        </button>
+      </div>
+
+      <!-- Loading -->
+      <div v-if="compareLoading" class="flb-cmp-loading">
+        <i class="fas fa-spinner fa-spin fa-2x"></i>
+        <p>Loading comparison...</p>
+      </div>
+
+      <!-- Error -->
+      <div v-else-if="compareError" class="flb-cmp-error">
+        <i class="fas fa-exclamation-triangle"></i>
+        <p v-text="compareError"></p>
+        <button class="flb-cmp-retry" @click="loadCompare(compareMode)">Retry</button>
+      </div>
+
+      <!-- Stats content -->
+      <div v-else-if="compareData" class="flb-cmp-body">
+        <!-- Player headers row -->
+        <div class="flb-cmp-players">
+          <div class="flb-cmp-label-col"></div>
+          <div v-for="(p, pi) in compareData.players" :key="'ph-' + p.id"
+               class="flb-cmp-player-col">
+            <img :src="avatarUrl(p.id)" class="flb-cmp-avatar"
+                 :class="{ 'flb-cmp-avatar--self': p.id === selfId }"
+                 @error="$event.target.src='/static/images/avatar_notwork.png'">
+            <span class="flb-cmp-name" v-text="p.name"></span>
+            <span v-if="p.clan_tag" class="flb-cmp-clan" v-text="'[' + p.clan_tag + ']'"></span>
+          </div>
+        </div>
+
+        <!-- Stat rows -->
+        <div v-for="stat in cmpStats" :key="stat.key" class="flb-cmp-row">
+          <div class="flb-cmp-label-col" v-text="stat.label"></div>
+          <div v-for="(val, vi) in stat.values" :key="'sv-' + vi"
+               class="flb-cmp-val-col"
+               :class="{ 'flb-cmp-win': stat.winners.indexOf(vi) !== -1 }">
+            <span v-text="val"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  var userId = {{ session.user_data['id'] }};
+</script>
+<script src="/static/hinaDir/compiled/friends_leaderboard.js"></script>
+{% endblock %}
