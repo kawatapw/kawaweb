@@ -25,7 +25,6 @@ $btn-neutral-bg: hsla(0, 0%, 100%, 0.1);
 
 $ring-gap: #111215;
 $ring-gradient: conic-gradient(#ff6b6b, #ffd93d, #6bcb77, #4d96ff, #ff6b6b);
-$card-width: 200px;
 
 // ── Mixins ──
 
@@ -191,7 +190,7 @@ $card-width: 200px;
 
 // ── Section headers (Online / Offline collapsible) ──
 
-.friends-section { margin-bottom: 24px; width: 100%; }
+.friends-section { margin-bottom: 32px; width: 100%; }
 
 .section-header {
   display: flex;
@@ -238,48 +237,31 @@ $card-width: 200px;
   font-weight: 500;
 }
 
-// ── Grid (horizontal scroll) ──
+// ── Grid (4 per row, wrapping) ──
 
 .friends-grid-wrapper {
   width: 100%;
-  overflow-x: auto;
-  overflow-y: hidden;
-  -webkit-overflow-scrolling: touch;
-  padding-bottom: 8px;
-  scroll-snap-type: x proximity;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(255,255,255,0.1) transparent;
-
-  &::-webkit-scrollbar { height: 4px; }
-  &::-webkit-scrollbar-track { background: transparent; }
-  &::-webkit-scrollbar-thumb {
-    background: rgba(255,255,255,0.1);
-    border-radius: 2px;
-    &:hover { background: rgba(255,255,255,0.2); }
-  }
 }
 
 .friends-grid {
-  display: flex;
-  gap: 12px;
-  min-width: min-content;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
 }
 
 // ── Friend Card (Story Card — vertical, avatar-first) ──
 
 .friend-card {
-  flex-shrink: 0;
-  width: $card-width;
+  width: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 16px 12px 10px;
+  padding: 20px 14px 12px;
   background: $card-bg;
   border: 1px solid $border;
   border-radius: 12px;
   position: relative;
   transition: transform 0.2s ease-out, box-shadow 0.2s ease-out, background 0.15s;
-  scroll-snap-align: start;
 
   &:hover {
     transform: translateY(-2px);
@@ -536,8 +518,7 @@ $card-width: 200px;
 .friends-loading { padding: 0; }
 
 .friend-card-skeleton {
-  flex-shrink: 0;
-  width: $card-width;
+  width: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -630,6 +611,12 @@ $card-width: 200px;
   }
 }
 
+// ── Responsive: Tablet (≤1024px) ──
+
+@media (max-width: 1024px) {
+  .friends-grid { grid-template-columns: repeat(3, 1fr); }
+}
+
 // ── Responsive: Mobile (≤768px) ──
 
 @media (max-width: 768px) {
@@ -646,10 +633,10 @@ $card-width: 200px;
     gap: 6px;
   }
 
-  .friend-card {
-    width: 160px;
-    padding: 12px 8px 8px;
+  .friends-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
 
+  .friend-card {
+    padding: 14px 10px 10px;
     &:hover { transform: none; box-shadow: none; }
   }
 
@@ -668,13 +655,8 @@ $card-width: 200px;
 @media (max-width: 480px) {
   .friends-tab span:not(.tab-count) { display: none; }
 
-  .friend-card { width: 140px; }
+  .friends-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
   .friend-avatar-wrapper { width: 76px; height: 76px; }
   .friend-status-badge { font-size: 0.55rem; padding: 1px 6px; }
   .action-bar-btn { width: 28px; height: 28px; font-size: 0.68rem; }
-}
-
-// Restore tab text for medium mobile
-@media (min-width: 480px) and (max-width: 768px) {
-  .friends-tab span:not(.tab-count) { display: inline; }
 }

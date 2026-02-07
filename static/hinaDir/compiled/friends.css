@@ -163,7 +163,7 @@
 }
 
 .friends-section {
-  margin-bottom: 24px;
+  margin-bottom: 32px;
   width: 100%;
 }
 
@@ -221,47 +221,25 @@
 
 .friends-grid-wrapper {
   width: 100%;
-  overflow-x: auto;
-  overflow-y: hidden;
-  -webkit-overflow-scrolling: touch;
-  padding-bottom: 8px;
-  scroll-snap-type: x proximity;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
-}
-.friends-grid-wrapper::-webkit-scrollbar {
-  height: 4px;
-}
-.friends-grid-wrapper::-webkit-scrollbar-track {
-  background: transparent;
-}
-.friends-grid-wrapper::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 2px;
-}
-.friends-grid-wrapper::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.2);
 }
 
 .friends-grid {
-  display: flex;
-  gap: 12px;
-  min-width: min-content;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
 }
 
 .friend-card {
-  flex-shrink: 0;
-  width: 200px;
+  width: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 16px 12px 10px;
+  padding: 20px 14px 12px;
   background: hsla(0, 0%, 100%, 0.04);
   border: 1px solid hsla(0, 0%, 100%, 0.08);
   border-radius: 12px;
   position: relative;
   transition: transform 0.2s ease-out, box-shadow 0.2s ease-out, background 0.15s;
-  scroll-snap-align: start;
 }
 .friend-card:hover {
   transform: translateY(-2px);
@@ -511,8 +489,7 @@
 }
 
 .friend-card-skeleton {
-  flex-shrink: 0;
-  width: 200px;
+  width: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -618,6 +595,11 @@
   background: rgba(250, 166, 26, 0.3);
 }
 
+@media (max-width: 1024px) {
+  .friends-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
 @media (max-width: 768px) {
   .friends-header {
     padding: 20px 0 6px;
@@ -640,9 +622,12 @@
     font-size: 0.82rem;
     gap: 6px;
   }
+  .friends-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
   .friend-card {
-    width: 160px;
-    padding: 12px 8px 8px;
+    padding: 14px 10px 10px;
   }
   .friend-card:hover {
     transform: none;
@@ -678,8 +663,9 @@
   .friends-tab span:not(.tab-count) {
     display: none;
   }
-  .friend-card {
-    width: 140px;
+  .friends-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
   }
   .friend-avatar-wrapper {
     width: 76px;
@@ -693,10 +679,5 @@
     width: 28px;
     height: 28px;
     font-size: 0.68rem;
-  }
-}
-@media (min-width: 480px) and (max-width: 768px) {
-  .friends-tab span:not(.tab-count) {
-    display: inline;
   }
 }
