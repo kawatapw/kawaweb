@@ -69,6 +69,11 @@
     var mode = '{{ mode }}';
     var mods = '{{ mods }}';
     var domain = "{{ domain() }}";
+    {% if 'user_data' in session and session['user_data']['id'] == user['id'] %}
+    var isOwnProfile = true;
+    {% else %}
+    var isOwnProfile = false;
+    {% endif %}
 </script>
 {% endblock %}
 
@@ -301,7 +306,8 @@
 
 <style id="style">
     :root {
-        --main: {{ user['hue'] or 180 }} !important;
+        --profile-hue: {{ user['hue'] or 180 }};
+        --main: {{ user['hue'] or 180 }};
         --accent1: calc(var(--main) + 20);
     }
 
@@ -309,14 +315,14 @@
     {% if user['customisation']['banner'] == True %}
         .profile-bg {
             min-height: 262px;
-            background: linear-gradient(hsl(var(--main), 25%, 25%, 20%), hsl(var(--main), 25%, 25%, 60%)), url("/banners/{{ user['id'] }}");
+            background: linear-gradient(hsl(var(--profile-hue), 25%, 25%, 20%), hsl(var(--profile-hue), 25%, 25%, 60%)), url("/banners/{{ user['id'] }}");
             background-size: cover;
             background-position: center;
         }
     {% endif %}
     {% if user['customisation']['background'] == True %}
         body {
-            background: linear-gradient(hsl(var(--main), 25%, 25%, 20%), hsl(var(--main), 10%, 10%)), url("/backgrounds/{{ user['id'] }}");
+            background: linear-gradient(hsl(var(--profile-hue), 25%, 25%, 20%), hsl(var(--profile-hue), 10%, 10%)), url("/backgrounds/{{ user['id'] }}");
             background-size: cover;
             background-clip: content-box;
         }

@@ -37,7 +37,7 @@
             </button>
             
             {% if session.authenticated %}
-                <div class="navbar-user-dropdown-container">
+                <div class="navbar-user-dropdown-container" data-user-hue="{{ session.user_data.get('hue', 180) or 180 }}">
                     <button class="navbar-user-trigger" @click="toggleUserDropdown" :class="{ 'is-active': isUserDropdownOpen }">
                         <img src="https://a.{{domain()}}/{{ session.user_data['id'] }}" alt="{{ session.user_data['name'] }}" class="navbar-avatar">
                         <span class="navbar-username">{{ session.user_data['name'] }}</span>

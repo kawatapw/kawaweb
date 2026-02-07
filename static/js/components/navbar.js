@@ -60,9 +60,11 @@ if (typeof Vue === 'undefined') {
                 };
                 document.addEventListener('keydown', this._userDropdownKeyHandler);
 
-                // Read initial hue from the CSS variable set by base.html
-                const rootHue = getComputedStyle(document.documentElement).getPropertyValue('--main').trim();
-                this.currentHue = parseInt(rootHue) || 180;
+                // Read the logged-in user's own hue from the data attribute (not --main,
+                // which may be the profile user's hue on other people's profiles)
+                const container = this.$el.querySelector('.navbar-user-dropdown-container');
+                const userHue = container && container.getAttribute('data-user-hue');
+                this.currentHue = parseInt(userHue) || 180;
 
                 // Format donor expiry after DOM renders
                 this.$nextTick(() => this._formatDonorExpiry());
@@ -271,10 +273,21 @@ if (typeof Vue === 'undefined') {
                     this.isUserDropdownOpen = false;
                 },
                 previewHue(value) {
+                    // On someone else's profile, don't change page colors —
+                    // the whole page uses their hue. Only allow live preview
+                    // on your own profile or non-profile pages.
+                    if (window.isOwnProfile === false) return;
+
                     document.documentElement.style.setProperty('--main', value);
+                    if (window.isOwnProfile) {
+                        document.documentElement.style.setProperty('--profile-hue', value);
+                    }
                     this.currentHue = parseInt(value);
                 },
                 async saveHue(value) {
+                    // Don't save when viewing someone else's profile
+                    if (window.isOwnProfile === false) return;
+
                     const hue = parseInt(value);
                     try {
                         const formData = new FormData();
