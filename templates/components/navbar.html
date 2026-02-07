@@ -3,6 +3,7 @@
     <div class="navbar-desktop">
         <div class="navbar-brand">
             <a class="navbar-logo" href="/home">
+                <img src="/static/images/logo.png" alt="Kawata" class="navbar-logo-img">
                 {{ appName() }}
             </a>
         </div>
@@ -126,8 +127,9 @@
     <!-- Mobile Navbar -->
     <div class="navbar-mobile">
         <div class="navbar-mobile-bar">
-            <a class="navbar-logo" href="/home">
-                {{ appName() }}
+            <a class="navbar-logo navbar-logo--mobile" href="/home">
+                <img src="/static/images/logo.png" alt="Kawata" class="navbar-logo-img navbar-logo-img--mobile">
+                <span class="navbar-logo-text--mobile">{{ appName() }}</span>
             </a>
             
             <div class="navbar-mobile-actions">

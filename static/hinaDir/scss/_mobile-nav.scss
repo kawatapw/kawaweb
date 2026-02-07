@@ -6,6 +6,35 @@ html, body {
     max-width: 100vw;
 }
 
+// ── Mobile navbar logo ──
+// Logo + text side by side. On very small screens (≤380px) the text hides
+// and just the logo shows, keeping the bar compact.
+.navbar-logo--mobile {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.navbar-logo-img--mobile {
+    width: 28px;
+    height: 28px;
+    object-fit: contain;
+    border-radius: 6px;
+    flex-shrink: 0;
+}
+
+.navbar-logo-text--mobile {
+    font-size: 1.2rem;
+    font-weight: 700;
+}
+
+@media (max-width: 380px) {
+    // Very narrow screens: hide text, just show logo
+    .navbar-logo-text--mobile {
+        display: none;
+    }
+}
+
 // Leaderboard player name link (replaces <user-profile> component to fix race condition)
 .lb-player-name {
     color: inherit;

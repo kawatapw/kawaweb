@@ -7,6 +7,21 @@
 // We use a different container class (.navbar-user-dropdown-container)
 // so the hover rule doesn't apply. No override needed.
 
+// ── Navbar logo image (desktop) ──
+.navbar-logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.navbar-logo-img {
+    width: 32px;
+    height: 32px;
+    object-fit: contain;
+    border-radius: 6px;
+    flex-shrink: 0;
+}
+
 // ── Container ──
 .navbar-user-dropdown-container {
     position: relative;
