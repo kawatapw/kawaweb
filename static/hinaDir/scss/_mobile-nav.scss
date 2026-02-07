@@ -1,0 +1,67 @@
+// Leaderboard player name link (replaces <user-profile> component to fix race condition)
+.lb-player-name {
+    color: inherit;
+    text-decoration: none;
+    transition: color 0.15s ease;
+
+    &:hover {
+        color: var(--navbar-accent, hsl(180, 50%, 60%));
+        text-decoration: underline;
+    }
+}
+
+// Mobile Navbar Quick Links (Clan & Friends)
+// Sits between user banner and search in the mobile slide-out menu.
+// Uses nuc-mobile-* prefix to avoid conflicts with Loki's .navbar-mobile-* classes.
+
+.nuc-mobile-quicklinks {
+    display: flex;
+    flex-direction: column;
+    padding: 6px 0;
+    border-bottom: 1px solid var(--navbar-border);
+}
+
+.nuc-mobile-quicklink {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 16px;
+    color: var(--navbar-text);
+    text-decoration: none;
+    font-weight: 500;
+    font-size: 0.95rem;
+    transition: background 0.15s ease, color 0.15s ease;
+    border-bottom: 1px solid var(--navbar-border);
+
+    &:last-child {
+        border-bottom: none;
+    }
+
+    &:hover {
+        background: var(--navbar-bg-hover);
+        color: var(--navbar-accent);
+        text-decoration: none;
+    }
+
+    i {
+        width: 20px;
+        text-align: center;
+        color: var(--navbar-text-muted);
+        font-size: 0.9rem;
+        flex-shrink: 0;
+    }
+
+    &:hover i {
+        color: var(--navbar-accent);
+    }
+}
+
+.nuc-mobile-clan-tag {
+    margin-left: auto;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--navbar-accent);
+    background: hsla(var(--main), 50%, 60%, 0.12);
+    padding: 2px 8px;
+    border-radius: 6px;
+}

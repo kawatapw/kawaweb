@@ -10,10 +10,12 @@
         @import url("/static/css/style.css") layer(styles);
         @import url("/static/css/pages/generic.css") layer(styles);
         @import url("/static/css/stars.css") layer(styles);
-        @import url("/static/css/hina_import.css") layer(styles);
 
     /* Components */
         @import url("/static/css/components.css") layer(components);
         @import url("/static/css/components/badges.css") layer(components);
         @import url("/static/css/components/panels.css") layer(components);
         @import url("/static/css/components/navbar.css") layer(components);
+
+    /* Overrides (Hinamizawa) */
+        @import url("/static/hinaDir/compiled/hina_import.css") layer(overrides);

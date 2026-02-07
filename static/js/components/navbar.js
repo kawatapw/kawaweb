@@ -26,7 +26,11 @@ if (typeof Vue === 'undefined') {
                 searchId: 0,
                 isMobile: false,
                 resizeListener: null,
-                searchBusListener: null
+                searchBusListener: null,
+                isUserDropdownOpen: false,
+                currentHue: 180,
+                _userDropdownClickHandler: null,
+                _userDropdownKeyHandler: null
             },
             created() {
                 this.$log = ColorfulLogger.child('Navbar');
@@ -37,6 +41,32 @@ if (typeof Vue === 'undefined') {
                 this.resizeListener = this.updateMobileState.bind(this);
                 window.addEventListener('resize', this.resizeListener);
                 
+                // User dropdown: close on outside click
+                this._userDropdownClickHandler = (e) => {
+                    if (this.isUserDropdownOpen) {
+                        const container = this.$el.querySelector('.navbar-user-dropdown-container');
+                        if (container && !container.contains(e.target)) {
+                            this.isUserDropdownOpen = false;
+                        }
+                    }
+                };
+                document.addEventListener('mousedown', this._userDropdownClickHandler);
+
+                // User dropdown: close on Escape
+                this._userDropdownKeyHandler = (e) => {
+                    if (e.key === 'Escape' && this.isUserDropdownOpen) {
+                        this.isUserDropdownOpen = false;
+                    }
+                };
+                document.addEventListener('keydown', this._userDropdownKeyHandler);
+
+                // Read initial hue from the CSS variable set by base.html
+                const rootHue = getComputedStyle(document.documentElement).getPropertyValue('--main').trim();
+                this.currentHue = parseInt(rootHue) || 180;
+
+                // Format donor expiry after DOM renders
+                this.$nextTick(() => this._formatDonorExpiry());
+
                 // Listen for search window events
                 if (window.searchBus) {
                     this.searchBusListener = () => {
@@ -233,11 +263,65 @@ if (typeof Vue === 'undefined') {
                         difficulty_rating: diff.DifficultyRating
                     }));
                 },
+                // ── User dropdown methods ──
+                toggleUserDropdown() {
+                    this.isUserDropdownOpen = !this.isUserDropdownOpen;
+                },
+                closeUserDropdown() {
+                    this.isUserDropdownOpen = false;
+                },
+                previewHue(value) {
+                    document.documentElement.style.setProperty('--main', value);
+                    this.currentHue = parseInt(value);
+                },
+                async saveHue(value) {
+                    const hue = parseInt(value);
+                    try {
+                        const formData = new FormData();
+                        formData.append('hue', hue);
+                        const res = await fetch('/settings/hue', {
+                            method: 'POST',
+                            body: formData
+                        });
+                        if (!res.ok) throw new Error('Failed to save');
+                        this.currentHue = hue;
+                    } catch (err) {
+                        this.$log.error('HUE', 'Failed to save hue', err);
+                    }
+                },
+                _formatDonorExpiry() {
+                    const el = this.$el.querySelector('.nuc-supporter-expiry');
+                    if (!el) return;
+
+                    const donorEnd = parseInt(el.getAttribute('data-donor-end'), 10);
+                    if (!donorEnd) return;
+
+                    const now = Date.now() / 1000;
+                    if (donorEnd <= now) {
+                        el.textContent = 'Expired';
+                        return;
+                    }
+
+                    let remaining = donorEnd - now;
+                    const years = Math.floor(remaining / (365.25 * 86400));
+                    remaining -= years * 365.25 * 86400;
+                    const months = Math.floor(remaining / (30.44 * 86400));
+                    remaining -= months * 30.44 * 86400;
+                    const days = Math.floor(remaining / 86400);
+
+                    let parts = [];
+                    if (years > 0) parts.push(`${years}y`);
+                    if (months > 0) parts.push(`${months}mo`);
+                    if (parts.length === 0 && days > 0) parts.push(`${days}d`);
+                    if (parts.length === 0) parts.push('< 1d');
+
+                    el.textContent = 'Expires: ' + parts.join(' ');
+                },
+
                 toggleMobileDropdown(event) {
                     const dropdown = event.currentTarget.parentElement;
                     dropdown.classList.toggle('active');
                 },
-                showSearchWindow() { searchBus.$emit('show-search-window'); },
                 showDocsPanel(doc, page) {
                     docsBus.$emit('show-docs-panel', doc || 'Rules', page || 'Main');
                 }
@@ -260,6 +344,14 @@ if (typeof Vue === 'undefined') {
                 // Clean up resize listener
                 if (this.resizeListener) {
                     window.removeEventListener('resize', this.resizeListener);
+                }
+
+                // Clean up user dropdown listeners
+                if (this._userDropdownClickHandler) {
+                    document.removeEventListener('mousedown', this._userDropdownClickHandler);
+                }
+                if (this._userDropdownKeyHandler) {
+                    document.removeEventListener('keydown', this._userDropdownKeyHandler);
                 }
             }
         });

@@ -36,19 +36,84 @@
             </button>
             
             {% if session.authenticated %}
-                <div class="navbar-dropdown-container">
-                    <button class="navbar-user-trigger">
+                <div class="navbar-user-dropdown-container">
+                    <button class="navbar-user-trigger" @click="toggleUserDropdown" :class="{ 'is-active': isUserDropdownOpen }">
                         <img src="https://a.{{domain()}}/{{ session.user_data['id'] }}" alt="{{ session.user_data['name'] }}" class="navbar-avatar">
                         <span class="navbar-username">{{ session.user_data['name'] }}</span>
-                        <i class="fas fa-chevron-down"></i>
+                        <i class="fas fa-chevron-down nuc-chevron" :class="{ 'is-flipped': isUserDropdownOpen }"></i>
                     </button>
-                    <div class="navbar-dropdown-menu navbar-user-menu">
-                        <a class="navbar-dropdown-item" href="/u/{{ session.user_data['id'] }}">
-                            <img src="https://a.{{domain()}}/{{ session.user_data['id'] }}" alt="{{ session.user_data['name'] }}" class="navbar-avatar-small">
-                            <span>{{ session.user_data['name'] }}</span>
+                    <div class="navbar-user-card" v-show="isUserDropdownOpen">
+                        {# Header — links to profile #}
+                        <a class="nuc-header" href="/u/{{ session.user_data['id'] }}">
+                            <img src="https://a.{{domain()}}/{{ session.user_data['id'] }}" alt="{{ session.user_data['name'] }}" class="nuc-avatar">
+                            <div class="nuc-header-info">
+                                <span class="nuc-username">{{ session.user_data['name'] }}</span>
+                                <span class="nuc-safe-name">@{{ session.user_data.get('safe_name', session.user_data['name']|lower|replace(' ', '_')) }}</span>
+                            </div>
+                            <i class="fas fa-chevron-right nuc-header-arrow"></i>
                         </a>
-                        <a class="navbar-dropdown-item" href="/settings">Settings</a>
-                        <a class="navbar-dropdown-item" href="/logout">Logout</a>
+
+                        {# Supporter row — only if donor_end > 0 #}
+                        {% if session.user_data.get('donor_end', 0) > 0 %}
+                        <div class="nuc-supporter-row">
+                            <div class="nuc-supporter-badge">
+                                <i class="fas fa-star"></i>
+                                <span>Supporter</span>
+                            </div>
+                            <span class="nuc-supporter-expiry" data-donor-end="{{ session.user_data['donor_end'] }}"></span>
+                        </div>
+                        {% endif %}
+
+                        <div class="nuc-divider"></div>
+
+                        {# Menu items #}
+                        <div class="nuc-menu">
+                            {# Clan row — only if clan_id > 0 #}
+                            {% if session.user_data.get('clan_id', 0) > 0 %}
+                            <a class="nuc-menu-item" href="/clan/{{ session.user_data['clan_id'] }}">
+                                <i class="fas fa-flag nuc-menu-icon"></i>
+                                <span>My clan</span>
+                                {% if session.user_data.get('clan_tag') %}
+                                <span class="nuc-clan-tag">[{{ session.user_data['clan_tag'] }}]</span>
+                                {% endif %}
+                            </a>
+                            {% endif %}
+
+                            {# Coins shop — enable when shop system exists #}
+                            {# <a class="nuc-menu-item" href="/shop">
+                                <i class="fas fa-coins nuc-menu-icon"></i>
+                                <span>Coins shop</span>
+                                <span class="nuc-coin-balance">0</span>
+                            </a> #}
+
+                            <a class="nuc-menu-item" href="/friends">
+                                <i class="fas fa-user-friends nuc-menu-icon"></i>
+                                <span>Friends</span>
+                            </a>
+
+                            <a class="nuc-menu-item" href="/settings">
+                                <i class="fas fa-cog nuc-menu-icon"></i>
+                                <span>Settings</span>
+                            </a>
+
+                            <div class="nuc-menu-item nuc-theme-row">
+                                <i class="fas fa-palette nuc-menu-icon"></i>
+                                <span>Theme</span>
+                                <input type="range" class="nuc-hue-slider"
+                                       min="0" max="360"
+                                       :value="currentHue"
+                                       @input="previewHue($event.target.value)"
+                                       @change="saveHue($event.target.value)">
+                                <span class="nuc-hue-value" v-text="currentHue"></span>
+                            </div>
+
+                            <div class="nuc-divider"></div>
+
+                            <a class="nuc-menu-item nuc-menu-item--danger" href="/logout">
+                                <i class="fas fa-sign-out-alt nuc-menu-icon"></i>
+                                <span>Sign out</span>
+                            </a>
+                        </div>
                     </div>
                 </div>
             {% else %}
@@ -102,6 +167,22 @@
                                 </div>
                             </div>
                         </div>
+                    </div>
+                    {# Quick links — clan & friends above the main nav #}
+                    <div class="nuc-mobile-quicklinks">
+                        {% if session.user_data.get('clan_id', 0) > 0 %}
+                        <a class="nuc-mobile-quicklink" href="/clan/{{ session.user_data['clan_id'] }}">
+                            <i class="fas fa-flag"></i>
+                            <span>My clan</span>
+                            {% if session.user_data.get('clan_tag') %}
+                            <span class="nuc-mobile-clan-tag">[{{ session.user_data['clan_tag'] }}]</span>
+                            {% endif %}
+                        </a>
+                        {% endif %}
+                        <a class="nuc-mobile-quicklink" href="/friends">
+                            <i class="fas fa-user-friends"></i>
+                            <span>Friends</span>
+                        </a>
                     </div>
                 {% else %}
                     <div class="navbar-mobile-auth">

@@ -258,6 +258,27 @@ async def settings_profile_post():
     session.pop('user_data', None)
     return await flash('success', 'Your username/email have been changed! Please login again.', 'login')
 
+@frontend.route('/settings/hue', methods=['POST'])
+@login_required
+async def settings_hue_post():
+    """AJAX endpoint to update hue without logout."""
+    form = await request.form
+    new_hue = form.get('hue', type=int)
+
+    if new_hue is None or new_hue < 0 or new_hue > 360:
+        return {'status': 'error', 'message': 'Invalid hue value'}, 400
+
+    await glob.db.execute(
+        'INSERT INTO user_customisations (userid, hue) VALUES (%s, %s) '
+        'ON DUPLICATE KEY UPDATE hue = %s',
+        [session['user_data']['id'], new_hue, new_hue]
+    )
+
+    session['user_data']['hue'] = new_hue
+    session.modified = True
+
+    return {'status': 'success', 'hue': new_hue}, 200
+
 @frontend.route('/settings/avatar')
 @error_catcher
 @login_required
@@ -563,10 +584,13 @@ async def login_post():
         return await flash('error', 'Invalid parameters.', 'home')
 
     user_info = await glob.db.fetch(
-        'SELECT users.id, users.name, users.email, users.priv, '
-        'users.pw_bcrypt, users.silence_end, user_customisations.hue '
+        'SELECT users.id, users.name, users.safe_name, users.email, users.priv, '
+        'users.pw_bcrypt, users.silence_end, users.clan_id, users.donor_end, '
+        'user_customisations.hue, '
+        'clans.name AS clan_name, clans.tag AS clan_tag '
         'FROM users '
         'LEFT JOIN user_customisations ON users.id = user_customisations.userid '
+        'LEFT JOIN clans ON users.clan_id = clans.id AND users.clan_id > 0 '
         'WHERE users.safe_name = %s',
         [utils.get_safe_name(username)]
     )
@@ -621,6 +645,7 @@ async def login_post():
     session['user_data'] = {
         'id': user_info['id'],
         'name': user_info['name'],
+        'safe_name': user_info['safe_name'],
         'badges': (badges or None),
         'email': user_info['email'],
         'priv': user_info['priv'],
@@ -628,7 +653,11 @@ async def login_post():
         'is_staff': user_info['priv'] & Privileges.Staff != 0,
         'is_dev': user_info['priv'] & Privileges.Dangerous != 0,
         'is_donator': user_info['priv'] & Privileges.Donator != 0,
-        'hue': user_info['hue'] or None
+        'hue': user_info['hue'] or None,
+        'clan_id': user_info['clan_id'] or 0,
+        'clan_name': user_info.get('clan_name') or None,
+        'clan_tag': user_info.get('clan_tag') or None,
+        'donor_end': user_info['donor_end'] or 0,
     }
 
     if glob.config.debug:

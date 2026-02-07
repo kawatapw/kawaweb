@@ -135,7 +135,7 @@
                                             <% flags[user.country.toUpperCase()] %>
                                         </div>
                                     </a>
-                                    <user-profile :user="user"></user-profile>
+                                    <a :href="'/u/' + user.player_id" class="lb-player-name" v-text="user.name"></a>
                                 </td>
                                 <td id="clan-tag" >
                                     <span v-if="user.clan_tag">
