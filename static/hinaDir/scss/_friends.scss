@@ -1,26 +1,152 @@
-// Friends page styles
+// Friends page — Story Card Design with Activity Rings
 // Compiled separately: npx sass scss/_friends.scss compiled/friends.css --no-source-map
 
+// ── Variables ──
+
 $accent: hsla(var(--main), 70%, 55%, 1);
-$accent-dim: hsla(var(--main), 70%, 55%, 0.15);
-$bg-card: hsla(0, 0%, 100%, 0.04);
-$bg-card-hover: hsla(0, 0%, 100%, 0.07);
+$accent-dim: hsla(var(--main), 50%, 40%, 0.3);
+$card-bg: hsla(0, 0%, 100%, 0.04);
+$card-bg-hover: hsla(0, 0%, 100%, 0.07);
 $border: hsla(0, 0%, 100%, 0.08);
 $text-primary: hsla(0, 0%, 100%, 0.92);
 $text-secondary: hsla(0, 0%, 100%, 0.55);
 $text-muted: hsla(0, 0%, 100%, 0.35);
 
+$status-online: #00D26A;
+$status-playing: #00D26A;
+$status-away: #FAA61A;
+$status-offline: #747F8D;
+$status-multiplayer: #5865F2;
+
+$btn-primary-bg: hsla(221, 70%, 55%, 1);
+$btn-success-bg: hsla(145, 70%, 40%, 1);
+$btn-danger-color: #F04747;
+$btn-neutral-bg: hsla(0, 0%, 100%, 0.1);
+
+$ring-gap: #111215;
+$ring-gradient: conic-gradient(#ff6b6b, #ffd93d, #6bcb77, #4d96ff, #ff6b6b);
+$card-width: 200px;
+
+// ── Mixins ──
+
+@mixin skeleton-pulse {
+  background: linear-gradient(90deg, hsla(0,0%,100%,0.04) 25%, hsla(0,0%,100%,0.08) 50%, hsla(0,0%,100%,0.04) 75%);
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.5s ease-in-out infinite;
+}
+
+@keyframes skeleton-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+// ── Root ──
+
+[v-cloak] { display: none !important; }
+
+// Bulma .container has width:auto + flex-grow:1 which means
+// it sizes to content first. When Vue removes cards during
+// search filtering, the content shrinks and so does the container.
+// Force it to always fill available space.
+.my-con:has(#friends-app) {
+  width: 100% !important;
+}
+
+#friends-app {
+  width: 100%;
+  overflow: hidden;
+}
+
 // ── Header ──
 
 .friends-header {
-  padding: 32px 0 16px;
+  padding: 32px 0 8px;
 }
 
 .friends-title {
   font-size: 1.6rem;
   font-weight: 700;
   color: $text-primary;
-  margin: 0;
+  margin: 0 0 8px;
+}
+
+.friends-stats {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.9rem;
+  color: $text-secondary;
+
+  strong { color: $text-primary; font-weight: 600; }
+}
+
+.stat-item--online {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.stat-divider { color: $text-muted; }
+
+.status-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+
+  &--online { background: $status-online; }
+  &--offline { background: $status-offline; }
+}
+
+// ── Search ──
+
+.friends-search {
+  position: relative;
+  margin-bottom: 16px;
+
+  > i {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: $text-muted;
+    font-size: 0.85rem;
+    pointer-events: none;
+  }
+
+  input {
+    width: 100%;
+    padding: 10px 40px 10px 40px;
+    background: $card-bg;
+    border: 1px solid $border;
+    border-radius: 8px;
+    color: $text-primary;
+    font-size: 0.9rem;
+    outline: none;
+    transition: border-color 0.15s, background 0.15s;
+
+    &::placeholder { color: $text-muted; }
+    &:focus { border-color: $accent; background: $card-bg-hover; }
+  }
+}
+
+.search-clear {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  color: $text-muted;
+  cursor: pointer;
+  border-radius: 50%;
+
+  &:hover { color: $text-secondary; background: hsla(0,0%,100%,0.06); }
 }
 
 // ── Tabs ──
@@ -30,7 +156,6 @@ $text-muted: hsla(0, 0%, 100%, 0.35);
   gap: 4px;
   border-bottom: 1px solid $border;
   margin-bottom: 24px;
-  padding-bottom: 0;
 }
 
 .friends-tab {
@@ -48,21 +173,12 @@ $text-muted: hsla(0, 0%, 100%, 0.35);
   transition: color 0.15s, border-color 0.15s;
   margin-bottom: -1px;
 
-  &:hover {
-    color: $text-primary;
-  }
-
-  &.active {
-    color: $accent;
-    border-bottom-color: $accent;
-  }
-
-  i {
-    font-size: 0.85rem;
-  }
+  &:hover { color: $text-primary; }
+  &.active { color: $accent; border-bottom-color: $accent; }
+  i { font-size: 0.85rem; }
 }
 
-.friends-tab-count {
+.tab-count {
   background: $accent-dim;
   color: $accent;
   font-size: 0.75rem;
@@ -73,257 +189,492 @@ $text-muted: hsla(0, 0%, 100%, 0.35);
   text-align: center;
 }
 
-// ── Loading / Error / Empty states ──
+// ── Section headers (Online / Offline collapsible) ──
 
-.friends-loading,
+.friends-section { margin-bottom: 24px; width: 100%; }
+
+.section-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 4px;
+  margin-bottom: 12px;
+  cursor: pointer;
+  user-select: none;
+  background: none;
+  border: none;
+  width: 100%;
+  text-align: left;
+
+  &:hover .section-title { color: $text-primary; }
+}
+
+.section-chevron {
+  font-size: 0.7rem;
+  color: $text-muted;
+  transition: transform 0.2s ease;
+  &.collapsed { transform: rotate(-90deg); }
+}
+
+.section-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  &--online { background: $status-online; }
+  &--offline { background: $status-offline; }
+}
+
+.section-title {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: $text-secondary;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.section-count {
+  font-size: 0.78rem;
+  color: $text-muted;
+  font-weight: 500;
+}
+
+// ── Grid (horizontal scroll) ──
+
+.friends-grid-wrapper {
+  width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 8px;
+  scroll-snap-type: x proximity;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,255,255,0.1) transparent;
+
+  &::-webkit-scrollbar { height: 4px; }
+  &::-webkit-scrollbar-track { background: transparent; }
+  &::-webkit-scrollbar-thumb {
+    background: rgba(255,255,255,0.1);
+    border-radius: 2px;
+    &:hover { background: rgba(255,255,255,0.2); }
+  }
+}
+
+.friends-grid {
+  display: flex;
+  gap: 12px;
+  min-width: min-content;
+}
+
+// ── Friend Card (Story Card — vertical, avatar-first) ──
+
+.friend-card {
+  flex-shrink: 0;
+  width: $card-width;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 16px 12px 10px;
+  background: $card-bg;
+  border: 1px solid $border;
+  border-radius: 12px;
+  position: relative;
+  transition: transform 0.2s ease-out, box-shadow 0.2s ease-out, background 0.15s;
+  scroll-snap-align: start;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+    background: $card-bg-hover;
+  }
+
+  &--offline {
+    opacity: 0.7;
+    &:hover { opacity: 1; }
+  }
+
+  &--playing {
+    border-color: rgba($status-playing, 0.2);
+  }
+}
+
+// ── Avatar Wrapper & Activity Ring ──
+
+.friend-avatar-wrapper {
+  position: relative;
+  width: 108px;
+  height: 108px;
+  margin-bottom: 10px;
+}
+
+.friend-avatar-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+
+  // Gap mask
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 3px;
+    border-radius: 50%;
+    background: $ring-gap;
+  }
+
+  // Ring states
+  &.ring--playing {
+    background: $ring-gradient;
+    animation: ring-hue 4s linear infinite;
+  }
+
+  &.ring--online {
+    background: $status-online;
+  }
+
+  &.ring--lobby {
+    background: $status-multiplayer;
+  }
+
+  &.ring--away {
+    background: $status-away;
+  }
+
+  &.ring--none {
+    background: transparent;
+    &::after { background: transparent; }
+  }
+}
+
+@keyframes ring-hue {
+  from { filter: hue-rotate(0deg); }
+  to { filter: hue-rotate(360deg); }
+}
+
+.friend-avatar {
+  position: absolute;
+  inset: 6px;
+  border-radius: 50%;
+  object-fit: cover;
+  z-index: 1;
+  background: hsla(0, 0%, 100%, 0.06);
+}
+
+// ── Status Badge (on avatar) ──
+
+.friend-status-badge {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 2;
+  padding: 2px 8px;
+  border-radius: 8px;
+  font-size: 0.6rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  border: 2px solid $ring-gap;
+
+  &.badge--playing {
+    background: $status-playing;
+    color: #000;
+  }
+
+  &.badge--online {
+    background: rgba($status-online, 0.15);
+    color: $status-online;
+    border-color: rgba($status-online, 0.3);
+  }
+
+  &.badge--lobby {
+    background: $status-multiplayer;
+    color: white;
+  }
+
+  &.badge--away {
+    background: rgba($status-away, 0.15);
+    color: $status-away;
+    border-color: rgba($status-away, 0.3);
+  }
+}
+
+// ── Activity text (below avatar) ──
+
+.friend-activity {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  max-width: 100%;
+  margin-bottom: 6px;
+  font-size: 0.72rem;
+  color: $status-online;
+
+  i { font-size: 0.65rem; flex-shrink: 0; }
+
+  .activity-text {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &--offline {
+    color: $text-muted;
+  }
+}
+
+.activity-beatmap-link {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-color: rgba(255, 255, 255, 0.3);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  &:hover { opacity: 0.8; }
+}
+
+.activity-mods {
+  font-weight: 600;
+  font-size: 0.9em;
+  opacity: 0.8;
+  flex-shrink: 0;
+}
+
+// ── Friend info (name, clan, flag) ──
+
+.friend-info {
+  text-align: center;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.friend-name {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: $text-primary;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  margin-bottom: 2px;
+}
+
+.friend-clan {
+  font-size: 0.75rem;
+  color: $accent;
+  font-weight: 500;
+  margin-left: 2px;
+}
+
+.friend-meta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+.friend-flag {
+  width: 18px;
+  height: 12px;
+  object-fit: cover;
+  border-radius: 2px;
+}
+
+// ── Action Bar (always visible below card info) ──
+
+.friend-action-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid $border;
+}
+
+.action-bar-btn {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  color: white;
+  font-size: 0.8rem;
+  text-decoration: none;
+
+  &:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  &--primary {
+    background: $btn-primary-bg;
+    &:hover:not(:disabled) { filter: brightness(1.2); transform: scale(1.08); }
+  }
+
+  &--success {
+    background: $btn-success-bg;
+    &:hover:not(:disabled) { filter: brightness(1.2); transform: scale(1.08); }
+  }
+
+  &--danger {
+    background: rgba($btn-danger-color, 0.12);
+    color: $btn-danger-color;
+    border: 1px solid rgba($btn-danger-color, 0.25);
+    &:hover:not(:disabled) { background: rgba($btn-danger-color, 0.22); transform: scale(1.08); }
+  }
+
+  &--neutral {
+    background: $btn-neutral-bg;
+    &:hover:not(:disabled) { background: hsla(0,0%,100%,0.18); transform: scale(1.08); }
+  }
+}
+
+
+// ── Loading Skeletons ──
+
+.friends-loading { padding: 0; }
+
+.friend-card-skeleton {
+  flex-shrink: 0;
+  width: $card-width;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 16px 12px 14px;
+  background: $card-bg;
+  border: 1px solid $border;
+  border-radius: 12px;
+}
+
+.skeleton {
+  @include skeleton-pulse;
+  border-radius: 4px;
+}
+
+.skeleton-avatar {
+  width: 96px;
+  height: 96px;
+  border-radius: 50% !important;
+  margin-bottom: 10px;
+}
+
+.skeleton-text {
+  height: 12px;
+}
+
+// ── Error ──
+
 .friends-error {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 10px;
   padding: 48px 16px;
-  color: $text-secondary;
+  color: hsla(0, 70%, 60%, 1);
   font-size: 0.95rem;
 }
 
-.friends-error {
-  color: hsla(0, 70%, 60%, 1);
-}
+// ── Empty states ──
 
 .friends-empty {
+  text-align: center;
+  padding: 48px 24px;
+  color: $text-muted;
+
+  i { margin-bottom: 16px; opacity: 0.4; }
+  h3 { color: $text-secondary; margin-bottom: 8px; font-size: 1.1rem; font-weight: 600; }
+  p {
+    font-size: 0.9rem;
+    max-width: 320px;
+    margin: 0 auto 16px;
+    a { color: $accent; text-decoration: none; &:hover { text-decoration: underline; } }
+  }
+}
+
+.friends-empty-cta {
+  display: inline-block;
+  padding: 8px 20px;
+  background: $accent;
+  color: white;
+  border-radius: 4px;
+  font-weight: 500;
+  text-decoration: none;
+  &:hover { filter: brightness(1.1); color: white; }
+}
+
+// ── Poll error ──
+
+.friends-poll-error {
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 64px 16px;
-  text-align: center;
-
-  i {
-    font-size: 2.5rem;
-    color: $text-muted;
-    margin-bottom: 16px;
-  }
-
-  p {
-    font-size: 1.05rem;
-    color: $text-secondary;
-    margin: 0 0 6px;
-  }
-}
-
-.friends-empty-hint {
-  font-size: 0.8rem;
-  color: $text-muted;
-}
-
-// ── Card grid ──
-
-.friends-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   gap: 12px;
-}
-
-.friends-card {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 12px 16px;
-  background: $bg-card;
-  border: 1px solid $border;
-  border-radius: 10px;
-  transition: background 0.15s, border-color 0.15s;
-
-  &:hover {
-    background: $bg-card-hover;
-    border-color: hsla(0, 0%, 100%, 0.12);
-  }
-}
-
-.friends-card-avatar-link {
-  flex-shrink: 0;
-}
-
-.friends-card-avatar {
-  width: 48px;
-  height: 48px;
-  border-radius: 50%;
-  object-fit: cover;
-  background: hsla(0, 0%, 100%, 0.06);
-}
-
-.friends-card-info {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.friends-card-name {
-  font-size: 0.95rem;
-  font-weight: 600;
-  color: $text-primary;
-  text-decoration: none;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-
-  &:hover {
-    color: $accent;
-    text-decoration: underline;
-  }
-}
-
-.friends-card-clan {
-  font-size: 0.78rem;
-  color: $accent;
-  font-weight: 500;
-}
-
-.friends-card-meta {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin-top: 2px;
-}
-
-.friends-card-flag {
-  width: 20px;
-  height: 14px;
-  object-fit: cover;
-  border-radius: 2px;
-}
-
-.friends-card-activity {
-  font-size: 0.78rem;
-  color: $text-muted;
-}
-
-// ── Action buttons ──
-
-.friends-card-actions {
-  display: flex;
-  gap: 6px;
-  flex-shrink: 0;
-}
-
-.friends-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  padding: 6px 12px;
-  border: 1px solid transparent;
+  padding: 8px 16px;
+  background: rgba($status-away, 0.1);
+  border: 1px solid rgba($status-away, 0.3);
   border-radius: 6px;
-  font-size: 0.8rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: background 0.15s, opacity 0.15s;
-  white-space: nowrap;
+  margin-bottom: 12px;
+  font-size: 0.85rem;
+  color: $status-away;
 
-  &:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-
-  i {
-    font-size: 0.78rem;
-  }
-}
-
-.friends-btn--success {
-  background: hsla(140, 60%, 45%, 0.15);
-  color: hsla(140, 60%, 55%, 1);
-  border-color: hsla(140, 60%, 45%, 0.25);
-
-  &:hover:not(:disabled) {
-    background: hsla(140, 60%, 45%, 0.25);
+  button {
+    padding: 4px 12px;
+    background: rgba($status-away, 0.2);
+    border: 1px solid $status-away;
+    border-radius: 4px;
+    color: $status-away;
+    cursor: pointer;
+    font-size: 0.8rem;
+    &:hover { background: rgba($status-away, 0.3); }
   }
 }
 
-.friends-btn--danger {
-  background: hsla(0, 60%, 45%, 0.15);
-  color: hsla(0, 60%, 60%, 1);
-  border-color: hsla(0, 60%, 45%, 0.25);
-
-  &:hover:not(:disabled) {
-    background: hsla(0, 60%, 45%, 0.25);
-  }
-}
-
-.friends-btn--neutral {
-  background: hsla(0, 0%, 100%, 0.06);
-  color: $text-secondary;
-  border-color: $border;
-
-  &:hover:not(:disabled) {
-    background: hsla(0, 0%, 100%, 0.1);
-    color: $text-primary;
-  }
-}
-
-// ── Mobile responsive ──
+// ── Responsive: Mobile (≤768px) ──
 
 @media (max-width: 768px) {
-  .friends-header {
-    padding: 20px 0 12px;
-  }
+  .friends-header { padding: 20px 0 6px; }
+  .friends-title { font-size: 1.3rem; }
+  .friends-stats { font-size: 0.82rem; gap: 6px; flex-wrap: wrap; }
 
-  .friends-title {
-    font-size: 1.3rem;
-  }
-
-  .friends-tabs {
-    gap: 0;
-  }
-
+  .friends-tabs { gap: 0; }
   .friends-tab {
     flex: 1;
     justify-content: center;
     padding: 10px 8px;
     font-size: 0.82rem;
     gap: 6px;
-
-    // Hide text labels on very small screens, keep icons
-    span:first-of-type {
-      display: none;
-    }
   }
 
-  .friends-grid {
-    grid-template-columns: 1fr;
-    gap: 8px;
+  .friend-card {
+    width: 160px;
+    padding: 12px 8px 8px;
+
+    &:hover { transform: none; box-shadow: none; }
   }
 
-  .friends-card {
-    padding: 10px 12px;
-  }
+  .friend-avatar-wrapper { width: 88px; height: 88px; }
+  .friend-avatar { inset: 5px; }
+  .friend-avatar-ring::after { inset: 2px; }
+  .friend-name { font-size: 0.82rem; }
+  .friend-activity { font-size: 0.68rem; }
 
-  .friends-card-avatar {
-    width: 40px;
-    height: 40px;
-  }
-
-  .friends-btn span {
-    display: none;
-  }
-
-  .friends-btn {
-    padding: 8px 10px;
-  }
-
-  .friends-empty {
-    padding: 40px 16px;
-
-    i {
-      font-size: 2rem;
-    }
-  }
+  .friend-action-bar { margin-top: 8px; padding-top: 8px; }
+  .action-bar-btn { width: 30px; height: 30px; font-size: 0.72rem; }
 }
 
-// Very small mobile: show tab text again at slightly larger breakpoint
+// ── Very small mobile (≤480px) ──
+
+@media (max-width: 480px) {
+  .friends-tab span:not(.tab-count) { display: none; }
+
+  .friend-card { width: 140px; }
+  .friend-avatar-wrapper { width: 76px; height: 76px; }
+  .friend-status-badge { font-size: 0.55rem; padding: 1px 6px; }
+  .action-bar-btn { width: 28px; height: 28px; font-size: 0.68rem; }
+}
+
+// Restore tab text for medium mobile
 @media (min-width: 480px) and (max-width: 768px) {
-  .friends-tab span:first-of-type {
-    display: inline;
-  }
+  .friends-tab span:not(.tab-count) { display: inline; }
 }

@@ -3,6 +3,15 @@ declare const domain: string;
 declare const userId: number;
 declare const timeago: any;
 
+interface PlayerStatus {
+    action: number;
+    action_name: string;
+    info_text: string;
+    mode: number;
+    mods: number;
+    map_id: number;
+}
+
 interface FriendUser {
     id: number;
     name: string;
@@ -11,6 +20,8 @@ interface FriendUser {
     clan_name: string | null;
     clan_tag: string | null;
     latest_activity: number;
+    is_online: boolean;
+    player_status: PlayerStatus | null;
 }
 
 new Vue({
@@ -23,50 +34,335 @@ new Vue({
         loading: true,
         error: null as string | null,
         actionLoading: {} as Record<number, boolean>,
+        searchQuery: '' as string,
+        sections: { online: true, offline: true } as Record<string, boolean>,
+        pollTimer: null as number | null,
+        pollAttempts: 0,
+        pollError: false,
+        isPolling: false,
+        _keyHandler: null as any,
+        _visHandler: null as any,
+    },
+    computed: {
+        currentList(): FriendUser[] {
+            var list: FriendUser[] = this.getBaseList();
+            if (!this.searchQuery) return list;
+            var q = this.searchQuery.toLowerCase();
+            return list.filter(function(u: FriendUser) {
+                return u.name.toLowerCase().indexOf(q) !== -1;
+            });
+        },
+
+        onlineFriends(): FriendUser[] {
+            var self = this;
+            return this.currentList
+                .filter(function(u: FriendUser) { return u.is_online; })
+                .sort(function(a: FriendUser, b: FriendUser) {
+                    return self._actionPriority(a) - self._actionPriority(b);
+                });
+        },
+
+        offlineFriends(): FriendUser[] {
+            return this.currentList
+                .filter(function(u: FriendUser) { return !u.is_online; })
+                .sort(function(a: FriendUser, b: FriendUser) {
+                    return b.latest_activity - a.latest_activity;
+                });
+        },
+
+        totalFriends(): number {
+            return this.mutuals.length;
+        },
+
+        totalOnline(): number {
+            return this.mutuals.filter(function(u: FriendUser) { return u.is_online; }).length;
+        },
+
+        totalFollowers(): number {
+            return this.followers.length;
+        },
     },
     created() {
         this.loadAll();
+        this.startPolling();
+
+        var self = this;
+        this._keyHandler = function(e: KeyboardEvent) { self._handleKeydown(e); };
+        document.addEventListener('keydown', this._keyHandler);
+
+        this._visHandler = function() { self._handleVisibility(); };
+        document.addEventListener('visibilitychange', this._visHandler);
+    },
+    beforeDestroy() {
+        this.stopPolling();
+        if (this._keyHandler) document.removeEventListener('keydown', this._keyHandler);
+        if (this._visHandler) document.removeEventListener('visibilitychange', this._visHandler);
     },
     methods: {
-        async loadAll() {
-            this.loading = true;
-            this.error = null;
-            try {
-                var res = await fetch(
-                    location.protocol + '//api.' + domain + '/v1/get_friends_detailed?id=' + userId + '&scope=all'
-                );
-                if (!res.ok) throw new Error('API returned ' + res.status);
-                var data = await res.json();
-                if (data.status !== 'success') throw new Error(data.status || 'Unknown error');
-                this.mutuals = data.mutuals || [];
-                this.followers = data.followers || [];
-                this.blocked = data.blocked || [];
-            } catch (e: any) {
-                this.error = 'Failed to load friends data.';
-                console.error('[Friends]', e);
+        getBaseList(): FriendUser[] {
+            if (this.tab === 'mutuals') return this.mutuals;
+            if (this.tab === 'followers') return this.followers;
+            if (this.tab === 'blocked') return this.blocked;
+            return [];
+        },
+
+        // ── Sorting helper ──
+        _actionPriority(u: FriendUser): number {
+            if (!u.player_status) return 99;
+            var a = u.player_status.action;
+            if (a === 2 || a === 9 || a === 10) return 0; // Playing/Submitting/Paused
+            if (a === 5 || a === 12) return 1;              // Multiplayer
+            if (a === 11) return 2;                          // Lobby
+            if (a === 6) return 3;                           // Watching
+            if (a === 0) return 4;                           // Idle
+            if (a === 1) return 5;                           // AFK
+            return 6;
+        },
+
+        // ── Mod decoder ──
+        formatMods(mods: number): string {
+            if (!mods) return '';
+            var names: string[] = [];
+            if (mods & 1) names.push('NF');
+            if (mods & 2) names.push('EZ');
+            if (mods & 4) names.push('TD');
+            if (mods & 8) names.push('HD');
+            if (mods & 16) names.push('HR');
+            if (mods & 32) names.push('SD');
+            if (mods & 64) names.push('DT');
+            if (mods & 128) names.push('RX');
+            if (mods & 256) names.push('HT');
+            if (mods & 512) names.push('NC');
+            if (mods & 1024) names.push('FL');
+            if (mods & 2048) names.push('AP');
+            if (mods & 4096) names.push('SO');
+            // NC implies DT — show NC only
+            if (names.indexOf('NC') !== -1 && names.indexOf('DT') !== -1) {
+                names.splice(names.indexOf('DT'), 1);
             }
-            this.loading = false;
+            return names.length ? '+' + names.join('') : '';
         },
 
-        switchTab(t: string) {
-            this.tab = t;
-        },
-
-        async doAction(action: string, targetId: number) {
-            this.$set(this.actionLoading, targetId, true);
-            try {
-                var fd = new FormData();
-                fd.append('target_id', String(targetId));
-                var res = await fetch('/friends/' + action, { method: 'POST', body: fd });
-                if (!res.ok) {
-                    var errData = await res.json().catch(function() { return {}; });
-                    throw new Error(errData.status || 'Request failed');
+        // ── Status display ──
+        activityText(user: FriendUser): string {
+            if (user.is_online && user.player_status) {
+                var s = user.player_status;
+                var modStr = this.formatMods(s.mods);
+                switch (s.action) {
+                    case 0: return 'Idle';
+                    case 1: return 'AFK';
+                    case 2:
+                        if (s.info_text && s.map_id) {
+                            return ('Playing: ' + s.info_text + ' ' + modStr).trim();
+                        }
+                        return 'Playing';
+                    case 3: return s.info_text ? 'Editing: ' + s.info_text : 'Editing';
+                    case 4: return s.info_text ? 'Modding: ' + s.info_text : 'Modding';
+                    case 5: case 12:
+                        return s.info_text ? 'Multiplayer: ' + s.info_text : 'In Multiplayer';
+                    case 6: return s.info_text ? 'Watching: ' + s.info_text : 'Watching';
+                    case 8: return s.info_text ? 'Testing: ' + s.info_text : 'Testing';
+                    case 9: return 'Submitting score...';
+                    case 10: return s.info_text ? 'Paused: ' + s.info_text : 'Paused';
+                    case 11: return 'In Lobby';
+                    case 13: return 'Browsing osu!direct';
+                    default: return 'Online';
                 }
-                await this.loadAll();
-            } catch (e: any) {
-                console.error('[Friends] Action failed:', e);
             }
-            this.$set(this.actionLoading, targetId, false);
+            if (!user.is_online) {
+                return this._formatLastSeen(user.latest_activity);
+            }
+            return 'Online';
+        },
+
+        // ── Beatmap title (just the map name, no "Playing:" prefix) ──
+        beatmapTitle(user: FriendUser): string {
+            if (user.player_status && user.player_status.info_text) {
+                return user.player_status.info_text;
+            }
+            return 'Unknown';
+        },
+
+        // ── Mode text ──
+        modeText(user: FriendUser): string {
+            if (!user.player_status) return '';
+            var modes = ['osu!standard', 'osu!taiko', 'osu!catch', 'osu!mania'];
+            var m = user.player_status.mode;
+            return (m >= 0 && m < modes.length) ? modes[m] : '';
+        },
+
+        // ── Precise last seen ──
+        _formatLastSeen(ts: number): string {
+            if (!ts || ts === 0) return 'Never seen';
+            var now = Date.now() / 1000;
+            var delta = now - ts;
+            if (delta < 300) return 'Just now';
+            if (delta < 3600) return Math.floor(delta / 60) + 'm ago';
+            if (delta < 86400) return Math.floor(delta / 3600) + 'h ago';
+            if (delta < 604800) return Math.floor(delta / 86400) + 'd ago';
+            try {
+                return timeago.format(ts * 1000);
+            } catch (e) {
+                return 'Long ago';
+            }
+        },
+
+        // ── Activity ring CSS class ──
+        activityRingClass(user: FriendUser): string {
+            if (!user.is_online) return 'ring--none';
+            if (!user.player_status) return 'ring--online';
+            var a = user.player_status.action;
+            if (a === 2 || a === 9 || a === 10) return 'ring--playing';
+            if (a === 5 || a === 12) return 'ring--lobby';
+            if (a === 11) return 'ring--lobby';
+            if (a === 1) return 'ring--away';
+            return 'ring--online';
+        },
+
+        // ── Status badge CSS class ──
+        statusBadgeClass(user: FriendUser): string {
+            if (!user.is_online || !user.player_status) return '';
+            var a = user.player_status.action;
+            if (a === 2 || a === 9 || a === 10) return 'badge--playing';
+            if (a === 5 || a === 12 || a === 11) return 'badge--lobby';
+            if (a === 1) return 'badge--away';
+            return 'badge--online';
+        },
+
+        // ── Status badge text ──
+        statusBadgeText(user: FriendUser): string {
+            if (!user.is_online || !user.player_status) return '';
+            var a = user.player_status.action;
+            if (a === 2 || a === 9 || a === 10) return 'PLAYING';
+            if (a === 5 || a === 12) return 'MULTI';
+            if (a === 11) return 'LOBBY';
+            if (a === 1) return 'AFK';
+            if (a === 6) return 'WATCHING';
+            if (a === 0) return 'IDLE';
+            return '';
+        },
+
+        isPlaying(user: FriendUser): boolean {
+            return user.is_online && !!user.player_status &&
+                   (user.player_status.action === 2 || user.player_status.action === 10);
+        },
+
+        beatmapUrl(user: FriendUser): string | null {
+            if (user.player_status && user.player_status.map_id) {
+                return '/b/' + user.player_status.map_id;
+            }
+            return null;
+        },
+
+        // ── Polling with backoff ──
+        startPolling() {
+            this.stopPolling();
+            this.pollAttempts = 0;
+            this.pollError = false;
+            var self = this;
+            this.pollTimer = window.setInterval(function() { self.pollStatus(); }, 30000);
+        },
+
+        stopPolling() {
+            if (this.pollTimer) {
+                clearInterval(this.pollTimer);
+                this.pollTimer = null;
+            }
+        },
+
+        pollStatus() {
+            if (this.isPolling || this.loading) return;
+            this.isPolling = true;
+            var self = this;
+
+            fetch(location.protocol + '//api.' + domain + '/v1/get_friends_status?id=' + userId)
+                .then(function(res: Response) {
+                    if (!res.ok) throw new Error('HTTP ' + res.status);
+                    return res.json();
+                })
+                .then(function(data: any) {
+                    if (data.status !== 'success') throw new Error('Bad response');
+                    var online = data.online;
+
+                    var lists = [self.mutuals, self.followers];
+                    for (var i = 0; i < lists.length; i++) {
+                        var list = lists[i];
+                        for (var j = 0; j < list.length; j++) {
+                            var user = list[j];
+                            var status = online[String(user.id)];
+                            if (status) {
+                                self.$set(user, 'is_online', true);
+                                self.$set(user, 'player_status', status);
+                            } else if (user.is_online) {
+                                self.$set(user, 'is_online', false);
+                                self.$set(user, 'player_status', null);
+                            }
+                        }
+                    }
+
+                    self.pollAttempts = 0;
+                    self.pollError = false;
+                    self.isPolling = false;
+                })
+                .catch(function() {
+                    self.pollAttempts++;
+                    if (self.pollAttempts >= 3) {
+                        self.stopPolling();
+                        self.pollError = true;
+                    }
+                    self.isPolling = false;
+                });
+        },
+
+        reconnectPolling() {
+            this.startPolling();
+            this.pollStatus();
+        },
+
+        // ── Visibility API ──
+        _handleVisibility() {
+            if (document.hidden) {
+                this.stopPolling();
+            } else {
+                this.startPolling();
+                this.pollStatus();
+            }
+        },
+
+        // ── Keyboard shortcuts ──
+        _handleKeydown(e: KeyboardEvent) {
+            // / focuses search
+            if (e.key === '/' && document.activeElement &&
+                document.activeElement.tagName !== 'INPUT' &&
+                document.activeElement.tagName !== 'TEXTAREA') {
+                e.preventDefault();
+                var input = this.$refs.searchInput as HTMLInputElement;
+                if (input) input.focus();
+            }
+        },
+
+        // ── Actions ──
+        doAction(action: string, targetId: number) {
+            this.$set(this.actionLoading, targetId, true);
+            this.stopPolling();
+            var self = this;
+            var fd = new FormData();
+            fd.append('target_id', String(targetId));
+
+            fetch('/friends/' + action, { method: 'POST', body: fd })
+                .then(function(res: Response) {
+                    if (!res.ok) throw new Error('Request failed');
+                    return self.loadAll();
+                })
+                .then(function() {
+                    self.$set(self.actionLoading, targetId, false);
+                    self.startPolling();
+                })
+                .catch(function() {
+                    self.error = 'Action failed. Please try again.';
+                    self.$set(self.actionLoading, targetId, false);
+                    self.startPolling();
+                });
         },
 
         addFriend(id: number) { this.doAction('add', id); },
@@ -74,19 +370,48 @@ new Vue({
         blockUser(id: number) { this.doAction('block', id); },
         unblockUser(id: number) { this.doAction('unblock', id); },
 
+        // ── Data fetching ──
+        loadAll(): Promise<void> {
+            this.loading = true;
+            this.error = null;
+            var self = this;
+
+            return fetch(
+                location.protocol + '//api.' + domain + '/v1/get_friends_detailed?id=' + userId + '&scope=all'
+            )
+            .then(function(res: Response) {
+                if (!res.ok) throw new Error('API returned ' + res.status);
+                return res.json();
+            })
+            .then(function(data: any) {
+                if (data.status !== 'success') throw new Error(data.status || 'Unknown error');
+                self.mutuals = data.mutuals || [];
+                self.followers = data.followers || [];
+                self.blocked = data.blocked || [];
+                self.loading = false;
+            })
+            .catch(function(e: any) {
+                self.error = 'Failed to load friends data.';
+                console.error('[Friends]', e);
+                self.loading = false;
+            });
+        },
+
+        // ── UI helpers ──
+        switchTab(t: string) {
+            this.tab = t;
+        },
+
+        toggleSection(s: string) {
+            this.$set(this.sections, s, !this.sections[s]);
+        },
+
         avatarUrl(id: number): string {
             return 'https://a.' + domain + '/' + id;
         },
+
         profileUrl(id: number): string {
             return '/u/' + id;
-        },
-        lastSeen(ts: number): string {
-            if (!ts) return 'Never seen';
-            try {
-                return timeago.format(ts * 1000);
-            } catch (e) {
-                return 'Unknown';
-            }
         },
     }
 });
