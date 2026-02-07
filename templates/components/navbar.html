@@ -43,7 +43,7 @@
                         <span class="navbar-username">{{ session.user_data['name'] }}</span>
                         <i class="fas fa-chevron-down nuc-chevron" :class="{ 'is-flipped': isUserDropdownOpen }"></i>
                     </button>
-                    <div class="navbar-user-card" v-show="isUserDropdownOpen">
+                    <div class="navbar-user-card" v-cloak v-show="isUserDropdownOpen">
                         {# Header — links to profile #}
                         <a class="nuc-header" href="/u/{{ session.user_data['id'] }}">
                             <img src="https://a.{{domain()}}/{{ session.user_data['id'] }}" alt="{{ session.user_data['name'] }}" class="nuc-avatar">

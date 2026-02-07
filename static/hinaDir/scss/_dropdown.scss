@@ -42,6 +42,11 @@
     }
 }
 
+// ── Card: hide before Vue hydrates (v-cloak removed on mount, then v-show takes over) ──
+.navbar-user-card[v-cloak] {
+    display: none;
+}
+
 // ── Card ──
 .navbar-user-card {
     position: absolute;

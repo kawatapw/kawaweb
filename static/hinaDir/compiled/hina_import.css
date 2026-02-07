@@ -419,6 +419,10 @@
   transform: rotate(180deg);
 }
 
+.navbar-user-card[v-cloak] {
+  display: none;
+}
+
 .navbar-user-card {
   position: absolute;
   top: calc(100% + 8px);
