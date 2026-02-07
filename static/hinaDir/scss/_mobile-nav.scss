@@ -1,3 +1,11 @@
+// ── Page-level horizontal overflow lock ──
+// Loki's html/body have no overflow-x constraint. Any child wider than
+// the viewport gives the entire page a horizontal scrollbar on mobile.
+html, body {
+    overflow-x: hidden;
+    max-width: 100vw;
+}
+
 // Leaderboard player name link (replaces <user-profile> component to fix race condition)
 .lb-player-name {
     color: inherit;
@@ -10,7 +18,28 @@
     }
 }
 
-// Mobile Navbar Quick Links (Clan & Friends)
+// ── Mobile menu flicker fix ──
+// Loki uses `transition: all 0.3s ease` which transitions visibility
+// alongside opacity, causing a flash on open/close. Override to only
+// transition opacity and visibility with a step-end/step-start so
+// visibility flips instantly at the right time.
+.navbar-mobile-menu {
+    transition: opacity 0.3s ease, visibility 0.3s step-end;
+    overflow: hidden;
+
+    &.is-open {
+        transition: opacity 0.3s ease, visibility 0s step-start;
+    }
+}
+
+// ── Mobile menu content overflow fix ──
+// The content panel is absolutely positioned (left:0 right:0) but has no
+// overflow-x constraint, allowing children to push beyond the viewport.
+.navbar-mobile-menu-content {
+    overflow-x: hidden;
+}
+
+// ── Mobile Navbar Quick Links (Clan & Friends) ──
 // Sits between user banner and search in the mobile slide-out menu.
 // Uses nuc-mobile-* prefix to avoid conflicts with Loki's .navbar-mobile-* classes.
 
@@ -19,6 +48,9 @@
     flex-direction: column;
     padding: 6px 0;
     border-bottom: 1px solid var(--navbar-border);
+    width: 100%;
+    box-sizing: border-box;
+    overflow: hidden;
 }
 
 .nuc-mobile-quicklink {
@@ -26,6 +58,9 @@
     align-items: center;
     gap: 12px;
     padding: 14px 16px;
+    width: 100%;
+    box-sizing: border-box;
+    min-width: 0;
     color: var(--navbar-text);
     text-decoration: none;
     font-weight: 500;
@@ -54,14 +89,25 @@
     &:hover i {
         color: var(--navbar-accent);
     }
+
+    // Text label — allow truncation so badge stays visible
+    > span:not(.nuc-mobile-clan-tag) {
+        flex: 1;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
 }
 
 .nuc-mobile-clan-tag {
     margin-left: auto;
+    flex-shrink: 0;
     font-size: 0.78rem;
     font-weight: 600;
     color: var(--navbar-accent);
     background: hsla(var(--main), 50%, 60%, 0.12);
     padding: 2px 8px;
     border-radius: 6px;
+    white-space: nowrap;
 }
