@@ -38,6 +38,14 @@ new Vue({
         compareError: null as string | null,
         compareData: null as any,
         compareMode: 0,
+        // Tooltip state
+        tooltipId: null as number | null,
+        tooltipData: null as any,
+        tooltipLoading: false,
+        tipCache: {} as Record<string, any>,
+        tipTimer: null as number | null,
+        tipTop: 0,
+        tipLeft: 0,
     },
     computed: {
         userHasStats(): boolean {
@@ -253,6 +261,95 @@ new Vue({
                     console.error('[FriendsLeaderboard] compare error:', e);
                     self.compareLoading = false;
                 });
+        },
+
+        // ── Tooltip methods ──
+
+        showTooltip(id: number, event: MouseEvent) {
+            var self = this;
+            // Clear any pending timer
+            if (this.tipTimer) {
+                clearTimeout(this.tipTimer);
+                this.tipTimer = null;
+            }
+
+            // Calculate fixed position from the hovered cell
+            var td = event.currentTarget as HTMLElement;
+            var rect = td.getBoundingClientRect();
+            this.tipTop = rect.bottom + 8;
+            this.tipLeft = rect.left;
+
+            var cacheKey = id + '-' + this.mode;
+            if (this.tipCache[cacheKey]) {
+                // Cached — show immediately
+                this.tooltipId = id;
+                this.tooltipData = this.tipCache[cacheKey];
+                this.tooltipLoading = false;
+                return;
+            }
+
+            // Debounce 300ms before fetching
+            this.tipTimer = window.setTimeout(function() {
+                self.tooltipId = id;
+                self.tooltipLoading = true;
+                self.tooltipData = null;
+                self.fetchTooltip(id);
+            }, 300);
+        },
+
+        hideTooltip() {
+            if (this.tipTimer) {
+                clearTimeout(this.tipTimer);
+                this.tipTimer = null;
+            }
+            this.tooltipId = null;
+            this.tooltipData = null;
+            this.tooltipLoading = false;
+        },
+
+        fetchTooltip(id: number) {
+            var self = this;
+            var mode = this.mode;
+            var cacheKey = id + '-' + mode;
+            var url = location.protocol + '//api.' + domain + '/v1/get_player_quick_stats?id=' + id + '&mode=' + mode;
+
+            fetch(url)
+                .then(function(res: Response) {
+                    if (!res.ok) throw new Error('HTTP ' + res.status);
+                    return res.json();
+                })
+                .then(function(data: any) {
+                    if (data.status !== 'success') return;
+                    self.tipCache[cacheKey] = data;
+                    // Only show if still hovering the same player
+                    if (self.tooltipId === id) {
+                        self.tooltipData = data;
+                        self.tooltipLoading = false;
+                    }
+                })
+                .catch(function(e: any) {
+                    console.error('[FriendsLeaderboard] tooltip fetch error:', e);
+                    if (self.tooltipId === id) {
+                        self.tooltipLoading = false;
+                    }
+                });
+        },
+
+        formatTotalScore(n: number): string {
+            if (n >= 1e9) return (n / 1e9).toFixed(2) + 'B';
+            if (n >= 1e6) return (n / 1e6).toFixed(1) + 'M';
+            if (n >= 1e3) return (n / 1e3).toFixed(0) + 'K';
+            return String(n);
+        },
+
+        formatPlaytime(seconds: number): string {
+            var hours = Math.floor(seconds / 3600);
+            if (hours >= 24) {
+                var days = Math.floor(hours / 24);
+                var rem = hours % 24;
+                return days + 'd ' + rem + 'h';
+            }
+            return hours + 'h';
         },
     }
 });

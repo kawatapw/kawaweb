@@ -23,6 +23,14 @@
             compareError: null,
             compareData: null,
             compareMode: 0,
+            // Tooltip state
+            tooltipId: null,
+            tooltipData: null,
+            tooltipLoading: false,
+            tipCache: {},
+            tipTimer: null,
+            tipTop: 0,
+            tipLeft: 0,
         },
         computed: {
             userHasStats() {
@@ -227,6 +235,90 @@
                     console.error('[FriendsLeaderboard] compare error:', e);
                     self.compareLoading = false;
                 });
+            },
+            // ── Tooltip methods ──
+            showTooltip(id, event) {
+                var self = this;
+                // Clear any pending timer
+                if (this.tipTimer) {
+                    clearTimeout(this.tipTimer);
+                    this.tipTimer = null;
+                }
+                // Calculate fixed position from the hovered cell
+                var td = event.currentTarget;
+                var rect = td.getBoundingClientRect();
+                this.tipTop = rect.bottom + 8;
+                this.tipLeft = rect.left;
+                var cacheKey = id + '-' + this.mode;
+                if (this.tipCache[cacheKey]) {
+                    // Cached — show immediately
+                    this.tooltipId = id;
+                    this.tooltipData = this.tipCache[cacheKey];
+                    this.tooltipLoading = false;
+                    return;
+                }
+                // Debounce 300ms before fetching
+                this.tipTimer = window.setTimeout(function () {
+                    self.tooltipId = id;
+                    self.tooltipLoading = true;
+                    self.tooltipData = null;
+                    self.fetchTooltip(id);
+                }, 300);
+            },
+            hideTooltip() {
+                if (this.tipTimer) {
+                    clearTimeout(this.tipTimer);
+                    this.tipTimer = null;
+                }
+                this.tooltipId = null;
+                this.tooltipData = null;
+                this.tooltipLoading = false;
+            },
+            fetchTooltip(id) {
+                var self = this;
+                var mode = this.mode;
+                var cacheKey = id + '-' + mode;
+                var url = location.protocol + '//api.' + domain + '/v1/get_player_quick_stats?id=' + id + '&mode=' + mode;
+                fetch(url)
+                    .then(function (res) {
+                    if (!res.ok)
+                        throw new Error('HTTP ' + res.status);
+                    return res.json();
+                })
+                    .then(function (data) {
+                    if (data.status !== 'success')
+                        return;
+                    self.tipCache[cacheKey] = data;
+                    // Only show if still hovering the same player
+                    if (self.tooltipId === id) {
+                        self.tooltipData = data;
+                        self.tooltipLoading = false;
+                    }
+                })
+                    .catch(function (e) {
+                    console.error('[FriendsLeaderboard] tooltip fetch error:', e);
+                    if (self.tooltipId === id) {
+                        self.tooltipLoading = false;
+                    }
+                });
+            },
+            formatTotalScore(n) {
+                if (n >= 1e9)
+                    return (n / 1e9).toFixed(2) + 'B';
+                if (n >= 1e6)
+                    return (n / 1e6).toFixed(1) + 'M';
+                if (n >= 1e3)
+                    return (n / 1e3).toFixed(0) + 'K';
+                return String(n);
+            },
+            formatPlaytime(seconds) {
+                var hours = Math.floor(seconds / 3600);
+                if (hours >= 24) {
+                    var days = Math.floor(hours / 24);
+                    var rem = hours % 24;
+                    return days + 'd ' + rem + 'h';
+                }
+                return hours + 'h';
             },
         }
     });

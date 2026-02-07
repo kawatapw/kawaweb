@@ -138,7 +138,8 @@
             </span>
             <span v-else v-text="entry.rank"></span>
           </td>
-          <td class="flb-cell flb-cell--player">
+          <td class="flb-cell flb-cell--player"
+              @mouseenter="showTooltip(entry.id, $event)" @mouseleave="hideTooltip()">
             <a :href="profileUrl(entry.id)" class="flb-player-link">
               <img class="flb-avatar" :src="avatarUrl(entry.id)" :alt="entry.name"
                    @error="$event.target.src='/static/images/avatar_notwork.png'">
@@ -233,6 +234,52 @@
         </div>
       </div>
     </div>
+  </div>
+
+  <!-- Quick stats tooltip (fixed position, desktop only) -->
+  <div v-if="tooltipId !== null && tooltipData" class="flb-tip"
+       :style="{ top: tipTop + 'px', left: tipLeft + 'px' }">
+    <div class="flb-tip-section" v-if="tooltipData.top_play">
+      <div class="flb-tip-label">Top Play</div>
+      <div class="flb-tip-top-play">
+        <span class="flb-tip-pp" v-text="addCommas(Math.round(tooltipData.top_play.pp)) + 'pp'"></span>
+        <span class="flb-tip-map" v-text="tooltipData.top_play.map_title"></span>
+      </div>
+    </div>
+    <div class="flb-tip-section" v-else>
+      <div class="flb-tip-label">Top Play</div>
+      <div class="flb-tip-empty">No ranked scores</div>
+    </div>
+    <div class="flb-tip-grid">
+      <div class="flb-tip-stat">
+        <span class="flb-tip-stat-val" v-text="addCommas(tooltipData.stats.max_combo) + 'x'"></span>
+        <span class="flb-tip-stat-key">Max Combo</span>
+      </div>
+      <div class="flb-tip-stat">
+        <span class="flb-tip-stat-val" v-text="formatTotalScore(tooltipData.stats.rscore)"></span>
+        <span class="flb-tip-stat-key">Ranked Score</span>
+      </div>
+      <div class="flb-tip-stat">
+        <span class="flb-tip-stat-val" v-text="formatPlaytime(tooltipData.stats.playtime)"></span>
+        <span class="flb-tip-stat-key">Playtime</span>
+      </div>
+      <div class="flb-tip-stat">
+        <span class="flb-tip-stat-val" v-text="(tooltipData.stats.xh_count + tooltipData.stats.x_count)"></span>
+        <span class="flb-tip-stat-key">SS</span>
+      </div>
+      <div class="flb-tip-stat">
+        <span class="flb-tip-stat-val" v-text="(tooltipData.stats.sh_count + tooltipData.stats.s_count)"></span>
+        <span class="flb-tip-stat-key">S</span>
+      </div>
+      <div class="flb-tip-stat">
+        <span class="flb-tip-stat-val" v-text="tooltipData.stats.a_count"></span>
+        <span class="flb-tip-stat-key">A</span>
+      </div>
+    </div>
+  </div>
+  <div v-if="tooltipId !== null && tooltipLoading" class="flb-tip flb-tip--loading"
+       :style="{ top: tipTop + 'px', left: tipLeft + 'px' }">
+    <i class="fas fa-spinner fa-spin"></i>
   </div>
 
 </div>
