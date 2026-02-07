@@ -14,7 +14,6 @@ new Vue({
         pollAttempts: 0,
         pollError: false,
         isPolling: false,
-        _keyHandler: null,
         _visHandler: null,
     },
     computed: {
@@ -56,15 +55,11 @@ new Vue({
         this.loadAll();
         this.startPolling();
         var self = this;
-        this._keyHandler = function (e) { self._handleKeydown(e); };
-        document.addEventListener('keydown', this._keyHandler);
         this._visHandler = function () { self._handleVisibility(); };
         document.addEventListener('visibilitychange', this._visHandler);
     },
     beforeDestroy() {
         this.stopPolling();
-        if (this._keyHandler)
-            document.removeEventListener('keydown', this._keyHandler);
         if (this._visHandler)
             document.removeEventListener('visibilitychange', this._visHandler);
     },
@@ -331,18 +326,6 @@ new Vue({
             else {
                 this.startPolling();
                 this.pollStatus();
-            }
-        },
-        // ── Keyboard shortcuts ──
-        _handleKeydown(e) {
-            // / focuses search
-            if (e.key === '/' && document.activeElement &&
-                document.activeElement.tagName !== 'INPUT' &&
-                document.activeElement.tagName !== 'TEXTAREA') {
-                e.preventDefault();
-                var input = this.$refs.searchInput;
-                if (input)
-                    input.focus();
             }
         },
         // ── Actions ──

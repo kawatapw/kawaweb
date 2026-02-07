@@ -29,8 +29,8 @@
   <!-- Search bar -->
   <div class="friends-search">
     <i class="fas fa-search"></i>
-    <input type="text" ref="searchInput"
-           placeholder="Search friends... (Press / to focus)"
+    <input type="text"
+           placeholder="Search friends..."
            v-model="searchQuery" autocomplete="off">
     <button v-if="searchQuery" class="search-clear" @click="searchQuery = ''">
       <i class="fas fa-times"></i>
