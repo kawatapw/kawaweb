@@ -220,6 +220,7 @@
   }
 
   // --- Bottom blur strip (the text band) ---
+  // Reset desktop residuals: margin, fixed height, min-width overflow
   .map-data {
     backdrop-filter: blur(6px) brightness(0.82);
     -webkit-backdrop-filter: blur(6px) brightness(0.82);
@@ -227,8 +228,11 @@
     padding: 6px 10px !important;
     flex-direction: column !important;
     height: auto !important;
-    min-width: 100%;
+    min-width: 0 !important; // desktop has 100% which overflows with margin
+    width: 100% !important;
+    margin: 0 !important; // desktop has 8px 0 which pushes outside card
     gap: 2px;
+    box-sizing: border-box;
   }
 
   // Hide inner thumbnail — cover comes from card background
@@ -239,16 +243,19 @@
   // --- Row 1: title + timeago ---
   .map-content1 {
     width: 100% !important;
+    height: auto !important; // desktop has height: 100%
     display: flex !important;
     flex-direction: row !important;
     align-items: center;
     gap: 8px;
+    min-width: 0 !important;
   }
 
   .map-title-block {
     flex: 1;
-    min-width: 0; // allow truncation
-    margin-bottom: 0 !important;
+    min-width: 0 !important; // allow truncation
+    margin: 0 !important; // reset desktop margin-left: 6px, margin-top: 5px
+    padding: 0 !important; // reset desktop padding-right: 12px
   }
 
   .map-title {
@@ -267,6 +274,8 @@
   // Timeago floats right in row 1
   .play-stats-block {
     flex-shrink: 0;
+    margin: 0 !important; // reset desktop margin-left: 6px
+    padding: 0 !important; // reset desktop padding-right: 12px
   }
 
   .map-date {
@@ -278,9 +287,11 @@
   // --- Row 2: PP + accuracy + grade ---
   .map-content2 {
     width: 100% !important;
+    height: auto !important; // desktop has height: 100%
     flex-direction: row !important;
     justify-content: flex-start !important;
-    align-items: center;
+    align-items: center !important; // override desktop align-items: flex-end
+    min-width: 0 !important;
   }
 
   .score-details {

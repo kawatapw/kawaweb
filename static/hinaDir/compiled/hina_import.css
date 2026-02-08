@@ -950,23 +950,29 @@ html, body {
     padding: 6px 10px !important;
     flex-direction: column !important;
     height: auto !important;
-    min-width: 100%;
+    min-width: 0 !important;
+    width: 100% !important;
+    margin: 0 !important;
     gap: 2px;
+    box-sizing: border-box;
   }
   .map-image {
     display: none !important;
   }
   .map-content1 {
     width: 100% !important;
+    height: auto !important;
     display: flex !important;
     flex-direction: row !important;
     align-items: center;
     gap: 8px;
+    min-width: 0 !important;
   }
   .map-title-block {
     flex: 1;
-    min-width: 0;
-    margin-bottom: 0 !important;
+    min-width: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
   }
   .map-title {
     white-space: nowrap;
@@ -984,6 +990,8 @@ html, body {
   }
   .play-stats-block {
     flex-shrink: 0;
+    margin: 0 !important;
+    padding: 0 !important;
   }
   .map-date {
     font-size: 11px;
@@ -992,9 +1000,11 @@ html, body {
   }
   .map-content2 {
     width: 100% !important;
+    height: auto !important;
     flex-direction: row !important;
     justify-content: flex-start !important;
-    align-items: center;
+    align-items: center !important;
+    min-width: 0 !important;
   }
   .score-details {
     width: 100%;
