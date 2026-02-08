@@ -36,6 +36,11 @@ new Vue({
         error: null as string | null,
         actionLoading: {} as Record<number, boolean>,
         searchQuery: '' as string,
+        actionError: null as string | null,
+        actionErrorTimer: null as number | null,
+        toastVisible: false,
+        toastMessage: '' as string,
+        toastTimer: null as number | null,
         sections: { online: true, offline: true } as Record<string, boolean>,
         // Compare modal
         compareVisible: false,
@@ -403,6 +408,13 @@ new Vue({
             var fd = new FormData();
             fd.append('target_id', String(targetId));
 
+            var actionLabels: Record<string, string> = {
+                add: 'Friend added',
+                remove: 'Friend removed',
+                block: 'User blocked',
+                unblock: 'User unblocked',
+            };
+
             fetch('/friends/' + action, { method: 'POST', body: fd })
                 .then(function(res: Response) {
                     if (!res.ok) throw new Error('Request failed');
@@ -411,12 +423,42 @@ new Vue({
                 .then(function() {
                     self.$set(self.actionLoading, targetId, false);
                     self.startPolling();
+                    self.showToast(actionLabels[action] || 'Done');
                 })
                 .catch(function() {
-                    self.error = 'Action failed. Please try again.';
+                    self.showActionError('Action failed. Please try again.');
                     self.$set(self.actionLoading, targetId, false);
                     self.startPolling();
                 });
+        },
+
+        showActionError(msg: string) {
+            this.actionError = msg;
+            if (this.actionErrorTimer) clearTimeout(this.actionErrorTimer);
+            var self = this;
+            this.actionErrorTimer = window.setTimeout(function() {
+                self.actionError = null;
+                self.actionErrorTimer = null;
+            }, 5000);
+        },
+
+        dismissActionError() {
+            this.actionError = null;
+            if (this.actionErrorTimer) {
+                clearTimeout(this.actionErrorTimer);
+                this.actionErrorTimer = null;
+            }
+        },
+
+        showToast(msg: string) {
+            this.toastMessage = msg;
+            this.toastVisible = true;
+            if (this.toastTimer) clearTimeout(this.toastTimer);
+            var self = this;
+            this.toastTimer = window.setTimeout(function() {
+                self.toastVisible = false;
+                self.toastTimer = null;
+            }, 2000);
         },
 
         addFriend(id: number) { this.doAction('add', id); },

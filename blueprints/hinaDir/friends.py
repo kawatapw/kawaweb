@@ -61,7 +61,10 @@ async def friends_action(action):
             'target': str(target_id),
             'action': valid_actions[action],
         },
-        headers={'Authorization': f'Bearer {glob.config.api_key}'},
+        headers={
+            'Authorization': f'Bearer {glob.config.api_key}',
+            'Host': f'api.{glob.config.domain}',
+        },
     ) as resp:
         data = await resp.json()
         return jsonify(data), resp.status

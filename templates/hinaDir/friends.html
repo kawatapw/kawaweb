@@ -84,10 +84,19 @@
     </div>
   </div>
 
-  <!-- Error state -->
+  <!-- Load error state (initial fetch failed — nothing to show) -->
   <div class="friends-error" v-if="error">
     <i class="fas fa-exclamation-triangle"></i>
     <span v-text="error"></span>
+  </div>
+
+  <!-- Action error notice (dismissible, doesn't hide content) -->
+  <div class="friends-action-error" v-if="actionError">
+    <i class="fas fa-exclamation-circle"></i>
+    <span v-text="actionError"></span>
+    <button class="action-error-dismiss" @click="dismissActionError">
+      <i class="fas fa-times"></i>
+    </button>
   </div>
 
   <!-- Main content -->
@@ -335,6 +344,14 @@
     </template>
 
   </div>
+
+  <!-- Success toast -->
+  <transition name="toast">
+    <div v-if="toastVisible" class="friends-toast">
+      <i class="fas fa-check-circle"></i>
+      <span v-text="toastMessage"></span>
+    </div>
+  </transition>
 
   <!-- Compare Modal -->
   <div v-if="compareVisible" class="compare-overlay" @click.self="closeCompare"

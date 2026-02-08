@@ -14,6 +14,11 @@
             error: null,
             actionLoading: {},
             searchQuery: '',
+            actionError: null,
+            actionErrorTimer: null,
+            toastVisible: false,
+            toastMessage: '',
+            toastTimer: null,
             sections: { online: true, offline: true },
             // Compare modal
             compareVisible: false,
@@ -404,6 +409,12 @@
                 var self = this;
                 var fd = new FormData();
                 fd.append('target_id', String(targetId));
+                var actionLabels = {
+                    add: 'Friend added',
+                    remove: 'Friend removed',
+                    block: 'User blocked',
+                    unblock: 'User unblocked',
+                };
                 fetch('/friends/' + action, { method: 'POST', body: fd })
                     .then(function (res) {
                     if (!res.ok)
@@ -413,12 +424,41 @@
                     .then(function () {
                     self.$set(self.actionLoading, targetId, false);
                     self.startPolling();
+                    self.showToast(actionLabels[action] || 'Done');
                 })
                     .catch(function () {
-                    self.error = 'Action failed. Please try again.';
+                    self.showActionError('Action failed. Please try again.');
                     self.$set(self.actionLoading, targetId, false);
                     self.startPolling();
                 });
+            },
+            showActionError(msg) {
+                this.actionError = msg;
+                if (this.actionErrorTimer)
+                    clearTimeout(this.actionErrorTimer);
+                var self = this;
+                this.actionErrorTimer = window.setTimeout(function () {
+                    self.actionError = null;
+                    self.actionErrorTimer = null;
+                }, 5000);
+            },
+            dismissActionError() {
+                this.actionError = null;
+                if (this.actionErrorTimer) {
+                    clearTimeout(this.actionErrorTimer);
+                    this.actionErrorTimer = null;
+                }
+            },
+            showToast(msg) {
+                this.toastMessage = msg;
+                this.toastVisible = true;
+                if (this.toastTimer)
+                    clearTimeout(this.toastTimer);
+                var self = this;
+                this.toastTimer = window.setTimeout(function () {
+                    self.toastVisible = false;
+                    self.toastTimer = null;
+                }, 2000);
             },
             addFriend(id) { this.doAction('add', id); },
             removeFriend(id) { this.doAction('remove', id); },
