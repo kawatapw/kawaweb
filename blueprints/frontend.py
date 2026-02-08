@@ -245,18 +245,22 @@ async def settings_profile_post():
             [new_email, session['user_data']['id']]
         )
         
-    if new_hue < 0 or new_hue > 360:
-        return await flash('error', 'Your hue value is invalid.', 'settings/profile')
-    
-    await glob.db.execute(
-        'INSERT INTO user_customisations (userid, hue) VALUES (%s, %s) ON DUPLICATE KEY UPDATE hue = %s',
-        [session['user_data']['id'], new_hue, new_hue]
-    )
+    if new_hue is not None and 0 <= new_hue <= 360:
+        await glob.db.execute(
+            'INSERT INTO user_customisations (userid, hue) VALUES (%s, %s) ON DUPLICATE KEY UPDATE hue = %s',
+            [session['user_data']['id'], new_hue, new_hue]
+        )
 
-    # logout
-    session.pop('authenticated', None)
-    session.pop('user_data', None)
-    return await flash('success', 'Your username/email have been changed! Please login again.', 'login')
+    # Only require re-login if name or email changed
+    if new_name != old_name or new_email != old_email:
+        session.pop('authenticated', None)
+        session.pop('user_data', None)
+        return await flash('success', 'Your username/email have been changed! Please login again.', 'login')
+
+    # Hue-only change: update session and stay on page
+    if new_hue is not None:
+        session['user_data']['hue'] = new_hue
+    return await flash('success', 'Settings saved.', 'settings/profile')
 
 @frontend.route('/settings/hue', methods=['POST'])
 @login_required

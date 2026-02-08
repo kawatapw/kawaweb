@@ -142,6 +142,12 @@ bootstrapVue('beatmap-panel', {
                 valid |= (1 << 12); // SPUNOUT
                 // Note: AUTOPLAY, CINEMA, TARGET are not submittable
                 // Note: RELAX and AUTOPILOT are rulesets, not mods
+            } else if (mode === 1) { // taiko
+                // Note: AUTOPLAY, CINEMA, TARGET are not submittable
+                // Note: RELAX is a ruleset, not a mod
+            } else if (mode === 2) { // catch
+                // Note: AUTOPLAY, CINEMA, TARGET are not submittable
+                // Note: RELAX is a ruleset, not a mod
             } else if (mode === 3) { // mania
                 valid |= (1 << 20); // FADEIN
                 valid |= (1 << 30); // MIRROR
@@ -160,10 +166,13 @@ bootstrapVue('beatmap-panel', {
             }
             
             // Remove mods that conflict with ruleset
-            if (ruleset === 2) { // AUTOPILOT ruleset
-                // In AUTOPILOT ruleset, SPUNOUT is not valid
+            if (ruleset === 1) { // Relax ruleset
+                // In relax ruleset, SPUNOUT is not valid
                 valid &= ~(1 << 12); // Remove SPUNOUT
-            } 
+            } else if (ruleset === 2) { // Autopilot ruleset
+                // In autopilot ruleset, SPUNOUT is not valid
+                valid &= ~(1 << 12); // Remove SPUNOUT
+            }
             
             return valid;
         },

@@ -112,6 +112,10 @@ def captchaKey() -> str:
 def domain() -> str:
     return glob.config.domain
 
+@app.template_global()
+def developerMode() -> bool:
+    return glob.config.developer_mode
+
 @app.before_request
 async def inject_globals():
     """App-wide defaults for g — ensures all blueprints have these set."""

@@ -18,6 +18,9 @@
 
   <!-- Core Logger (loaded first) -->
   <script src="/static/js/utils/logger.js" crossorigin="anonymous"></script>
+  {% if developerMode() %}
+  <script>window.ColorfulLogger && window.ColorfulLogger.enableDebug('ALL');</script>
+  {% endif %}
 
   <!-- Favicon & Metadata -->
   <link rel="apple-touch-icon" sizes="180x180" href="/static/favicon/apple-touch-icon.png">

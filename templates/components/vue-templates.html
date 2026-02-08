@@ -398,7 +398,8 @@
 
         <script type="text/x-template" id="score-card-template">
             <div class="map-single"
-                :style="'background: linear-gradient(hsl(var(--main), 25%, 25%, 90%), hsl(var(--main), 25%, 25%, 90%)), url(https://assets.ppy.sh/beatmaps/' + score.beatmap.set_id + '/covers/cover.jpg)'"
+                :data-score-type="type"
+                :style="'--cover-url: url(https://assets.ppy.sh/beatmaps/' + score.beatmap.set_id + '/covers/cover.jpg); background: linear-gradient(hsl(var(--main), 25%, 25%, 90%), hsl(var(--main), 25%, 25%, 90%)), url(https://assets.ppy.sh/beatmaps/' + score.beatmap.set_id + '/covers/cover.jpg)'"
                 @click="scoreBus.$emit('show-score-window', score.id)">
                 <div class="map-data">
                     <div class="map-image">
@@ -2485,7 +2486,7 @@
                         <button class="button score-button is-primary" @click="DownloadReplay(safeScore.id)" :disabled="!safeScore">
                             Download Replay
                         </button>
-                        <button class="button score-button" @click="" :disabled="!safeScore">
+                        <button class="button score-button" @click="viewBeatmapPage()" :disabled="!safeBeatmap">
                             View Beatmap Page
                         </button>
                         <button class="button score-button not-ready" @click="" :disabled="!safeScore" tooltip="You can use this to watch a replay of this score in your browser!">
@@ -2533,7 +2534,7 @@
                                     <span>Download Replay</span>
                                     <i class="fas fa-chevron-right action-sheet-chevron"></i>
                                 </button>
-                                <button class="action-sheet-item" @click="closeActionSheet()" :disabled="!safeScore">
+                                <button class="action-sheet-item" @click="viewBeatmapPage()" :disabled="!safeBeatmap">
                                     <i class="fas fa-info-circle"></i>
                                     <span>View Beatmap Page</span>
                                     <i class="fas fa-chevron-right action-sheet-chevron"></i>

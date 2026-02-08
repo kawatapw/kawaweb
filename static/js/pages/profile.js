@@ -58,6 +58,22 @@ new Vue({
         this.LoadAllofdata();
         this.LoadUserStatus();
         this.$log.debug('Data', "Profile Data Loaded:", this.data);
+
+        // Pause status polling when tab is hidden
+        this.visibilityHandler = () => {
+            if (document.hidden) {
+                clearTimeout(loop);
+            } else {
+                this.LoadUserStatus();
+            }
+        };
+        document.addEventListener('visibilitychange', this.visibilityHandler);
+    },
+    beforeDestroy() {
+        clearTimeout(loop);
+        if (this.visibilityHandler) {
+            document.removeEventListener('visibilitychange', this.visibilityHandler);
+        }
     },
     methods: {
         LoadAllofdata() {

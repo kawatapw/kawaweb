@@ -5,6 +5,10 @@ Vue.component('score-card', {
     score: {
       type: Object,
       required: true
+    },
+    type: {
+      type: String,
+      default: 'best'
     }
   },
   created () {

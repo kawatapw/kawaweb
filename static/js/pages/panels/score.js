@@ -173,6 +173,14 @@ bootstrapVue('score-panel', {
                 if (trigger) trigger.focus();
             });
         },
+        viewBeatmapPage() {
+            if (!this.safeBeatmap) return;
+            // Close score panel, then open beatmap panel
+            this.close();
+            if (window.beatmapBus) {
+                beatmapBus.$emit('show-beatmap-panel', this.safeBeatmap.id, this.safeBeatmap.set_id);
+            }
+        },
         resetState() { 
             this.$log.debug('LIFECYCLE', 'Resetting state');
             this.score = null; 
