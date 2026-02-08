@@ -2,6 +2,7 @@
 
 import datetime
 import hashlib
+import json
 from functools import wraps
 
 import bcrypt
@@ -15,6 +16,11 @@ from objects.privileges import Privileges, ComparePrivs, GetPriv
 from constants import regexes
 
 hina_admin = Blueprint('hina_admin', __name__)
+
+DEFAULT_CHECKLIST = json.dumps({
+    "timing": False, "hitsounds": False, "difficulty_spread": False,
+    "metadata": False, "background": False, "no_abuse": False
+})
 
 # ─── Decorators ────────────────────────────────────────────────────────
 
@@ -59,9 +65,9 @@ async def _log_action(mod_id, mod_name, target_id, action_name, action_text,
     now = datetime.datetime.now()
 
     await glob.db.execute(
-        "INSERT INTO logs (id, action, reason, `mod`, target, time, type) "
-        "VALUES (%s, %s, %s, %s, %s, %s, %s)",
-        [action_id, action_name, reason, mod_id, target_id, now, action_type]
+        "INSERT INTO logs (id, `from`, `to`, action, msg, time) "
+        "VALUES (%s, %s, %s, %s, %s, %s)",
+        [action_id, mod_id, target_id, action_name, reason, now]
     )
 
     # Discord webhook (best-effort, don't fail the action)
@@ -1477,3 +1483,519 @@ async def action_completerequest():
         'status': 'success',
         'message': f"Request for map {map_id} marked as complete."
     })
+
+
+# ─── Beatmap Review Work Items ────────────────────────────────────────
+
+@hina_admin.route('/api/beatmaps/work-items')
+@error_catcher
+@staff_required
+async def api_bm_work_items():
+    mod_priv = session['user_data']['priv']
+    if not _check_priv(mod_priv, Privileges.ManageBeatmaps):
+        return jsonify({'status': 'error', 'message': 'Insufficient privileges.'}), 403
+
+    # ── Auto-sync: create work items from unprocessed active map_requests ──
+    unprocessed = await glob.db.fetchall(
+        "SELECT mr.id, mr.map_id, mr.player_id, mr.datetime, m.set_id "
+        "FROM map_requests mr "
+        "JOIN maps m ON mr.map_id = m.id "
+        "WHERE mr.active = 1 "
+        "AND NOT EXISTS ("
+        "  SELECT 1 FROM beatmap_work_items bwi "
+        "  WHERE bwi.set_id = m.set_id AND bwi.review_state != 'done'"
+        ")"
+    )
+    seen_sets = set()
+    for req in (unprocessed or []):
+        if req['set_id'] in seen_sets:
+            continue
+        seen_sets.add(req['set_id'])
+        await glob.db.execute(
+            "INSERT INTO beatmap_work_items "
+            "(set_id, request_id, review_state, checklist, created_at) "
+            "VALUES (%s, %s, 'pending', %s, %s)",
+            [req['set_id'], req['id'], DEFAULT_CHECKLIST, req['datetime']]
+        )
+
+    # ── Parse filters ──
+    page = max(1, int(request.args.get('page', 1)))
+    search = str(request.args.get('search', '')).strip()
+    filter_status = str(request.args.get('status', ''))
+    filter_assigned = str(request.args.get('assigned', ''))
+    filter_age = str(request.args.get('age', ''))
+    filter_mode = str(request.args.get('mode', ''))
+    filter_map_status = str(request.args.get('map_status', ''))
+    filter_mapper = str(request.args.get('mapper', '')).strip()
+    filter_requester = str(request.args.get('requester', '')).strip()
+    sort_by = str(request.args.get('sort', 'created_at'))
+    sort_order = str(request.args.get('order', 'DESC'))
+
+    if sort_by not in ('created_at', 'updated_at', 'priority'):
+        sort_by = 'created_at'
+    if sort_order not in ('ASC', 'DESC'):
+        sort_order = 'DESC'
+
+    items_per_page = 30
+    offset = (page - 1) * items_per_page
+
+    # ── Build query ──
+    base_query = (
+        "SELECT bwi.id, bwi.set_id, bwi.request_id, bwi.review_state, "
+        "bwi.assigned_to, bwi.checklist, bwi.priority, bwi.resolution, "
+        "UNIX_TIMESTAMP(bwi.created_at) as created_at, "
+        "UNIX_TIMESTAMP(bwi.updated_at) as updated_at, "
+        "UNIX_TIMESTAMP(bwi.resolved_at) as resolved_at, "
+        "UNIX_TIMESTAMP(bwi.assigned_at) as assigned_at, "
+        "ua.name as assignee_name, "
+        "mr.player_id as requester_id, ur.name as requester_name, "
+        "UNIX_TIMESTAMP(mr.datetime) as requested_at "
+        "FROM beatmap_work_items bwi "
+        "LEFT JOIN map_requests mr ON mr.id = bwi.request_id "
+        "LEFT JOIN users ua ON ua.id = bwi.assigned_to "
+        "LEFT JOIN users ur ON ur.id = mr.player_id"
+    )
+    conditions = []
+    params = []
+
+    if filter_status:
+        conditions.append("bwi.review_state = %s")
+        params.append(filter_status)
+    else:
+        conditions.append("bwi.review_state != 'done'")
+
+    if filter_assigned == 'me':
+        conditions.append("bwi.assigned_to = %s")
+        params.append(session['user_data']['id'])
+    elif filter_assigned == 'unassigned':
+        conditions.append("bwi.assigned_to IS NULL")
+
+    age_map = {'1d': 1, '3d': 3, '7d': 7, '30d': 30}
+    if filter_age in age_map:
+        conditions.append("bwi.created_at <= DATE_SUB(NOW(), INTERVAL %s DAY)")
+        params.append(age_map[filter_age])
+
+    if search:
+        conditions.append(
+            "EXISTS (SELECT 1 FROM maps m WHERE m.set_id = bwi.set_id "
+            "AND (m.artist LIKE %s OR m.title LIKE %s OR m.creator LIKE %s))"
+        )
+        like = f"%{search}%"
+        params.extend([like, like, like])
+
+    if filter_mapper:
+        conditions.append(
+            "EXISTS (SELECT 1 FROM maps m WHERE m.set_id = bwi.set_id AND m.creator LIKE %s)"
+        )
+        params.append(f"%{filter_mapper}%")
+
+    if filter_requester:
+        conditions.append("ur.name LIKE %s")
+        params.append(f"%{filter_requester}%")
+
+    if filter_mode != '':
+        conditions.append(
+            "EXISTS (SELECT 1 FROM maps m WHERE m.set_id = bwi.set_id AND m.mode = %s)"
+        )
+        params.append(int(filter_mode))
+
+    if filter_map_status != '':
+        conditions.append(
+            "EXISTS (SELECT 1 FROM maps m WHERE m.set_id = bwi.set_id AND m.status = %s)"
+        )
+        params.append(int(filter_map_status))
+
+    where = " WHERE " + " AND ".join(conditions) if conditions else ""
+
+    # Count
+    count_query = (
+        "SELECT COUNT(*) as total FROM beatmap_work_items bwi "
+        "LEFT JOIN map_requests mr ON mr.id = bwi.request_id "
+        "LEFT JOIN users ur ON ur.id = mr.player_id"
+    )
+    total = await glob.db.fetch(count_query + where, params)
+    total_count = total['total'] if total else 0
+    total_pages = max(1, (total_count + items_per_page - 1) // items_per_page)
+
+    # Fetch page
+    sort_col = 'bwi.' + sort_by
+    items = await glob.db.fetchall(
+        base_query + where + f" ORDER BY {sort_col} {sort_order} LIMIT {items_per_page} OFFSET {offset}",
+        params
+    )
+    items = [dict(i) for i in (items or [])]
+
+    # ── Batch-enrich with set metadata (avoid N+1) ──
+    if items:
+        set_ids = list(set(item['set_id'] for item in items))
+        placeholders = ','.join(['%s'] * len(set_ids))
+
+        set_meta = await glob.db.fetchall(
+            f"SELECT set_id, ANY_VALUE(artist) as artist, ANY_VALUE(title) as title, "
+            f"ANY_VALUE(creator) as creator, ANY_VALUE(mode) as mode "
+            f"FROM maps WHERE set_id IN ({placeholders}) GROUP BY set_id",
+            set_ids
+        )
+        meta_map = {r['set_id']: r for r in (set_meta or [])}
+
+        diff_summary = await glob.db.fetchall(
+            f"SELECT set_id, COUNT(*) as diff_count, "
+            f"MIN(diff) as min_stars, MAX(diff) as max_stars, "
+            f"SUM(plays) as total_plays "
+            f"FROM maps WHERE set_id IN ({placeholders}) GROUP BY set_id",
+            set_ids
+        )
+        diff_map = {r['set_id']: r for r in (diff_summary or [])}
+
+        item_ids = [item['id'] for item in items]
+        ip = ','.join(['%s'] * len(item_ids))
+        comment_rows = await glob.db.fetchall(
+            f"SELECT work_item_id, COUNT(*) as cnt "
+            f"FROM beatmap_review_comments WHERE work_item_id IN ({ip}) "
+            f"GROUP BY work_item_id",
+            item_ids
+        )
+        comment_map = {r['work_item_id']: r['cnt'] for r in (comment_rows or [])}
+
+        for item in items:
+            meta = meta_map.get(item['set_id'], {})
+            diffs = diff_map.get(item['set_id'], {})
+            item['artist'] = meta.get('artist', '')
+            item['title'] = meta.get('title', '')
+            item['creator'] = meta.get('creator', '')
+            item['mode'] = meta.get('mode', 0)
+            item['diff_count'] = diffs.get('diff_count', 0)
+            item['min_stars'] = float(diffs.get('min_stars', 0) or 0)
+            item['max_stars'] = float(diffs.get('max_stars', 0) or 0)
+            item['total_plays'] = diffs.get('total_plays', 0)
+            item['comment_count'] = comment_map.get(item['id'], 0)
+            if item.get('checklist') and isinstance(item['checklist'], str):
+                item['checklist'] = json.loads(item['checklist'])
+
+    return jsonify({
+        'items': items,
+        'pagination': {
+            'current_page': page,
+            'total_pages': total_pages,
+            'total_count': total_count,
+        }
+    })
+
+
+@hina_admin.route('/api/beatmaps/work-items/<int:item_id>')
+@error_catcher
+@staff_required
+async def api_bm_work_item_detail(item_id):
+    item = await glob.db.fetch(
+        "SELECT bwi.*, ua.name as assignee_name "
+        "FROM beatmap_work_items bwi "
+        "LEFT JOIN users ua ON ua.id = bwi.assigned_to "
+        "WHERE bwi.id = %s", [item_id]
+    )
+    if not item:
+        return jsonify({'status': 'error', 'message': 'Work item not found.'}), 404
+    item = dict(item)
+
+    # All diffs in the set
+    diffs = await glob.db.fetchall(
+        "SELECT id, version, diff, mode, cs, ar, od, hp, bpm, "
+        "total_length, max_combo, plays, passes, status "
+        "FROM maps WHERE set_id = %s ORDER BY diff ASC",
+        [item['set_id']]
+    )
+
+    # Set metadata from first diff
+    meta = await glob.db.fetch(
+        "SELECT artist, title, creator FROM maps WHERE set_id = %s LIMIT 1",
+        [item['set_id']]
+    )
+    item['artist'] = meta['artist'] if meta else ''
+    item['title'] = meta['title'] if meta else ''
+    item['creator'] = meta['creator'] if meta else ''
+
+    # Requester info
+    requester = None
+    if item.get('request_id'):
+        req_row = await glob.db.fetch(
+            "SELECT mr.player_id, mr.datetime, u.name as player_name "
+            "FROM map_requests mr JOIN users u ON u.id = mr.player_id "
+            "WHERE mr.id = %s", [item['request_id']]
+        )
+        if req_row:
+            requester = {
+                'id': req_row['player_id'],
+                'name': req_row['player_name'],
+                'datetime': int(req_row['datetime'].timestamp())
+                    if isinstance(req_row['datetime'], datetime.datetime)
+                    else req_row['datetime'],
+            }
+
+    # All requests for this set
+    all_requests = await glob.db.fetchall(
+        "SELECT mr.id, mr.map_id, mr.player_id, mr.active, mr.datetime, u.name "
+        "FROM map_requests mr "
+        "JOIN maps m ON mr.map_id = m.id "
+        "JOIN users u ON u.id = mr.player_id "
+        "WHERE m.set_id = %s ORDER BY mr.datetime DESC",
+        [item['set_id']]
+    )
+
+    # Aggregate stats
+    fav_count = await glob.db.fetch(
+        "SELECT COUNT(*) as cnt FROM favourites WHERE setid = %s", [item['set_id']]
+    )
+    total_plays = sum(d.get('plays', 0) for d in (diffs or []))
+    total_passes = sum(d.get('passes', 0) for d in (diffs or []))
+
+    # Review comments
+    comments = await glob.db.fetchall(
+        "SELECT brc.*, u.name as user_name "
+        "FROM beatmap_review_comments brc "
+        "JOIN users u ON u.id = brc.user_id "
+        "WHERE brc.work_item_id = %s ORDER BY brc.created_at ASC",
+        [item_id]
+    )
+
+    # Action history from logs
+    # logs schema: id, `from` (mod), `to` (target), action, msg (reason), time
+    map_ids = [d['id'] for d in (diffs or [])]
+    history = []
+    if map_ids:
+        ip = ','.join(['%s'] * len(map_ids))
+        history = await glob.db.fetchall(
+            f"SELECT l.id, l.`from` as `mod`, l.`to` as target, l.action, "
+            f"l.msg as reason, l.time, u.name as mod_name "
+            f"FROM logs l LEFT JOIN users u ON u.id = l.`from` "
+            f"WHERE l.`to` IN ({ip}) "
+            f"ORDER BY l.time DESC LIMIT 20",
+            map_ids
+        )
+
+    # Convert datetimes to unix timestamps for JSON
+    for key in ('created_at', 'updated_at', 'resolved_at', 'assigned_at'):
+        if item.get(key) and isinstance(item[key], datetime.datetime):
+            item[key] = int(item[key].timestamp())
+    if isinstance(item.get('checklist'), str):
+        item['checklist'] = json.loads(item['checklist'])
+    for c in (comments or []):
+        if isinstance(c.get('created_at'), datetime.datetime):
+            c['created_at'] = int(c['created_at'].timestamp())
+    for r in (all_requests or []):
+        if isinstance(r.get('datetime'), datetime.datetime):
+            r['datetime'] = int(r['datetime'].timestamp())
+    for h in (history or []):
+        if isinstance(h.get('time'), datetime.datetime):
+            h['time'] = int(h['time'].timestamp())
+
+    item['diffs'] = [dict(d) for d in (diffs or [])]
+    item['requester'] = requester
+    item['requests'] = [dict(r) for r in (all_requests or [])]
+    item['favourite_count'] = fav_count['cnt'] if fav_count else 0
+    item['total_plays'] = total_plays
+    item['total_passes'] = total_passes
+    item['comments'] = [dict(c) for c in (comments or [])]
+    item['history'] = [dict(h) for h in (history or [])]
+
+    return jsonify(item)
+
+
+@hina_admin.route('/api/beatmaps/work-items', methods=['POST'])
+@error_catcher
+@staff_required
+async def api_bm_create_work_item():
+    data = await request.get_json()
+    set_id = data.get('set_id')
+    if not set_id:
+        return jsonify({'status': 'error', 'message': 'set_id required.'}), 400
+
+    mod_priv = session['user_data']['priv']
+    if not _check_priv(mod_priv, Privileges.ManageBeatmaps):
+        return jsonify({'status': 'error', 'message': 'Insufficient privileges.'}), 403
+
+    exists = await glob.db.fetch("SELECT id FROM maps WHERE set_id = %s LIMIT 1", [set_id])
+    if not exists:
+        return jsonify({'status': 'error', 'message': 'No maps found for this set.'}), 404
+
+    active = await glob.db.fetch(
+        "SELECT id FROM beatmap_work_items WHERE set_id = %s AND review_state != 'done'",
+        [set_id]
+    )
+    if active:
+        return jsonify({'status': 'error', 'message': 'Active work item already exists.', 'existing_id': active['id']}), 409
+
+    await glob.db.execute(
+        "INSERT INTO beatmap_work_items (set_id, review_state, checklist) VALUES (%s, 'pending', %s)",
+        [set_id, DEFAULT_CHECKLIST]
+    )
+    return jsonify({'status': 'success', 'message': 'Work item created.'})
+
+
+@hina_admin.route('/api/beatmaps/work-items/<int:item_id>/assign', methods=['POST'])
+@error_catcher
+@staff_required
+async def api_bm_assign(item_id):
+    data = await request.get_json()
+    user_id = data.get('user_id')
+
+    item = await glob.db.fetch("SELECT * FROM beatmap_work_items WHERE id = %s", [item_id])
+    if not item:
+        return jsonify({'status': 'error', 'message': 'Work item not found.'}), 404
+
+    if user_id:
+        await glob.db.execute(
+            "UPDATE beatmap_work_items "
+            "SET assigned_to = %s, assigned_at = NOW(), "
+            "    review_state = CASE WHEN review_state = 'pending' THEN 'in_review' ELSE review_state END "
+            "WHERE id = %s",
+            [int(user_id), item_id]
+        )
+    else:
+        await glob.db.execute(
+            "UPDATE beatmap_work_items SET assigned_to = NULL, assigned_at = NULL, "
+            "review_state = CASE WHEN review_state = 'in_review' THEN 'pending' ELSE review_state END "
+            "WHERE id = %s",
+            [item_id]
+        )
+
+    return jsonify({'status': 'success'})
+
+
+@hina_admin.route('/api/beatmaps/work-items/<int:item_id>/checklist', methods=['POST'])
+@error_catcher
+@staff_required
+async def api_bm_checklist(item_id):
+    data = await request.get_json()
+    item = await glob.db.fetch("SELECT checklist FROM beatmap_work_items WHERE id = %s", [item_id])
+    if not item:
+        return jsonify({'status': 'error', 'message': 'Work item not found.'}), 404
+
+    current = json.loads(item['checklist']) if item.get('checklist') else {}
+    VALID_KEYS = ('timing', 'hitsounds', 'difficulty_spread', 'metadata', 'background', 'no_abuse')
+    for key in VALID_KEYS:
+        if key in data:
+            current[key] = bool(data[key])
+
+    await glob.db.execute(
+        "UPDATE beatmap_work_items SET checklist = %s WHERE id = %s",
+        [json.dumps(current), item_id]
+    )
+    return jsonify({'status': 'success', 'checklist': current})
+
+
+@hina_admin.route('/api/beatmaps/work-items/<int:item_id>/comment', methods=['POST'])
+@error_catcher
+@staff_required
+async def api_bm_comment(item_id):
+    data = await request.get_json()
+    body = (data.get('body') or '').strip()
+    if not body:
+        return jsonify({'status': 'error', 'message': 'Comment body required.'}), 400
+
+    item = await glob.db.fetch("SELECT id FROM beatmap_work_items WHERE id = %s", [item_id])
+    if not item:
+        return jsonify({'status': 'error', 'message': 'Work item not found.'}), 404
+
+    mod_id = session['user_data']['id']
+    await glob.db.execute(
+        "INSERT INTO beatmap_review_comments (work_item_id, user_id, body) VALUES (%s, %s, %s)",
+        [item_id, mod_id, body]
+    )
+    return jsonify({'status': 'success'})
+
+
+@hina_admin.route('/api/beatmaps/work-items/<int:item_id>/decide', methods=['POST'])
+@error_catcher
+@staff_required
+async def api_bm_decide(item_id):
+    data = await request.get_json()
+    action = data.get('action', '')
+    reason = (data.get('reason') or '').strip()
+
+    VALID_ACTIONS = ('rank', 'approve', 'qualify', 'love', 'unrank', 'needs_changes', 'dismiss')
+    if action not in VALID_ACTIONS:
+        return jsonify({'status': 'error', 'message': 'Invalid action.'}), 400
+
+    if action in ('unrank', 'needs_changes') and not reason:
+        return jsonify({'status': 'error', 'message': 'Reason required for this action.'}), 400
+
+    mod_id, mod_name, mod_priv = _get_mod_info()
+    if not _check_priv(mod_priv, Privileges.ManageBeatmaps):
+        return jsonify({'status': 'error', 'message': 'Insufficient privileges.'}), 403
+
+    item = await glob.db.fetch("SELECT * FROM beatmap_work_items WHERE id = %s", [item_id])
+    if not item:
+        return jsonify({'status': 'error', 'message': 'Work item not found.'}), 404
+
+    set_id = item['set_id']
+    map_row = await glob.db.fetch("SELECT * FROM maps WHERE set_id = %s LIMIT 1", [set_id])
+    if not map_row:
+        return jsonify({'status': 'error', 'message': 'No maps in set.'}), 404
+
+    map_id = map_row['id']
+    map_obj = dict(map_row)
+
+    # ── Status-changing actions ──
+    if action in ('rank', 'approve', 'qualify', 'love', 'unrank'):
+        STATUS_MAP = {'rank': 2, 'approve': 3, 'qualify': 4, 'love': 5, 'unrank': 0}
+        new_status = STATUS_MAP[action]
+        ACTION_TEXT = {'rank': 'Ranked', 'approve': 'Approved', 'qualify': 'Qualified', 'love': 'Loved', 'unrank': 'Unranked'}
+
+        await _update_map_status(map_id, new_status)
+
+        await glob.db.execute(
+            "UPDATE beatmap_work_items "
+            "SET review_state = 'done', resolution = %s, resolved_at = NOW() "
+            "WHERE id = %s",
+            [action, item_id]
+        )
+
+        await glob.db.execute(
+            "UPDATE map_requests SET active = 0 "
+            "WHERE map_id IN (SELECT id FROM maps WHERE set_id = %s)",
+            [set_id]
+        )
+
+        if action != 'unrank':
+            try:
+                await glob.db.execute(
+                    "INSERT INTO newly_ranked (map_id, mod_id, time) VALUES (%s, %s, %s)",
+                    [map_id, mod_id, datetime.datetime.now()]
+                )
+            except Exception:
+                pass
+
+        await _log_action(mod_id, mod_name, map_id, action,
+                          ACTION_TEXT[action], reason or f'{ACTION_TEXT[action]} via review',
+                          1, map_obj=map_obj)
+
+    # ── Needs Changes (no map status change) ──
+    elif action == 'needs_changes':
+        await glob.db.execute(
+            "UPDATE beatmap_work_items "
+            "SET review_state = 'needs_changes', resolution = 'needs_changes' WHERE id = %s",
+            [item_id]
+        )
+        await glob.db.execute(
+            "INSERT INTO beatmap_review_comments (work_item_id, user_id, body) VALUES (%s, %s, %s)",
+            [item_id, mod_id, '[Needs Changes] ' + reason]
+        )
+        await _log_action(mod_id, mod_name, map_id, 'needs_changes',
+                          'Requested changes', reason, 1, map_obj=map_obj)
+
+    # ── Dismiss (close without status change) ──
+    elif action == 'dismiss':
+        await glob.db.execute(
+            "UPDATE beatmap_work_items "
+            "SET review_state = 'done', resolution = 'dismissed', resolved_at = NOW() WHERE id = %s",
+            [item_id]
+        )
+        await glob.db.execute(
+            "UPDATE map_requests SET active = 0 "
+            "WHERE map_id IN (SELECT id FROM maps WHERE set_id = %s)",
+            [set_id]
+        )
+        await _log_action(mod_id, mod_name, map_id, 'dismiss',
+                          'Request dismissed', reason or 'Dismissed via review',
+                          1, map_obj=map_obj)
+
+    return jsonify({'status': 'success', 'message': f'Action "{action}" completed.'})

@@ -9,7 +9,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/static/hinaDir/compiled/admin_v2.css?v=4">
+    <link rel="stylesheet" href="/static/hinaDir/compiled/admin_v2.css?v=5">
     <style>
         :root {
             {% if 'user_data' in session and session['user_data'].get('hue') %}
@@ -936,75 +936,380 @@
 
             <!-- BEATMAPS VIEW -->
             <div v-if="currentView === 'beatmaps'" class="av2-view">
-                <h1 class="av2-view-title"><i class="fas fa-map"></i> Beatmap Requests</h1>
+                <h1 class="av2-view-title"><i class="fas fa-map"></i> Beatmap Review</h1>
 
-                <div v-if="!beatmaps.loading && beatmaps.requests.length === 0" class="av2-empty-state">
-                    <i class="fas fa-inbox"></i>
-                    <p>No active map requests.</p>
+                <!-- Primary Filters -->
+                <div class="av2-filters">
+                    <div class="av2-filter-group" style="flex: 2;">
+                        <input class="av2-input" type="text" placeholder="Search artist, title, creator..."
+                               v-model="beatmaps.search" @input="debouncedSearchBeatmaps">
+                    </div>
+                    <div class="av2-filter-group">
+                        <select class="av2-select" v-model="beatmaps.filters.status" @change="loadWorkItems(1)">
+                            <option value="">Active Queue</option>
+                            <option value="pending">Pending</option>
+                            <option value="in_review">In Review</option>
+                            <option value="needs_changes">Needs Changes</option>
+                            <option value="done">Done / Resolved</option>
+                        </select>
+                    </div>
+                    <div class="av2-filter-group">
+                        <select class="av2-select" v-model="beatmaps.filters.assigned" @change="loadWorkItems(1)">
+                            <option value="">All Assignments</option>
+                            <option value="me">Assigned to Me</option>
+                            <option value="unassigned">Unassigned</option>
+                        </select>
+                    </div>
+                    <div class="av2-filter-group">
+                        <select class="av2-select" v-model="beatmaps.filters.sort" @change="loadWorkItems(1)">
+                            <option value="created_at">Newest First</option>
+                            <option value="updated_at">Recently Updated</option>
+                            <option value="priority">Priority</option>
+                        </select>
+                    </div>
+                    <button class="av2-btn av2-btn--sm" @click="toggleBmAdvancedFilters"
+                            :class="{ 'av2-btn--active': beatmaps.showAdvancedFilters }"
+                            style="align-self: flex-start; margin-top: 1px;">
+                        <i class="fas fa-sliders-h"></i> More
+                    </button>
                 </div>
 
-                <div v-for="req in beatmaps.requests" :key="req.id" class="av2-map-card" v-if="!beatmaps.loading">
-                    <div class="av2-map-card-banner"
-                         :style="'background-image: url(https://assets.ppy.sh/beatmaps/' + req.map_info.set_id + '/covers/cover.jpg)'">
-                        <div class="av2-map-card-overlay">
-                            <div class="av2-map-card-title">
-                                <span v-text="req.map_info.artist + ' - ' + req.map_info.title"></span>
+                <!-- Advanced Filters (collapsible) -->
+                <div class="av2-filters av2-filters--advanced" v-if="beatmaps.showAdvancedFilters">
+                    <div class="av2-filter-group">
+                        <select class="av2-select" v-model="beatmaps.filters.age" @change="loadWorkItems(1)">
+                            <option value="">Age: Any</option>
+                            <option value="1d">Waiting 1+ day</option>
+                            <option value="3d">Waiting 3+ days</option>
+                            <option value="7d">Waiting 7+ days</option>
+                            <option value="30d">Waiting 30+ days</option>
+                        </select>
+                    </div>
+                    <div class="av2-filter-group">
+                        <select class="av2-select" v-model="beatmaps.filters.mode" @change="loadWorkItems(1)">
+                            <option value="">Mode: All</option>
+                            <option value="0">osu!</option>
+                            <option value="1">Taiko</option>
+                            <option value="2">Catch</option>
+                            <option value="3">Mania</option>
+                        </select>
+                    </div>
+                    <div class="av2-filter-group">
+                        <select class="av2-select" v-model="beatmaps.filters.mapStatus" @change="loadWorkItems(1)">
+                            <option value="">Map Status: Any</option>
+                            <option value="0">Pending</option>
+                            <option value="2">Ranked</option>
+                            <option value="3">Approved</option>
+                            <option value="4">Qualified</option>
+                            <option value="5">Loved</option>
+                        </select>
+                    </div>
+                    <div class="av2-filter-group" style="flex: 0 0 auto; min-width: 120px;">
+                        <input class="av2-input av2-input--sm" type="text" placeholder="Mapper"
+                               v-model="beatmaps.filters.mapper" @input="debouncedSearchBeatmaps">
+                    </div>
+                    <div class="av2-filter-group" style="flex: 0 0 auto; min-width: 120px;">
+                        <input class="av2-input av2-input--sm" type="text" placeholder="Requester"
+                               v-model="beatmaps.filters.requester" @input="debouncedSearchBeatmaps">
+                    </div>
+                    <!-- Manual add -->
+                    <div class="av2-filter-group" style="flex: 0 0 auto; display: flex; gap: 4px;">
+                        <input class="av2-input av2-input--sm" type="text" placeholder="Set ID"
+                               v-model="beatmaps.addSetId" style="width: 90px;">
+                        <button class="av2-btn av2-btn--sm av2-btn--accent" @click="addManualWorkItem"
+                                title="Add a mapset to the review queue manually">
+                            <i class="fas fa-plus"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Queue Stats -->
+                <div class="av2-bm-queue-stats" v-if="!beatmaps.loading">
+                    <span v-text="beatmaps.pagination.total_count + ' item' + (beatmaps.pagination.total_count !== 1 ? 's' : '')"></span>
+                </div>
+
+                <!-- Card Grid -->
+                <div class="av2-bm-grid" v-if="!beatmaps.loading">
+                    <div v-for="item in beatmaps.workItems" :key="item.id"
+                         class="av2-bm-card"
+                         :class="{
+                             'av2-bm-card--active': beatmaps.activeItem && beatmaps.activeItem.id === item.id,
+                             'av2-bm-card--needs-changes': item.review_state === 'needs_changes',
+                             'av2-bm-card--done': item.review_state === 'done',
+                         }"
+                         @click="selectWorkItem(item.id)">
+
+                        <!-- Cover Image -->
+                        <div class="av2-bm-card-cover"
+                             :style="'background-image: url(https://assets.ppy.sh/beatmaps/' + item.set_id + '/covers/cover.jpg)'">
+                            <div class="av2-bm-card-badges">
+                                <span class="av2-bm-state-pill"
+                                      :class="'av2-bm-state--' + item.review_state"
+                                      v-text="reviewStateLabel(item.review_state)"></span>
+                                <span class="av2-bm-mode-pill" v-text="bmModeLabel(item.mode)"></span>
                             </div>
-                            <div class="av2-map-card-meta">
-                                <span v-text="'[' + req.map_info.version + ']'"></span>
-                                <span v-text="'by ' + req.map_info.creator"></span>
-                                <span v-text="'★ ' + (req.map_info.diff || 0).toFixed(2)"></span>
+                        </div>
+
+                        <!-- Card Body -->
+                        <div class="av2-bm-card-body">
+                            <div class="av2-bm-card-title" v-text="item.artist + ' - ' + item.title"></div>
+                            <div class="av2-bm-card-meta">
+                                <span v-text="'by ' + item.creator"></span>
+                                <span class="av2-bm-card-stars" v-text="starRange(item)"></span>
+                            </div>
+                            <div class="av2-bm-card-footer">
+                                <span class="av2-bm-card-diffs"
+                                      v-text="item.diff_count + ' diff' + (item.diff_count !== 1 ? 's' : '')"></span>
+                                <span class="av2-bm-card-plays" v-if="item.total_plays"
+                                      v-text="formatNumber(item.total_plays) + ' plays'"></span>
+                                <span class="av2-bm-card-assignee" v-if="item.assignee_name"
+                                      :title="'Assigned to ' + item.assignee_name">
+                                    <i class="fas fa-user"></i>
+                                    <span v-text="item.assignee_name"></span>
+                                </span>
+                                <span class="av2-bm-card-comments" v-if="item.comment_count"
+                                      :title="item.comment_count + ' comment(s)'">
+                                    <i class="fas fa-comment"></i>
+                                    <span v-text="item.comment_count"></span>
+                                </span>
                             </div>
                         </div>
                     </div>
-                    <div class="av2-map-card-body">
-                        <div class="av2-map-card-stats">
-                            <span>CS <span v-text="req.map_info.cs"></span></span>
-                            <span>AR <span v-text="req.map_info.ar"></span></span>
-                            <span>OD <span v-text="req.map_info.od"></span></span>
-                            <span>HP <span v-text="req.map_info.hp"></span></span>
-                            <span>BPM <span v-text="req.map_info.bpm"></span></span>
-                        </div>
-                        <div class="av2-map-card-requester" v-if="req.player">
-                            Requested by <strong v-text="req.player.name"></strong>
-                            <span v-text="'(' + req.datetime + ')'"></span>
-                        </div>
-                        <div class="av2-map-card-diffs" v-if="req.map_diffs && req.map_diffs.length">
-                            <span class="av2-map-diff" v-for="d in req.map_diffs" :key="d.id"
-                                  v-text="'[' + d.version + '] ★' + (d.diff || 0).toFixed(2)">
-                            </span>
-                        </div>
-                        <div class="av2-map-card-actions">
-                            <button class="av2-btn av2-btn--success av2-btn--sm"
-                                    @click="mapAction('rank', req.map_info.id)">
-                                <i class="fas fa-check"></i> Rank
-                            </button>
-                            <button class="av2-btn av2-btn--sm"
-                                    @click="mapAction('approve', req.map_info.id)">
-                                <i class="fas fa-thumbs-up"></i> Approve
-                            </button>
-                            <button class="av2-btn av2-btn--sm"
-                                    @click="mapAction('qualify', req.map_info.id)">
-                                <i class="fas fa-clipboard-check"></i> Qualify
-                            </button>
-                            <button class="av2-btn av2-btn--warning av2-btn--sm"
-                                    @click="mapAction('love', req.map_info.id)">
-                                <i class="fas fa-heart"></i> Love
-                            </button>
-                            <button class="av2-btn av2-btn--danger av2-btn--sm"
-                                    @click="mapAction('unrank', req.map_info.id)">
-                                <i class="fas fa-times"></i> Unrank
-                            </button>
-                            <button class="av2-btn av2-btn--sm"
-                                    @click="mapAction('completerequest', req.map_info.id)">
-                                <i class="fas fa-check-double"></i> Complete
-                            </button>
-                        </div>
+
+                    <!-- Empty State -->
+                    <div v-if="beatmaps.workItems.length === 0" class="av2-empty-state" style="grid-column: 1 / -1;">
+                        <i class="fas fa-inbox"></i>
+                        <p>No items match your filters.</p>
                     </div>
+                </div>
+
+                <!-- Pagination -->
+                <div class="av2-pagination" v-if="!beatmaps.loading && beatmaps.pagination.total_pages > 1">
+                    <button class="av2-btn av2-btn--sm"
+                            :disabled="beatmaps.pagination.current_page <= 1"
+                            @click="loadWorkItems(beatmaps.pagination.current_page - 1)">
+                        <i class="fas fa-chevron-left"></i>
+                    </button>
+                    <span class="av2-pagination-info">
+                        Page <span v-text="beatmaps.pagination.current_page"></span>
+                        of <span v-text="beatmaps.pagination.total_pages"></span>
+                    </span>
+                    <button class="av2-btn av2-btn--sm"
+                            :disabled="beatmaps.pagination.current_page >= beatmaps.pagination.total_pages"
+                            @click="loadWorkItems(beatmaps.pagination.current_page + 1)">
+                        <i class="fas fa-chevron-right"></i>
+                    </button>
                 </div>
 
                 <div v-if="beatmaps.loading" class="av2-loading">
-                    <i class="fas fa-spinner fa-spin"></i> Loading beatmaps...
+                    <i class="fas fa-spinner fa-spin"></i> Loading queue...
+                </div>
+
+                <!-- Detail Panel Overlay -->
+                <div class="av2-panel-overlay" v-if="beatmaps.activeItem" @click.self="closeWorkItemPanel"></div>
+
+                <!-- Detail Panel -->
+                <div class="av2-panel av2-bm-detail" :class="{ 'is-open': beatmaps.activeItem }">
+                    <div v-if="beatmaps.activeItem && !beatmaps.activeLoading">
+                        <!-- Panel Header with Cover -->
+                        <div class="av2-bm-detail-header"
+                             :style="'background-image: url(https://assets.ppy.sh/beatmaps/' + beatmaps.activeItem.set_id + '/covers/cover.jpg)'">
+                            <div class="av2-bm-detail-header-overlay">
+                                <button class="av2-panel-close" @click="closeWorkItemPanel">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                                <div class="av2-bm-detail-title" v-text="beatmaps.activeItem.artist + ' - ' + beatmaps.activeItem.title"></div>
+                                <div class="av2-bm-detail-subtitle">
+                                    <span v-text="'Mapped by ' + beatmaps.activeItem.creator"></span>
+                                    <span> | Set <span v-text="beatmaps.activeItem.set_id"></span></span>
+                                    <a class="av2-bm-detail-link" :href="'/beatmapsets/' + beatmaps.activeItem.set_id"
+                                       target="_blank" title="Preview on main site">
+                                        <i class="fas fa-external-link-alt"></i>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="av2-panel-body">
+                            <!-- Assignment + State Row -->
+                            <div class="av2-bm-detail-status-row">
+                                <span class="av2-bm-state-pill av2-bm-state-pill--lg"
+                                      :class="'av2-bm-state--' + beatmaps.activeItem.review_state"
+                                      v-text="reviewStateLabel(beatmaps.activeItem.review_state)"></span>
+
+                                <span class="av2-bm-detail-assignee" v-if="beatmaps.activeItem.assignee_name">
+                                    <i class="fas fa-user"></i>
+                                    <span v-text="beatmaps.activeItem.assignee_name"></span>
+                                    <button class="av2-btn av2-btn--sm" @click="unassignWorkItem" title="Unassign">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </span>
+                                <button class="av2-btn av2-btn--sm av2-btn--accent" v-else @click="assignToMe">
+                                    <i class="fas fa-hand-paper"></i> Assign to Me
+                                </button>
+
+                                <span class="av2-bm-detail-age av2-text-muted" v-text="'Created ' + formatTime(beatmaps.activeItem.created_at)"></span>
+                            </div>
+
+                            <!-- Requester Info -->
+                            <div class="av2-bm-detail-requester" v-if="beatmaps.activeItem.requester">
+                                <i class="fas fa-user-clock"></i>
+                                Requested by
+                                <a :href="'/u/' + beatmaps.activeItem.requester.id" target="_blank"
+                                   v-text="beatmaps.activeItem.requester.name"></a>
+                                <span class="av2-text-muted" v-text="formatTime(beatmaps.activeItem.requester.datetime)"></span>
+                            </div>
+
+                            <!-- Difficulty List -->
+                            <div class="av2-bm-detail-section">
+                                <h3 class="av2-card-title" style="padding: 0; border: none;">
+                                    Difficulties
+                                    (<span v-text="beatmaps.activeItem.diffs.length"></span>)
+                                </h3>
+                                <div class="av2-bm-diff-list">
+                                    <div v-for="d in beatmaps.activeItem.diffs" :key="d.id" class="av2-bm-diff-row">
+                                        <span class="av2-bm-diff-stars" v-text="'\u2605' + (d.diff || 0).toFixed(2)"></span>
+                                        <span class="av2-bm-diff-version" v-text="d.version"></span>
+                                        <span class="av2-bm-diff-stats av2-text-muted">
+                                            CS<span v-text="d.cs"></span>
+                                            AR<span v-text="d.ar"></span>
+                                            OD<span v-text="d.od"></span>
+                                            HP<span v-text="d.hp"></span>
+                                            BPM<span v-text="d.bpm"></span>
+                                        </span>
+                                        <span class="av2-bm-diff-length av2-text-muted" v-text="formatDuration(d.total_length)"></span>
+                                        <span class="av2-bm-diff-plays av2-text-muted" v-text="formatNumber(d.plays) + ' plays'"></span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Stats Summary -->
+                            <div class="av2-bm-detail-section">
+                                <div class="av2-bm-stat-row">
+                                    <div class="av2-bm-stat">
+                                        <span class="av2-bm-stat-value" v-text="formatNumber(beatmaps.activeItem.total_plays)"></span>
+                                        <span class="av2-bm-stat-label">Total Plays</span>
+                                    </div>
+                                    <div class="av2-bm-stat">
+                                        <span class="av2-bm-stat-value" v-text="formatNumber(beatmaps.activeItem.total_passes)"></span>
+                                        <span class="av2-bm-stat-label">Passes</span>
+                                    </div>
+                                    <div class="av2-bm-stat">
+                                        <span class="av2-bm-stat-value" v-text="formatNumber(beatmaps.activeItem.favourite_count)"></span>
+                                        <span class="av2-bm-stat-label">Favourites</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Checklist -->
+                            <div class="av2-bm-detail-section">
+                                <h3 class="av2-card-title" style="padding: 0; border: none;">Review Checklist</h3>
+                                <div class="av2-bm-checklist">
+                                    <label v-for="key in ['timing','hitsounds','difficulty_spread','metadata','background','no_abuse']"
+                                           :key="key" class="av2-bm-checklist-item"
+                                           :class="{ 'av2-bm-checklist-item--checked': beatmaps.activeItem.checklist && beatmaps.activeItem.checklist[key] }">
+                                        <input type="checkbox"
+                                               :checked="beatmaps.activeItem.checklist && beatmaps.activeItem.checklist[key]"
+                                               @change="toggleChecklist(key)">
+                                        <span v-text="checklistLabel(key)"></span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <!-- Comments -->
+                            <div class="av2-bm-detail-section">
+                                <h3 class="av2-card-title" style="padding: 0; border: none;">
+                                    Review Notes
+                                    (<span v-text="(beatmaps.activeItem.comments || []).length"></span>)
+                                </h3>
+                                <div class="av2-bm-comments">
+                                    <div v-for="c in beatmaps.activeItem.comments" :key="c.id" class="av2-bm-comment">
+                                        <div class="av2-bm-comment-header">
+                                            <strong v-text="c.user_name"></strong>
+                                            <span class="av2-text-muted" v-text="formatTime(c.created_at)"></span>
+                                        </div>
+                                        <div class="av2-bm-comment-body" v-text="c.body"></div>
+                                    </div>
+                                    <div v-if="!beatmaps.activeItem.comments || !beatmaps.activeItem.comments.length"
+                                         class="av2-empty" style="padding: 8px 0; font-size: 0.85rem;">
+                                        No notes yet.
+                                    </div>
+                                </div>
+                                <!-- Add Comment -->
+                                <div class="av2-bm-comment-form">
+                                    <textarea class="av2-input av2-textarea" placeholder="Add a review note..."
+                                              v-model="beatmaps.commentDraft" rows="2"></textarea>
+                                    <button class="av2-btn av2-btn--sm av2-btn--accent" @click="addBmComment"
+                                            :disabled="!beatmaps.commentDraft.trim()">
+                                        <i class="fas fa-paper-plane"></i> Post
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- History -->
+                            <div class="av2-bm-detail-section" v-if="beatmaps.activeItem.history && beatmaps.activeItem.history.length">
+                                <h3 class="av2-card-title" style="padding: 0; border: none;">Action History</h3>
+                                <div v-for="h in beatmaps.activeItem.history" :key="h.id" class="av2-bm-history-entry">
+                                    <span class="av2-bm-history-action" v-text="h.action"></span>
+                                    <span class="av2-text-muted">
+                                        by <span v-text="h.mod_name || 'Unknown'"></span>
+                                    </span>
+                                    <span class="av2-text-muted" v-if="h.reason" v-text="'\u2014 ' + h.reason"></span>
+                                    <span class="av2-text-muted" v-text="formatTime(h.time)"></span>
+                                </div>
+                            </div>
+
+                            <!-- Decision Actions -->
+                            <div class="av2-bm-detail-section" v-if="beatmaps.activeItem.review_state !== 'done'">
+                                <h3 class="av2-card-title" style="padding: 0; border: none;">Decision</h3>
+                                <div class="av2-bm-actions">
+                                    <button class="av2-btn av2-btn--success" @click="bmDecide('rank')">
+                                        <i class="fas fa-check"></i> Rank
+                                    </button>
+                                    <button class="av2-btn" @click="bmDecide('approve')">
+                                        <i class="fas fa-thumbs-up"></i> Approve
+                                    </button>
+                                    <button class="av2-btn" @click="bmDecide('qualify')">
+                                        <i class="fas fa-clipboard-check"></i> Qualify
+                                    </button>
+                                    <button class="av2-btn av2-btn--warning" @click="bmDecide('love')">
+                                        <i class="fas fa-heart"></i> Love
+                                    </button>
+                                    <button class="av2-btn av2-btn--danger" @click="bmDecide('unrank')">
+                                        <i class="fas fa-ban"></i> Unrank
+                                    </button>
+                                    <button class="av2-btn av2-btn--danger" @click="bmDecide('needs_changes')"
+                                            style="border-style: dashed;">
+                                        <i class="fas fa-redo"></i> Needs Changes
+                                    </button>
+                                    <button class="av2-btn" @click="bmDecide('dismiss')">
+                                        <i class="fas fa-times"></i> Dismiss
+                                    </button>
+                                    <button class="av2-btn av2-btn--sm" @click="closeWorkItemPanel"
+                                            style="margin-left: auto;">
+                                        <i class="fas fa-arrow-left"></i> Cancel / Close
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Resolved info -->
+                            <div class="av2-bm-detail-section" v-if="beatmaps.activeItem.review_state === 'done'">
+                                <div class="av2-bm-resolved">
+                                    <i class="fas fa-check-circle"></i>
+                                    Resolved: <strong v-text="beatmaps.activeItem.resolution"></strong>
+                                    <span class="av2-text-muted" v-text="formatTime(beatmaps.activeItem.resolved_at)"></span>
+                                </div>
+                                <button class="av2-btn av2-btn--sm" @click="closeWorkItemPanel" style="margin-top: 12px;">
+                                    <i class="fas fa-arrow-left"></i> Cancel / Close
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Panel loading state -->
+                    <div v-if="beatmaps.activeLoading" class="av2-loading" style="padding: 40px;">
+                        <i class="fas fa-spinner fa-spin"></i> Loading details...
+                    </div>
                 </div>
             </div>
 
@@ -1138,6 +1443,22 @@
                     <i class="fas fa-info-circle"></i>
                     The user will need to log in again with the new password. Make sure to communicate it to them securely.
                 </div>
+                <div class="av2-hint av2-hint--info" v-if="confirmDialog.action.indexOf('bm_decide_rank') === 0 || confirmDialog.action.indexOf('bm_decide_approve') === 0 || confirmDialog.action.indexOf('bm_decide_qualify') === 0 || confirmDialog.action.indexOf('bm_decide_love') === 0">
+                    <i class="fas fa-info-circle"></i>
+                    This will change the map's ranked status across ALL difficulties in the set via kawata.py API.
+                </div>
+                <div class="av2-hint av2-hint--warn" v-if="confirmDialog.action === 'bm_decide_unrank'">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    Unranking will remove the map from leaderboards. Existing scores remain but no longer award PP. A reason is required.
+                </div>
+                <div class="av2-hint av2-hint--info" v-if="confirmDialog.action === 'bm_decide_needs_changes'">
+                    <i class="fas fa-info-circle"></i>
+                    This will mark the work item as needing changes and auto-post a comment with your reason. The map status is NOT changed.
+                </div>
+                <div class="av2-hint av2-hint--info" v-if="confirmDialog.action === 'bm_decide_dismiss'">
+                    <i class="fas fa-info-circle"></i>
+                    Dismissing closes the review without changing the map status. Associated requests will be marked inactive.
+                </div>
 
                 <div class="av2-form-group" v-if="confirmDialog.needsReason">
                     <label>Reason</label>
@@ -1173,6 +1494,6 @@
 
     <script src="/static/js/asserts/vue.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/timeago.js/4.0.2/timeago.min.js"></script>
-    <script src="/static/hinaDir/compiled/admin_v2.js?v=4"></script>
+    <script src="/static/hinaDir/compiled/admin_v2.js?v=5"></script>
 </body>
 </html>

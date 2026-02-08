@@ -162,8 +162,26 @@ document.addEventListener('DOMContentLoaded', function () {
 
             // Beatmaps
             beatmaps: {
-                requests: [] as any[],
+                workItems: [] as any[],
+                pagination: { current_page: 1, total_pages: 1, total_count: 0 },
+                search: '',
+                filters: {
+                    status: '',
+                    assigned: '',
+                    age: '',
+                    mode: '',
+                    mapStatus: '',
+                    mapper: '',
+                    requester: '',
+                    sort: 'created_at',
+                    order: 'DESC',
+                },
+                showAdvancedFilters: false,
                 loading: false,
+                activeItem: null as any,
+                activeLoading: false,
+                commentDraft: '',
+                addSetId: '',
             },
 
             // Badges
@@ -180,6 +198,7 @@ document.addEventListener('DOMContentLoaded', function () {
             // Debounce timers
             searchTimer: null as any,
             globalSearchTimer: null as any,
+            bmSearchTimer: null as any,
 
             // Keyboard handler reference for cleanup
             keydownHandler: null as any,
@@ -223,6 +242,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 if (e.key === 'Escape') {
                     self.closeGlobalSearch();
                     self.users.openMenuId = null;
+                    if (self.beatmaps.activeItem) self.closeWorkItemPanel();
                 }
             };
             document.addEventListener('keydown', self.keydownHandler);
@@ -273,7 +293,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 switch (view) {
                     case 'dashboard': this.loadDashboard(); break;
                     case 'users': this.loadUsers(1); break;
-                    case 'beatmaps': this.loadBeatmaps(); break;
+                    case 'beatmaps': this.loadWorkItems(1); break;
                     case 'badges': this.loadBadges(); break;
                 }
             },
@@ -728,6 +748,13 @@ document.addEventListener('DOMContentLoaded', function () {
                     return;
                 }
 
+                // Handle beatmap decide actions
+                if (d.action.indexOf('bm_decide_') === 0) {
+                    d.show = false;
+                    self.executeBmDecide(d.action, d.reason);
+                    return;
+                }
+
                 var body: any = { user: d.targetId, reason: d.reason };
                 if (d.needsDuration) body.duration = d.duration;
                 if (d.needsPassword) body.password = d.password;
@@ -748,14 +775,28 @@ document.addEventListener('DOMContentLoaded', function () {
                 });
             },
 
-            // ── Beatmaps ──────────────────────────────────────────
+            // ── Beatmap Review ────────────────────────────────────
 
-            loadBeatmaps: function () {
+            loadWorkItems: function (page?: number) {
                 var self = this;
+                if (!page) page = 1;
                 self.beatmaps.loading = true;
 
-                adminApi('beatmaps').then(function (data: any) {
-                    self.beatmaps.requests = data.requests || [];
+                var url = 'beatmaps/work-items?page=' + page
+                    + '&search=' + encodeURIComponent(self.beatmaps.search)
+                    + '&status=' + self.beatmaps.filters.status
+                    + '&assigned=' + self.beatmaps.filters.assigned
+                    + '&age=' + self.beatmaps.filters.age
+                    + '&mode=' + self.beatmaps.filters.mode
+                    + '&map_status=' + self.beatmaps.filters.mapStatus
+                    + '&mapper=' + encodeURIComponent(self.beatmaps.filters.mapper)
+                    + '&requester=' + encodeURIComponent(self.beatmaps.filters.requester)
+                    + '&sort=' + self.beatmaps.filters.sort
+                    + '&order=' + self.beatmaps.filters.order;
+
+                adminApi(url).then(function (data: any) {
+                    self.beatmaps.workItems = data.items || [];
+                    self.beatmaps.pagination = data.pagination || { current_page: 1, total_pages: 1, total_count: 0 };
                     self.beatmaps.loading = false;
                 }).catch(function (e: any) {
                     self.showToast('error', e.message);
@@ -763,19 +804,179 @@ document.addEventListener('DOMContentLoaded', function () {
                 });
             },
 
-            mapAction: function (action: string, mapId: number) {
+            debouncedSearchBeatmaps: function () {
                 var self = this;
-                if (!confirm('Are you sure you want to ' + action + ' this map?')) return;
+                if (self.bmSearchTimer) clearTimeout(self.bmSearchTimer);
+                self.bmSearchTimer = setTimeout(function () {
+                    self.loadWorkItems(1);
+                }, 350);
+            },
 
-                adminApi('action/' + action, {
-                    method: 'POST',
-                    body: JSON.stringify({ map: mapId }),
-                }).then(function (result: any) {
-                    self.showToast('success', result.message);
-                    self.loadBeatmaps();
+            selectWorkItem: function (itemId: number) {
+                var self = this;
+                self.beatmaps.activeLoading = true;
+                self.beatmaps.commentDraft = '';
+
+                adminApi('beatmaps/work-items/' + itemId).then(function (data: any) {
+                    self.beatmaps.activeItem = data;
+                    self.beatmaps.activeLoading = false;
                 }).catch(function (e: any) {
                     self.showToast('error', e.message);
+                    self.beatmaps.activeLoading = false;
                 });
+            },
+
+            closeWorkItemPanel: function () {
+                this.beatmaps.activeItem = null;
+            },
+
+            assignToMe: function () {
+                var self = this;
+                var itemId = self.beatmaps.activeItem.id;
+                adminApi('beatmaps/work-items/' + itemId + '/assign', {
+                    method: 'POST',
+                    body: JSON.stringify({ user_id: self.config.userId }),
+                }).then(function () {
+                    self.showToast('success', 'Assigned to you.');
+                    self.selectWorkItem(itemId);
+                    self.loadWorkItems(self.beatmaps.pagination.current_page);
+                }).catch(function (e: any) { self.showToast('error', e.message); });
+            },
+
+            unassignWorkItem: function () {
+                var self = this;
+                var itemId = self.beatmaps.activeItem.id;
+                adminApi('beatmaps/work-items/' + itemId + '/assign', {
+                    method: 'POST',
+                    body: JSON.stringify({ user_id: null }),
+                }).then(function () {
+                    self.showToast('success', 'Unassigned.');
+                    self.selectWorkItem(itemId);
+                    self.loadWorkItems(self.beatmaps.pagination.current_page);
+                }).catch(function (e: any) { self.showToast('error', e.message); });
+            },
+
+            toggleChecklist: function (key: string) {
+                var self = this;
+                var itemId = self.beatmaps.activeItem.id;
+                var current = self.beatmaps.activeItem.checklist || {};
+                var update: any = {};
+                update[key] = !current[key];
+                adminApi('beatmaps/work-items/' + itemId + '/checklist', {
+                    method: 'POST',
+                    body: JSON.stringify(update),
+                }).then(function (data: any) {
+                    self.beatmaps.activeItem.checklist = data.checklist;
+                }).catch(function (e: any) { self.showToast('error', e.message); });
+            },
+
+            addBmComment: function () {
+                var self = this;
+                var body = (self.beatmaps.commentDraft || '').trim();
+                if (!body) return;
+                var itemId = self.beatmaps.activeItem.id;
+                adminApi('beatmaps/work-items/' + itemId + '/comment', {
+                    method: 'POST',
+                    body: JSON.stringify({ body: body }),
+                }).then(function () {
+                    self.beatmaps.commentDraft = '';
+                    self.selectWorkItem(itemId);
+                }).catch(function (e: any) { self.showToast('error', e.message); });
+            },
+
+            bmDecide: function (action: string) {
+                var self = this;
+                var needsReason = action === 'unrank' || action === 'needs_changes';
+                var labels: { [key: string]: string } = {
+                    'rank': 'Rank', 'approve': 'Approve', 'qualify': 'Qualify',
+                    'love': 'Love', 'unrank': 'Unrank', 'needs_changes': 'Needs Changes',
+                    'dismiss': 'Dismiss',
+                };
+                self.confirmDialog = {
+                    show: true,
+                    title: labels[action] + ' this mapset?',
+                    message: self.beatmaps.activeItem.artist + ' - '
+                        + self.beatmaps.activeItem.title + ' (set ' + self.beatmaps.activeItem.set_id + ')',
+                    action: 'bm_decide_' + action,
+                    needsReason: needsReason,
+                    needsDuration: false,
+                    needsPassword: false,
+                    reason: '',
+                    duration: 0,
+                    password: '',
+                    targetId: self.beatmaps.activeItem.id,
+                };
+            },
+
+            executeBmDecide: function (action: string, reason: string) {
+                var self = this;
+                var realAction = action.replace('bm_decide_', '');
+                var itemId = self.beatmaps.activeItem ? self.beatmaps.activeItem.id : self.confirmDialog.targetId;
+                adminApi('beatmaps/work-items/' + itemId + '/decide', {
+                    method: 'POST',
+                    body: JSON.stringify({ action: realAction, reason: reason }),
+                }).then(function (data: any) {
+                    self.showToast('success', data.message);
+                    self.beatmaps.activeItem = null;
+                    self.loadWorkItems(self.beatmaps.pagination.current_page);
+                }).catch(function (e: any) { self.showToast('error', e.message); });
+            },
+
+            addManualWorkItem: function () {
+                var self = this;
+                var setId = parseInt(self.beatmaps.addSetId, 10);
+                if (!setId || isNaN(setId)) {
+                    self.showToast('error', 'Enter a valid set ID.');
+                    return;
+                }
+                adminApi('beatmaps/work-items', {
+                    method: 'POST',
+                    body: JSON.stringify({ set_id: setId }),
+                }).then(function () {
+                    self.showToast('success', 'Work item created.');
+                    self.beatmaps.addSetId = '';
+                    self.loadWorkItems(1);
+                }).catch(function (e: any) { self.showToast('error', e.message); });
+            },
+
+            toggleBmAdvancedFilters: function () {
+                this.beatmaps.showAdvancedFilters = !this.beatmaps.showAdvancedFilters;
+            },
+
+            reviewStateLabel: function (state: string): string {
+                var labels: { [key: string]: string } = {
+                    'pending': 'Pending', 'in_review': 'In Review',
+                    'needs_changes': 'Needs Changes', 'done': 'Done',
+                };
+                return labels[state] || state;
+            },
+
+            starRange: function (item: any): string {
+                if (!item.min_stars && !item.max_stars) return '';
+                if (item.min_stars === item.max_stars)
+                    return (item.min_stars || 0).toFixed(2) + ' \u2605';
+                return (item.min_stars || 0).toFixed(1) + ' \u2013 ' + (item.max_stars || 0).toFixed(1) + ' \u2605';
+            },
+
+            checklistLabel: function (key: string): string {
+                var labels: { [key: string]: string } = {
+                    'timing': 'Timing', 'hitsounds': 'Hitsounds',
+                    'difficulty_spread': 'Difficulty Spread', 'metadata': 'Metadata',
+                    'background': 'Background (no NSFW)', 'no_abuse': 'No Obvious Abuse',
+                };
+                return labels[key] || key;
+            },
+
+            bmModeLabel: function (mode: number): string {
+                var names: { [key: number]: string } = { 0: 'osu!', 1: 'Taiko', 2: 'Catch', 3: 'Mania' };
+                return names[mode] || 'Mode ' + mode;
+            },
+
+            formatDuration: function (seconds: number): string {
+                if (!seconds) return '0:00';
+                var m = Math.floor(seconds / 60);
+                var s = seconds % 60;
+                return m + ':' + (s < 10 ? '0' : '') + s;
             },
 
             // ── Badges ────────────────────────────────────────────
