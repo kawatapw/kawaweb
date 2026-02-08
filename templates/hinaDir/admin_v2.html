@@ -9,7 +9,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/static/hinaDir/compiled/admin_v2.css?v=2">
+    <link rel="stylesheet" href="/static/hinaDir/compiled/admin_v2.css?v=4">
     <style>
         :root {
             {% if 'user_data' in session and session['user_data'].get('hue') %}
@@ -520,17 +520,24 @@
                 <!-- Bulk Action Bar -->
                 <div class="av2-bulk-bar" v-if="users.selectedIds.length > 0">
                     <span class="av2-bulk-count">
-                        <span v-text="users.selectedIds.length"></span> selected
+                        <i class="fas fa-check-square"></i>
+                        <span v-text="users.selectedIds.length"></span> user(s) selected
                     </span>
-                    <button class="av2-btn av2-btn--danger av2-btn--sm" @click="bulkAction('restrict')">
-                        <i class="fas fa-ban"></i> Restrict
+                    <button class="av2-btn av2-btn--danger av2-btn--sm" @click="bulkAction('restrict')"
+                            title="Restrict all selected users at once">
+                        <i class="fas fa-ban"></i> Restrict All
                     </button>
-                    <button class="av2-btn av2-btn--success av2-btn--sm" @click="bulkAction('unrestrict')">
-                        <i class="fas fa-check"></i> Unrestrict
+                    <button class="av2-btn av2-btn--success av2-btn--sm" @click="bulkAction('unrestrict')"
+                            title="Unrestrict all selected users at once">
+                        <i class="fas fa-check"></i> Unrestrict All
                     </button>
-                    <button class="av2-btn av2-btn--sm" @click="clearSelection">
+                    <button class="av2-btn av2-btn--sm" @click="clearSelection"
+                            title="Deselect all users">
                         <i class="fas fa-times"></i> Clear
                     </button>
+                    <span class="av2-bulk-hint">
+                        <i class="fas fa-info-circle"></i> Actions apply to all selected users. A confirmation will appear before anything happens.
+                    </span>
                 </div>
 
                 <!-- User Table -->
@@ -546,9 +553,9 @@
                                     <th>User</th>
                                     <th>Status</th>
                                     <th>Country</th>
-                                    <th>PP</th>
-                                    <th>Plays</th>
-                                    <th>Risk</th>
+                                    <th title="Performance Points for the user's preferred game mode">PP</th>
+                                    <th title="Total play count for the user's preferred game mode">Plays</th>
+                                    <th title="Risk indicators: fingerprint = shared hardware with other accounts, flag = scores with suspicious client flags">Risk</th>
                                     <th>Registered</th>
                                     <th></th>
                                 </tr>
@@ -615,6 +622,14 @@
                                                    v-if="!(u.priv & 1)" @click.prevent="rowAction('unrestrict', u)">
                                                     <i class="fas fa-check"></i> Unrestrict
                                                 </a>
+                                                <a class="av2-row-menu-item av2-row-menu-item--warning"
+                                                   v-if="!u.silence_end" @click.prevent="rowAction('silence', u)">
+                                                    <i class="fas fa-volume-mute"></i> Silence
+                                                </a>
+                                                <a class="av2-row-menu-item"
+                                                   v-if="u.silence_end" @click.prevent="rowAction('unsilence', u)">
+                                                    <i class="fas fa-volume-up"></i> Unsilence
+                                                </a>
                                                 <a class="av2-row-menu-item" @click.prevent="rowAction('wipe', u)">
                                                     <i class="fas fa-eraser"></i> Wipe Scores
                                                 </a>
@@ -677,25 +692,31 @@
                         <!-- Quick Actions -->
                         <div class="av2-action-bar">
                             <button class="av2-btn av2-btn--danger" @click="quickAction('restrict')"
-                                    v-if="users.editUser.priv !== 0">
+                                    v-if="users.editUser.priv !== 0"
+                                    title="Hide user from leaderboards and prevent online play">
                                 <i class="fas fa-ban"></i> Restrict
                             </button>
                             <button class="av2-btn av2-btn--success" @click="quickAction('unrestrict')"
-                                    v-if="users.editUser.priv === 0">
+                                    v-if="users.editUser.priv === 0"
+                                    title="Restore user to normal status and allow online play">
                                 <i class="fas fa-check"></i> Unrestrict
                             </button>
                             <button class="av2-btn av2-btn--warning" @click="quickAction('silence')"
-                                    v-if="users.editUser.silence_end === 0">
+                                    v-if="users.editUser.silence_end === 0"
+                                    title="Prevent user from sending chat messages for a set duration">
                                 <i class="fas fa-volume-mute"></i> Silence
                             </button>
                             <button class="av2-btn" @click="quickAction('unsilence')"
-                                    v-if="users.editUser.silence_end !== 0">
+                                    v-if="users.editUser.silence_end !== 0"
+                                    title="Allow user to send chat messages again immediately">
                                 <i class="fas fa-volume-up"></i> Unsilence
                             </button>
-                            <button class="av2-btn av2-btn--danger" @click="quickAction('wipe')">
+                            <button class="av2-btn av2-btn--danger" @click="quickAction('wipe')"
+                                    title="Permanently delete ALL scores and reset ALL stats to zero (irreversible)">
                                 <i class="fas fa-eraser"></i> Wipe
                             </button>
-                            <button class="av2-btn" @click="quickAction('changepassword')">
+                            <button class="av2-btn" @click="quickAction('changepassword')"
+                                    title="Set a new password for this user (9-32 characters)">
                                 <i class="fas fa-key"></i> Password
                             </button>
                         </div>
@@ -1091,22 +1112,60 @@
             <div class="av2-confirm" v-if="confirmDialog.show">
                 <h3 v-text="confirmDialog.title"></h3>
                 <p v-text="confirmDialog.message"></p>
+
+                <!-- Action-specific help notes -->
+                <div class="av2-hint av2-hint--info" v-if="confirmDialog.action === 'restrict' || confirmDialog.action === 'bulk_restrict'">
+                    <i class="fas fa-info-circle"></i>
+                    Restricting a user hides them from leaderboards and prevents them from playing online. They can still log in but all interactions are hidden from other players.
+                </div>
+                <div class="av2-hint av2-hint--info" v-if="confirmDialog.action === 'unrestrict' || confirmDialog.action === 'bulk_unrestrict'">
+                    <i class="fas fa-info-circle"></i>
+                    Unrestricting restores the user to normal status (priv 1). They will reappear on leaderboards after their next score submission.
+                </div>
+                <div class="av2-hint av2-hint--info" v-if="confirmDialog.action === 'silence'">
+                    <i class="fas fa-info-circle"></i>
+                    Silencing prevents the user from sending chat messages in-game for the specified duration. They can still play and submit scores.
+                </div>
+                <div class="av2-hint av2-hint--info" v-if="confirmDialog.action === 'unsilence'">
+                    <i class="fas fa-info-circle"></i>
+                    This will immediately allow the user to send chat messages again.
+                </div>
+                <div class="av2-hint av2-hint--warn" v-if="confirmDialog.action === 'wipe'">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <strong>This is irreversible.</strong> All scores across every mode will be permanently deleted and all stats reset to zero. Only do this if you are certain.
+                </div>
+                <div class="av2-hint av2-hint--info" v-if="confirmDialog.action === 'changepassword'">
+                    <i class="fas fa-info-circle"></i>
+                    The user will need to log in again with the new password. Make sure to communicate it to them securely.
+                </div>
+
                 <div class="av2-form-group" v-if="confirmDialog.needsReason">
                     <label>Reason</label>
-                    <input class="av2-input" v-model="confirmDialog.reason" placeholder="Optional reason...">
+                    <input class="av2-input" v-model="confirmDialog.reason" placeholder="Optional but recommended for audit trail...">
+                    <span class="av2-field-hint">Logged for other staff to see. Leave blank if not needed.</span>
                 </div>
                 <div class="av2-form-group" v-if="confirmDialog.needsDuration">
                     <label>Duration (hours)</label>
-                    <input class="av2-input" type="number" v-model.number="confirmDialog.duration" min="1">
+                    <input class="av2-input" type="number" v-model.number="confirmDialog.duration" min="1" max="8760">
+                    <span class="av2-field-hint">How many hours to silence. e.g. 1 = 1 hour, 24 = 1 day, 168 = 1 week, 720 = 1 month.</span>
                 </div>
                 <div class="av2-form-group" v-if="confirmDialog.needsPassword">
-                    <label>New Password (9-32 chars)</label>
-                    <input class="av2-input" type="text" v-model="confirmDialog.password">
+                    <label>New Password</label>
+                    <input class="av2-input" type="text" v-model="confirmDialog.password"
+                           placeholder="Enter new password..." minlength="9" maxlength="32">
+                    <span class="av2-field-hint">Must be 9-32 characters. The user will need this to log in.</span>
                 </div>
                 <div class="av2-confirm-actions">
                     <button class="av2-btn" @click="confirmDialog.show = false">Cancel</button>
-                    <button class="av2-btn av2-btn--danger" @click="executeConfirmedAction">Confirm</button>
+                    <button class="av2-btn av2-btn--danger" @click="executeConfirmedAction"
+                            :disabled="confirmDialog.needsPassword && (confirmDialog.password.length < 9 || confirmDialog.password.length > 32)">
+                        Confirm
+                    </button>
                 </div>
+                <span class="av2-field-hint" v-if="confirmDialog.needsPassword && confirmDialog.password.length > 0 && confirmDialog.password.length < 9"
+                      style="color: var(--av2-danger); margin-top: 4px; display: block;">
+                    Password too short (<span v-text="confirmDialog.password.length"></span>/9 characters minimum)
+                </span>
             </div>
 
         </main>
@@ -1114,6 +1173,6 @@
 
     <script src="/static/js/asserts/vue.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/timeago.js/4.0.2/timeago.min.js"></script>
-    <script src="/static/hinaDir/compiled/admin_v2.js?v=2"></script>
+    <script src="/static/hinaDir/compiled/admin_v2.js?v=4"></script>
 </body>
 </html>

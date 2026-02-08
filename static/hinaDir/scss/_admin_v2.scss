@@ -1903,6 +1903,54 @@ select:focus:not(:focus-visible) {
     justify-content: flex-end;
     gap: 8px;
     margin-top: 16px;
+
+    .av2-btn:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+    }
+}
+
+// ─── Hint / Guidance Text ────────────────────────────────────────────
+
+.av2-hint {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 10px 12px;
+    border-radius: var(--av2-radius-sm);
+    font-size: 0.8rem;
+    line-height: 1.45;
+    margin-bottom: 14px;
+
+    i { margin-top: 2px; flex-shrink: 0; }
+
+    &--info {
+        background: hsla(210, 60%, 55%, 0.08);
+        color: hsl(210, 60%, 70%);
+        border-left: 3px solid hsl(210, 60%, 55%);
+    }
+
+    &--warn {
+        background: hsla(0, 60%, 55%, 0.08);
+        color: hsl(0, 60%, 70%);
+        border-left: 3px solid hsl(0, 60%, 55%);
+    }
+}
+
+.av2-field-hint {
+    display: block;
+    font-size: 0.72rem;
+    color: var(--av2-text-dim);
+    margin-top: 4px;
+    line-height: 1.4;
+}
+
+.av2-bulk-hint {
+    font-size: 0.75rem;
+    color: var(--av2-text-muted);
+    margin-left: auto;
+
+    i { margin-right: 4px; }
 }
 
 // ─── Empty State ──────────────────────────────────────────────────────
@@ -2130,6 +2178,11 @@ select:focus:not(:focus-visible) {
     &--success {
         color: var(--av2-success);
         &:hover { background: hsla(140, 60%, 45%, 0.1); }
+    }
+
+    &--warning {
+        color: var(--av2-warning);
+        &:hover { background: hsla(40, 80%, 55%, 0.1); }
     }
 }
 

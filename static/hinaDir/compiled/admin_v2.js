@@ -557,16 +557,20 @@ document.addEventListener('DOMContentLoaded', function () {
                     this.openUserEdit(user.id);
                     return;
                 }
-                // For restrict/unrestrict/wipe/changepassword: use confirm dialog
+                // For restrict/unrestrict/silence/unsilence/wipe/changepassword: use confirm dialog
                 var titles = {
                     restrict: 'Restrict ' + user.name + '?',
                     unrestrict: 'Unrestrict ' + user.name + '?',
+                    silence: 'Silence ' + user.name + '?',
+                    unsilence: 'Unsilence ' + user.name + '?',
                     wipe: 'Wipe all scores for ' + user.name + '?',
                     changepassword: 'Change password for ' + user.name + '?',
                 };
                 var messages = {
                     restrict: 'This will set their privilege to 0 (banned).',
                     unrestrict: 'This will restore their privilege to 1 (normal).',
+                    silence: 'They will not be able to send messages in-game.',
+                    unsilence: 'They will be able to send messages again.',
                     wipe: 'This will delete ALL scores and reset ALL stats. This cannot be undone easily.',
                     changepassword: 'Enter a new password for this user.',
                 };
@@ -576,7 +580,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     message: messages[action] || '',
                     action: action,
                     needsReason: true,
-                    needsDuration: false,
+                    needsDuration: action === 'silence',
                     needsPassword: action === 'changepassword',
                     reason: '',
                     duration: 24,
