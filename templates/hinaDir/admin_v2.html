@@ -170,6 +170,9 @@
             <!-- DASHBOARD VIEW -->
             <div v-if="currentView === 'dashboard'" class="av2-view">
                 <h1 class="av2-view-title av2-display-title"><i class="fas fa-tachometer-alt"></i> Control Center</h1>
+                <p class="av2-env-context">
+                    <span v-text="config.devMode ? 'Development' : 'Production'"></span> · <span v-text="config.domain"></span>
+                </p>
 
                 <!-- Skeleton loaders -->
                 <div v-if="dash.loading" class="av2-dash-skeleton">
@@ -197,7 +200,8 @@
 
                     <!-- KPI Cards -->
                     <div class="av2-stats-grid av2-stats-grid--4" v-if="dash.kpis">
-                        <div class="av2-stat av2-stat--clickable" @click="navigateTo('users')">
+                        <div class="av2-stat av2-stat--clickable" tabindex="0" role="button"
+                             @click="navigateTo('users')" @keydown.enter="navigateTo('users')">
                             <div class="av2-stat-icon"><i class="fas fa-users"></i></div>
                             <div class="av2-stat-body">
                                 <div class="av2-stat-value" v-text="formatNumber(dash.kpis.total_users)"></div>
@@ -207,7 +211,8 @@
                             </div>
                         </div>
 
-                        <div class="av2-stat av2-stat--clickable" @click="navigateUsersFiltered('creation_time', 'DESC')">
+                        <div class="av2-stat av2-stat--clickable" tabindex="0" role="button"
+                             @click="navigateUsersFiltered('creation_time', 'DESC')" @keydown.enter="navigateUsersFiltered('creation_time', 'DESC')">
                             <div class="av2-stat-icon av2-stat-icon--success"><i class="fas fa-user-plus"></i></div>
                             <div class="av2-stat-body">
                                 <div class="av2-stat-value" v-text="formatNumber(dash.kpis.new_users_7d)"></div>
@@ -227,7 +232,8 @@
                             </div>
                         </div>
 
-                        <div class="av2-stat av2-stat--clickable" @click="navigateUsersFiltered('priv', 'ASC', 'restricted')">
+                        <div class="av2-stat av2-stat--clickable" tabindex="0" role="button"
+                             @click="navigateUsersFiltered('priv', 'ASC', 'restricted')" @keydown.enter="navigateUsersFiltered('priv', 'ASC', 'restricted')">
                             <div class="av2-stat-icon av2-stat-icon--danger"><i class="fas fa-ban"></i></div>
                             <div class="av2-stat-body">
                                 <div class="av2-stat-value" v-text="formatNumber(dash.kpis.restricted)"></div>
@@ -269,7 +275,15 @@
 
                         <!-- Server Overview -->
                         <div class="av2-card">
-                            <h2 class="av2-card-title"><i class="fas fa-server"></i> Server Overview</h2>
+                            <div class="av2-card-title-row">
+                                <h2 class="av2-card-title"><i class="fas fa-server"></i> Server Overview</h2>
+                                <div class="av2-last-updated" v-if="dash.updatedAt">
+                                    <span v-text="formatTime(dash.updatedAt)"></span>
+                                    <button class="av2-refresh-btn" @click="loadDashboard" title="Refresh">
+                                        <i class="fas fa-sync-alt"></i>
+                                    </button>
+                                </div>
+                            </div>
                             <div class="av2-server-stats">
                                 <div class="av2-server-stat-row">
                                     <span class="av2-server-stat-label"><i class="fas fa-users"></i> Online Players</span>
@@ -283,6 +297,10 @@
                                     <span class="av2-server-stat-label"><i class="fas fa-chart-bar"></i> Scores (24h)</span>
                                     <span class="av2-server-stat-value" v-text="formatNumber(dash.kpis ? dash.kpis.scores_24h : 0)"></span>
                                 </div>
+                            </div>
+                            <div class="av2-server-empty"
+                                 v-if="dash.kpis && dash.kpis.online === 0 && dash.kpis.scores_1h === 0 && dash.kpis.scores_24h === 0">
+                                <i class="fas fa-moon"></i> No activity — server is quiet.
                             </div>
                             <div class="av2-top-countries" v-if="dash.topCountries && dash.topCountries.length">
                                 <h3 class="av2-sub-title">Top Countries (New Users, 7d)</h3>
@@ -314,9 +332,11 @@
                                         <tr v-for="u in dash.recentUsers" :key="u.id">
                                             <td>
                                                 <div class="av2-user-cell">
-                                                    <img :src="'https://' + config.avatarDomain + '/' + u.id"
-                                                         class="av2-user-cell-avatar" alt="">
-                                                    <span class="av2-user-cell-name" v-text="u.name"></span>
+                                                    <a href="#" class="av2-user-cell-link" @click.prevent="searchNavigateUser(u.id)">
+                                                        <img :src="'https://' + config.avatarDomain + '/' + u.id"
+                                                             class="av2-user-cell-avatar" alt="">
+                                                        <span class="av2-user-cell-name" v-text="u.name"></span>
+                                                    </a>
                                                     <span class="av2-alt-dot" v-if="u.shared_hardware > 0"
                                                           :title="u.shared_hardware + ' shared hardware match(es)'">
                                                         <i class="fas fa-exclamation-circle"></i>
@@ -369,14 +389,18 @@
                                             :class="{ 'av2-row--flagged': s.client_flags !== 0 }">
                                             <td>
                                                 <div class="av2-user-cell">
-                                                    <img :src="'https://' + config.avatarDomain + '/' + s.userid"
-                                                         class="av2-user-cell-avatar" alt="">
-                                                    <span class="av2-user-cell-name" v-text="s.player_name"></span>
+                                                    <a href="#" class="av2-user-cell-link" @click.prevent="searchNavigateUser(s.userid)">
+                                                        <img :src="'https://' + config.avatarDomain + '/' + s.userid"
+                                                             class="av2-user-cell-avatar" alt="">
+                                                        <span class="av2-user-cell-name" v-text="s.player_name"></span>
+                                                    </a>
                                                 </div>
                                             </td>
                                             <td class="av2-map-cell">
-                                                <span v-text="s.artist + ' - ' + s.title"></span>
-                                                <small v-text="'[' + s.version + ']'"></small>
+                                                <a :href="'https://osu.ppy.sh/beatmapsets/' + s.set_id" target="_blank" rel="noopener" class="av2-map-cell-link">
+                                                    <span v-text="s.artist + ' - ' + s.title"></span>
+                                                    <small v-text="'[' + s.version + ']'"></small>
+                                                </a>
                                             </td>
                                             <td class="av2-score-cell">
                                                 <span class="av2-score-pp" v-text="Math.round(s.pp) + 'pp'"></span>

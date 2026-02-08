@@ -105,6 +105,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 flaggedLoading: false,
                 error: null,
                 peakOnline: 0,
+                updatedAt: 0,
             },
             // Global search
             search: {
@@ -148,6 +149,14 @@ document.addEventListener('DOMContentLoaded', function () {
         },
         created: function () {
             var self = this;
+            // Restore persisted score filter
+            try {
+                var savedFilter = localStorage.getItem('av2-score-filter');
+                if (savedFilter === 'flagged') {
+                    self.dash.scoreFilter = 'flagged';
+                }
+            }
+            catch (e) { /* localStorage unavailable */ }
             self.loadView(self.currentView);
             // Handle browser back/forward
             window.addEventListener('popstate', function () {
@@ -234,7 +243,12 @@ document.addEventListener('DOMContentLoaded', function () {
                     if (self.dash.kpis && self.dash.kpis.online > self.dash.peakOnline) {
                         self.dash.peakOnline = self.dash.kpis.online;
                     }
+                    self.dash.updatedAt = Math.floor(Date.now() / 1000);
                     self.dash.loading = false;
+                    // If saved filter is 'flagged', load flagged scores now
+                    if (self.dash.scoreFilter === 'flagged') {
+                        self.loadFlaggedScores();
+                    }
                 }).catch(function (e) {
                     self.dash.error = e.message || 'Failed to load dashboard';
                     self.dash.loading = false;
@@ -254,6 +268,10 @@ document.addEventListener('DOMContentLoaded', function () {
             },
             toggleScoreFilter: function (filter) {
                 this.dash.scoreFilter = filter;
+                try {
+                    localStorage.setItem('av2-score-filter', filter);
+                }
+                catch (e) { }
                 if (filter === 'all') {
                     this.dash.displayScores = this.dash.recentScores;
                 }
