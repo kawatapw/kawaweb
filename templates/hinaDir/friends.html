@@ -182,14 +182,21 @@
 
               <!-- Action bar -->
               <div class="friend-action-bar">
-                <a class="action-bar-btn action-bar-btn--primary" :href="profileUrl(user.id)" title="Profile">
-                  <i class="fas fa-user"></i>
-                </a>
                 <button class="action-bar-btn action-bar-btn--compare"
                         @click="openCompare(user.id)" title="Compare Stats"
                         aria-label="Compare stats">
                   <i class="fas fa-chart-bar"></i>
                 </button>
+                <a class="action-bar-btn action-bar-btn--primary" :href="profileUrl(user.id)" title="Profile">
+                  <i class="fas fa-user"></i>
+                </a>
+                <template v-if="tab === 'followers'">
+                  <button class="action-bar-btn action-bar-btn--success"
+                          @click="addFriend(user.id)"
+                          :disabled="actionLoading[user.id]" title="Add">
+                    <i class="fas fa-user-plus"></i>
+                  </button>
+                </template>
                 <template v-if="tab === 'mutuals'">
                   <button class="action-bar-btn action-bar-btn--danger"
                           @click="removeFriend(user.id)"
@@ -198,11 +205,6 @@
                   </button>
                 </template>
                 <template v-if="tab === 'followers'">
-                  <button class="action-bar-btn action-bar-btn--success"
-                          @click="addFriend(user.id)"
-                          :disabled="actionLoading[user.id]" title="Add">
-                    <i class="fas fa-user-plus"></i>
-                  </button>
                   <button class="action-bar-btn action-bar-btn--danger"
                           @click="blockUser(user.id)"
                           :disabled="actionLoading[user.id]" title="Block">
@@ -254,14 +256,21 @@
 
               <!-- Action bar -->
               <div class="friend-action-bar">
-                <a class="action-bar-btn action-bar-btn--primary" :href="profileUrl(user.id)" title="Profile">
-                  <i class="fas fa-user"></i>
-                </a>
                 <button class="action-bar-btn action-bar-btn--compare"
                         @click="openCompare(user.id)" title="Compare Stats"
                         aria-label="Compare stats">
                   <i class="fas fa-chart-bar"></i>
                 </button>
+                <a class="action-bar-btn action-bar-btn--primary" :href="profileUrl(user.id)" title="Profile">
+                  <i class="fas fa-user"></i>
+                </a>
+                <template v-if="tab === 'followers'">
+                  <button class="action-bar-btn action-bar-btn--success"
+                          @click="addFriend(user.id)"
+                          :disabled="actionLoading[user.id]" title="Add">
+                    <i class="fas fa-user-plus"></i>
+                  </button>
+                </template>
                 <template v-if="tab === 'mutuals'">
                   <button class="action-bar-btn action-bar-btn--danger"
                           @click="removeFriend(user.id)"
@@ -270,11 +279,6 @@
                   </button>
                 </template>
                 <template v-if="tab === 'followers'">
-                  <button class="action-bar-btn action-bar-btn--success"
-                          @click="addFriend(user.id)"
-                          :disabled="actionLoading[user.id]" title="Add">
-                    <i class="fas fa-user-plus"></i>
-                  </button>
                   <button class="action-bar-btn action-bar-btn--danger"
                           @click="blockUser(user.id)"
                           :disabled="actionLoading[user.id]" title="Block">
