@@ -170,7 +170,7 @@
                     <div class="navbar-mobile-user">
                         <div class="navbar-mobile-user-banner" style="background-image: url(/banners/{{ session.user_data['id'] }});"></div>
                         <div class="navbar-mobile-user-info">
-                            <img src="https://a.{{domain()}}/{{ session.user_data['id'] }}" alt="{{ session.user_data['name'] }}" class="navbar-mobile-user-avatar">
+                            <a href="/u/{{ session.user_data['id'] }}"><img src="https://a.{{domain()}}/{{ session.user_data['id'] }}" alt="{{ session.user_data['name'] }}" class="navbar-mobile-user-avatar"></a>
                             <div class="navbar-mobile-user-details">
                                 <span class="navbar-mobile-user-name">{{ session.user_data['name'] }}</span>
                                 <div class="navbar-mobile-user-actions">
