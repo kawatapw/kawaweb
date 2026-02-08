@@ -28,7 +28,6 @@ if (typeof Vue === 'undefined') {
                 resizeListener: null,
                 searchBusListener: null,
                 isUserDropdownOpen: false,
-                isAdminV2Open: false,
                 currentHue: 180,
                 _userDropdownClickHandler: null,
                 _userDropdownKeyHandler: null
@@ -56,7 +55,6 @@ if (typeof Vue === 'undefined') {
                 // User dropdown: close on Escape
                 this._userDropdownKeyHandler = (e) => {
                     if (e.key === 'Escape') {
-                        if (this.isAdminV2Open) this.isAdminV2Open = false;
                         if (this.isUserDropdownOpen) this.isUserDropdownOpen = false;
                     }
                 };
@@ -333,13 +331,6 @@ if (typeof Vue === 'undefined') {
                     el.textContent = 'Expires: ' + parts.join(' ');
                 },
 
-                toggleAdminV2Panel() {
-                    this.isAdminV2Open = !this.isAdminV2Open;
-                    // Close mobile menu if open
-                    if (this.isAdminV2Open && this.isMobileMenuOpen) {
-                        this.isMobileMenuOpen = false;
-                    }
-                },
                 toggleMobileDropdown(event) {
                     const dropdown = event.currentTarget.parentElement;
                     dropdown.classList.toggle('active');

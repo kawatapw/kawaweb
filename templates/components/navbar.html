@@ -34,7 +34,7 @@
                     <button class="navbar-dropdown-trigger">hinaWIP <i class="fas fa-flask"></i></button>
                     <div class="navbar-dropdown-menu">
                         <a class="navbar-dropdown-item" href="#">Score Hunt</a>
-                        <a class="navbar-dropdown-item hina-adminv2-trigger" href="#" @click.prevent="toggleAdminV2Panel">Admin V2</a>
+                        <a class="navbar-dropdown-item" href="/admin-v2">Admin V2</a>
                     </div>
                 </div>
             {% endif %}
@@ -351,7 +351,7 @@
                             </button>
                             <div class="navbar-mobile-dropdown-menu">
                                 <a class="navbar-mobile-dropdown-item" href="#">Score Hunt</a>
-                                <a class="navbar-mobile-dropdown-item" href="#" @click.prevent="toggleAdminV2Panel">Admin V2</a>
+                                <a class="navbar-mobile-dropdown-item" href="/admin-v2">Admin V2</a>
                             </div>
                         </div>
                     {% endif %}
@@ -361,50 +361,7 @@
     </div>
 </nav>
 
-{# ── Admin V2 Side Panel (dev-only, concept) ── #}
-{% if session.authenticated and session.user_data['is_staff'] %}
-<div class="hina-adminv2-overlay" v-cloak v-show="isAdminV2Open" @click.self="isAdminV2Open = false"></div>
-<div class="hina-adminv2-panel" v-cloak :class="{ 'is-open': isAdminV2Open }">
-    <div class="hina-av2-header">
-        <h3 class="hina-av2-title"><i class="fas fa-flask"></i> Admin V2</h3>
-        <button class="hina-av2-close" @click="isAdminV2Open = false"><i class="fas fa-times"></i></button>
-    </div>
-    <div class="hina-av2-body">
-        <p class="hina-av2-notice">Concept panel — all links are placeholders.</p>
-        <div class="hina-av2-section">
-            <span class="hina-av2-section-label">Dashboard</span>
-            <a class="hina-av2-item" href="#"><i class="fas fa-tachometer-alt"></i> Overview</a>
-            <a class="hina-av2-item" href="#"><i class="fas fa-chart-line"></i> Analytics</a>
-        </div>
-        <div class="hina-av2-section">
-            <span class="hina-av2-section-label">Users</span>
-            <a class="hina-av2-item" href="#"><i class="fas fa-users"></i> Manage Users</a>
-            <a class="hina-av2-item" href="#"><i class="fas fa-user-shield"></i> Privileges</a>
-            <a class="hina-av2-item" href="#"><i class="fas fa-gavel"></i> Moderation Log</a>
-        </div>
-        <div class="hina-av2-section">
-            <span class="hina-av2-section-label">Beatmaps</span>
-            <a class="hina-av2-item" href="#"><i class="fas fa-map"></i> Beatmap Requests</a>
-            <a class="hina-av2-item" href="#"><i class="fas fa-star"></i> Ranked Maps</a>
-        </div>
-        <div class="hina-av2-section">
-            <span class="hina-av2-section-label">Content</span>
-            <a class="hina-av2-item" href="#"><i class="fas fa-award"></i> Badges</a>
-            <a class="hina-av2-item" href="#"><i class="fas fa-bullhorn"></i> Changelog</a>
-        </div>
-        <div class="hina-av2-section">
-            <span class="hina-av2-section-label">Events</span>
-            <a class="hina-av2-item" href="#"><i class="fas fa-crosshairs"></i> Score Hunt</a>
-            <a class="hina-av2-item" href="#"><i class="fas fa-box-open"></i> Map Packs</a>
-        </div>
-        <div class="hina-av2-section">
-            <span class="hina-av2-section-label">System</span>
-            <a class="hina-av2-item" href="#"><i class="fas fa-server"></i> Server Status</a>
-            <a class="hina-av2-item" href="#"><i class="fas fa-cog"></i> Settings</a>
-        </div>
-    </div>
-</div>
-{% endif %}
+{# Admin V2 is now a standalone SPA at /admin-v2 #}
 
 {% block content %}
 {% endblock %}

@@ -142,6 +142,9 @@ app.register_blueprint(hina_friends)
 from blueprints.admin import admin
 app.register_blueprint(admin, url_prefix='/admin')
 
+from blueprints.hinaDir import hina_admin
+app.register_blueprint(hina_admin, url_prefix='/admin-v2')
+
 @app.errorhandler(404)
 async def page_not_found(e):
     # NOTE: we set the 404 status explicitly
