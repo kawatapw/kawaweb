@@ -62,15 +62,6 @@ if (typeof Vue === 'undefined') {
                 };
                 document.addEventListener('keydown', this._userDropdownKeyHandler);
 
-                // Read the logged-in user's own hue from the data attribute (not --main,
-                // which may be the profile user's hue on other people's profiles)
-                const container = this.$el.querySelector('.navbar-user-dropdown-container');
-                const userHue = container && container.getAttribute('data-user-hue');
-                this.currentHue = parseInt(userHue) || 180;
-
-                // Format donor expiry after DOM renders
-                this.$nextTick(() => this._formatDonorExpiry());
-
                 // Listen for search window events
                 if (window.searchBus) {
                     this.searchBusListener = () => {
@@ -86,6 +77,15 @@ if (typeof Vue === 'undefined') {
                     };
                     searchBus.$on('show-search-window', this.searchBusListener);
                 }
+            },
+            mounted() {
+                // $el is now available — read hue from DOM attribute
+                const container = this.$el.querySelector('.navbar-user-dropdown-container');
+                const userHue = container && container.getAttribute('data-user-hue');
+                this.currentHue = parseInt(userHue) || 180;
+
+                // Format donor expiry now that DOM is rendered
+                this._formatDonorExpiry();
             },
             computed: {
                 hasSearchResults() {

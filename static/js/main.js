@@ -132,11 +132,17 @@ class KawataApp {
             this.logger.error('COMPONENT', 'Navbar failed to load', error);
         }
 
+        // Load misc.js first — defines mixin_formatting / mixin_conversion used by other components
+        try {
+            await this._loadComponent('/static/js/components/misc.js', 'misc-components');
+        } catch (error) {
+            this.logger.error('COMPONENT', 'Misc components failed to load', error);
+        }
+
         // Load other components in parallel with proper error handling
         const componentPromises = [
             this._loadComponent('/static/js/utils/portal.js', 'portal').catch(() => {}),
             this._loadComponent('/static/js/components/shaders.js', 'shaders').catch(() => {}),
-            this._loadComponent('/static/js/components/misc.js', 'misc-components').catch(() => {}),
             this._loadComponent('/static/js/components/userProfile.js', 'userProfile').catch(() => {}),
             this._loadComponent('/static/js/components/beatmap.js', 'beatmap').catch(() => {}),
             this._loadComponent('/static/js/components/score.js', 'score').catch(() => {}),
