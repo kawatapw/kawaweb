@@ -140,17 +140,8 @@ bootstrapVue('beatmap-panel', {
             if (mode === 0) { // osu!
                 valid |= (1 << 2);  // TOUCHSCREEN
                 valid |= (1 << 12); // SPUNOUT
-                valid |= (1 << 20); // FADEIN
                 // Note: AUTOPLAY, CINEMA, TARGET are not submittable
                 // Note: RELAX and AUTOPILOT are rulesets, not mods
-            } else if (mode === 1) { // taiko
-                valid |= (1 << 20); // FADEIN
-                // Note: AUTOPLAY, CINEMA, TARGET are not submittable
-                // Note: RELAX is a ruleset, not a mod
-            } else if (mode === 2) { // catch
-                valid |= (1 << 20); // FADEIN
-                // Note: AUTOPLAY, CINEMA, TARGET are not submittable
-                // Note: RELAX is a ruleset, not a mod
             } else if (mode === 3) { // mania
                 valid |= (1 << 20); // FADEIN
                 valid |= (1 << 30); // MIRROR
@@ -169,13 +160,10 @@ bootstrapVue('beatmap-panel', {
             }
             
             // Remove mods that conflict with ruleset
-            if (ruleset === 1) { // Relax ruleset
-                // In relax ruleset, SPUNOUT is not valid
+            if (ruleset === 2) { // AUTOPILOT ruleset
+                // In AUTOPILOT ruleset, SPUNOUT is not valid
                 valid &= ~(1 << 12); // Remove SPUNOUT
-            } else if (ruleset === 2) { // Autopilot ruleset
-                // In autopilot ruleset, SPUNOUT is not valid
-                valid &= ~(1 << 12); // Remove SPUNOUT
-            }
+            } 
             
             return valid;
         },
