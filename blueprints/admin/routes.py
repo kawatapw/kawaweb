@@ -1,0 +1,499 @@
+# -*- coding: utf-8 -*-
+"""
+Routes for Admin Panel
+
+This module contains all route definitions for the admin panel,
+handling HTTP requests and coordinating with services.
+"""
+
+from typing import Optional, Dict, Any
+import datetime
+from datetime import datetime as dt_class
+
+import timeago
+from quart import render_template, jsonify, request, session
+
+from objects import glob
+from objects.utils import flash, error_catcher
+from objects.privileges import Privileges
+
+from . import admin
+from .models import (
+    ActionType, ActionRequest, UserListRequest, BadgeRequest, MapRequest,
+    ActionResponse, UserListResponse, DashboardData, UserDetail, BadgeDetail
+)
+from .exceptions import (
+    AdminPanelError, AuthenticationError, AuthorizationError, ValidationError,
+    ResourceNotFoundError, AlreadyExistsError, InvalidActionError,
+    StateConflictError, DatabaseError, ExternalServiceError,
+    PasswordValidationError, PrivilegeError, MapStatusError, ScoreError,
+    BadgeError, UserAccountError, FormValidationError, handle_admin_error
+)
+from .repositories import (
+    UserRepository, MapRepository, BadgeRepository, UserBadgeRepository,
+    ScoreRepository, StatsRepository, MapRequestRepository, LogRepository,
+    ClientHashRepository, NewlyRankedRepository, ServerDataRepository
+)
+from .services import (
+    PermissionService, ActionService, DashboardService, UserService,
+    BadgeService, MapRequestService, ServerDataService
+)
+from .utils import (
+    SessionManager, RequestValidator, DiscordLogger, ResponseFormatter,
+    PasswordManager, PrivilegeChecker, MapStatusUpdater, ScoreManager,
+    StatsManager, FormValidator
+)
+
+
+# Initialize services
+user_repo = UserRepository()
+map_repo = MapRepository()
+badge_repo = BadgeRepository()
+user_badge_repo = UserBadgeRepository()
+score_repo = ScoreRepository()
+stats_repo = StatsRepository()
+map_request_repo = MapRequestRepository()
+log_repo = LogRepository()
+client_hash_repo = ClientHashRepository()
+newly_ranked_repo = NewlyRankedRepository()
+server_data_repo = ServerDataRepository()
+
+action_service = ActionService(
+    user_repo, map_repo, badge_repo, user_badge_repo,
+    score_repo, stats_repo, map_request_repo, log_repo, newly_ranked_repo
+)
+dashboard_service = DashboardService(user_repo)
+user_service = UserService(user_repo, badge_repo, user_badge_repo, log_repo, client_hash_repo)
+badge_service = BadgeService(badge_repo)
+map_request_service = MapRequestService(map_request_repo, user_repo, badge_repo, user_badge_repo, map_repo)
+server_data_service = ServerDataService(server_data_repo)
+
+discord_logger = DiscordLogger(
+    glob.config.ADMIN_WEBHOOK_URL,
+    glob.config.RANKED_WEBHOOK_URL
+)
+
+
+@admin.route("/action/<action_type>", methods=["POST"])
+@error_catcher
+async def action(action_type: str):
+    """
+    Execute an admin action on users or maps.
+    
+    This endpoint handles various admin actions including:
+    - User management (wipe, restrict, unrestrict, silence, unsilence, etc.)
+    - Map management (rank, approve, qualify, love, unrank, etc.)
+    - Badge management (add, remove)
+    - Score management (remove)
+    
+    Args:
+        action_type: The type of action to execute
+        
+    Returns:
+        JSON response with action status and details
+    """
+    # Validate authentication
+    SessionManager.require_authentication()
+    
+    # Validate content type
+    RequestValidator.validate_content_type()
+    
+    # Get form data
+    form = await RequestValidator.get_form_data()
+    
+    # Parse action type
+    try:
+        action_enum = ActionType(action_type)
+    except ValueError:
+        raise InvalidActionError(action_type)
+    
+    # Build action request
+    request_data = ActionRequest(
+        action=action_enum,
+        reason=form.get("reason"),
+        user_id=int(form.get("user")) if form.get("user") else None,
+        map_id=int(form.get("map")) if form.get("map") else None,
+        duration=int(form.get("duration")) if form.get("duration") else None,
+        password=form.get("password"),
+        privs=int(form.get("privs")) if form.get("privs") else None,
+        username=form.get("username"),
+        email=form.get("email"),
+        country=form.get("country"),
+        userpage_content=form.get("userpage_content"),
+        badge_id=int(form.get("badge")) if form.get("badge") else None,
+        score_id=int(form.get("score")) if form.get("score") else None
+    )
+    
+    # Get current user ID
+    mod_id = SessionManager.get_user_id()
+    
+    # Create and execute action
+    action_obj = await action_service.create_action(request_data, mod_id)
+    response = await action_service.execute_action(action_obj, request_data)
+    
+    # Log to Discord
+    if action_obj.is_user_action and hasattr(action_obj, 'user'):
+        discord_logger.log_user_action(
+            action_obj,
+            action_obj.mod.name,
+            action_obj.mod.id,
+            action_obj.user.name,
+            action_obj.user.id
+        )
+    elif action_obj.is_map_action and hasattr(action_obj, 'map'):
+        discord_logger.log_map_action(
+            action_obj,
+            action_obj.mod.name,
+            action_obj.mod.id,
+            action_obj.map
+        )
+    elif action_obj.is_badge_action and hasattr(action_obj, 'badge'):
+        discord_logger.log_badge_action(
+            action_obj,
+            action_obj.mod.name,
+            action_obj.mod.id,
+            action_obj.user.name,
+            action_obj.user.id,
+            {
+                'id': action_obj.badge.id,
+                'name': action_obj.badge.name,
+                'description': action_obj.badge.description
+            }
+        )
+    
+    return jsonify(ResponseFormatter.success(
+        response.message,
+        response.action_id
+    )), 200
+
+
+@admin.route('/')
+@admin.route('/home')
+@admin.route('/dashboard')
+@error_catcher
+async def home():
+    """Render the admin dashboard."""
+    # Validate authentication
+    SessionManager.require_authentication()
+    SessionManager.require_staff()
+    
+    # Get dashboard data
+    dashboard_data = await dashboard_service.get_dashboard_data()
+    
+    return await render_template(
+        'admin/home.html',
+        dashdata=dashboard_data,
+        recentusers=dashboard_data.recent_users,
+        recentscores=dashboard_data.recent_scores,
+        datetime=datetime,
+        timeago=timeago
+    )
+
+
+@admin.route('/users')
+@admin.route('/users/')
+@admin.route('/users/<int:page>')
+@error_catcher
+async def users(page: Optional[int] = None):
+    """Render the users management page."""
+    # Validate authentication
+    SessionManager.require_authentication()
+    SessionManager.require_staff()
+    
+    # Parse request parameters
+    update = request.args.get('update') == 'true'
+    search = str(request.args.get('search') or '')
+    sort_by = str(request.args.get('sort') or 'id')
+    sort_order = str(request.args.get('order') or 'ASC')
+    filter_priv = str(request.args.get('priv') or '')
+    filter_country = str(request.args.get('country') or '')
+    
+    # Build request
+    request_data = UserListRequest(
+        page=page or 1,
+        search=search if search else None,
+        sort_by=sort_by,
+        sort_order=sort_order,
+        filter_priv=filter_priv if filter_priv else None,
+        filter_country=filter_country if filter_country else None,
+        update=update
+    )
+    
+    # Validate request
+    errors = request_data.validate()
+    if errors:
+        raise ValidationError(f"Invalid request: {', '.join(errors)}")
+    
+    # Calculate pagination
+    items_per_page = 50
+    offset = items_per_page * (request_data.page - 1)
+    
+    # Build filters
+    filters = {}
+    if request_data.search:
+        filters['search'] = request_data.search
+    if request_data.filter_priv:
+        filters['filter_priv'] = request_data.filter_priv
+    if request_data.filter_country:
+        filters['filter_country'] = request_data.filter_country
+    
+    # Get total count
+    total_count = await user_repo.get_count(filters)
+    total_pages = (total_count + items_per_page - 1) // items_per_page
+    
+    # Get users
+    users = await user_repo.get_list(
+        limit=items_per_page,
+        offset=offset,
+        sort_by=request_data.sort_by,
+        sort_order=request_data.sort_order,
+        filters=filters
+    )
+    
+    # Get customizations for each user
+    for user in users:
+        user['customisations'] = await user_repo.get_customisations(user['id'])
+    
+    # Return JSON if update request
+    if update:
+        return jsonify(UserListResponse(
+            users=users,
+            pagination={
+                'current_page': request_data.page,
+                'total_pages': total_pages,
+                'total_count': total_count,
+                'items_per_page': items_per_page
+            }
+        ))
+    
+    # Render template
+    return await render_template(
+        'admin/users.html',
+        users=users,
+        page=request_data.page,
+        total_pages=total_pages,
+        total_count=total_count,
+        search=request_data.search or '',
+        sort_by=request_data.sort_by,
+        sort_order=request_data.sort_order,
+        filter_priv=request_data.filter_priv or '',
+        filter_country=request_data.filter_country or '',
+        datetime=datetime,
+        timeago=timeago
+    )
+
+
+@admin.route('/user/<int:userid>')
+@error_catcher
+async def user(userid: int):
+    """Get detailed user information."""
+    # Validate authentication
+    SessionManager.require_authentication()
+    SessionManager.require_staff()
+    
+    # Get user detail
+    user_detail = await user_service.get_user_detail(userid)
+    
+    return jsonify(user_detail.user)
+
+
+@admin.route('/badges')
+@error_catcher
+async def badges():
+    """Render the badges management page."""
+    # Validate authentication
+    SessionManager.require_authentication()
+    SessionManager.require_staff()
+    
+    # Check if JSON response is requested
+    is_json = request.args.get('json') == 'true'
+    
+    # Get all badges
+    badges = await badge_service.get_all_badges()
+    
+    # Return JSON if requested
+    if is_json:
+        return jsonify(badges)
+    
+    # Render template
+    return await render_template(
+        'admin/badges.html',
+        badges=badges,
+        datetime=datetime,
+        timeago=timeago
+    )
+
+
+@admin.route('/badge/<int:badgeid>')
+@error_catcher
+async def badge(badgeid: int):
+    """Get detailed badge information."""
+    # Validate authentication
+    SessionManager.require_authentication()
+    SessionManager.require_staff()
+    
+    # Get badge detail
+    badge_detail = await badge_service.get_badge_detail(badgeid)
+    
+    return jsonify(badge_detail.badge)
+
+
+@admin.route('/badge/<int:badgeid>/update', methods=['POST'])
+@error_catcher
+async def update_badge(badgeid: int):
+    """Update an existing badge."""
+    # Validate authentication
+    SessionManager.require_authentication()
+    SessionManager.require_staff()
+    
+    # Check permission
+    user_priv = SessionManager.get_user_priv()
+    if not PrivilegeChecker.has_privilege(user_priv, "ManageBadges"):
+        return jsonify(ResponseFormatter.permission_error("update badges")), 403
+    
+    # Get JSON data
+    data = await RequestValidator.get_json_data()
+    
+    # Build request
+    request_data = BadgeRequest(
+        name=data.get('name'),
+        description=data.get('description'),
+        priority=data.get('priority'),
+        styles=data.get('styles')
+    )
+    
+    # Validate request
+    errors = request_data.validate()
+    if errors:
+        raise ValidationError(f"Invalid request: {', '.join(errors)}")
+    
+    # Update badge
+    await badge_service.update_badge(
+        badgeid,
+        request_data.name,
+        request_data.description,
+        request_data.priority,
+        request_data.styles
+    )
+    
+    return jsonify(ResponseFormatter.success("Badge updated successfully")), 200
+
+
+@admin.route('/badge/create', methods=['POST'])
+@error_catcher
+async def create_badge():
+    """Create a new badge."""
+    # Validate authentication
+    SessionManager.require_authentication()
+    SessionManager.require_staff()
+    
+    # Check permission
+    user_priv = SessionManager.get_user_priv()
+    if not PrivilegeChecker.has_privilege(user_priv, "ManageBadges"):
+        return jsonify(ResponseFormatter.permission_error("create badges")), 403
+    
+    # Get JSON data
+    data = await RequestValidator.get_json_data()
+    
+    # Build request
+    request_data = BadgeRequest(
+        name=data.get('name'),
+        description=data.get('description'),
+        priority=data.get('priority'),
+        styles=data.get('styles')
+    )
+    
+    # Validate request
+    errors = request_data.validate()
+    if errors:
+        raise ValidationError(f"Invalid request: {', '.join(errors)}")
+    
+    # Create badge
+    await badge_service.create_badge(
+        request_data.name,
+        request_data.description,
+        request_data.priority,
+        request_data.styles
+    )
+    
+    return jsonify(ResponseFormatter.success("Badge created successfully")), 200
+
+
+@admin.route('/beatmaps/<int:page>')
+@admin.route('/beatmaps')
+@error_catcher
+async def beatmaps(page: Optional[int] = None):
+    """Render the beatmaps management page."""
+    # Validate authentication
+    SessionManager.require_authentication()
+    SessionManager.require_staff()
+    
+    # Check permission
+    user_priv = SessionManager.get_user_priv()
+    if not PrivilegeChecker.has_privilege(user_priv, "ManageBeatmaps"):
+        return await flash('error', 'You have insufficient privileges.', 'home')
+    
+    # Build request
+    request_data = MapRequest(page=page or 1)
+    
+    # Validate request
+    errors = request_data.validate()
+    if errors:
+        raise ValidationError(f"Invalid request: {', '.join(errors)}")
+    
+    # Get active map requests
+    requests = await map_request_service.get_active_requests(request_data.page)
+    
+    # Render template
+    return await render_template(
+        'admin/beatmaps.html',
+        requests=requests,
+        datetime=datetime,
+        timeago=timeago,
+        page=request_data.page
+    )
+
+
+@admin.route('/stuffbroke')
+@error_catcher
+async def stuffbroke():
+    """Trigger a break event (for testing/debugging)."""
+    # Validate authentication
+    SessionManager.require_authentication()
+    
+    # Check permission
+    user_priv = SessionManager.get_user_priv()
+    if not PrivilegeChecker.has_privilege(user_priv, "Dangerous"):
+        return await flash('error', 'You have insufficient privileges.', 'home')
+    
+    # Trigger break event
+    await server_data_service.trigger_break_event()
+    
+    return await frontend.home(flash='Successfully broke stuff.', status='success')
+
+
+@admin.route('/test')
+@error_catcher
+async def test():
+    """Test endpoint for debugging."""
+    # Validate authentication
+    SessionManager.require_authentication()
+    
+    # Check permission
+    user_priv = SessionManager.get_user_priv()
+    if not PrivilegeChecker.has_privilege(user_priv, "Dangerous"):
+        return await flash('error', 'You have insufficient privileges.', 'home')
+    
+    return await flash('success', 'Successfully tested. Results: ', 'home')
+
+
+# Error handler for AdminPanelError
+@admin.errorhandler(AdminPanelError)
+async def handle_admin_panel_error(error: AdminPanelError):
+    """Handle AdminPanelError exceptions."""
+    response, status_code = handle_admin_error(error)
+    return jsonify(response), status_code
+
+
+# Import frontend blueprint for stuffbroke endpoint
+from blueprints import frontend

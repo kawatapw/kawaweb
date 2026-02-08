@@ -6,21 +6,20 @@
 
   <!-- Three.js -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-  <!-- D3 -->
-  <script src="https://d3js.org/d3.v7.min.js"></script>
   <!-- VueJS -->
   <script src="/static/js/asserts/vue.js"></script>
   <script src="/static/js/asserts/vue-axios.js"></script>
-  <script src="/static/js/vue-bootstrap.js"></script>
+  <script src="/static/js/utils/vue-bootstrap.js"></script>
   <script src="https://unpkg.com/portal-vue@2.1.7/dist/portal-vue.umd.min.js"></script>
   
-  <!-- Logger -->
-  <script src="/static/js/comps/logger.js" crossorigin="anonymous"></script>
+  <!-- HTMX -->
+  <script src="https://unpkg.com/htmx.org@1.9.10" integrity="sha384-D1Kt99CQMDuVetoL1lrYwg5t+9QdHe7NLX/SoJYkXDFfX37iInKRy5xLSi8nO7UC" crossorigin="anonymous"></script>
+
+  <!-- Core Logger (loaded first) -->
+  <script src="/static/js/utils/logger.js" crossorigin="anonymous"></script>
   {% if developerMode() %}
   <script>window.ColorfulLogger && window.ColorfulLogger.enableDebug('ALL');</script>
   {% endif %}
-
-  <script src="https://unpkg.com/htmx.org@1.9.10" integrity="sha384-D1Kt99CQMDuVetoL1lrYwg5t+9QdHe7NLX/SoJYkXDFfX37iInKRy5xLSi8nO7UC" crossorigin="anonymous"></script>
 
   <!-- Favicon -->
   <link rel="apple-touch-icon" sizes="180x180" href="/static/favicon/apple-touch-icon.png">
@@ -36,26 +35,8 @@
   <!-- Metadata -->
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
-  <!-- JQuery -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.slim.min.js"
-    integrity="sha512-/DXTXr6nQodMUiq+IUJYCt2PPOUjrHJ9wFrqpJ3XkgPNOZVfMok7cRw6CSxyCQxXn6ozlESsSh1/sMCTF1rL/g=="
-    crossorigin="anonymous"></script>
-
-  <!-- Bulma no not from Dragon Ball you DWEEB -->
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/HakuraSukinoe/bulma-hsl/bulma.min-v6.css" />
-
-  <!-- Font awesome -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
-
-  <!-- TimeAgo -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/timeago.js/4.0.2/timeago.min.js"></script>
   <!-- Custom style -->
-  <link rel="stylesheet" href="/static/css/style.css">
-  <link rel="stylesheet" href="/static/css/components.css">
-  <link rel="stylesheet" href="/static/css/components/badges.css">
-  <link rel="stylesheet" href="/static/css/components/panels.css">
-  <link rel="stylesheet" href="/static/css/pages/generic.css">
-  <link rel="stylesheet" href="/static/css/hina_import.css">
+  <link rel="stylesheet" href="/static/css/main.css">
   <link rel="stylesheet" href="/static/css/pages/admin/style.css">
 
   {% block header %}
@@ -107,9 +88,6 @@
 
   <!-- Main JS scripts -->
   <script src="/static/js/main.js" crossorigin="anonymous"></script>
-  <script src="/static/js/components.js" crossorigin="anonymous"></script>
-  <script src="/static/js/comps/shaders.js" crossorigin="anonymous"></script>
-  <script src="/static/js/panels.js" crossorigin="anonymous"></script>
 
   <!-- Customisation -->
   {% block bottom %}
