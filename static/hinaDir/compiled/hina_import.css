@@ -1136,7 +1136,7 @@ html, body {
     background-position: center !important;
   }
   .info-block {
-    display: none !important;
+    display: none;
   }
   .profile-flex {
     display: grid !important;

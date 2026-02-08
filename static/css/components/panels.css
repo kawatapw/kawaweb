@@ -29,7 +29,9 @@
     }
 
     .modal .modal-content {
-        margin: 0 !important;
+        margin: 65px;
+        margin-top: 65px;
+        margin-bottom: 4px;
         max-height: 95vh;
         max-width: 85vw;
         width: fit-content;
@@ -1030,8 +1032,6 @@
         position: absolute;
         top: auto;
         bottom: auto;
-        margin-top: auto;
-        margin-bottom: auto;
     }
         [data-panel="Beatmap"] .main-block {
             background: hsl(var(--main), 10%, 15%);

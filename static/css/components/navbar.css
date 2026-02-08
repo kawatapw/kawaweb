@@ -847,6 +847,11 @@
     .my-con {
         margin-top: 12px;
     }
+
+    .modal .modal-content {
+        margin-top: 4px;
+        margin-bottom: 65px;
+    }
     
     /* Add padding to body to account for fixed mobile navbar */
     body {

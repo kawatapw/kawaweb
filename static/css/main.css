@@ -1,5 +1,5 @@
 /* Setup Layers */
-    @layer frameworks, styles, components, utilities, overrides;
+    @layer frameworks, styles, styles-override, components, utilities, overrides;
 
 /* Import styles into Layers */
     /* Frameworks */
@@ -18,4 +18,4 @@
         @import url("/static/css/components/navbar.css") layer(components);
 
     /* Overrides (Hinamizawa) */
-        @import url("/static/hinaDir/compiled/hina_import.css") layer(overrides);
+        @import url("/static/hinaDir/compiled/hina_import.css") layer(styles-override);

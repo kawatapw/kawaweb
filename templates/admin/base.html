@@ -37,7 +37,9 @@
 
   <!-- Custom style -->
   <link rel="stylesheet" href="/static/css/main.css">
-  <link rel="stylesheet" href="/static/css/pages/admin/style.css">
+  <style>
+    @import url("/static/css/pages/admin/style.css") layer(styles);
+  </style>
 
   {% block header %}
   {% endblock %}
