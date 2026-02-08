@@ -142,12 +142,22 @@ document.addEventListener('DOMContentLoaded', function () {
                 list: [] as any[],
                 pagination: { current_page: 1, total_pages: 1, total_count: 0 },
                 search: '',
-                filters: { priv: '', country: '', sort: 'id', order: 'ASC' },
+                filters: {
+                    priv: '', country: '', sort: 'id', order: 'ASC',
+                    active: '',
+                    registered: '',
+                    risk: '',
+                },
+                showAdvancedFilters: false,
+                selectedIds: [] as number[],
+                selectAll: false,
+                openMenuId: null as number | null,
                 editUser: null as any,
-                editTab: 'account',
+                editTab: 'overview',
                 editForm: { username: '', email: '', country: '', userpage: '' },
                 allBadges: [] as any[],
                 loading: false,
+                overviewMode: 0,
             },
 
             // Beatmaps
@@ -212,9 +222,20 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
                 if (e.key === 'Escape') {
                     self.closeGlobalSearch();
+                    self.users.openMenuId = null;
                 }
             };
             document.addEventListener('keydown', self.keydownHandler);
+
+            // Close row menu on outside click
+            document.addEventListener('click', function (e: Event) {
+                if (self.users.openMenuId !== null) {
+                    var target = e.target as HTMLElement;
+                    if (!target.closest('.av2-row-menu') && !target.closest('.av2-row-menu-trigger')) {
+                        self.users.openMenuId = null;
+                    }
+                }
+            });
         },
 
         beforeDestroy: function () {
@@ -371,6 +392,9 @@ document.addEventListener('DOMContentLoaded', function () {
             loadUsers: function (page: number) {
                 var self = this;
                 self.users.loading = true;
+                self.users.selectedIds = [];
+                self.users.selectAll = false;
+                self.users.openMenuId = null;
                 var params = new URLSearchParams({
                     page: String(page),
                     search: self.users.search,
@@ -378,6 +402,9 @@ document.addEventListener('DOMContentLoaded', function () {
                     order: self.users.filters.order,
                     priv: self.users.filters.priv,
                     country: self.users.filters.country,
+                    active: self.users.filters.active,
+                    registered: self.users.filters.registered,
+                    risk: self.users.filters.risk,
                 });
 
                 adminApi('users?' + params).then(function (data: any) {
@@ -402,7 +429,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 var self = this;
                 adminApi('user/' + userId).then(function (user: any) {
                     self.users.editUser = user;
-                    self.users.editTab = 'account';
+                    self.users.editTab = 'overview';
+                    self.users.overviewMode = user.preferred_mode || 0;
                     self.users.editForm = {
                         username: user.name || '',
                         email: user.email || '',
@@ -496,6 +524,156 @@ document.addEventListener('DOMContentLoaded', function () {
                 });
             },
 
+            // ── Bulk Selection ────────────────────────────────────
+
+            toggleSelectAll: function () {
+                var self = this;
+                if (self.users.selectAll) {
+                    self.users.selectedIds = [];
+                    self.users.selectAll = false;
+                } else {
+                    self.users.selectedIds = self.users.list.map(function (u: any) { return u.id; });
+                    self.users.selectAll = true;
+                }
+            },
+
+            toggleSelectUser: function (userId: number) {
+                var idx = this.users.selectedIds.indexOf(userId);
+                if (idx !== -1) {
+                    this.users.selectedIds.splice(idx, 1);
+                } else {
+                    this.users.selectedIds.push(userId);
+                }
+                this.users.selectAll = this.users.selectedIds.length === this.users.list.length;
+            },
+
+            isUserSelected: function (userId: number): boolean {
+                return this.users.selectedIds.indexOf(userId) !== -1;
+            },
+
+            clearSelection: function () {
+                this.users.selectedIds = [];
+                this.users.selectAll = false;
+            },
+
+            // ── Bulk Actions ─────────────────────────────────────
+
+            bulkAction: function (action: string) {
+                this.confirmDialog = {
+                    show: true,
+                    title: action.charAt(0).toUpperCase() + action.slice(1) + ' ' + this.users.selectedIds.length + ' users?',
+                    message: 'This will ' + action + ' all selected users.',
+                    action: 'bulk_' + action,
+                    needsReason: true,
+                    needsDuration: false,
+                    needsPassword: false,
+                    reason: '',
+                    duration: 0,
+                    password: '',
+                    targetId: 0,
+                };
+            },
+
+            executeBulkAction: function (action: string, reason: string) {
+                var self = this;
+                var realAction = action.replace('bulk_', '');
+                adminApi('action/bulk', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        action: realAction,
+                        users: self.users.selectedIds,
+                        reason: reason,
+                    }),
+                }).then(function (result: any) {
+                    self.showToast('success', result.message);
+                    self.clearSelection();
+                    self.loadUsers(self.users.pagination.current_page);
+                }).catch(function (e: any) {
+                    self.showToast('error', e.message);
+                });
+            },
+
+            // ── Row Menu ─────────────────────────────────────────
+
+            toggleRowMenu: function (userId: number) {
+                this.users.openMenuId = this.users.openMenuId === userId ? null : userId;
+            },
+
+            closeRowMenu: function () {
+                this.users.openMenuId = null;
+            },
+
+            rowAction: function (action: string, user: any) {
+                this.users.openMenuId = null;
+                if (action === 'profile') {
+                    window.open('/u/' + user.id, '_blank');
+                    return;
+                }
+                if (action === 'edit') {
+                    this.openUserEdit(user.id);
+                    return;
+                }
+
+                // For restrict/unrestrict/wipe/changepassword: use confirm dialog
+                var titles: { [key: string]: string } = {
+                    restrict: 'Restrict ' + user.name + '?',
+                    unrestrict: 'Unrestrict ' + user.name + '?',
+                    wipe: 'Wipe all scores for ' + user.name + '?',
+                    changepassword: 'Change password for ' + user.name + '?',
+                };
+                var messages: { [key: string]: string } = {
+                    restrict: 'This will set their privilege to 0 (banned).',
+                    unrestrict: 'This will restore their privilege to 1 (normal).',
+                    wipe: 'This will delete ALL scores and reset ALL stats. This cannot be undone easily.',
+                    changepassword: 'Enter a new password for this user.',
+                };
+
+                this.confirmDialog = {
+                    show: true,
+                    title: titles[action] || action,
+                    message: messages[action] || '',
+                    action: action,
+                    needsReason: true,
+                    needsDuration: false,
+                    needsPassword: action === 'changepassword',
+                    reason: '',
+                    duration: 24,
+                    password: '',
+                    targetId: user.id,
+                };
+            },
+
+            // ── Advanced Filters ─────────────────────────────────
+
+            toggleAdvancedFilters: function () {
+                this.users.showAdvancedFilters = !this.users.showAdvancedFilters;
+            },
+
+            // ── Overview Helpers ──────────────────────────────────
+
+            getStatsForMode: function (mode: number): any {
+                if (!this.users.editUser || !this.users.editUser.stats) return null;
+                for (var i = 0; i < this.users.editUser.stats.length; i++) {
+                    if (this.users.editUser.stats[i].mode === mode) return this.users.editUser.stats[i];
+                }
+                return null;
+            },
+
+            formatPlaytime: function (seconds: number): string {
+                if (!seconds) return '0h';
+                var h = Math.floor(seconds / 3600);
+                var m = Math.floor((seconds % 3600) / 60);
+                return h + 'h ' + m + 'm';
+            },
+
+            getModeName: function (mode: number): string {
+                var names: { [key: number]: string } = {
+                    0: 'std', 1: 'taiko', 2: 'catch', 3: 'mania',
+                    4: 'rx!std', 5: 'rx!taiko', 6: 'rx!catch', 8: 'ap!std'
+                };
+                return names[mode] || ('mode ' + mode);
+            },
+
             // ── Quick Actions (with confirm dialog) ──────────────
 
             quickAction: function (action: string) {
@@ -538,6 +716,14 @@ document.addEventListener('DOMContentLoaded', function () {
             executeConfirmedAction: function () {
                 var self = this;
                 var d = self.confirmDialog;
+
+                // Handle bulk actions
+                if (d.action.indexOf('bulk_') === 0) {
+                    d.show = false;
+                    self.executeBulkAction(d.action, d.reason);
+                    return;
+                }
+
                 var body: any = { user: d.targetId, reason: d.reason };
                 if (d.needsDuration) body.duration = d.duration;
                 if (d.needsPassword) body.password = d.password;

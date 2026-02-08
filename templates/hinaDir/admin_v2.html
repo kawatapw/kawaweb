@@ -9,7 +9,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/static/hinaDir/compiled/admin_v2.css">
+    <link rel="stylesheet" href="/static/hinaDir/compiled/admin_v2.css?v=2">
     <style>
         :root {
             {% if 'user_data' in session and session['user_data'].get('hue') %}
@@ -441,7 +441,7 @@
             <div v-if="currentView === 'users'" class="av2-view">
                 <h1 class="av2-view-title"><i class="fas fa-users"></i> Users</h1>
 
-                <!-- Filters -->
+                <!-- Primary Filters -->
                 <div class="av2-filters">
                     <div class="av2-filter-group">
                         <input class="av2-input" type="text" placeholder="Search by name or ID..."
@@ -457,6 +457,11 @@
                             <option value="restricted">Restricted</option>
                         </select>
                     </div>
+                    <div class="av2-filter-group" style="flex: 0 0 auto; min-width: 80px;">
+                        <input class="av2-input av2-input--sm" type="text" placeholder="Country"
+                               v-model="users.filters.country" @input="debouncedSearchUsers" maxlength="2"
+                               style="text-transform: uppercase;">
+                    </div>
                     <div class="av2-filter-group">
                         <select class="av2-select" v-model="users.filters.sort" @change="loadUsers(1)">
                             <option value="id">Sort by ID</option>
@@ -464,6 +469,8 @@
                             <option value="creation_time">Sort by Registered</option>
                             <option value="latest_activity">Sort by Activity</option>
                             <option value="priv">Sort by Privilege</option>
+                            <option value="pp">Sort by PP</option>
+                            <option value="plays">Sort by Play Count</option>
                         </select>
                     </div>
                     <div class="av2-filter-group">
@@ -472,38 +479,150 @@
                             <option value="DESC">Descending</option>
                         </select>
                     </div>
+                    <button class="av2-btn av2-btn--sm" @click="toggleAdvancedFilters"
+                            :class="{ 'av2-btn--active': users.showAdvancedFilters }"
+                            style="align-self: flex-start; margin-top: 1px;">
+                        <i class="fas fa-sliders-h"></i> Filters
+                    </button>
+                </div>
+
+                <!-- Advanced Filters (collapsible) -->
+                <div class="av2-filters av2-filters--advanced" v-if="users.showAdvancedFilters">
+                    <div class="av2-filter-group">
+                        <select class="av2-select" v-model="users.filters.active" @change="loadUsers(1)">
+                            <option value="">Last Active: Any</option>
+                            <option value="today">Today</option>
+                            <option value="week">This week</option>
+                            <option value="month">This month</option>
+                            <option value="inactive30">Inactive 30d+</option>
+                            <option value="inactive90">Inactive 90d+</option>
+                        </select>
+                    </div>
+                    <div class="av2-filter-group">
+                        <select class="av2-select" v-model="users.filters.registered" @change="loadUsers(1)">
+                            <option value="">Registered: Any</option>
+                            <option value="24h">Last 24h</option>
+                            <option value="7d">Last 7 days</option>
+                            <option value="30d">Last 30 days</option>
+                            <option value="90d">Last 90 days</option>
+                        </select>
+                    </div>
+                    <div class="av2-filter-group">
+                        <select class="av2-select" v-model="users.filters.risk" @change="loadUsers(1)">
+                            <option value="">Risk: Any</option>
+                            <option value="shared_hw">Shared hardware</option>
+                            <option value="flagged_scores">Flagged scores</option>
+                            <option value="either">Either</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Bulk Action Bar -->
+                <div class="av2-bulk-bar" v-if="users.selectedIds.length > 0">
+                    <span class="av2-bulk-count">
+                        <span v-text="users.selectedIds.length"></span> selected
+                    </span>
+                    <button class="av2-btn av2-btn--danger av2-btn--sm" @click="bulkAction('restrict')">
+                        <i class="fas fa-ban"></i> Restrict
+                    </button>
+                    <button class="av2-btn av2-btn--success av2-btn--sm" @click="bulkAction('unrestrict')">
+                        <i class="fas fa-check"></i> Unrestrict
+                    </button>
+                    <button class="av2-btn av2-btn--sm" @click="clearSelection">
+                        <i class="fas fa-times"></i> Clear
+                    </button>
                 </div>
 
                 <!-- User Table -->
                 <div class="av2-card" v-if="!users.loading">
                     <div class="av2-table-wrap">
-                        <table class="av2-table">
+                        <table class="av2-table av2-table--users">
                             <thead>
                                 <tr>
-                                    <th>ID</th><th>Name</th><th>Country</th><th>Priv</th><th>Activity</th><th></th>
+                                    <th class="av2-th-check">
+                                        <input type="checkbox" :checked="users.selectAll"
+                                               @change="toggleSelectAll">
+                                    </th>
+                                    <th>User</th>
+                                    <th>Status</th>
+                                    <th>Country</th>
+                                    <th>PP</th>
+                                    <th>Plays</th>
+                                    <th>Risk</th>
+                                    <th>Registered</th>
+                                    <th></th>
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr v-for="u in users.list" :key="u.id">
-                                    <td v-text="u.id"></td>
+                                <tr v-for="u in users.list" :key="u.id"
+                                    :class="{ 'av2-row--selected': isUserSelected(u.id) }">
+                                    <td class="av2-td-check">
+                                        <input type="checkbox" :checked="isUserSelected(u.id)"
+                                               @change="toggleSelectUser(u.id)">
+                                    </td>
                                     <td>
                                         <div class="av2-user-cell">
                                             <img :src="'https://' + config.avatarDomain + '/' + u.id"
                                                  class="av2-user-cell-avatar" alt="">
-                                            <span v-text="u.name"></span>
+                                            <div class="av2-user-cell-info">
+                                                <span class="av2-user-cell-name" v-text="u.name"></span>
+                                                <span class="av2-user-cell-id" v-text="'#' + u.id"></span>
+                                            </div>
                                         </div>
                                     </td>
-                                    <td v-text="u.country"></td>
                                     <td>
                                         <span class="av2-priv-pill"
                                               :class="getPrivClass(u.priv)"
                                               v-text="getPrivLabel(u.priv)"></span>
                                     </td>
-                                    <td v-text="formatTime(u.latest_activity)"></td>
-                                    <td>
-                                        <button class="av2-btn av2-btn--sm" @click="openUserEdit(u.id)">
-                                            <i class="fas fa-pen"></i>
-                                        </button>
+                                    <td v-text="u.country"></td>
+                                    <td class="av2-pp-value" v-text="formatNumber(u.pp)"></td>
+                                    <td v-text="formatNumber(u.plays)"></td>
+                                    <td class="av2-risk-cell">
+                                        <span class="av2-risk-badge av2-risk-badge--hw" v-if="u.shared_hardware > 0"
+                                              :title="u.shared_hardware + ' shared hardware match(es)'">
+                                            <i class="fas fa-fingerprint"></i>
+                                        </span>
+                                        <span class="av2-risk-badge av2-risk-badge--flag" v-if="u.flagged_scores > 0"
+                                              :title="u.flagged_scores + ' flagged score(s)'">
+                                            <i class="fas fa-flag"></i>
+                                        </span>
+                                        <span class="av2-risk-badge av2-risk-badge--clean"
+                                              v-if="!u.shared_hardware && !u.flagged_scores">
+                                            &mdash;
+                                        </span>
+                                    </td>
+                                    <td v-text="formatTime(u.creation_time)"></td>
+                                    <td class="av2-td-actions">
+                                        <div class="av2-row-menu-wrap">
+                                            <button class="av2-btn av2-btn--sm av2-row-menu-trigger"
+                                                    @click.stop="toggleRowMenu(u.id)">
+                                                <i class="fas fa-ellipsis-h"></i>
+                                            </button>
+                                            <div class="av2-row-menu" v-if="users.openMenuId === u.id">
+                                                <a class="av2-row-menu-item" @click.prevent="rowAction('profile', u)">
+                                                    <i class="fas fa-external-link-alt"></i> View Profile
+                                                </a>
+                                                <a class="av2-row-menu-item" @click.prevent="rowAction('edit', u)">
+                                                    <i class="fas fa-pen"></i> Edit User
+                                                </a>
+                                                <div class="av2-row-menu-divider"></div>
+                                                <a class="av2-row-menu-item av2-row-menu-item--danger"
+                                                   v-if="u.priv & 1" @click.prevent="rowAction('restrict', u)">
+                                                    <i class="fas fa-ban"></i> Restrict
+                                                </a>
+                                                <a class="av2-row-menu-item av2-row-menu-item--success"
+                                                   v-if="!(u.priv & 1)" @click.prevent="rowAction('unrestrict', u)">
+                                                    <i class="fas fa-check"></i> Unrestrict
+                                                </a>
+                                                <a class="av2-row-menu-item" @click.prevent="rowAction('wipe', u)">
+                                                    <i class="fas fa-eraser"></i> Wipe Scores
+                                                </a>
+                                                <a class="av2-row-menu-item" @click.prevent="rowAction('changepassword', u)">
+                                                    <i class="fas fa-key"></i> Reset Password
+                                                </a>
+                                            </div>
+                                        </div>
                                     </td>
                                 </tr>
                             </tbody>
@@ -583,6 +702,8 @@
 
                         <!-- Tabs -->
                         <div class="av2-tabs">
+                            <button class="av2-tab" :class="{ active: users.editTab === 'overview' }"
+                                    @click="users.editTab = 'overview'">Overview</button>
                             <button class="av2-tab" :class="{ active: users.editTab === 'account' }"
                                     @click="users.editTab = 'account'">Account</button>
                             <button class="av2-tab" :class="{ active: users.editTab === 'badges' }"
@@ -591,6 +712,116 @@
                                     @click="users.editTab = 'privileges'">Privileges</button>
                             <button class="av2-tab" :class="{ active: users.editTab === 'logs' }"
                                     @click="users.editTab = 'logs'">Logs</button>
+                        </div>
+
+                        <!-- Overview Tab -->
+                        <div v-if="users.editTab === 'overview'" class="av2-tab-content">
+                            <!-- Mode Selector -->
+                            <div class="av2-overview-modes">
+                                <button v-for="m in [0,1,2,3,4,5,6,8]" :key="m"
+                                        class="av2-btn av2-btn--sm"
+                                        :class="{ 'av2-btn--active': users.overviewMode === m }"
+                                        @click="users.overviewMode = m"
+                                        v-text="getModeName(m)"></button>
+                            </div>
+
+                            <!-- Stats Grid -->
+                            <div class="av2-overview-stats" v-if="getStatsForMode(users.overviewMode)">
+                                <div class="av2-overview-stat">
+                                    <span class="av2-overview-stat-label">PP</span>
+                                    <span class="av2-overview-stat-value" v-text="formatNumber(getStatsForMode(users.overviewMode).pp)"></span>
+                                </div>
+                                <div class="av2-overview-stat">
+                                    <span class="av2-overview-stat-label">Accuracy</span>
+                                    <span class="av2-overview-stat-value" v-text="(getStatsForMode(users.overviewMode).acc || 0).toFixed(2) + '%'"></span>
+                                </div>
+                                <div class="av2-overview-stat">
+                                    <span class="av2-overview-stat-label">Play Count</span>
+                                    <span class="av2-overview-stat-value" v-text="formatNumber(getStatsForMode(users.overviewMode).plays)"></span>
+                                </div>
+                                <div class="av2-overview-stat">
+                                    <span class="av2-overview-stat-label">Playtime</span>
+                                    <span class="av2-overview-stat-value" v-text="formatPlaytime(getStatsForMode(users.overviewMode).playtime)"></span>
+                                </div>
+                                <div class="av2-overview-stat">
+                                    <span class="av2-overview-stat-label">Max Combo</span>
+                                    <span class="av2-overview-stat-value" v-text="formatNumber(getStatsForMode(users.overviewMode).max_combo)"></span>
+                                </div>
+                                <div class="av2-overview-stat">
+                                    <span class="av2-overview-stat-label">Ranked Score</span>
+                                    <span class="av2-overview-stat-value" v-text="formatNumber(getStatsForMode(users.overviewMode).rscore)"></span>
+                                </div>
+                                <div class="av2-overview-stat">
+                                    <span class="av2-overview-stat-label">SS / S</span>
+                                    <span class="av2-overview-stat-value" v-text="((getStatsForMode(users.overviewMode).xh_count || 0) + (getStatsForMode(users.overviewMode).x_count || 0)) + ' / ' + ((getStatsForMode(users.overviewMode).sh_count || 0) + (getStatsForMode(users.overviewMode).s_count || 0))"></span>
+                                </div>
+                                <div class="av2-overview-stat">
+                                    <span class="av2-overview-stat-label">A Grades</span>
+                                    <span class="av2-overview-stat-value" v-text="formatNumber(getStatsForMode(users.overviewMode).a_count)"></span>
+                                </div>
+                            </div>
+                            <div v-else class="av2-empty" style="padding: 16px 0;">No stats for this mode.</div>
+
+                            <!-- Risk Signals -->
+                            <div class="av2-overview-section">
+                                <h3 class="av2-card-title" style="padding: 0; border: none;">Risk Signals</h3>
+                                <div v-if="users.editUser.hw_matches && users.editUser.hw_matches.length"
+                                     class="av2-risk-row av2-risk-row--warning">
+                                    <i class="fas fa-fingerprint"></i>
+                                    <span>Shared hardware with <span v-text="users.editUser.hw_matches.length"></span> user(s):
+                                        <span v-for="(m, i) in users.editUser.hw_matches.slice(0, 5)" :key="m.userid">
+                                            <a class="av2-risk-user-chip" @click.prevent="openUserEdit(m.userid)"
+                                               v-text="m.name"></a><span v-if="i < Math.min(users.editUser.hw_matches.length, 5) - 1">, </span>
+                                        </span>
+                                        <span v-if="users.editUser.hw_matches.length > 5"> ...</span>
+                                    </span>
+                                </div>
+                                <div v-if="users.editUser.flagged_score_count > 0"
+                                     class="av2-risk-row av2-risk-row--danger">
+                                    <i class="fas fa-flag"></i>
+                                    <span v-text="users.editUser.flagged_score_count + ' score(s) with client flags'"></span>
+                                </div>
+                                <div v-if="(!users.editUser.hw_matches || !users.editUser.hw_matches.length) && !users.editUser.flagged_score_count"
+                                     class="av2-risk-row av2-risk-row--clean">
+                                    <i class="fas fa-shield-alt"></i> No risk signals detected.
+                                </div>
+                            </div>
+
+                            <!-- Recent Scores -->
+                            <div class="av2-overview-section" v-if="users.editUser.recent_scores && users.editUser.recent_scores.length">
+                                <h3 class="av2-card-title" style="padding: 0; border: none;">Recent Scores</h3>
+                                <div v-for="s in users.editUser.recent_scores" :key="s.id" class="av2-overview-score">
+                                    <span class="av2-overview-score-map" v-text="(s.artist || '') + ' - ' + (s.title || '') + ' [' + (s.version || '') + ']'"></span>
+                                    <span class="av2-overview-score-pp" v-text="Math.round(s.pp) + 'pp'"></span>
+                                    <span v-text="(s.acc || 0).toFixed(2) + '%'"></span>
+                                    <span v-text="s.grade"></span>
+                                    <span v-text="formatMods(s.mods)"></span>
+                                    <span class="av2-flag-icon" v-if="s.client_flags" :title="getClientFlagsText(s.client_flags)">
+                                        <i class="fas fa-exclamation-triangle"></i>
+                                    </span>
+                                    <span class="av2-text-muted" v-text="formatTime(s.play_time)"></span>
+                                </div>
+                            </div>
+
+                            <!-- Recent Logins -->
+                            <div class="av2-overview-section" v-if="users.editUser.recent_logins && users.editUser.recent_logins.length">
+                                <h3 class="av2-card-title" style="padding: 0; border: none;">Recent Logins</h3>
+                                <div v-for="l in users.editUser.recent_logins" :key="l.id" class="av2-overview-login">
+                                    <span v-text="l.ip"></span>
+                                    <span class="av2-text-muted" v-text="l.osu_ver"></span>
+                                    <span class="av2-text-muted" v-text="l.osu_stream"></span>
+                                    <span class="av2-text-muted" v-text="formatTime(l.datetime)"></span>
+                                </div>
+                            </div>
+
+                            <!-- Clan Info -->
+                            <div class="av2-overview-section" v-if="users.editUser.clan">
+                                <h3 class="av2-card-title" style="padding: 0; border: none;">Clan</h3>
+                                <div class="av2-overview-clan">
+                                    <span class="av2-clan-tag" v-text="'[' + users.editUser.clan.tag + ']'"></span>
+                                    <span v-text="users.editUser.clan.name"></span>
+                                </div>
+                            </div>
                         </div>
 
                         <!-- Account Tab -->
@@ -883,6 +1114,6 @@
 
     <script src="/static/js/asserts/vue.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/timeago.js/4.0.2/timeago.min.js"></script>
-    <script src="/static/hinaDir/compiled/admin_v2.js"></script>
+    <script src="/static/hinaDir/compiled/admin_v2.js?v=2"></script>
 </body>
 </html>

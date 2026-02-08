@@ -408,8 +408,11 @@ async def api_users():
     sort_order = str(request.args.get('order', 'ASC'))
     filter_priv = str(request.args.get('priv', ''))
     filter_country = str(request.args.get('country', ''))
+    filter_active = str(request.args.get('active', ''))
+    filter_registered = str(request.args.get('registered', ''))
+    filter_risk = str(request.args.get('risk', ''))
 
-    if sort_by not in ('id', 'name', 'creation_time', 'latest_activity', 'priv'):
+    if sort_by not in ('id', 'name', 'creation_time', 'latest_activity', 'priv', 'pp', 'plays'):
         sort_by = 'id'
     if sort_order not in ('ASC', 'DESC'):
         sort_order = 'ASC'
@@ -417,47 +420,157 @@ async def api_users():
     items_per_page = 50
     offset = items_per_page * (page - 1)
 
-    base_query = "SELECT id, name, priv, country, creation_time, latest_activity FROM users"
-    count_query = "SELECT COUNT(*) as total FROM users"
+    # JOIN stats for PP/plays columns
+    base_query = (
+        "SELECT u.id, u.name, u.priv, u.country, u.creation_time, u.latest_activity, "
+        "u.silence_end, u.preferred_mode, "
+        "COALESCE(s.pp, 0) as pp, COALESCE(s.plays, 0) as plays "
+        "FROM users u "
+        "LEFT JOIN stats s ON s.id = u.id AND s.mode = u.preferred_mode"
+    )
+    count_query = "SELECT COUNT(*) as total FROM users u"
     conditions = []
     params = []
 
     if search and search.strip():
         if search.isdigit():
-            conditions.append("id = %s")
+            conditions.append("u.id = %s")
             params.append(int(search))
         else:
-            conditions.append("name LIKE %s")
+            conditions.append("u.name LIKE %s")
             params.append(f"%{search}%")
 
     if filter_priv:
         if filter_priv == 'normal':
-            conditions.append("priv = 1")
+            conditions.append("u.priv = 1")
         elif filter_priv == 'supporter':
-            conditions.append("priv & 4 != 0")
+            conditions.append("u.priv & 4 != 0")
         elif filter_priv == 'mod':
-            conditions.append("priv & 1023 != 0 AND priv < 2047")
+            conditions.append("u.priv & 1023 != 0 AND u.priv < 2047")
         elif filter_priv == 'admin':
-            conditions.append("priv & 2047 != 0")
+            conditions.append("u.priv & 2047 != 0")
         elif filter_priv == 'restricted':
-            conditions.append("NOT priv & 1")
+            conditions.append("NOT u.priv & 1")
 
     if filter_country and filter_country.strip():
-        conditions.append("country = %s")
+        conditions.append("u.country = %s")
         params.append(filter_country.upper())
+
+    # Advanced filters: last active
+    if filter_active:
+        import time
+        now_ts = int(time.time())
+        active_map = {
+            'today': now_ts - 86400,
+            'week': now_ts - 604800,
+            'month': now_ts - 2592000,
+        }
+        if filter_active in active_map:
+            conditions.append("u.latest_activity > %s")
+            params.append(active_map[filter_active])
+        elif filter_active == 'inactive30':
+            conditions.append("u.latest_activity < %s")
+            params.append(now_ts - 2592000)
+        elif filter_active == 'inactive90':
+            conditions.append("u.latest_activity < %s")
+            params.append(now_ts - 7776000)
+
+    # Advanced filters: registered
+    if filter_registered:
+        registered_map = {
+            '24h': "u.creation_time > DATE_SUB(NOW(), INTERVAL 1 DAY)",
+            '7d': "u.creation_time > DATE_SUB(NOW(), INTERVAL 7 DAY)",
+            '30d': "u.creation_time > DATE_SUB(NOW(), INTERVAL 30 DAY)",
+            '90d': "u.creation_time > DATE_SUB(NOW(), INTERVAL 90 DAY)",
+        }
+        if filter_registered in registered_map:
+            conditions.append(registered_map[filter_registered])
+
+    # Advanced filters: risk (expensive subqueries, only when active)
+    if filter_risk:
+        shared_hw_exists = (
+            "EXISTS (SELECT 1 FROM client_hashes ch1 "
+            "JOIN client_hashes ch2 ON (ch1.osupath = ch2.osupath "
+            "OR ch1.adapters = ch2.adapters OR ch1.disk_serial = ch2.disk_serial) "
+            "AND ch1.userid != ch2.userid WHERE ch1.userid = u.id)"
+        )
+        flagged_scores_exists = (
+            "EXISTS (SELECT 1 FROM scores sc WHERE sc.userid = u.id AND sc.client_flags != 0)"
+        )
+        if filter_risk == 'shared_hw':
+            conditions.append(shared_hw_exists)
+        elif filter_risk == 'flagged_scores':
+            conditions.append(flagged_scores_exists)
+        elif filter_risk == 'either':
+            conditions.append(f"({shared_hw_exists} OR {flagged_scores_exists})")
 
     where = ""
     if conditions:
         where = " WHERE " + " AND ".join(conditions)
 
+    # For count query, we only need users table conditions (no JOIN)
+    # But since risk filters reference u.id, we need the alias
     total = await glob.db.fetch(count_query + where, params)
     total_count = total['total'] if total else 0
     total_pages = max(1, (total_count + items_per_page - 1) // items_per_page)
 
-    order = f" ORDER BY {sort_by} {sort_order}"
+    # Sort: pp and plays come from the JOIN
+    sort_col = sort_by
+    if sort_by in ('pp', 'plays'):
+        sort_col = sort_by  # already in SELECT via COALESCE
+    elif sort_by in ('id', 'name', 'priv', 'country', 'creation_time', 'latest_activity'):
+        sort_col = 'u.' + sort_by
+
+    order = f" ORDER BY {sort_col} {sort_order}"
     limit = f" LIMIT {items_per_page} OFFSET {offset}"
 
     users = await glob.db.fetchall(base_query + where + order + limit, params)
+
+    if not users:
+        users = []
+
+    # Batch risk indicator queries for the returned page of users
+    user_ids = [u['id'] for u in users]
+    hw_counts = {}
+    flag_counts = {}
+
+    if user_ids:
+        placeholders = ', '.join(['%s'] * len(user_ids))
+
+        # Shared hardware counts
+        try:
+            hw_rows = await glob.db.fetchall(
+                "SELECT ch1.userid, COUNT(DISTINCT ch2.userid) as cnt "
+                "FROM client_hashes ch1 "
+                "JOIN client_hashes ch2 ON (ch1.osupath = ch2.osupath "
+                "  OR ch1.adapters = ch2.adapters OR ch1.disk_serial = ch2.disk_serial) "
+                "  AND ch1.userid != ch2.userid "
+                f"WHERE ch1.userid IN ({placeholders}) "
+                "GROUP BY ch1.userid",
+                user_ids
+            )
+            for row in (hw_rows or []):
+                hw_counts[row['userid']] = row['cnt']
+        except Exception:
+            pass
+
+        # Flagged score counts
+        try:
+            flag_rows = await glob.db.fetchall(
+                "SELECT userid, COUNT(*) as cnt FROM scores "
+                f"WHERE userid IN ({placeholders}) AND client_flags != 0 "
+                "GROUP BY userid",
+                user_ids
+            )
+            for row in (flag_rows or []):
+                flag_counts[row['userid']] = row['cnt']
+        except Exception:
+            pass
+
+    # Attach risk counts to each user
+    for u in users:
+        u['shared_hardware'] = hw_counts.get(u['id'], 0)
+        u['flagged_scores'] = flag_counts.get(u['id'], 0)
 
     return jsonify({
         'users': users,
@@ -514,9 +627,76 @@ async def api_user_detail(userid):
         )
         log_entry['mod'] = mod_user
 
+    # ── Overview data (new) ────────────────────────────────────
+
+    # Stats for all modes
+    stats = await glob.db.fetchall(
+        "SELECT * FROM stats WHERE id = %s", [userid]
+    )
+
+    # Recent scores (last 5 with map info)
+    recent_scores = await glob.db.fetchall(
+        "SELECT s.id, s.map_md5, s.pp, s.acc, s.grade, s.mods, s.mode, "
+        "s.client_flags, UNIX_TIMESTAMP(s.play_time) as play_time, "
+        "m.artist, m.title, m.version, m.set_id "
+        "FROM scores s LEFT JOIN maps m ON s.map_md5 = m.md5 "
+        "WHERE s.userid = %s ORDER BY s.id DESC LIMIT 5",
+        [userid]
+    )
+
+    # Hardware matches (other users sharing hashes)
+    hw_matches = []
+    try:
+        hw_matches = await glob.db.fetchall(
+            "SELECT DISTINCT ch2.userid, u2.name "
+            "FROM client_hashes ch1 "
+            "JOIN client_hashes ch2 ON (ch1.osupath = ch2.osupath "
+            "    OR ch1.adapters = ch2.adapters OR ch1.disk_serial = ch2.disk_serial) "
+            "    AND ch1.userid != ch2.userid "
+            "JOIN users u2 ON ch2.userid = u2.id "
+            "WHERE ch1.userid = %s LIMIT 10",
+            [userid]
+        )
+    except Exception:
+        pass
+
+    # Flagged score count
+    flagged = await glob.db.fetch(
+        "SELECT COUNT(*) as cnt FROM scores WHERE userid = %s AND client_flags != 0",
+        [userid]
+    )
+
+    # Recent logins (last 5)
+    recent_logins = []
+    try:
+        recent_logins = await glob.db.fetchall(
+            "SELECT id, userid, ip, osu_ver, osu_stream, datetime "
+            "FROM ingame_logins WHERE userid = %s ORDER BY id DESC LIMIT 5",
+            [userid]
+        )
+        # Convert datetime objects to timestamps for JSON
+        for login in (recent_logins or []):
+            if login.get('datetime') and isinstance(login['datetime'], datetime.datetime):
+                login['datetime'] = int(login['datetime'].timestamp())
+    except Exception:
+        pass
+
+    # Clan info
+    clan = None
+    if user.get('clan_id') and user['clan_id'] > 0:
+        clan = await glob.db.fetch(
+            "SELECT id, name, tag FROM clans WHERE id = %s", [user['clan_id']]
+        )
+
     user = dict(user)
     user['badges'] = badges
     user['logs'] = {'hashes': hashes, 'admin_logs': admin_logs}
+    user['stats'] = stats or []
+    user['recent_scores'] = recent_scores or []
+    user['hw_matches'] = hw_matches or []
+    user['flagged_score_count'] = flagged['cnt'] if flagged else 0
+    user['recent_logins'] = recent_logins or []
+    user['clan'] = dict(clan) if clan else None
 
     return jsonify(user)
 
@@ -852,6 +1032,79 @@ async def action_editaccount():
     return jsonify({
         'status': 'success',
         'message': f"Successfully edited account for {user['name']} ({user_id})."
+    })
+
+
+@hina_admin.route('/api/action/bulk', methods=['POST'])
+@error_catcher
+@staff_required
+async def action_bulk():
+    data = await request.get_json()
+    action = data.get('action', '') if data else ''
+    user_ids = data.get('users', []) if data else []
+    reason = data.get('reason', '') if data else ''
+
+    if action not in ('restrict', 'unrestrict'):
+        return jsonify({'status': 'error', 'message': 'Invalid bulk action.'}), 400
+
+    if not user_ids or len(user_ids) > 50:
+        return jsonify({'status': 'error', 'message': 'Select 1-50 users.'}), 400
+
+    mod_id, mod_name, mod_priv = _get_mod_info()
+    if not _check_priv(mod_priv, Privileges.RestrictUsers):
+        return jsonify({'status': 'error', 'message': 'Insufficient privileges.'}), 403
+
+    results = []
+    for uid in user_ids:
+        uid = int(uid)
+        user = await glob.db.fetch(
+            "SELECT id, name, priv, country FROM users WHERE id = %s", [uid]
+        )
+        if not user:
+            results.append({'id': uid, 'status': 'error', 'message': 'Not found'})
+            continue
+
+        if action == 'restrict':
+            if not (user['priv'] & 1):
+                results.append({'id': uid, 'status': 'skipped', 'message': 'Already restricted'})
+                continue
+            await glob.db.execute("UPDATE users SET priv = 0 WHERE id = %s", [uid])
+            # Remove from all leaderboards
+            for mode in [0, 1, 2, 3, 4, 5, 6, 7, 8]:
+                await glob.redis.zrem(f"bancho:leaderboard:{mode}", uid)
+                await glob.redis.zrem(f"bancho:leaderboard:{mode}:{user['country']}", uid)
+            await _log_action(mod_id, mod_name, uid, 'restrict', 'Restricted (bulk)', reason, 0)
+
+        elif action == 'unrestrict':
+            if user['priv'] & 1:
+                results.append({'id': uid, 'status': 'skipped', 'message': 'Not restricted'})
+                continue
+            await glob.db.execute("UPDATE users SET priv = 1 WHERE id = %s", [uid])
+            await _log_action(mod_id, mod_name, uid, 'unrestrict', 'Unrestricted (bulk)', reason, 0)
+
+        results.append({'id': uid, 'status': 'success', 'message': f'{action}ed'})
+
+    success_count = len([r for r in results if r['status'] == 'success'])
+
+    # Summary audit log entry
+    affected_ids = [r['id'] for r in results if r['status'] == 'success']
+    if affected_ids:
+        summary_msg = (
+            f"Bulk {action}: {success_count}/{len(user_ids)} users. "
+            f"IDs: {','.join(str(i) for i in affected_ids[:20])}"
+            f"{'...' if len(affected_ids) > 20 else ''}. "
+            f"Reason: {reason or 'No reason specified.'}"
+        )
+        await _log_action(
+            mod_id, mod_name, 0,
+            f'bulk_{action}', f'Bulk {action}',
+            summary_msg, 0
+        )
+
+    return jsonify({
+        'status': 'success',
+        'message': f'Bulk {action}: {success_count}/{len(user_ids)} users processed.',
+        'results': results,
     })
 
 
