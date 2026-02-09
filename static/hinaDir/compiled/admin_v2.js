@@ -196,12 +196,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 self.currentView = view;
                 self.loadView(view);
             });
-            // Close sidebar on mobile when clicking nav
-            window.addEventListener('resize', function () {
-                if (window.innerWidth >= 1024) {
-                    self.sidebarOpen = true;
-                }
-            });
+            // Re-open sidebar when resizing back to desktop (if it was closed via mobile overlay)
+            // Removed: was forcing sidebarOpen=true on desktop, preventing toggle
             // Keyboard shortcuts
             self.keydownHandler = function (e) {
                 if ((e.metaKey || e.ctrlKey) && e.key === 'k') {

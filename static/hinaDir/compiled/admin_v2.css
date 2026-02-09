@@ -419,6 +419,9 @@ select:focus:not(:focus-visible) {
 }
 @media (min-width: 1024px) {
   .av2-sidebar {
+    transform: translateX(-100%);
+  }
+  .av2-sidebar.is-open {
     transform: translateX(0);
   }
 }
@@ -501,6 +504,9 @@ select:focus:not(:focus-visible) {
 }
 @media (min-width: 1024px) {
   .av2-main {
+    margin-left: 0;
+  }
+  .av2-main.sidebar-open {
     margin-left: var(--av2-sidebar-w);
   }
 }

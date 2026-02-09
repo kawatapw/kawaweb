@@ -429,7 +429,8 @@ select:focus:not(:focus-visible) {
     }
 
     @media (min-width: 1024px) {
-        transform: translateX(0);
+        transform: translateX(-100%);
+        &.is-open { transform: translateX(0); }
     }
 }
 
@@ -509,7 +510,8 @@ select:focus:not(:focus-visible) {
     transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 
     @media (min-width: 1024px) {
-        margin-left: var(--av2-sidebar-w);
+        margin-left: 0;
+        &.sidebar-open { margin-left: var(--av2-sidebar-w); }
     }
 }
 
