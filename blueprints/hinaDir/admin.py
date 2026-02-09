@@ -11,7 +11,7 @@ from quart import Blueprint, jsonify, render_template, request, session, redirec
 
 from objects import glob
 import config as cfg
-from objects.utils import get_safe_name, error_catcher
+from objects.utils import get_safe_name
 from objects.privileges import Privileges, ComparePrivs, GetPriv
 from constants import regexes
 
@@ -23,6 +23,19 @@ DEFAULT_CHECKLIST = json.dumps({
 })
 
 # ─── Decorators ────────────────────────────────────────────────────────
+
+def error_catcher(func):
+    """JSON-safe error catcher for admin API endpoints (replaces shared one that returns HTML)."""
+    @wraps(func)
+    async def wrapper(*args, **kwargs):
+        try:
+            return await func(*args, **kwargs)
+        except Exception as e:
+            import logging
+            logging.getLogger('console.error').error(f"Error in {func.__name__}: {e}")
+            return jsonify({'status': 'error', 'message': str(e)}), 500
+    return wrapper
+
 
 def staff_required(func):
     """Require login + is_staff for admin-v2 API routes. Returns JSON errors."""
@@ -631,17 +644,20 @@ async def api_user_detail(userid):
             [userid]
         )
 
-    # Admin logs
+    # Admin logs (logs schema: id, `from`, `to`, action, msg, time)
     admin_logs = await glob.db.fetchall(
-        "SELECT * FROM logs WHERE `target` = %s ORDER BY `time` DESC LIMIT 50",
+        "SELECT id, `from` AS mod_id, `to` AS target_id, action, msg, `time` "
+        "FROM logs WHERE `to` = %s ORDER BY `time` DESC LIMIT 50",
         [userid]
     )
-    for log_entry in admin_logs:
+    for log_entry in (admin_logs or []):
         mod_user = await glob.db.fetch(
             "SELECT id, name, country, priv FROM users WHERE id = %s",
-            [log_entry['mod']]
+            [log_entry['mod_id']]
         )
         log_entry['mod'] = mod_user
+        if isinstance(log_entry.get('time'), datetime.datetime):
+            log_entry['time'] = int(log_entry['time'].timestamp())
 
     # ── Overview data (new) ────────────────────────────────────
 
@@ -743,10 +759,10 @@ async def action_wipe():
         "INSERT INTO wiped_scores "
         "(id, map_md5, score, pp, acc, max_combo, mods, n300, n100, n50, nmiss, "
         "ngeki, nkatu, grade, status, mode, play_time, time_elapsed, client_flags, "
-        "userid, perfect, online_checksum, r_replay_id) "
+        "userid, perfect, online_checksum) "
         "SELECT id, map_md5, score, pp, acc, max_combo, mods, n300, n100, n50, nmiss, "
         "ngeki, nkatu, grade, status, mode, play_time, time_elapsed, client_flags, "
-        "userid, perfect, online_checksum, r_replay_id "
+        "userid, perfect, online_checksum "
         "FROM scores WHERE userid = %s",
         [user_id]
     )
@@ -969,10 +985,13 @@ async def action_changeprivileges():
     if ComparePrivs(user['priv'], new_priv):
         return jsonify({'status': 'error', 'message': 'Privileges are already equivalent.'}), 400
 
-    if ComparePrivs(new_priv, mod_priv):
+    # ComparePrivs(a, b) returns True if b ⊆ a
+    # Block if new_priv has privs the mod doesn't have
+    if not ComparePrivs(mod_priv, new_priv):
         return jsonify({'status': 'error', 'message': 'Cannot grant privileges you do not possess.'}), 403
 
-    if ComparePrivs(mod_priv, user['priv']):
+    # Block if target user has privs the mod doesn't have
+    if not ComparePrivs(mod_priv, user['priv']):
         return jsonify({'status': 'error', 'message': 'Cannot modify users with privileges you do not possess.'}), 403
 
     await glob.db.execute("UPDATE users SET priv = %s WHERE id = %s", [new_priv, user_id])

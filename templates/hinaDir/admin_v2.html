@@ -9,7 +9,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/static/hinaDir/compiled/admin_v2.css?v=7">
+    <link rel="stylesheet" href="/static/hinaDir/compiled/admin_v2.css?v=8">
     <style>
         :root {
             {% if 'user_data' in session and session['user_data'].get('hue') %}
@@ -40,7 +40,7 @@
                     <i class="fas fa-bars"></i>
                 </button>
                 <a href="/admin-v2" class="av2-logo" @click.prevent="navigateTo('dashboard')">
-                    <i class="fas fa-shield-alt"></i>
+                    <img src="/static/images/logo.png" alt="Kawata" class="av2-logo-img">
                     <span>Admin V2</span>
                 </a>
                 <span class="av2-env-badge" v-if="config.devMode">DEV</span>
@@ -305,7 +305,12 @@
                             <div class="av2-top-countries" v-if="dash.topCountries && dash.topCountries.length">
                                 <h3 class="av2-sub-title">Top Countries (New Users, 7d)</h3>
                                 <div v-for="c in dash.topCountries" :key="c.country" class="av2-country-bar">
-                                    <span class="av2-country-label" v-text="c.country || '??'"></span>
+                                    <span class="av2-country-label">
+                                        <img v-if="c.country && c.country !== 'xx'"
+                                             :src="'/static/images/flags/' + c.country.toUpperCase() + '.png'"
+                                             class="av2-flag" :alt="c.country">
+                                        <span v-text="c.country || '??'"></span>
+                                    </span>
                                     <div class="av2-country-bar-fill" :style="'width:' + getCountryBarWidth(c.count) + '%'"></div>
                                     <span class="av2-country-count" v-text="c.count"></span>
                                 </div>
@@ -582,7 +587,12 @@
                                               :class="getPrivClass(u.priv)"
                                               v-text="getPrivLabel(u.priv)"></span>
                                     </td>
-                                    <td v-text="u.country"></td>
+                                    <td>
+                                        <img v-if="u.country && u.country !== 'xx'"
+                                             :src="'/static/images/flags/' + u.country.toUpperCase() + '.png'"
+                                             class="av2-flag" :alt="u.country">
+                                        <span v-text="u.country"></span>
+                                    </td>
                                     <td class="av2-pp-value" v-text="formatNumber(u.pp)"></td>
                                     <td v-text="formatNumber(u.plays)"></td>
                                     <td class="av2-risk-cell">
@@ -679,6 +689,9 @@
                                 <h2 class="av2-panel-title" v-text="users.editUser.name"></h2>
                                 <span class="av2-panel-subtitle">
                                     ID: <span v-text="users.editUser.id"></span> |
+                                    <img v-if="users.editUser.country && users.editUser.country !== 'xx'"
+                                         :src="'/static/images/flags/' + users.editUser.country.toUpperCase() + '.png'"
+                                         class="av2-flag" :alt="users.editUser.country">
                                     <span v-text="users.editUser.country"></span>
                                 </span>
                             </div>

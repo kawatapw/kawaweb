@@ -139,10 +139,14 @@ select:focus:not(:focus-visible) {
     font-weight: 700;
     font-size: 1rem;
     text-decoration: none;
-    i { font-size: 1.1rem; }
     span {
         @media (max-width: 480px) { display: none; }
     }
+}
+
+.av2-logo-img {
+    height: 24px;
+    width: auto;
 }
 
 // ─── Environment Badge ───────────────────────────────────────────────
@@ -933,8 +937,18 @@ select:focus:not(:focus-visible) {
     font-size: 0.8rem;
     font-weight: 600;
     color: var(--av2-text-muted);
-    width: 28px;
+    width: 60px;
     text-align: center;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.av2-flag {
+    height: 12px;
+    width: auto;
+    vertical-align: middle;
     flex-shrink: 0;
 }
 
