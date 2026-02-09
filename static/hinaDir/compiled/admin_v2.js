@@ -159,6 +159,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 activeLoading: false,
                 commentDraft: '',
                 addSetId: '',
+                selectedDiffs: [],
             },
             // Badges
             badges: {
@@ -682,10 +683,16 @@ document.addEventListener('DOMContentLoaded', function () {
                     self.executeBulkAction(d.action, d.reason);
                     return;
                 }
-                // Handle beatmap decide actions
-                if (d.action.indexOf('bm_decide_') === 0) {
+                // Handle beatmap status actions (per-diff)
+                if (d.action.indexOf('bm_status_') === 0) {
                     d.show = false;
-                    self.executeBmDecide(d.action, d.reason);
+                    self.executeSetDiffStatus(d.action, d.reason);
+                    return;
+                }
+                // Handle beatmap resolve actions (close work item)
+                if (d.action.indexOf('bm_resolve_') === 0) {
+                    d.show = false;
+                    self.executeBmResolve(d.action, d.reason);
                     return;
                 }
                 var body = { user: d.targetId, reason: d.reason };
@@ -745,6 +752,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 var self = this;
                 self.beatmaps.activeLoading = true;
                 self.beatmaps.commentDraft = '';
+                self.beatmaps.selectedDiffs = [];
                 adminApi('beatmaps/work-items/' + itemId).then(function (data) {
                     self.beatmaps.activeItem = data;
                     self.beatmaps.activeLoading = false;
@@ -807,20 +815,82 @@ document.addEventListener('DOMContentLoaded', function () {
                     self.selectWorkItem(itemId);
                 }).catch(function (e) { self.showToast('error', e.message); });
             },
-            bmDecide: function (action) {
+            // ── Diff Selection ─────────────────────────────────────
+            toggleDiffSelect: function (diffId) {
+                var idx = this.beatmaps.selectedDiffs.indexOf(diffId);
+                if (idx === -1) {
+                    this.beatmaps.selectedDiffs.push(diffId);
+                }
+                else {
+                    this.beatmaps.selectedDiffs.splice(idx, 1);
+                }
+            },
+            toggleAllDiffs: function () {
+                if (!this.beatmaps.activeItem)
+                    return;
+                var allIds = this.beatmaps.activeItem.diffs.map(function (d) { return d.id; });
+                if (this.allDiffsSelected()) {
+                    this.beatmaps.selectedDiffs = [];
+                }
+                else {
+                    this.beatmaps.selectedDiffs = allIds.slice();
+                }
+            },
+            allDiffsSelected: function () {
+                if (!this.beatmaps.activeItem || !this.beatmaps.activeItem.diffs.length)
+                    return false;
+                return this.beatmaps.selectedDiffs.length === this.beatmaps.activeItem.diffs.length;
+            },
+            isDiffSelected: function (diffId) {
+                return this.beatmaps.selectedDiffs.indexOf(diffId) !== -1;
+            },
+            mapStatusLabel: function (status) {
+                var labels = {
+                    0: 'Pending', 1: 'Pending', 2: 'Ranked', 3: 'Approved',
+                    4: 'Qualified', 5: 'Loved',
+                };
+                return labels[status] || ('Status ' + status);
+            },
+            mapStatusClass: function (status) {
+                var classes = {
+                    0: 'av2-map-status--pending', 1: 'av2-map-status--pending',
+                    2: 'av2-map-status--ranked', 3: 'av2-map-status--approved',
+                    4: 'av2-map-status--qualified', 5: 'av2-map-status--loved',
+                };
+                return classes[status] || 'av2-map-status--pending';
+            },
+            selectedDiffNames: function () {
                 var self = this;
-                var needsReason = action === 'unrank' || action === 'needs_changes';
+                if (!self.beatmaps.activeItem)
+                    return '';
+                var names = [];
+                for (var i = 0; i < self.beatmaps.activeItem.diffs.length; i++) {
+                    var d = self.beatmaps.activeItem.diffs[i];
+                    if (self.beatmaps.selectedDiffs.indexOf(d.id) !== -1) {
+                        names.push(d.version);
+                    }
+                }
+                return names.join(', ');
+            },
+            // ── Set Status (per-diff, stays open) ────────────────
+            setDiffStatus: function (action) {
+                var self = this;
+                if (!self.beatmaps.selectedDiffs.length) {
+                    self.showToast('error', 'Select at least one difficulty first.');
+                    return;
+                }
+                var needsReason = action === 'unrank';
                 var labels = {
                     'rank': 'Rank', 'approve': 'Approve', 'qualify': 'Qualify',
-                    'love': 'Love', 'unrank': 'Unrank', 'needs_changes': 'Needs Changes',
-                    'dismiss': 'Dismiss',
+                    'love': 'Love', 'unrank': 'Unrank',
                 };
+                var count = self.beatmaps.selectedDiffs.length;
+                var diffNames = self.selectedDiffNames();
                 self.confirmDialog = {
                     show: true,
-                    title: labels[action] + ' this mapset?',
-                    message: self.beatmaps.activeItem.artist + ' - '
-                        + self.beatmaps.activeItem.title + ' (set ' + self.beatmaps.activeItem.set_id + ')',
-                    action: 'bm_decide_' + action,
+                    title: labels[action] + ' ' + count + ' difficulty(ies)?',
+                    message: diffNames,
+                    action: 'bm_status_' + action,
                     needsReason: needsReason,
                     needsDuration: false,
                     needsPassword: false,
@@ -830,9 +900,60 @@ document.addEventListener('DOMContentLoaded', function () {
                     targetId: self.beatmaps.activeItem.id,
                 };
             },
-            executeBmDecide: function (action, reason) {
+            executeSetDiffStatus: function (action, reason) {
                 var self = this;
-                var realAction = action.replace('bm_decide_', '');
+                var realAction = action.replace('bm_status_', '');
+                var itemId = self.beatmaps.activeItem ? self.beatmaps.activeItem.id : self.confirmDialog.targetId;
+                adminApi('beatmaps/work-items/' + itemId + '/set-status', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        map_ids: self.beatmaps.selectedDiffs.slice(),
+                        action: realAction,
+                        reason: reason,
+                    }),
+                }).then(function (data) {
+                    self.showToast('success', data.message);
+                    // Update diffs in-place
+                    if (data.diffs && self.beatmaps.activeItem) {
+                        self.beatmaps.activeItem.diffs = data.diffs;
+                    }
+                    // Update review state if it transitioned
+                    if (data.review_state && self.beatmaps.activeItem) {
+                        self.beatmaps.activeItem.review_state = data.review_state;
+                    }
+                    self.beatmaps.selectedDiffs = [];
+                    // Reload the full item to refresh history
+                    self.selectWorkItem(itemId);
+                    self.loadWorkItems(self.beatmaps.pagination.current_page);
+                }).catch(function (e) { self.showToast('error', e.message); });
+            },
+            // ── Resolve Review (closes work item) ────────────────
+            bmResolve: function (action) {
+                var self = this;
+                var needsReason = action === 'needs_changes';
+                var labels = {
+                    'mark_complete': 'Mark Complete',
+                    'needs_changes': 'Needs Changes',
+                    'dismiss': 'Dismiss',
+                };
+                self.confirmDialog = {
+                    show: true,
+                    title: labels[action] + '?',
+                    message: self.beatmaps.activeItem.artist + ' - '
+                        + self.beatmaps.activeItem.title + ' (set ' + self.beatmaps.activeItem.set_id + ')',
+                    action: 'bm_resolve_' + action,
+                    needsReason: needsReason,
+                    needsDuration: false,
+                    needsPassword: false,
+                    reason: '',
+                    duration: 0,
+                    password: '',
+                    targetId: self.beatmaps.activeItem.id,
+                };
+            },
+            executeBmResolve: function (action, reason) {
+                var self = this;
+                var realAction = action.replace('bm_resolve_', '');
                 var itemId = self.beatmaps.activeItem ? self.beatmaps.activeItem.id : self.confirmDialog.targetId;
                 adminApi('beatmaps/work-items/' + itemId + '/decide', {
                     method: 'POST',

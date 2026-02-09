@@ -1909,6 +1909,28 @@ select:focus:not(:focus-visible) {
     justify-content: flex-end;
 }
 
+.av2-bm-close-btn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(0, 0, 0, 0.55);
+    color: #fff;
+    font-size: 0.9rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2;
+    transition: background 0.15s;
+    &:hover {
+        background: rgba(0, 0, 0, 0.8);
+    }
+}
+
 .av2-bm-detail-title {
     font-size: 1.1rem;
     font-weight: 700;
@@ -2009,6 +2031,80 @@ select:focus:not(:focus-visible) {
 .av2-bm-diff-length, .av2-bm-diff-plays {
     font-size: 0.75rem;
     white-space: nowrap;
+}
+
+// Diff Selection — Select-All header
+.av2-bm-diff-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 8px;
+    border-bottom: 1px solid var(--av2-border);
+    margin-bottom: 4px;
+    font-size: 0.8rem;
+}
+
+// Diff Selection — Checkbox label
+.av2-bm-diff-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    flex-shrink: 0;
+    font-size: 0.8rem;
+    color: var(--av2-text-muted);
+
+    input[type="checkbox"] {
+        width: 16px;
+        height: 16px;
+        accent-color: var(--av2-accent);
+        cursor: pointer;
+    }
+}
+
+// Diff Selection — Selected row highlight
+.av2-bm-diff-row--selected {
+    border-left: 3px solid var(--av2-accent);
+    background: hsla(var(--main), 60%, 55%, 0.06);
+    padding-left: 5px;
+}
+
+// Map Status Pill (per-difficulty)
+.av2-map-status-pill {
+    display: inline-block;
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 2px 8px;
+    border-radius: 10px;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.av2-map-status--pending {
+    background: hsla(0, 0%, 50%, 0.15);
+    color: var(--av2-text-muted);
+}
+
+.av2-map-status--ranked {
+    background: hsla(140, 60%, 45%, 0.15);
+    color: var(--av2-success);
+}
+
+.av2-map-status--approved {
+    background: hsla(210, 60%, 55%, 0.15);
+    color: var(--av2-info);
+}
+
+.av2-map-status--qualified {
+    background: hsla(40, 80%, 55%, 0.15);
+    color: var(--av2-warning);
+}
+
+.av2-map-status--loved {
+    background: hsla(330, 60%, 55%, 0.15);
+    color: hsl(330, 60%, 65%);
 }
 
 // Stats Row
@@ -2128,6 +2224,12 @@ select:focus:not(:focus-visible) {
     display: flex;
     flex-wrap: wrap;
     gap: 8px;
+
+    .av2-btn:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+        pointer-events: none;
+    }
 }
 
 // Resolved Badge
@@ -2375,7 +2477,7 @@ select:focus:not(:focus-visible) {
     .av2-bm-detail { max-width: 100%; }
     .av2-bm-detail-header { height: 120px; }
     .av2-bm-stat-row { flex-direction: column; }
-    .av2-bm-diff-stats { display: none; }
+    .av2-bm-diff-stats, .av2-bm-diff-length { display: none; }
     .av2-bm-actions {
         flex-direction: column;
         .av2-btn { width: 100%; justify-content: center; }

@@ -65,9 +65,9 @@ async def _log_action(mod_id, mod_name, target_id, action_name, action_text,
     now = datetime.datetime.now()
 
     await glob.db.execute(
-        "INSERT INTO logs (id, `from`, `to`, action, msg, time) "
-        "VALUES (%s, %s, %s, %s, %s, %s)",
-        [action_id, mod_id, target_id, action_name, reason, now]
+        "INSERT INTO logs (`from`, `to`, action, msg, time) "
+        "VALUES (%s, %s, %s, %s, %s)",
+        [mod_id, target_id, action_name, reason, now]
     )
 
     # Discord webhook (best-effort, don't fail the action)
@@ -172,16 +172,26 @@ def _check_priv(mod_priv, required):
 # Map status codes for reference:
 # 0 = not submitted, 1 = pending, 2 = ranked, 3 = approved, 4 = qualified, 5 = loved
 
-STATUS_UPDATE_URL_TEMPLATE = "https://api.{domain}/v1/update_map_status"
+async def _update_map_status(map_id=None, new_status=None, set_id=None):
+    """Proxy map status update to kawata.py API.
 
-async def _update_map_status(map_id, new_status):
-    """Proxy map status update to kawata.py API."""
-    url = STATUS_UPDATE_URL_TEMPLATE.format(domain=glob.config.domain)
-    headers = {"Authorization": f"Bearer {glob.config.api_key}"}
-    params = {"id": map_id, "s": new_status}
+    Uses internal Docker URL with Host header for host-based routing.
+    Pass set_id to update all diffs in a set at once (?sid=),
+    or map_id to update a single diff (?id=).
+    """
+    url = 'http://bancho:10000/v1/update_map_status'
+    headers = {
+        'Host': f'api.{cfg.domain}',
+        'Authorization': f'Bearer {glob.config.api_key}',
+    }
+    params = {"s": str(new_status)}
+    if map_id is not None:
+        params["id"] = str(map_id)
+    if set_id is not None:
+        params["sid"] = str(set_id)
     try:
-        response = sync_requests.post(url, headers=headers, params=params)
-        return response.json()
+        async with glob.http.post(url, headers=headers, params=params) as resp:
+            return await resp.json(content_type=None)
     except Exception as e:
         return {"status": "error", "message": str(e)}
 
@@ -1903,19 +1913,130 @@ async def api_bm_comment(item_id):
     return jsonify({'status': 'success'})
 
 
+@hina_admin.route('/api/beatmaps/work-items/<int:item_id>/set-status', methods=['POST'])
+@error_catcher
+@staff_required
+async def api_bm_set_status(item_id):
+    """Apply a ranked status to selected difficulties without closing the work item."""
+    data = await request.get_json()
+    map_ids = data.get('map_ids', [])
+    action = data.get('action', '')
+    reason = (data.get('reason') or '').strip()
+
+    STATUS_MAP = {'rank': 2, 'approve': 3, 'qualify': 4, 'love': 5, 'unrank': 0}
+    if action not in STATUS_MAP:
+        return jsonify({'status': 'error', 'message': 'Invalid action.'}), 400
+
+    if not map_ids or not isinstance(map_ids, list):
+        return jsonify({'status': 'error', 'message': 'No difficulties selected.'}), 400
+
+    if action == 'unrank' and not reason:
+        return jsonify({'status': 'error', 'message': 'Reason required for unranking.'}), 400
+
+    mod_id, mod_name, mod_priv = _get_mod_info()
+    if not _check_priv(mod_priv, Privileges.ManageBeatmaps):
+        return jsonify({'status': 'error', 'message': 'Insufficient privileges.'}), 403
+
+    item = await glob.db.fetch("SELECT * FROM beatmap_work_items WHERE id = %s", [item_id])
+    if not item:
+        return jsonify({'status': 'error', 'message': 'Work item not found.'}), 404
+
+    set_id = item['set_id']
+
+    # Validate all map_ids belong to this set
+    all_diffs = await glob.db.fetchall(
+        "SELECT id, version, artist, title, set_id FROM maps WHERE set_id = %s",
+        [set_id]
+    )
+    all_diff_ids = {d['id'] for d in (all_diffs or [])}
+    for mid in map_ids:
+        if int(mid) not in all_diff_ids:
+            return jsonify({
+                'status': 'error',
+                'message': f'Map ID {mid} does not belong to this set.'
+            }), 400
+
+    new_status = STATUS_MAP[action]
+    ACTION_TEXT = {
+        'rank': 'Ranked', 'approve': 'Approved', 'qualify': 'Qualified',
+        'love': 'Loved', 'unrank': 'Unranked',
+    }
+
+    # Efficient path: if ALL diffs selected, use set_id API call
+    # Note: kawata.py always needs a valid map_id for its bmap lookup,
+    # even when using set_id, so we pass the first diff's id too.
+    if set(int(m) for m in map_ids) == all_diff_ids:
+        first_id = int(map_ids[0])
+        result = await _update_map_status(map_id=first_id, set_id=set_id, new_status=new_status)
+        if result.get('status') not in ('success',):
+            return jsonify({'status': 'error', 'message': result.get('status') or result.get('message', 'API call failed.')}), 502
+    else:
+        for mid in map_ids:
+            result = await _update_map_status(map_id=int(mid), new_status=new_status)
+            if result.get('status') not in ('success',):
+                return jsonify({'status': 'error', 'message': result.get('status') or result.get('message', 'API call failed.')}), 502
+
+    # Insert into newly_ranked for non-unrank actions
+    if action != 'unrank':
+        for mid in map_ids:
+            try:
+                await glob.db.execute(
+                    "INSERT IGNORE INTO newly_ranked (map_id, mod_id, time) "
+                    "VALUES (%s, %s, %s)",
+                    [int(mid), mod_id, datetime.datetime.now()]
+                )
+            except Exception:
+                pass
+
+    # Log each diff action
+    for mid in map_ids:
+        diff_row = next((d for d in all_diffs if d['id'] == int(mid)), None)
+        if diff_row:
+            await _log_action(
+                mod_id, mod_name, int(mid), action,
+                ACTION_TEXT[action],
+                reason or f'{ACTION_TEXT[action]} via per-diff review',
+                1, map_obj=dict(diff_row)
+            )
+
+    # Auto-transition pending → in_review on first status action
+    if item['review_state'] == 'pending':
+        await glob.db.execute(
+            "UPDATE beatmap_work_items SET review_state = 'in_review' WHERE id = %s",
+            [item_id]
+        )
+
+    # Return refreshed diff list
+    refreshed_diffs = await glob.db.fetchall(
+        "SELECT id, version, diff, mode, cs, ar, od, hp, bpm, "
+        "total_length, max_combo, plays, passes, status "
+        "FROM maps WHERE set_id = %s ORDER BY diff ASC",
+        [set_id]
+    )
+
+    return jsonify({
+        'status': 'success',
+        'message': f'{ACTION_TEXT[action]} {len(map_ids)} difficulty(ies).',
+        'diffs': [dict(d) for d in (refreshed_diffs or [])],
+        'review_state': 'in_review' if item['review_state'] == 'pending' else item['review_state'],
+    })
+
+
 @hina_admin.route('/api/beatmaps/work-items/<int:item_id>/decide', methods=['POST'])
 @error_catcher
 @staff_required
 async def api_bm_decide(item_id):
+    """Resolve a review work item (close it). Does NOT change map statuses.
+    Use the set-status endpoint to change diff statuses before resolving."""
     data = await request.get_json()
     action = data.get('action', '')
     reason = (data.get('reason') or '').strip()
 
-    VALID_ACTIONS = ('rank', 'approve', 'qualify', 'love', 'unrank', 'needs_changes', 'dismiss')
+    VALID_ACTIONS = ('mark_complete', 'needs_changes', 'dismiss')
     if action not in VALID_ACTIONS:
         return jsonify({'status': 'error', 'message': 'Invalid action.'}), 400
 
-    if action in ('unrank', 'needs_changes') and not reason:
+    if action == 'needs_changes' and not reason:
         return jsonify({'status': 'error', 'message': 'Reason required for this action.'}), 400
 
     mod_id, mod_name, mod_priv = _get_mod_info()
@@ -1928,44 +2049,24 @@ async def api_bm_decide(item_id):
 
     set_id = item['set_id']
     map_row = await glob.db.fetch("SELECT * FROM maps WHERE set_id = %s LIMIT 1", [set_id])
-    if not map_row:
-        return jsonify({'status': 'error', 'message': 'No maps in set.'}), 404
+    map_id = map_row['id'] if map_row else 0
+    map_obj = dict(map_row) if map_row else {}
 
-    map_id = map_row['id']
-    map_obj = dict(map_row)
-
-    # ── Status-changing actions ──
-    if action in ('rank', 'approve', 'qualify', 'love', 'unrank'):
-        STATUS_MAP = {'rank': 2, 'approve': 3, 'qualify': 4, 'love': 5, 'unrank': 0}
-        new_status = STATUS_MAP[action]
-        ACTION_TEXT = {'rank': 'Ranked', 'approve': 'Approved', 'qualify': 'Qualified', 'love': 'Loved', 'unrank': 'Unranked'}
-
-        await _update_map_status(map_id, new_status)
-
+    # ── Mark Complete ──
+    if action == 'mark_complete':
         await glob.db.execute(
             "UPDATE beatmap_work_items "
-            "SET review_state = 'done', resolution = %s, resolved_at = NOW() "
+            "SET review_state = 'done', resolution = 'completed', resolved_at = NOW() "
             "WHERE id = %s",
-            [action, item_id]
+            [item_id]
         )
-
         await glob.db.execute(
             "UPDATE map_requests SET active = 0 "
             "WHERE map_id IN (SELECT id FROM maps WHERE set_id = %s)",
             [set_id]
         )
-
-        if action != 'unrank':
-            try:
-                await glob.db.execute(
-                    "INSERT INTO newly_ranked (map_id, mod_id, time) VALUES (%s, %s, %s)",
-                    [map_id, mod_id, datetime.datetime.now()]
-                )
-            except Exception:
-                pass
-
-        await _log_action(mod_id, mod_name, map_id, action,
-                          ACTION_TEXT[action], reason or f'{ACTION_TEXT[action]} via review',
+        await _log_action(mod_id, mod_name, map_id, 'mark_complete',
+                          'Review completed', reason or 'Completed via review',
                           1, map_obj=map_obj)
 
     # ── Needs Changes (no map status change) ──
@@ -1998,4 +2099,4 @@ async def api_bm_decide(item_id):
                           'Request dismissed', reason or 'Dismissed via review',
                           1, map_obj=map_obj)
 
-    return jsonify({'status': 'success', 'message': f'Action "{action}" completed.'})
+    return jsonify({'status': 'success', 'message': f'Review resolved: {action}.'})

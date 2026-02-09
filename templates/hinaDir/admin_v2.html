@@ -9,7 +9,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/static/hinaDir/compiled/admin_v2.css?v=5">
+    <link rel="stylesheet" href="/static/hinaDir/compiled/admin_v2.css?v=7">
     <style>
         :root {
             {% if 'user_data' in session and session['user_data'].get('hue') %}
@@ -1115,7 +1115,7 @@
                         <div class="av2-bm-detail-header"
                              :style="'background-image: url(https://assets.ppy.sh/beatmaps/' + beatmaps.activeItem.set_id + '/covers/cover.jpg)'">
                             <div class="av2-bm-detail-header-overlay">
-                                <button class="av2-panel-close" @click="closeWorkItemPanel">
+                                <button class="av2-bm-close-btn" @click="closeWorkItemPanel">
                                     <i class="fas fa-times"></i>
                                 </button>
                                 <div class="av2-bm-detail-title" v-text="beatmaps.activeItem.artist + ' - ' + beatmaps.activeItem.title"></div>
@@ -1166,10 +1166,32 @@
                                     Difficulties
                                     (<span v-text="beatmaps.activeItem.diffs.length"></span>)
                                 </h3>
+                                <!-- Select All header (only when review not done) -->
+                                <div class="av2-bm-diff-header" v-if="beatmaps.activeItem.review_state !== 'done'">
+                                    <label class="av2-bm-diff-checkbox">
+                                        <input type="checkbox"
+                                               :checked="allDiffsSelected()"
+                                               @change="toggleAllDiffs()">
+                                        <span v-text="allDiffsSelected() ? 'Deselect All' : 'Select All'"></span>
+                                    </label>
+                                    <span class="av2-text-muted" v-if="beatmaps.selectedDiffs.length > 0"
+                                          v-text="beatmaps.selectedDiffs.length + ' selected'"></span>
+                                </div>
                                 <div class="av2-bm-diff-list">
-                                    <div v-for="d in beatmaps.activeItem.diffs" :key="d.id" class="av2-bm-diff-row">
+                                    <div v-for="d in beatmaps.activeItem.diffs" :key="d.id"
+                                         class="av2-bm-diff-row"
+                                         :class="{ 'av2-bm-diff-row--selected': isDiffSelected(d.id) }">
+                                        <label class="av2-bm-diff-checkbox"
+                                               v-if="beatmaps.activeItem.review_state !== 'done'">
+                                            <input type="checkbox"
+                                                   :checked="isDiffSelected(d.id)"
+                                                   @change="toggleDiffSelect(d.id)">
+                                        </label>
                                         <span class="av2-bm-diff-stars" v-text="'\u2605' + (d.diff || 0).toFixed(2)"></span>
                                         <span class="av2-bm-diff-version" v-text="d.version"></span>
+                                        <span class="av2-map-status-pill"
+                                              :class="mapStatusClass(d.status)"
+                                              v-text="mapStatusLabel(d.status)"></span>
                                         <span class="av2-bm-diff-stats av2-text-muted">
                                             CS<span v-text="d.cs"></span>
                                             AR<span v-text="d.ar"></span>
@@ -1259,30 +1281,54 @@
                                 </div>
                             </div>
 
-                            <!-- Decision Actions -->
+                            <!-- Set Status (per-difficulty) -->
                             <div class="av2-bm-detail-section" v-if="beatmaps.activeItem.review_state !== 'done'">
-                                <h3 class="av2-card-title" style="padding: 0; border: none;">Decision</h3>
+                                <h3 class="av2-card-title" style="padding: 0; border: none;">
+                                    Set Status
+                                    <span class="av2-text-muted" style="font-weight: 400; font-size: 0.8rem;"
+                                          v-if="beatmaps.selectedDiffs.length > 0"
+                                          v-text="'(' + beatmaps.selectedDiffs.length + ' selected)'"></span>
+                                </h3>
+                                <p class="av2-text-muted" style="font-size: 0.8rem; margin-bottom: 8px;"
+                                   v-if="beatmaps.selectedDiffs.length === 0">
+                                    Select difficulties above, then choose a status to apply.
+                                </p>
                                 <div class="av2-bm-actions">
-                                    <button class="av2-btn av2-btn--success" @click="bmDecide('rank')">
+                                    <button class="av2-btn av2-btn--success" @click="setDiffStatus('rank')"
+                                            :disabled="beatmaps.selectedDiffs.length === 0">
                                         <i class="fas fa-check"></i> Rank
                                     </button>
-                                    <button class="av2-btn" @click="bmDecide('approve')">
+                                    <button class="av2-btn" @click="setDiffStatus('approve')"
+                                            :disabled="beatmaps.selectedDiffs.length === 0">
                                         <i class="fas fa-thumbs-up"></i> Approve
                                     </button>
-                                    <button class="av2-btn" @click="bmDecide('qualify')">
+                                    <button class="av2-btn" @click="setDiffStatus('qualify')"
+                                            :disabled="beatmaps.selectedDiffs.length === 0">
                                         <i class="fas fa-clipboard-check"></i> Qualify
                                     </button>
-                                    <button class="av2-btn av2-btn--warning" @click="bmDecide('love')">
+                                    <button class="av2-btn av2-btn--warning" @click="setDiffStatus('love')"
+                                            :disabled="beatmaps.selectedDiffs.length === 0">
                                         <i class="fas fa-heart"></i> Love
                                     </button>
-                                    <button class="av2-btn av2-btn--danger" @click="bmDecide('unrank')">
+                                    <button class="av2-btn av2-btn--danger" @click="setDiffStatus('unrank')"
+                                            :disabled="beatmaps.selectedDiffs.length === 0">
                                         <i class="fas fa-ban"></i> Unrank
                                     </button>
-                                    <button class="av2-btn av2-btn--danger" @click="bmDecide('needs_changes')"
+                                </div>
+                            </div>
+
+                            <!-- Resolve Review (closes work item) -->
+                            <div class="av2-bm-detail-section" v-if="beatmaps.activeItem.review_state !== 'done'">
+                                <h3 class="av2-card-title" style="padding: 0; border: none;">Resolve Review</h3>
+                                <div class="av2-bm-actions">
+                                    <button class="av2-btn av2-btn--success" @click="bmResolve('mark_complete')">
+                                        <i class="fas fa-check-circle"></i> Mark Complete
+                                    </button>
+                                    <button class="av2-btn av2-btn--danger" @click="bmResolve('needs_changes')"
                                             style="border-style: dashed;">
                                         <i class="fas fa-redo"></i> Needs Changes
                                     </button>
-                                    <button class="av2-btn" @click="bmDecide('dismiss')">
+                                    <button class="av2-btn" @click="bmResolve('dismiss')">
                                         <i class="fas fa-times"></i> Dismiss
                                     </button>
                                     <button class="av2-btn av2-btn--sm" @click="closeWorkItemPanel"
@@ -1443,21 +1489,25 @@
                     <i class="fas fa-info-circle"></i>
                     The user will need to log in again with the new password. Make sure to communicate it to them securely.
                 </div>
-                <div class="av2-hint av2-hint--info" v-if="confirmDialog.action.indexOf('bm_decide_rank') === 0 || confirmDialog.action.indexOf('bm_decide_approve') === 0 || confirmDialog.action.indexOf('bm_decide_qualify') === 0 || confirmDialog.action.indexOf('bm_decide_love') === 0">
+                <div class="av2-hint av2-hint--info" v-if="confirmDialog.action === 'bm_status_rank' || confirmDialog.action === 'bm_status_approve' || confirmDialog.action === 'bm_status_qualify' || confirmDialog.action === 'bm_status_love'">
                     <i class="fas fa-info-circle"></i>
-                    This will change the map's ranked status across ALL difficulties in the set via kawata.py API.
+                    Changes status for the selected difficulties only. The work item stays open so you can apply different statuses to other diffs.
                 </div>
-                <div class="av2-hint av2-hint--warn" v-if="confirmDialog.action === 'bm_decide_unrank'">
+                <div class="av2-hint av2-hint--warn" v-if="confirmDialog.action === 'bm_status_unrank'">
                     <i class="fas fa-exclamation-triangle"></i>
-                    Unranking will remove the map from leaderboards. Existing scores remain but no longer award PP. A reason is required.
+                    Unranking will remove these difficulties from leaderboards. Existing scores remain but no longer award PP. A reason is required.
                 </div>
-                <div class="av2-hint av2-hint--info" v-if="confirmDialog.action === 'bm_decide_needs_changes'">
+                <div class="av2-hint av2-hint--info" v-if="confirmDialog.action === 'bm_resolve_mark_complete'">
                     <i class="fas fa-info-circle"></i>
-                    This will mark the work item as needing changes and auto-post a comment with your reason. The map status is NOT changed.
+                    Closes the review. Map statuses are not affected — make sure you've applied the correct statuses first.
                 </div>
-                <div class="av2-hint av2-hint--info" v-if="confirmDialog.action === 'bm_decide_dismiss'">
+                <div class="av2-hint av2-hint--info" v-if="confirmDialog.action === 'bm_resolve_needs_changes'">
                     <i class="fas fa-info-circle"></i>
-                    Dismissing closes the review without changing the map status. Associated requests will be marked inactive.
+                    Marks as needing changes and auto-posts a comment with your reason. Map statuses are not changed.
+                </div>
+                <div class="av2-hint av2-hint--info" v-if="confirmDialog.action === 'bm_resolve_dismiss'">
+                    <i class="fas fa-info-circle"></i>
+                    Closes the review without changing any map statuses. Associated requests will be deactivated.
                 </div>
 
                 <div class="av2-form-group" v-if="confirmDialog.needsReason">
@@ -1494,6 +1544,6 @@
 
     <script src="/static/js/asserts/vue.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/timeago.js/4.0.2/timeago.min.js"></script>
-    <script src="/static/hinaDir/compiled/admin_v2.js?v=5"></script>
+    <script src="/static/hinaDir/compiled/admin_v2.js?v=7"></script>
 </body>
 </html>
