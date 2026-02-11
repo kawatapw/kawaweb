@@ -72,15 +72,15 @@ def _gen_action_id():
 
 async def _log_action(mod_id, mod_name, target_id, action_name, action_text,
                        reason, action_type, badge=None, map_obj=None):
-    """Insert into logs table and post to Discord webhook."""
+    """Insert into admin_v2_logs table and post to Discord webhook."""
     action_id = _gen_action_id()
     reason = reason or 'No reason specified.'
     now = datetime.datetime.now()
 
     await glob.db.execute(
-        "INSERT INTO logs (`from`, `to`, action, msg, time) "
-        "VALUES (%s, %s, %s, %s, %s)",
-        [mod_id, target_id, action_name, reason, now]
+        "INSERT INTO admin_v2_logs (from_id, to_id, action, msg, created_at, action_type) "
+        "VALUES (%s, %s, %s, %s, %s, %s)",
+        [mod_id, target_id, action_name, reason, now, action_type]
     )
 
     # Discord webhook (best-effort, don't fail the action)
@@ -286,12 +286,12 @@ async def api_dashboard():
     )
 
     # ── Recent staff actions ──────────────────────────────
-    # logs schema: id, `from`, `to`, action, msg, time
+    # admin_v2_logs schema: id, from_id, to_id, action, msg, created_at, action_type
     action_placeholders = ', '.join(['%s'] * len(_STAFF_ACTION_WHITELIST))
     raw_actions = await glob.db.fetchall(
-        'SELECT l.id, l.action, l.msg, l.time, l.`from` AS mod_id, l.`to` AS target_id '
-        f'FROM logs l WHERE l.action IN ({action_placeholders}) '
-        'ORDER BY l.time DESC LIMIT 10',
+        'SELECT l.id, l.action, l.msg, l.created_at AS time, l.from_id AS mod_id, l.to_id AS target_id '
+        f'FROM admin_v2_logs l WHERE l.action IN ({action_placeholders}) '
+        'ORDER BY l.created_at DESC LIMIT 10',
         list(_STAFF_ACTION_WHITELIST)
     )
 
@@ -644,10 +644,10 @@ async def api_user_detail(userid):
             [userid]
         )
 
-    # Admin logs (logs schema: id, `from`, `to`, action, msg, time)
+    # Admin logs (admin_v2_logs schema: id, from_id, to_id, action, msg, created_at, action_type)
     admin_logs = await glob.db.fetchall(
-        "SELECT id, `from` AS mod_id, `to` AS target_id, action, msg, `time` "
-        "FROM logs WHERE `to` = %s ORDER BY `time` DESC LIMIT 50",
+        "SELECT id, from_id AS mod_id, to_id AS target_id, action, msg, created_at AS `time` "
+        "FROM admin_v2_logs WHERE to_id = %s ORDER BY created_at DESC LIMIT 50",
         [userid]
     )
     for log_entry in (admin_logs or []):
@@ -1785,18 +1785,18 @@ async def api_bm_work_item_detail(item_id):
         [item_id]
     )
 
-    # Action history from logs
-    # logs schema: id, `from` (mod), `to` (target), action, msg (reason), time
+    # Action history from admin_v2_logs
+    # admin_v2_logs schema: id, from_id, to_id, action, msg, created_at, action_type
     map_ids = [d['id'] for d in (diffs or [])]
     history = []
     if map_ids:
         ip = ','.join(['%s'] * len(map_ids))
         history = await glob.db.fetchall(
-            f"SELECT l.id, l.`from` as `mod`, l.`to` as target, l.action, "
-            f"l.msg as reason, l.time, u.name as mod_name "
-            f"FROM logs l LEFT JOIN users u ON u.id = l.`from` "
-            f"WHERE l.`to` IN ({ip}) "
-            f"ORDER BY l.time DESC LIMIT 20",
+            f"SELECT l.id, l.from_id as `mod`, l.to_id as target, l.action, "
+            f"l.msg as reason, l.created_at as time, u.name as mod_name "
+            f"FROM admin_v2_logs l LEFT JOIN users u ON u.id = l.from_id "
+            f"WHERE l.to_id IN ({ip}) AND l.action_type = 1 "
+            f"ORDER BY l.created_at DESC LIMIT 20",
             map_ids
         )
 
@@ -2119,3 +2119,319 @@ async def api_bm_decide(item_id):
                           1, map_obj=map_obj)
 
     return jsonify({'status': 'success', 'message': f'Review resolved: {action}.'})
+
+
+# ─── Staff Activity Log ──────────────────────────────────────────────
+
+_ACTION_TYPE_LABELS = {0: 'user', 1: 'map', 2: 'badge'}
+
+
+@hina_admin.route('/api/staff-list')
+@error_catcher
+@staff_required
+async def api_staff_list():
+    """Return list of staff members who have logged actions (for filter dropdown)."""
+    mod_priv = session['user_data']['priv']
+    if not _check_priv(mod_priv, Privileges.ViewPanelLog):
+        return jsonify({'status': 'error', 'message': 'Insufficient privileges.'}), 403
+
+    staff = await glob.db.fetchall(
+        "SELECT DISTINCT u.id, u.name FROM users u "
+        "INNER JOIN admin_v2_logs l ON u.id = l.from_id "
+        "ORDER BY u.name"
+    )
+    return jsonify({'staff': staff or []})
+
+
+@hina_admin.route('/api/staff-log')
+@error_catcher
+@staff_required
+async def api_staff_log():
+    """Full staff activity log with filtering and pagination."""
+    mod_priv = session['user_data']['priv']
+    if not _check_priv(mod_priv, Privileges.ViewPanelLog):
+        return jsonify({'status': 'error', 'message': 'Insufficient privileges.'}), 403
+
+    page = max(1, int(request.args.get('page', 1)))
+    page_size = min(200, max(1, int(request.args.get('page_size', 50))))
+    offset = (page - 1) * page_size
+
+    staff_id = request.args.get('staff_id', '').strip()
+    action_type = request.args.get('action_type', '').strip()
+    action = request.args.get('action', '').strip()
+    from_date = request.args.get('from_date', '').strip()
+    to_date = request.args.get('to_date', '').strip()
+    search = request.args.get('search', '').strip()
+
+    conditions = []
+    params = []
+
+    if staff_id:
+        conditions.append("l.from_id = %s")
+        params.append(int(staff_id))
+    if action_type != '':
+        conditions.append("l.action_type = %s")
+        params.append(int(action_type))
+    if action:
+        conditions.append("l.action = %s")
+        params.append(action)
+    if from_date:
+        conditions.append("l.created_at >= %s")
+        params.append(from_date)
+    if to_date:
+        conditions.append("l.created_at <= %s")
+        params.append(to_date)
+    if search:
+        conditions.append("l.msg LIKE %s")
+        params.append(f"%{search}%")
+
+    where = ""
+    if conditions:
+        where = " WHERE " + " AND ".join(conditions)
+
+    # Count
+    total_row = await glob.db.fetch(
+        "SELECT COUNT(*) as total FROM admin_v2_logs l" + where, params
+    )
+    total = total_row['total'] if total_row else 0
+
+    # Fetch page
+    rows = await glob.db.fetchall(
+        "SELECT l.id, l.from_id, l.to_id, l.action, l.action_type, l.msg, l.created_at "
+        "FROM admin_v2_logs l" + where +
+        " ORDER BY l.created_at DESC LIMIT %s OFFSET %s",
+        params + [page_size, offset]
+    )
+
+    logs = []
+    for row in (rows or []):
+        # Resolve staff name
+        staff_user = await glob.db.fetch("SELECT name FROM users WHERE id = %s", [row['from_id']])
+        staff_name = staff_user['name'] if staff_user else str(row['from_id'])
+
+        # Resolve target summary based on action_type
+        at = row['action_type']
+        target_summary = ''
+        target_set_id = None
+        if at == 0:
+            target_user = await glob.db.fetch("SELECT name FROM users WHERE id = %s", [row['to_id']])
+            target_summary = target_user['name'] if target_user else str(row['to_id'])
+        elif at == 1:
+            target_map = await glob.db.fetch(
+                "SELECT artist, title, version, set_id FROM maps WHERE id = %s LIMIT 1", [row['to_id']]
+            )
+            if target_map:
+                target_summary = f"{target_map['artist']} - {target_map['title']} [{target_map['version']}]"
+                target_set_id = target_map['set_id']
+            else:
+                target_summary = f"Map #{row['to_id']}"
+        elif at == 2:
+            target_badge = await glob.db.fetch("SELECT name FROM badges WHERE id = %s", [row['to_id']])
+            target_summary = target_badge['name'] if target_badge else f"Badge #{row['to_id']}"
+
+        created = row['created_at']
+        if isinstance(created, datetime.datetime):
+            created = int(created.timestamp())
+
+        entry = {
+            'id': row['id'],
+            'staff_id': row['from_id'],
+            'staff_name': staff_name,
+            'action': row['action'],
+            'action_type': at,
+            'target_type': _ACTION_TYPE_LABELS.get(at, 'unknown'),
+            'target_id': row['to_id'],
+            'target_summary': target_summary,
+            'msg': row['msg'] or '',
+            'created_at': created,
+        }
+        if target_set_id is not None:
+            entry['target_set_id'] = target_set_id
+        logs.append(entry)
+
+    return jsonify({
+        'status': 'success',
+        'logs': logs,
+        'total': total,
+        'page': page,
+        'page_size': page_size,
+    })
+
+
+# ─── Manual Beatmap Actions ──────────────────────────────────────────
+
+@hina_admin.route('/api/manual-map-info')
+@error_catcher
+@staff_required
+async def api_manual_map_info():
+    """Look up a beatmap set by set_id or map_id for manual actions."""
+    mod_priv = session['user_data']['priv']
+    if not _check_priv(mod_priv, Privileges.ManageBeatmaps):
+        return jsonify({'status': 'error', 'message': 'Insufficient privileges.'}), 403
+
+    set_id = request.args.get('set_id', '').strip()
+    map_id = request.args.get('map_id', '').strip()
+
+    if not set_id and not map_id:
+        return jsonify({'status': 'error', 'message': 'set_id or map_id required.'}), 400
+
+    # Resolve set_id from map_id if needed
+    if map_id and not set_id:
+        row = await glob.db.fetch("SELECT set_id FROM maps WHERE id = %s", [int(map_id)])
+        if row:
+            set_id = str(row['set_id'])
+
+    # Try local DB first
+    diffs = None
+    if set_id:
+        diffs = await glob.db.fetchall(
+            "SELECT id, set_id, artist, title, creator, version, mode, diff, "
+            "total_length, cs, ar, od, hp, bpm, max_combo, plays, passes, status "
+            "FROM maps WHERE set_id = %s ORDER BY diff ASC",
+            [int(set_id)]
+        )
+
+    # If not found locally, try to import from osu! via kawata.py
+    if not diffs and map_id:
+        try:
+            url = 'http://bancho:10000/v1/get_map_info'
+            headers = {'Host': f'api.{cfg.domain}'}
+            async with glob.http.get(url, headers=headers, params={'id': str(map_id)}) as resp:
+                api_data = await resp.json(content_type=None)
+                if api_data.get('status') == 'success' and api_data.get('map'):
+                    imported_set_id = api_data['map'].get('set_id')
+                    if imported_set_id:
+                        set_id = str(imported_set_id)
+                        diffs = await glob.db.fetchall(
+                            "SELECT id, set_id, artist, title, creator, version, mode, diff, "
+                            "total_length, cs, ar, od, hp, bpm, max_combo, plays, passes, status "
+                            "FROM maps WHERE set_id = %s ORDER BY diff ASC",
+                            [int(set_id)]
+                        )
+        except Exception:
+            pass
+
+    if not diffs:
+        msg = 'No maps found for this set.'
+        if not map_id:
+            msg += ' Try pasting a full beatmap URL (e.g. https://osu.ppy.sh/beatmapsets/123456#osu/789) to import from osu!'
+        return jsonify({'status': 'error', 'message': msg}), 404
+
+    first = diffs[0]
+    return jsonify({
+        'status': 'success',
+        'set_id': int(set_id),
+        'artist': first['artist'],
+        'title': first['title'],
+        'creator': first['creator'],
+        'diffs': [dict(d) for d in diffs],
+    })
+
+
+@hina_admin.route('/api/manual-map-action', methods=['POST'])
+@error_catcher
+@staff_required
+async def api_manual_map_action():
+    """Execute a manual status change on selected diffs of a set."""
+    mod_id, mod_name, mod_priv = _get_mod_info()
+    if not _check_priv(mod_priv, Privileges.ManageBeatmaps):
+        return jsonify({'status': 'error', 'message': 'Insufficient privileges.'}), 403
+
+    data = await request.get_json()
+    if not data:
+        return jsonify({'status': 'error', 'message': 'No data provided.'}), 400
+
+    set_id = data.get('set_id')
+    map_ids = data.get('map_ids', [])
+    action = data.get('action', '')
+    reason = (data.get('reason') or '').strip()
+
+    STATUS_MAP = {'rank': 2, 'approve': 3, 'qualify': 4, 'love': 5, 'unrank': 0}
+    if action not in STATUS_MAP:
+        return jsonify({'status': 'error', 'message': 'Invalid action.'}), 400
+
+    if not set_id:
+        return jsonify({'status': 'error', 'message': 'set_id required.'}), 400
+
+    if action == 'unrank' and not reason:
+        return jsonify({'status': 'error', 'message': 'Reason required for unranking.'}), 400
+
+    # Get all diffs in the set
+    all_diffs = await glob.db.fetchall(
+        "SELECT id, version, artist, title, set_id FROM maps WHERE set_id = %s",
+        [int(set_id)]
+    )
+    if not all_diffs:
+        return jsonify({'status': 'error', 'message': 'No maps found for this set.'}), 404
+
+    all_diff_ids = {d['id'] for d in all_diffs}
+
+    # If no map_ids specified, update all diffs
+    if not map_ids:
+        map_ids = list(all_diff_ids)
+
+    # Validate all map_ids belong to this set
+    for mid in map_ids:
+        if int(mid) not in all_diff_ids:
+            return jsonify({
+                'status': 'error',
+                'message': f'Map ID {mid} does not belong to set {set_id}.'
+            }), 400
+
+    new_status = STATUS_MAP[action]
+    ACTION_TEXT = {
+        'rank': 'Ranked', 'approve': 'Approved', 'qualify': 'Qualified',
+        'love': 'Loved', 'unrank': 'Unranked',
+    }
+
+    # If ALL diffs selected, use set_id for efficiency
+    if set(int(m) for m in map_ids) == all_diff_ids:
+        first_id = int(map_ids[0])
+        result = await _update_map_status(map_id=first_id, set_id=int(set_id), new_status=new_status)
+        if result.get('status') not in ('success',):
+            return jsonify({'status': 'error', 'message': result.get('status') or result.get('message', 'API call failed.')}), 502
+    else:
+        for mid in map_ids:
+            result = await _update_map_status(map_id=int(mid), new_status=new_status)
+            if result.get('status') not in ('success',):
+                return jsonify({'status': 'error', 'message': result.get('status') or result.get('message', 'API call failed.')}), 502
+
+    # Insert into newly_ranked for non-unrank actions
+    if action != 'unrank':
+        for mid in map_ids:
+            try:
+                await glob.db.execute(
+                    "INSERT IGNORE INTO newly_ranked (map_id, mod_id, time) "
+                    "VALUES (%s, %s, %s)",
+                    [int(mid), mod_id, datetime.datetime.now()]
+                )
+            except Exception:
+                pass
+
+    # Deactivate related map_requests
+    if map_ids:
+        placeholders = ', '.join(['%s'] * len(map_ids))
+        try:
+            await glob.db.execute(
+                f"UPDATE map_requests SET active = 0 WHERE map_id IN ({placeholders})",
+                [int(m) for m in map_ids]
+            )
+        except Exception:
+            pass
+
+    # Log each diff action
+    for mid in map_ids:
+        diff_row = next((d for d in all_diffs if d['id'] == int(mid)), None)
+        if diff_row:
+            await _log_action(
+                mod_id, mod_name, int(mid), f'manual_{action}',
+                ACTION_TEXT[action],
+                reason or f'{ACTION_TEXT[action]} via manual action',
+                1, map_obj=dict(diff_row)
+            )
+
+    return jsonify({
+        'status': 'success',
+        'message': f'{ACTION_TEXT[action]} {len(map_ids)} difficulty(ies) in set {set_id}.',
+        'count': len(map_ids),
+    })

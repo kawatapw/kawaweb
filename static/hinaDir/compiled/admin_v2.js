@@ -66,7 +66,7 @@ document.addEventListener('DOMContentLoaded', function () {
     var config = window.__ADMIN_V2__;
     // Determine initial view from URL
     var path = window.location.pathname.replace('/admin-v2', '').replace(/^\//, '');
-    var validViews = ['users', 'beatmaps', 'badges'];
+    var validViews = ['users', 'beatmaps', 'badges', 'staff-log', 'manual-map'];
     var initialView = validViews.indexOf(path) !== -1 ? path : 'dashboard';
     new Vue({
         el: '#admin-v2-app',
@@ -168,6 +168,36 @@ document.addEventListener('DOMContentLoaded', function () {
                 isNew: false,
                 loading: false,
             },
+            // Staff Activity Log
+            staffLog: {
+                entries: [],
+                pagination: { current_page: 1, total_pages: 1, total_count: 0 },
+                filters: {
+                    staff_id: '',
+                    action_type: '',
+                    action: '',
+                    from_date: '',
+                    to_date: '',
+                    search: '',
+                },
+                staffList: [],
+                staffListLoaded: false,
+                loading: false,
+                expandedId: null,
+                pageSize: 50,
+            },
+            // Manual Beatmap Actions
+            manualMap: {
+                input: '',
+                info: null,
+                loading: false,
+                error: '',
+                selectedDiffs: [],
+                action: '',
+                reason: '',
+                executing: false,
+                result: null,
+            },
             // Privilege list for the editor
             privilegeList: PRIVILEGES,
             // Debounce timers
@@ -191,7 +221,7 @@ document.addEventListener('DOMContentLoaded', function () {
             // Handle browser back/forward
             window.addEventListener('popstate', function () {
                 var p = window.location.pathname.replace('/admin-v2', '').replace(/^\//, '');
-                var views = ['users', 'beatmaps', 'badges'];
+                var views = ['users', 'beatmaps', 'badges', 'staff-log', 'manual-map'];
                 var view = views.indexOf(p) !== -1 ? p : 'dashboard';
                 self.currentView = view;
                 self.loadView(view);
@@ -263,6 +293,10 @@ document.addEventListener('DOMContentLoaded', function () {
                     case 'badges':
                         this.loadBadges();
                         break;
+                    case 'staff-log':
+                        this.loadStaffLog(1);
+                        break;
+                    case 'manual-map': break; // no auto-load, user types input
                 }
             },
             // ── Dashboard ─────────────────────────────────────────
@@ -691,6 +725,12 @@ document.addEventListener('DOMContentLoaded', function () {
                     self.executeBmResolve(d.action, d.reason);
                     return;
                 }
+                // Handle manual map actions
+                if (d.action === 'manual_map_action') {
+                    d.show = false;
+                    self.doManualAction();
+                    return;
+                }
                 var body = { user: d.targetId, reason: d.reason };
                 if (d.needsDuration)
                     body.duration = d.duration;
@@ -1011,6 +1051,233 @@ document.addEventListener('DOMContentLoaded', function () {
                 var m = Math.floor(seconds / 60);
                 var s = seconds % 60;
                 return m + ':' + (s < 10 ? '0' : '') + s;
+            },
+            // ── Staff Activity Log ─────────────────────────────────
+            loadStaffLog: function (page) {
+                var self = this;
+                self.staffLog.loading = true;
+                // Load staff list once for dropdown
+                if (!self.staffLog.staffListLoaded) {
+                    adminApi('staff-list').then(function (data) {
+                        self.staffLog.staffList = data.staff || [];
+                        self.staffLog.staffListLoaded = true;
+                    }).catch(function () { });
+                }
+                var params = new URLSearchParams({
+                    page: String(page),
+                    page_size: String(self.staffLog.pageSize),
+                });
+                var f = self.staffLog.filters;
+                if (f.staff_id)
+                    params.set('staff_id', f.staff_id);
+                if (f.action_type !== '')
+                    params.set('action_type', f.action_type);
+                if (f.action)
+                    params.set('action', f.action);
+                if (f.from_date)
+                    params.set('from_date', f.from_date);
+                if (f.to_date)
+                    params.set('to_date', f.to_date);
+                if (f.search)
+                    params.set('search', f.search);
+                adminApi('staff-log?' + params).then(function (data) {
+                    self.staffLog.entries = data.logs || [];
+                    var total = data.total || 0;
+                    var pageSize = data.page_size || self.staffLog.pageSize;
+                    self.staffLog.pagination = {
+                        current_page: data.page || 1,
+                        total_pages: Math.max(1, Math.ceil(total / pageSize)),
+                        total_count: total,
+                    };
+                    self.staffLog.loading = false;
+                }).catch(function (e) {
+                    self.showToast('error', e.message);
+                    self.staffLog.loading = false;
+                });
+            },
+            applyStaffLogFilters: function () {
+                this.loadStaffLog(1);
+            },
+            clearStaffLogFilters: function () {
+                this.staffLog.filters = {
+                    staff_id: '', action_type: '', action: '',
+                    from_date: '', to_date: '', search: '',
+                };
+                this.loadStaffLog(1);
+            },
+            toggleLogDetail: function (id) {
+                this.staffLog.expandedId = this.staffLog.expandedId === id ? null : id;
+            },
+            staffLogTypePillClass: function (actionType) {
+                var classes = {
+                    0: 'av2-sl-type-pill--user',
+                    1: 'av2-sl-type-pill--map',
+                    2: 'av2-sl-type-pill--badge',
+                };
+                return classes[actionType] || '';
+            },
+            staffLogTargetUrl: function (entry) {
+                if (entry.action_type === 0) {
+                    return '/u/' + entry.target_id;
+                }
+                if (entry.action_type === 1 && entry.target_set_id) {
+                    return '/beatmapsets/' + entry.target_set_id;
+                }
+                return '';
+            },
+            // ── Manual Beatmap Actions ────────────────────────────
+            parseMapInput: function (input) {
+                if (!input || !input.trim())
+                    return null;
+                input = input.trim();
+                // Try beatmapsets URL: /beatmapsets/123456#osu/789
+                var setMatch = input.match(/beatmapsets\/(\d+)(?:#\w+\/(\d+))?/);
+                if (setMatch) {
+                    return {
+                        set_id: parseInt(setMatch[1], 10),
+                        map_id: setMatch[2] ? parseInt(setMatch[2], 10) : null,
+                    };
+                }
+                // Try /b/123 URL
+                var bMatch = input.match(/\/b\/(\d+)/);
+                if (bMatch) {
+                    return { set_id: null, map_id: parseInt(bMatch[1], 10) };
+                }
+                // Try raw number
+                if (/^\d+$/.test(input)) {
+                    return { set_id: parseInt(input, 10), map_id: null };
+                }
+                return null;
+            },
+            loadManualMap: function () {
+                var self = this;
+                var parsed = self.parseMapInput(self.manualMap.input);
+                if (!parsed) {
+                    self.manualMap.error = 'Invalid input. Enter a beatmap URL, set ID, or map ID.';
+                    return;
+                }
+                self.manualMap.loading = true;
+                self.manualMap.error = '';
+                self.manualMap.info = null;
+                self.manualMap.result = null;
+                var params = '';
+                if (parsed.set_id)
+                    params = 'set_id=' + parsed.set_id;
+                if (parsed.map_id)
+                    params += (params ? '&' : '') + 'map_id=' + parsed.map_id;
+                adminApi('manual-map-info?' + params).then(function (data) {
+                    self.manualMap.info = data;
+                    self.manualMap.selectedDiffs = [];
+                    self.manualMap.action = '';
+                    self.manualMap.reason = '';
+                    self.manualMap.loading = false;
+                }).catch(function (e) {
+                    self.manualMap.error = e.message;
+                    self.manualMap.loading = false;
+                });
+            },
+            toggleManualDiff: function (id) {
+                var idx = this.manualMap.selectedDiffs.indexOf(id);
+                if (idx === -1) {
+                    this.manualMap.selectedDiffs.push(id);
+                }
+                else {
+                    this.manualMap.selectedDiffs.splice(idx, 1);
+                }
+            },
+            toggleAllManualDiffs: function () {
+                if (!this.manualMap.info)
+                    return;
+                var allIds = this.manualMap.info.diffs.map(function (d) { return d.id; });
+                if (this.manualMap.selectedDiffs.length === allIds.length) {
+                    this.manualMap.selectedDiffs = [];
+                }
+                else {
+                    this.manualMap.selectedDiffs = allIds.slice();
+                }
+            },
+            isManualDiffSelected: function (id) {
+                return this.manualMap.selectedDiffs.indexOf(id) !== -1;
+            },
+            allManualDiffsSelected: function () {
+                if (!this.manualMap.info || !this.manualMap.info.diffs.length)
+                    return false;
+                return this.manualMap.selectedDiffs.length === this.manualMap.info.diffs.length;
+            },
+            executeManualAction: function () {
+                var self = this;
+                if (!self.manualMap.info || !self.manualMap.action)
+                    return;
+                if (!self.manualMap.selectedDiffs.length) {
+                    self.showToast('error', 'Select at least one difficulty.');
+                    return;
+                }
+                if (self.manualMap.action === 'unrank' && !self.manualMap.reason.trim()) {
+                    self.showToast('error', 'Reason required for unranking.');
+                    return;
+                }
+                var labels = {
+                    'rank': 'Rank', 'approve': 'Approve', 'qualify': 'Qualify',
+                    'love': 'Love', 'unrank': 'Unrank',
+                };
+                var count = self.manualMap.selectedDiffs.length;
+                self.confirmDialog = {
+                    show: true,
+                    title: labels[self.manualMap.action] + ' ' + count + ' difficulty(ies)?',
+                    message: self.manualMap.info.artist + ' - ' + self.manualMap.info.title + ' (set ' + self.manualMap.info.set_id + ')',
+                    action: 'manual_map_action',
+                    needsReason: false,
+                    needsDuration: false,
+                    needsPassword: false,
+                    reason: self.manualMap.reason,
+                    duration: 0,
+                    password: '',
+                    targetId: self.manualMap.info.set_id,
+                };
+            },
+            doManualAction: function () {
+                var self = this;
+                self.manualMap.executing = true;
+                adminApi('manual-map-action', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        set_id: self.manualMap.info.set_id,
+                        map_ids: self.manualMap.selectedDiffs.slice(),
+                        action: self.manualMap.action,
+                        reason: self.manualMap.reason,
+                    }),
+                }).then(function (data) {
+                    self.manualMap.executing = false;
+                    self.manualMap.result = {
+                        message: data.message,
+                        count: data.count,
+                        set_id: self.manualMap.info.set_id,
+                    };
+                    self.showToast('success', data.message);
+                }).catch(function (e) {
+                    self.manualMap.executing = false;
+                    self.showToast('error', e.message);
+                });
+            },
+            resetManualMap: function () {
+                this.manualMap = {
+                    input: '',
+                    info: null,
+                    loading: false,
+                    error: '',
+                    selectedDiffs: [],
+                    action: '',
+                    reason: '',
+                    executing: false,
+                    result: null,
+                };
+            },
+            viewStaffLogForSet: function (setId) {
+                this.staffLog.filters = {
+                    staff_id: '', action_type: '1', action: '',
+                    from_date: '', to_date: '', search: '',
+                };
+                this.navigateTo('staff-log');
             },
             // ── Badges ────────────────────────────────────────────
             loadBadges: function () {

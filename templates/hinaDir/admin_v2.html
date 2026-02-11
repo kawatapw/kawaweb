@@ -9,7 +9,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/static/hinaDir/compiled/admin_v2.css?v=9">
+    <link rel="stylesheet" href="/static/hinaDir/compiled/admin_v2.css?v=11">
     <style>
         :root {
             {% if 'user_data' in session and session['user_data'].get('hue') %}
@@ -141,9 +141,20 @@
                    href="/admin-v2/beatmaps" @click.prevent="navigateTo('beatmaps')">
                     <i class="fas fa-map"></i><span>Beatmaps</span>
                 </a>
+                <a class="av2-nav-item" :class="{ active: currentView === 'manual-map' }"
+                   href="/admin-v2/manual-map" @click.prevent="navigateTo('manual-map')">
+                    <i class="fas fa-wrench"></i><span>Manual Rank</span>
+                </a>
                 <a class="av2-nav-item" :class="{ active: currentView === 'badges' }"
                    href="/admin-v2/badges" @click.prevent="navigateTo('badges')">
                     <i class="fas fa-award"></i><span>Badges</span>
+                </a>
+            </div>
+            <div class="av2-nav-section">
+                <span class="av2-nav-label">Monitoring</span>
+                <a class="av2-nav-item" :class="{ active: currentView === 'staff-log' }"
+                   href="/admin-v2/staff-log" @click.prevent="navigateTo('staff-log')">
+                    <i class="fas fa-clipboard-list"></i><span>Staff Log</span>
                 </a>
             </div>
             <div class="av2-nav-section">
@@ -1471,6 +1482,296 @@
                 </div>
             </div>
 
+            <!-- STAFF LOG VIEW -->
+            <div v-if="currentView === 'staff-log'" class="av2-view">
+                <h1 class="av2-view-title"><i class="fas fa-clipboard-list"></i> Staff Activity Log</h1>
+
+                <!-- Filters -->
+                <div class="av2-filters av2-sl-filters">
+                    <div class="av2-filter-group">
+                        <select class="av2-select" v-model="staffLog.filters.staff_id" @change="applyStaffLogFilters">
+                            <option value="">All Staff</option>
+                            <option v-for="s in staffLog.staffList" :key="s.id" :value="String(s.id)" v-text="s.name"></option>
+                        </select>
+                    </div>
+                    <div class="av2-filter-group">
+                        <select class="av2-select" v-model="staffLog.filters.action_type" @change="applyStaffLogFilters">
+                            <option value="">All Types</option>
+                            <option value="0">User</option>
+                            <option value="1">Map</option>
+                            <option value="2">Badge</option>
+                        </select>
+                    </div>
+                    <div class="av2-filter-group">
+                        <input class="av2-input" type="date" v-model="staffLog.filters.from_date"
+                               @change="applyStaffLogFilters" placeholder="From date">
+                    </div>
+                    <div class="av2-filter-group">
+                        <input class="av2-input" type="date" v-model="staffLog.filters.to_date"
+                               @change="applyStaffLogFilters" placeholder="To date">
+                    </div>
+                    <div class="av2-filter-group" style="flex: 2;">
+                        <input class="av2-input" type="text" placeholder="Search in messages..."
+                               v-model="staffLog.filters.search" @input="applyStaffLogFilters">
+                    </div>
+                    <button class="av2-btn av2-btn--sm" @click="clearStaffLogFilters">
+                        <i class="fas fa-times"></i> Clear
+                    </button>
+                </div>
+
+                <!-- Table -->
+                <div class="av2-card" v-if="!staffLog.loading">
+                    <div class="av2-table-wrap">
+                        <table class="av2-table av2-sl-table">
+                            <thead>
+                                <tr>
+                                    <th>Time</th>
+                                    <th>Staff</th>
+                                    <th>Type</th>
+                                    <th>Action</th>
+                                    <th>Target</th>
+                                    <th>Message</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <template v-for="entry in staffLog.entries">
+                                    <tr :key="entry.id" class="av2-sl-row" @click="toggleLogDetail(entry.id)">
+                                        <td class="av2-sl-time" v-text="formatTime(entry.created_at)"></td>
+                                        <td>
+                                            <div class="av2-user-cell">
+                                                <img :src="'https://' + config.avatarDomain + '/' + entry.staff_id"
+                                                     class="av2-user-cell-avatar" alt="">
+                                                <a href="#" @click.stop.prevent="searchNavigateUser(entry.staff_id)"
+                                                   v-text="entry.staff_name"></a>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <span class="av2-sl-type-pill"
+                                                  :class="staffLogTypePillClass(entry.action_type)"
+                                                  v-text="entry.target_type"></span>
+                                        </td>
+                                        <td>
+                                            <span class="av2-action-pill"
+                                                  :class="'av2-action-pill--' + getActionColor(entry.action)"
+                                                  v-text="entry.action"></span>
+                                        </td>
+                                        <td>
+                                            <a v-if="staffLogTargetUrl(entry)"
+                                               :href="staffLogTargetUrl(entry)"
+                                               @click.stop.prevent="entry.action_type === 0 ? searchNavigateUser(entry.target_id) : null"
+                                               v-text="entry.target_summary"></a>
+                                            <span v-else v-text="entry.target_summary"></span>
+                                        </td>
+                                        <td class="av2-sl-msg" v-text="entry.msg ? (entry.msg.length > 60 ? entry.msg.substring(0, 60) + '...' : entry.msg) : ''"></td>
+                                        <td>
+                                            <i class="fas" :class="staffLog.expandedId === entry.id ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
+                                        </td>
+                                    </tr>
+                                    <tr v-if="staffLog.expandedId === entry.id" :key="'detail-' + entry.id" class="av2-sl-detail-row">
+                                        <td colspan="7">
+                                            <div class="av2-sl-detail">
+                                                <div class="av2-sl-detail-field">
+                                                    <strong>Full Message:</strong>
+                                                    <span v-text="entry.msg || 'No message'"></span>
+                                                </div>
+                                                <div class="av2-sl-detail-field">
+                                                    <strong>Target ID:</strong>
+                                                    <span v-text="entry.target_id"></span>
+                                                </div>
+                                                <div class="av2-sl-detail-field">
+                                                    <strong>Staff ID:</strong>
+                                                    <span v-text="entry.staff_id"></span>
+                                                </div>
+                                                <div class="av2-sl-detail-field">
+                                                    <strong>Log ID:</strong>
+                                                    <span v-text="entry.id"></span>
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </template>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div v-if="staffLog.entries.length === 0" class="av2-empty">
+                        <i class="fas fa-clipboard-check" style="font-size: 1.5rem; margin-bottom: 8px;"></i>
+                        <div>No log entries found.</div>
+                    </div>
+
+                    <!-- Pagination -->
+                    <div class="av2-pagination" v-if="staffLog.pagination.total_pages > 1">
+                        <button class="av2-btn av2-btn--sm"
+                                :disabled="staffLog.pagination.current_page <= 1"
+                                @click="loadStaffLog(staffLog.pagination.current_page - 1)">
+                            <i class="fas fa-chevron-left"></i>
+                        </button>
+                        <span class="av2-pagination-info">
+                            Page <span v-text="staffLog.pagination.current_page"></span>
+                            of <span v-text="staffLog.pagination.total_pages"></span>
+                            (<span v-text="staffLog.pagination.total_count"></span> entries)
+                        </span>
+                        <button class="av2-btn av2-btn--sm"
+                                :disabled="staffLog.pagination.current_page >= staffLog.pagination.total_pages"
+                                @click="loadStaffLog(staffLog.pagination.current_page + 1)">
+                            <i class="fas fa-chevron-right"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div v-if="staffLog.loading" class="av2-loading">
+                    <i class="fas fa-spinner fa-spin"></i> Loading staff log...
+                </div>
+            </div>
+
+            <!-- MANUAL MAP VIEW -->
+            <div v-if="currentView === 'manual-map'" class="av2-view">
+                <h1 class="av2-view-title"><i class="fas fa-wrench"></i> Manual Rank</h1>
+
+                <!-- Step 1: Input (when no info loaded and no result) -->
+                <div v-if="!manualMap.info && !manualMap.result" class="av2-mm-wrapper">
+                    <div class="av2-card av2-mm-input-card">
+                        <h2 class="av2-mm-card-title">Look up beatmap</h2>
+                        <p class="av2-mm-card-sub">Paste an osu! URL or ID to fetch the set.</p>
+                        <div class="av2-mm-input-row">
+                            <input class="av2-input av2-mm-input" type="text"
+                                   placeholder="https://osu.ppy.sh/beatmapsets/123456 or 41823"
+                                   v-model="manualMap.input"
+                                   @keydown.enter="loadManualMap">
+                            <button class="av2-mm-load-btn" @click="loadManualMap"
+                                    :disabled="manualMap.loading">
+                                <i class="fas fa-spinner fa-spin" v-if="manualMap.loading"></i>
+                                <i class="fas fa-search" v-if="!manualMap.loading"></i>
+                            </button>
+                        </div>
+                        <p class="av2-mm-hint">Accepts: beatmapset URL, /b/ URL, or raw set/map ID.</p>
+                        <div class="av2-mm-error" v-if="manualMap.error" v-text="manualMap.error"></div>
+                    </div>
+                    <p class="av2-mm-caption">Manual actions bypass the review queue. Use carefully.</p>
+                </div>
+
+                <!-- Step 2: Map Info (loaded) -->
+                <div v-if="manualMap.info && !manualMap.result">
+                    <!-- Header with cover -->
+                    <div class="av2-mm-header"
+                         :style="'background-image: url(https://assets.ppy.sh/beatmaps/' + manualMap.info.set_id + '/covers/cover.jpg)'">
+                        <div class="av2-mm-header-overlay">
+                            <button class="av2-btn av2-btn--sm" @click="resetManualMap" style="position: absolute; top: 12px; right: 12px;">
+                                <i class="fas fa-times"></i>
+                            </button>
+                            <div class="av2-mm-header-title" v-text="manualMap.info.artist + ' - ' + manualMap.info.title"></div>
+                            <div class="av2-mm-header-subtitle">
+                                Mapped by <span v-text="manualMap.info.creator"></span> | Set #<span v-text="manualMap.info.set_id"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Difficulty Table -->
+                    <div class="av2-card">
+                        <h3 class="av2-card-title" style="padding: 0 0 8px; border: none;">
+                            Difficulties (<span v-text="manualMap.info.diffs.length"></span>)
+                        </h3>
+
+                        <div class="av2-bm-diff-header">
+                            <label class="av2-bm-diff-checkbox">
+                                <input type="checkbox"
+                                       :checked="allManualDiffsSelected()"
+                                       @change="toggleAllManualDiffs()">
+                                <span v-text="allManualDiffsSelected() ? 'Deselect All' : 'Select All'"></span>
+                            </label>
+                            <span class="av2-text-muted" v-if="manualMap.selectedDiffs.length > 0"
+                                  v-text="manualMap.selectedDiffs.length + ' selected'"></span>
+                        </div>
+
+                        <div class="av2-bm-diff-list">
+                            <div v-for="d in manualMap.info.diffs" :key="d.id"
+                                 class="av2-bm-diff-row"
+                                 :class="{ 'av2-bm-diff-row--selected': isManualDiffSelected(d.id) }">
+                                <label class="av2-bm-diff-checkbox">
+                                    <input type="checkbox"
+                                           :checked="isManualDiffSelected(d.id)"
+                                           @change="toggleManualDiff(d.id)">
+                                </label>
+                                <span class="av2-bm-diff-stars" v-text="'\u2605' + (d.diff || 0).toFixed(2)"></span>
+                                <span class="av2-bm-diff-version" v-text="d.version"></span>
+                                <span class="av2-map-status-pill"
+                                      :class="mapStatusClass(d.status)"
+                                      v-text="mapStatusLabel(d.status)"></span>
+                                <span class="av2-bm-diff-stats av2-text-muted">
+                                    CS<span v-text="d.cs"></span>
+                                    AR<span v-text="d.ar"></span>
+                                    OD<span v-text="d.od"></span>
+                                    HP<span v-text="d.hp"></span>
+                                    BPM<span v-text="d.bpm"></span>
+                                </span>
+                                <span class="av2-bm-diff-length av2-text-muted" v-text="formatDuration(d.total_length)"></span>
+                                <span class="av2-bm-diff-plays av2-text-muted" v-text="formatNumber(d.plays) + ' plays'"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Action Selection -->
+                    <div class="av2-card av2-mm-action-card">
+                        <h3 class="av2-card-title" style="padding: 0 0 8px; border: none;">Action</h3>
+                        <div class="av2-mm-actions">
+                            <label class="av2-mm-action-radio av2-mm-action-radio--success"
+                                   :class="{ active: manualMap.action === 'rank' }">
+                                <input type="radio" name="mm-action" value="rank" v-model="manualMap.action">
+                                <i class="fas fa-check"></i> Rank
+                            </label>
+                            <label class="av2-mm-action-radio"
+                                   :class="{ active: manualMap.action === 'approve' }">
+                                <input type="radio" name="mm-action" value="approve" v-model="manualMap.action">
+                                <i class="fas fa-thumbs-up"></i> Approve
+                            </label>
+                            <label class="av2-mm-action-radio"
+                                   :class="{ active: manualMap.action === 'qualify' }">
+                                <input type="radio" name="mm-action" value="qualify" v-model="manualMap.action">
+                                <i class="fas fa-clipboard-check"></i> Qualify
+                            </label>
+                            <label class="av2-mm-action-radio av2-mm-action-radio--warning"
+                                   :class="{ active: manualMap.action === 'love' }">
+                                <input type="radio" name="mm-action" value="love" v-model="manualMap.action">
+                                <i class="fas fa-heart"></i> Love
+                            </label>
+                            <label class="av2-mm-action-radio av2-mm-action-radio--danger"
+                                   :class="{ active: manualMap.action === 'unrank' }">
+                                <input type="radio" name="mm-action" value="unrank" v-model="manualMap.action">
+                                <i class="fas fa-ban"></i> Unrank
+                            </label>
+                        </div>
+
+                        <div class="av2-form-group" style="margin-top: 12px;">
+                            <label>Reason <small v-if="manualMap.action === 'unrank'" style="color: var(--av2-danger);">(required for unrank)</small></label>
+                            <textarea class="av2-input av2-textarea" v-model="manualMap.reason"
+                                      placeholder="Optional reason for audit trail..." rows="2"></textarea>
+                        </div>
+
+                        <button class="av2-btn av2-btn--accent" @click="executeManualAction"
+                                :disabled="!manualMap.action || !manualMap.selectedDiffs.length || manualMap.executing">
+                            <i class="fas fa-bolt" v-if="!manualMap.executing"></i>
+                            <i class="fas fa-spinner fa-spin" v-if="manualMap.executing"></i>
+                            Execute
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Step 3: Result -->
+                <div v-if="manualMap.result" class="av2-card av2-mm-result">
+                    <i class="fas fa-check-circle av2-mm-result-icon"></i>
+                    <h2 v-text="manualMap.result.message"></h2>
+                    <div class="av2-mm-result-actions">
+                        <button class="av2-btn av2-btn--sm" @click="viewStaffLogForSet(manualMap.result.set_id)">
+                            <i class="fas fa-clipboard-list"></i> View in Staff Log
+                        </button>
+                        <button class="av2-btn av2-btn--accent av2-btn--sm" @click="resetManualMap">
+                            <i class="fas fa-redo"></i> Do Another
+                        </button>
+                    </div>
+                </div>
+            </div>
+
             <!-- Confirm Dialog -->
             <div class="av2-panel-overlay" v-if="confirmDialog.show" @click.self="confirmDialog.show = false"></div>
             <div class="av2-confirm" v-if="confirmDialog.show">
@@ -1522,6 +1823,10 @@
                     <i class="fas fa-info-circle"></i>
                     Closes the review without changing any map statuses. Associated requests will be deactivated.
                 </div>
+                <div class="av2-hint av2-hint--info" v-if="confirmDialog.action === 'manual_map_action'">
+                    <i class="fas fa-info-circle"></i>
+                    This will directly change map statuses, add to newly ranked, and log the action. No work item is involved.
+                </div>
 
                 <div class="av2-form-group" v-if="confirmDialog.needsReason">
                     <label>Reason</label>
@@ -1557,6 +1862,6 @@
 
     <script src="/static/js/asserts/vue.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/timeago.js/4.0.2/timeago.min.js"></script>
-    <script src="/static/hinaDir/compiled/admin_v2.js?v=8"></script>
+    <script src="/static/hinaDir/compiled/admin_v2.js?v=9"></script>
 </body>
 </html>
