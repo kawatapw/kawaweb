@@ -3144,3 +3144,560 @@ select:focus:not(:focus-visible) {
     gap: 8px;
     justify-content: center;
 }
+
+// ─── Manual Map PP Toggle ────────────────────────────────────────────
+
+.av2-mm-pp-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    padding: 12px 16px;
+    background: hsla(var(--main), 50%, 40%, 0.3);
+    border: 1px solid hsla(var(--main), 60%, 50%, 0.4);
+    border-radius: 8px;
+    color: #fff;
+    cursor: pointer;
+    font-size: 0.85rem;
+    font-weight: 700;
+    transition: all 0.18s ease;
+    box-shadow: 0 2px 6px hsla(var(--main), 50%, 20%, 0.15);
+
+    &:hover {
+        background: hsla(var(--main), 55%, 45%, 0.45);
+        border-color: hsla(var(--main), 65%, 55%, 0.55);
+        box-shadow: 0 3px 10px hsla(var(--main), 50%, 20%, 0.25);
+        transform: translateY(-1px);
+    }
+
+    &:active {
+        transform: translateY(0) scale(0.99);
+    }
+
+    > span {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+}
+
+// ─── PP Table Modal ──────────────────────────────────────────────────
+
+.av2-pp-table-modal {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: var(--av2-surface);
+    border: 1px solid var(--av2-border);
+    border-radius: var(--av2-radius);
+    padding: 24px;
+    width: 820px;
+    max-width: 95vw;
+    max-height: 85vh;
+    overflow-y: auto;
+    z-index: 62;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.av2-pp-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+
+    h3 {
+        font-size: 1.1rem;
+        font-weight: 600;
+        margin: 0;
+    }
+
+    span {
+        font-size: 0.8rem;
+        display: block;
+        margin-top: 2px;
+    }
+
+    button {
+        flex-shrink: 0;
+        font-size: 1.2rem;
+        line-height: 1;
+        padding: 4px 8px;
+    }
+}
+
+.av2-pp-mods {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+}
+
+.av2-pp-mods-sep {
+    width: 1px;
+    height: 24px;
+    background: var(--av2-border);
+    margin: 0 4px;
+}
+
+.av2-pp-mod-btn {
+    padding: 5px 12px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    border: 1px solid var(--av2-border);
+    border-radius: 4px;
+    background: var(--av2-bg);
+    color: var(--av2-text-muted);
+    cursor: pointer;
+    transition: all 0.15s ease;
+    font-family: inherit;
+
+    &:hover {
+        border-color: var(--av2-accent);
+        color: var(--av2-text);
+    }
+
+    &--active {
+        background: var(--av2-accent);
+        border-color: var(--av2-accent);
+        color: #fff;
+
+        &:hover {
+            background: var(--av2-accent-hover);
+            border-color: var(--av2-accent-hover);
+        }
+    }
+}
+
+.av2-pp-combo-btn {
+    @extend .av2-pp-mod-btn;
+    border-style: dashed;
+
+    &.av2-pp-mod-btn--active {
+        border-style: solid;
+    }
+}
+
+.av2-pp-active-label {
+    font-size: 0.78rem;
+}
+
+.av2-pp-loading {
+    text-align: center;
+    padding: 24px;
+    color: var(--av2-text-muted);
+    font-size: 0.85rem;
+
+    i {
+        margin-right: 6px;
+    }
+}
+
+.av2-pp-table-wrap {
+    overflow-x: auto;
+}
+
+.av2-pp-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.82rem;
+    font-variant-numeric: tabular-nums;
+
+    th, td {
+        padding: 8px 12px;
+        text-align: right;
+        border-bottom: 1px solid var(--av2-border);
+        white-space: nowrap;
+    }
+
+    th {
+        position: sticky;
+        top: 0;
+        background: var(--av2-surface);
+        font-weight: 600;
+        color: var(--av2-text-muted);
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+    }
+
+    tbody tr:hover {
+        background: var(--av2-surface-hover);
+    }
+}
+
+.av2-pp-col-diff {
+    text-align: left;
+    min-width: 160px;
+}
+
+.av2-pp-col-stars {
+    color: var(--av2-warning);
+    font-weight: 600;
+}
+
+.av2-pp-col-val {
+    min-width: 70px;
+}
+
+.av2-pp-stars {
+    color: var(--av2-warning);
+    font-weight: 600;
+}
+
+@media (max-width: 640px) {
+    .av2-pp-table-modal {
+        width: 100vw;
+        max-width: 100vw;
+        height: 100vh;
+        max-height: 100vh;
+        border-radius: 0;
+        top: 0;
+        left: 0;
+        transform: none;
+    }
+
+    .av2-pp-mods-sep {
+        display: none;
+    }
+
+    .av2-pp-table th,
+    .av2-pp-table td {
+        padding: 6px 8px;
+        font-size: 0.75rem;
+    }
+
+    .av2-pp-col-diff {
+        min-width: 100px;
+    }
+}
+
+// ─── Manual Map Step 2 Layout ───────────────────────────────────────
+
+.av2-mm-step2 {
+    max-width: 720px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.av2-mm-card {
+    padding: 0;
+}
+
+.av2-mm-card-head {
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--av2-border);
+}
+
+.av2-mm-section-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--av2-text);
+    margin: 0;
+
+    i {
+        color: var(--av2-accent);
+        font-size: 0.85rem;
+    }
+}
+
+.av2-mm-section-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 22px;
+    height: 20px;
+    padding: 0 6px;
+    border-radius: 10px;
+    background: hsla(var(--main), 50%, 50%, 0.15);
+    color: var(--av2-accent);
+    font-size: 0.7rem;
+    font-weight: 700;
+}
+
+// ─── Toolbar (Select All) ───────────────────────────────────────────
+
+.av2-mm-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 18px;
+    background: var(--av2-bg);
+    border-bottom: 1px solid var(--av2-border);
+    font-size: 0.8rem;
+}
+
+.av2-mm-toolbar-check {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    color: var(--av2-text-muted);
+    font-weight: 500;
+
+    input[type="checkbox"] {
+        accent-color: var(--av2-accent);
+        width: 14px;
+        height: 14px;
+        cursor: pointer;
+    }
+
+    &:hover {
+        color: var(--av2-text);
+    }
+}
+
+.av2-mm-toolbar-count {
+    color: var(--av2-accent);
+    font-weight: 600;
+    font-size: 0.75rem;
+}
+
+// ─── Diff Rows ──────────────────────────────────────────────────────
+
+.av2-mm-diff-list {
+    // Container for diff rows — no extra padding, rows sit flush
+}
+
+.av2-mm-diff-row {
+    display: grid;
+    grid-template-columns: 32px 1fr auto auto auto;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 18px;
+    border-bottom: 1px solid hsla(var(--main), 10%, 16%, 0.5);
+    transition: background 0.1s ease;
+
+    &:last-child {
+        border-bottom: none;
+    }
+
+    &:hover {
+        background: var(--av2-surface-hover);
+    }
+
+    &--even {
+        background: hsla(var(--main), 8%, 9%, 0.5);
+
+        &:hover {
+            background: var(--av2-surface-hover);
+        }
+    }
+
+    &--selected {
+        background: hsla(var(--main), 50%, 50%, 0.06);
+
+        &:hover {
+            background: hsla(var(--main), 50%, 50%, 0.1);
+        }
+    }
+}
+
+.av2-mm-diff-check {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+
+    input[type="checkbox"] {
+        accent-color: var(--av2-accent);
+        width: 15px;
+        height: 15px;
+        cursor: pointer;
+    }
+}
+
+.av2-mm-diff-identity {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+}
+
+.av2-mm-diff-stars {
+    color: var(--av2-warning);
+    font-size: 0.78rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    min-width: 56px;
+}
+
+.av2-mm-diff-name {
+    font-weight: 500;
+    font-size: 0.85rem;
+    color: var(--av2-text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.av2-mm-diff-stats {
+    display: flex;
+    gap: 10px;
+}
+
+.av2-mm-stat {
+    font-size: 0.72rem;
+    color: var(--av2-text-dim);
+    white-space: nowrap;
+
+    b {
+        color: var(--av2-text-muted);
+        font-weight: 600;
+    }
+}
+
+.av2-mm-diff-meta {
+    display: flex;
+    gap: 10px;
+    color: var(--av2-text-dim);
+    font-size: 0.72rem;
+    white-space: nowrap;
+
+    i {
+        font-size: 0.65rem;
+        margin-right: 3px;
+        opacity: 0.7;
+    }
+}
+
+// ─── Action Card ────────────────────────────────────────────────────
+
+.av2-mm-action-group-label {
+    display: block;
+    padding: 12px 18px 8px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--av2-text-dim);
+}
+
+.av2-mm-actions {
+    padding: 0 18px 12px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.av2-mm-reason-group {
+    padding: 0 18px 16px;
+
+    .av2-mm-action-group-label {
+        padding: 0 0 8px;
+    }
+}
+
+.av2-mm-required {
+    color: var(--av2-danger);
+    font-size: 0.65rem;
+    font-weight: 400;
+    text-transform: none;
+    letter-spacing: 0;
+    margin-left: 4px;
+}
+
+.av2-mm-execute-btn {
+    margin: 0 18px 18px;
+    width: calc(100% - 36px);
+    justify-content: center;
+    font-weight: 600;
+    padding: 10px 16px;
+}
+
+// ─── PP Body (inline PP in card) ────────────────────────────────────
+
+.av2-mm-pp-body {
+    padding: 16px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+// ─── Header Close Button ────────────────────────────────────────────
+
+.av2-mm-header-close {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    z-index: 2;
+    opacity: 0.7;
+    transition: opacity 0.15s;
+
+    &:hover {
+        opacity: 1;
+    }
+}
+
+// ─── Manual Map Step 2 Responsive ───────────────────────────────────
+
+@media (max-width: 768px) {
+    .av2-mm-step2 {
+        gap: 12px;
+    }
+
+    .av2-mm-diff-row {
+        grid-template-columns: 28px 1fr auto;
+        gap: 8px;
+        padding: 8px 12px;
+    }
+
+    .av2-mm-diff-stats,
+    .av2-mm-diff-meta {
+        display: none;
+    }
+
+    .av2-mm-toolbar {
+        padding: 8px 12px;
+    }
+
+    .av2-mm-card-head {
+        padding: 12px;
+    }
+
+    .av2-mm-action-group-label {
+        padding: 12px 12px 6px;
+    }
+
+    .av2-mm-actions {
+        padding: 0 12px 12px;
+    }
+
+    .av2-mm-reason-group {
+        padding: 0 12px 12px;
+    }
+
+    .av2-mm-execute-btn {
+        margin: 0 12px 12px;
+        width: calc(100% - 24px);
+    }
+
+    .av2-mm-pp-body {
+        padding: 12px;
+    }
+}
+
+@media (max-width: 480px) {
+    .av2-mm-diff-identity {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 2px;
+    }
+
+    .av2-mm-diff-stars {
+        font-size: 0.7rem;
+    }
+
+    .av2-mm-diff-name {
+        font-size: 0.78rem;
+    }
+}

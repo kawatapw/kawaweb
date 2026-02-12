@@ -1358,6 +1358,46 @@ async def action_removebadge():
 
 # ─── Beatmaps API ─────────────────────────────────────────────────────
 
+
+# ─── PP Table ─────────────────────────────────────────────────────────
+
+@hina_admin.route('/api/beatmaps/pp-table')
+@error_catcher
+@staff_required
+async def api_pp_table():
+    """Proxy batch PP calculation to kawata.py API."""
+    mod_priv = session['user_data']['priv']
+    if not _check_priv(mod_priv, Privileges.ManageBeatmaps):
+        return jsonify({'status': 'error', 'message': 'Insufficient privileges.'}), 403
+
+    ids_raw = request.args.get('ids', '')
+    mods = request.args.get('mods', '0')
+
+    if not ids_raw:
+        return jsonify({'status': 'error', 'message': 'No IDs provided.'}), 400
+
+    # Build query params: repeat id= for each diff
+    params = [('acc', '100'), ('acc', '99'), ('acc', '98'), ('acc', '95')]
+    params.append(('mods', mods))
+    for bid in ids_raw.split(',')[:20]:
+        bid = bid.strip()
+        if bid.isdigit():
+            params.append(('id', bid))
+
+    url = 'http://bancho:10000/v1/calculate_pp_batch'
+    headers = {
+        'Host': f'api.{cfg.domain}',
+        'Authorization': f'Bearer {glob.config.api_key}',
+    }
+    try:
+        async with glob.http.get(url, headers=headers, params=params) as resp:
+            data = await resp.json(content_type=None)
+            if resp.status != 200:
+                return jsonify({'status': 'error', 'message': data.get('status', 'API error')}), resp.status
+            return jsonify(data)
+    except Exception as e:
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
 @hina_admin.route('/api/beatmaps')
 @error_catcher
 @staff_required

@@ -256,10 +256,10 @@ bootstrapVue('beatmap-panel', {
             
             await this.fetchBeatmaps();
             this.show = true;
-            this.$log.info('LIFECYCLE', 'Beatmap panel opened', { 
-                show: this.show, 
+            this.$log.info('LIFECYCLE', 'Beatmap panel opened', {
+                show: this.show,
                 beatmapsCount: this.beatmaps.length,
-                hasSelected: !!this.selected 
+                hasSelected: !!this.selected
             });
         },
         close() {

@@ -183,6 +183,14 @@ document.addEventListener('DOMContentLoaded', function () {
                 commentDraft: '',
                 addSetId: '',
                 selectedDiffs: [] as number[],
+                ppTable: {
+                    show: false,
+                    loading: false,
+                    mods: 0,
+                    data: null as any,
+                    cache: {} as Record<string, any>,
+                    error: '',
+                },
             },
 
             // Badges
@@ -223,6 +231,14 @@ document.addEventListener('DOMContentLoaded', function () {
                 reason: '',
                 executing: false,
                 result: null as any,
+                ppTable: {
+                    show: false,
+                    loading: false,
+                    mods: 0,
+                    data: null as any,
+                    cache: {} as any,
+                    error: '',
+                },
             },
 
             // Privilege list for the editor
@@ -862,6 +878,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 self.beatmaps.activeLoading = true;
                 self.beatmaps.commentDraft = '';
                 self.beatmaps.selectedDiffs = [];
+                self.beatmaps.ppTable = { show: false, loading: false, mods: 0, data: null, cache: {}, error: '' };
 
                 adminApi('beatmaps/work-items/' + itemId).then(function (data: any) {
                     self.beatmaps.activeItem = data;
@@ -958,6 +975,78 @@ document.addEventListener('DOMContentLoaded', function () {
 
             isDiffSelected: function (diffId: number): boolean {
                 return this.beatmaps.selectedDiffs.indexOf(diffId) !== -1;
+            },
+
+            // ── PP Table ──────────────────────────────────────────────
+
+            openPPTable: function () {
+                var pp = this.beatmaps.ppTable;
+                pp.show = true;
+                pp.mods = 0;
+                pp.error = '';
+                pp.data = null;
+                pp.cache = {};
+                this.fetchPPData();
+            },
+
+            closePPTable: function () {
+                this.beatmaps.ppTable.show = false;
+            },
+
+            togglePPMod: function (bit: number) {
+                var pp = this.beatmaps.ppTable;
+                // EZ/HR conflict
+                if (bit === 2 && (pp.mods & 16)) { pp.mods &= ~16; }
+                if (bit === 16 && (pp.mods & 2)) { pp.mods &= ~2; }
+                // DT/HT conflict
+                if (bit === 64 && (pp.mods & 256)) { pp.mods &= ~256; }
+                if (bit === 256 && (pp.mods & 64)) { pp.mods &= ~64; }
+                pp.mods ^= bit;
+                this.fetchPPData();
+            },
+
+            setPPModCombo: function (mods: number) {
+                this.beatmaps.ppTable.mods = mods;
+                this.fetchPPData();
+            },
+
+            fetchPPData: function () {
+                var self = this;
+                var pp = self.beatmaps.ppTable;
+                var item = self.beatmaps.activeItem;
+                if (!item || !item.diffs) return;
+
+                var cacheKey = '' + pp.mods;
+                if (pp.cache[cacheKey]) {
+                    pp.data = pp.cache[cacheKey];
+                    pp.error = '';
+                    return;
+                }
+
+                pp.loading = true;
+                pp.error = '';
+                var ids = item.diffs.map(function (d: any) { return d.id; }).join(',');
+
+                fetch('/admin-v2/api/beatmaps/pp-table?ids=' + ids + '&mods=' + pp.mods)
+                    .then(function (res: any) { return res.json(); })
+                    .then(function (data: any) {
+                        if (data.status === 'success') {
+                            pp.cache[cacheKey] = data.results;
+                            pp.data = data.results;
+                            pp.error = '';
+                        } else {
+                            pp.error = data.message || 'Failed to fetch PP data.';
+                        }
+                        pp.loading = false;
+                    })
+                    .catch(function (e: any) {
+                        pp.error = e.message || 'Network error.';
+                        pp.loading = false;
+                    });
+            },
+
+            isPPModActive: function (bit: number): boolean {
+                return (this.beatmaps.ppTable.mods & bit) !== 0;
             },
 
             mapStatusLabel: function (status: number): string {
@@ -1378,7 +1467,93 @@ document.addEventListener('DOMContentLoaded', function () {
                     reason: '',
                     executing: false,
                     result: null,
+                    ppTable: { show: false, loading: false, mods: 0, data: null, cache: {}, error: '' },
                 };
+            },
+
+            // ── Manual Map PP Table ───────────────────────────────
+
+            toggleManualPP: function () {
+                var pp = this.manualMap.ppTable;
+                pp.show = !pp.show;
+                if (pp.show && !pp.data) {
+                    this.fetchManualPP();
+                }
+            },
+
+            toggleManualPPMod: function (bit: number) {
+                var pp = this.manualMap.ppTable;
+                if (bit === 2 && (pp.mods & 16)) { pp.mods &= ~16; }
+                if (bit === 16 && (pp.mods & 2)) { pp.mods &= ~2; }
+                if (bit === 64 && (pp.mods & 256)) { pp.mods &= ~256; }
+                if (bit === 256 && (pp.mods & 64)) { pp.mods &= ~64; }
+                pp.mods ^= bit;
+                this.fetchManualPP();
+            },
+
+            setManualPPCombo: function (mods: number) {
+                this.manualMap.ppTable.mods = mods;
+                this.fetchManualPP();
+            },
+
+            isManualPPModActive: function (bit: number): boolean {
+                return (this.manualMap.ppTable.mods & bit) !== 0;
+            },
+
+            fetchManualPP: function () {
+                var self = this;
+                var pp = self.manualMap.ppTable;
+                var info = self.manualMap.info;
+                if (!info || !info.diffs) return;
+
+                var cacheKey = '' + pp.mods;
+                if (pp.cache[cacheKey]) {
+                    pp.data = pp.cache[cacheKey];
+                    pp.error = '';
+                    return;
+                }
+
+                pp.loading = true;
+                pp.error = '';
+                var ids = info.diffs.map(function (d: any) { return d.id; }).join(',');
+
+                fetch('/admin-v2/api/beatmaps/pp-table?ids=' + ids + '&mods=' + pp.mods)
+                    .then(function (res: any) { return res.json(); })
+                    .then(function (data: any) {
+                        if (data.status === 'success') {
+                            pp.cache[cacheKey] = data.results;
+                            pp.data = data.results;
+                            pp.error = '';
+                        } else {
+                            pp.error = data.message || 'Failed to fetch PP data.';
+                        }
+                        pp.loading = false;
+                    })
+                    .catch(function (e: any) {
+                        pp.error = e.message || 'Network error.';
+                        pp.loading = false;
+                    });
+            },
+
+            getManualPPValue: function (diffId: number, accIdx: number): string {
+                var pp = this.manualMap.ppTable;
+                if (!pp.data || !pp.data[diffId]) return '\u2014';
+                var entry = pp.data[diffId];
+                if (entry.error) return 'err';
+                if (entry.pp_values && entry.pp_values[accIdx]) {
+                    return Math.round(entry.pp_values[accIdx].pp) + 'pp';
+                }
+                return '\u2014';
+            },
+
+            getManualPPStars: function (diffId: number, fallback: number): string {
+                var pp = this.manualMap.ppTable;
+                if (!pp.data || !pp.data[diffId]) return (fallback || 0).toFixed(2);
+                var entry = pp.data[diffId];
+                if (entry.difficulty && entry.difficulty.stars != null) {
+                    return entry.difficulty.stars.toFixed(2);
+                }
+                return (fallback || 0).toFixed(2);
             },
 
             viewStaffLogForSet: function (setId: number) {

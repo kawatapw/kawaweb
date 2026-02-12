@@ -105,6 +105,12 @@ new Vue({
         downloadBase: '',
         mirror: 'osu_direct',
         infoSet: null as BeatmapSet | null,
+        ppTableShow: false,
+        ppTableLoading: false,
+        ppTableMods: 0,
+        ppTableData: null as Record<string, any> | null,
+        ppTableCache: {} as Record<string, any>,
+        ppTableError: '',
         modes: [
             { value: -1, name: 'All' },
             { value: 0, name: 'osu!' },
@@ -370,6 +376,11 @@ new Vue({
         closeInfo: function() {
             var self = this as any;
             self.infoSet = null;
+            self.ppTableShow = false;
+            self.ppTableData = null;
+            self.ppTableCache = {};
+            self.ppTableError = '';
+            self.ppTableMods = 0;
             document.body.style.overflow = '';
         },
 
@@ -396,6 +407,120 @@ new Vue({
                 names.push(MODE_NAMES[modeNums[i]] || 'Unknown');
             }
             return names.join(', ');
+        },
+
+        // ─── PP Table ────────────────────────────────────────────
+
+        togglePPTable: function() {
+            var self = this as any;
+            self.ppTableShow = !self.ppTableShow;
+            if (self.ppTableShow && !self.ppTableData) {
+                self.fetchPPData();
+            }
+        },
+
+        togglePPMod: function(bit: number) {
+            var self = this as any;
+            // EZ(2) / HR(16) conflict
+            if (bit === 2 && (self.ppTableMods & 16)) { self.ppTableMods &= ~16; }
+            if (bit === 16 && (self.ppTableMods & 2)) { self.ppTableMods &= ~2; }
+            // DT(64) / HT(256) conflict
+            if (bit === 64 && (self.ppTableMods & 256)) { self.ppTableMods &= ~256; }
+            if (bit === 256 && (self.ppTableMods & 64)) { self.ppTableMods &= ~64; }
+            self.ppTableMods ^= bit;
+            self.fetchPPData();
+        },
+
+        setPPModCombo: function(mods: number) {
+            var self = this as any;
+            self.ppTableMods = mods;
+            self.fetchPPData();
+        },
+
+        isPPModActive: function(bit: number): boolean {
+            return ((this as any).ppTableMods & bit) !== 0;
+        },
+
+        fetchPPData: function() {
+            var self = this as any;
+            if (!self.infoSet || !self.infoSet.beatmaps || self.infoSet.beatmaps.length === 0) return;
+
+            var cacheKey = '' + self.ppTableMods;
+            if (self.ppTableCache[cacheKey]) {
+                self.ppTableData = self.ppTableCache[cacheKey];
+                self.ppTableError = '';
+                return;
+            }
+
+            self.ppTableLoading = true;
+            self.ppTableError = '';
+            var ids: string[] = [];
+            for (var i = 0; i < self.infoSet.beatmaps.length; i++) {
+                ids.push(self.infoSet.beatmaps[i].id);
+            }
+
+            var xhr = new XMLHttpRequest();
+            xhr.open('GET', '/beatmaps/api/pp-table?ids=' + ids.join(',') + '&mods=' + self.ppTableMods, true);
+            xhr.onreadystatechange = function() {
+                if (xhr.readyState !== 4) return;
+                self.ppTableLoading = false;
+                if (xhr.status !== 200) {
+                    self.ppTableError = 'Failed to fetch PP data (status ' + xhr.status + ').';
+                    return;
+                }
+                try {
+                    var data = JSON.parse(xhr.responseText);
+                    if (data.status === 'success') {
+                        self.ppTableCache[cacheKey] = data.results;
+                        self.ppTableData = data.results;
+                        self.ppTableError = '';
+                    } else {
+                        self.ppTableError = data.message || 'Failed to fetch PP data.';
+                    }
+                } catch (e) {
+                    self.ppTableError = 'Invalid response.';
+                }
+            };
+            xhr.send();
+        },
+
+        formatPPMods: function(mods: number): string {
+            if (!mods) return 'None';
+            var MOD_BITS: Record<number, string> = {
+                1: 'NF', 2: 'EZ', 4: 'TD', 8: 'HD', 16: 'HR', 32: 'SD',
+                64: 'DT', 128: 'RX', 256: 'HT', 512: 'NC', 1024: 'FL'
+            };
+            var names: string[] = [];
+            for (var bit in MOD_BITS) {
+                if (MOD_BITS.hasOwnProperty(bit)) {
+                    var bitNum = parseInt(bit, 10);
+                    if (mods & bitNum) {
+                        names.push(MOD_BITS[bitNum]);
+                    }
+                }
+            }
+            return names.length ? '+' + names.join('') : 'None';
+        },
+
+        getPPValue: function(diffId: number, accIdx: number): string {
+            var self = this as any;
+            if (!self.ppTableData || !self.ppTableData[diffId]) return '\u2014';
+            var entry = self.ppTableData[diffId];
+            if (entry.error) return 'err';
+            if (entry.pp_values && entry.pp_values[accIdx]) {
+                return Math.round(entry.pp_values[accIdx].pp) + 'pp';
+            }
+            return '\u2014';
+        },
+
+        getPPStars: function(diffId: number, fallback: number): string {
+            var self = this as any;
+            if (!self.ppTableData || !self.ppTableData[diffId]) return (fallback || 0).toFixed(2);
+            var entry = self.ppTableData[diffId];
+            if (entry.difficulty && entry.difficulty.stars != null) {
+                return entry.difficulty.stars.toFixed(2);
+            }
+            return (fallback || 0).toFixed(2);
         },
     },
 });

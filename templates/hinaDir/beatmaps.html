@@ -309,6 +309,87 @@
              v-text="infoSet.availability.more_information"></p>
         </div>
 
+        <!-- PP Table -->
+        <div class="bm-modal-section bpp-section">
+          <button class="bpp-toggle" @click="togglePPTable">
+            <span class="bpp-toggle-label">
+              <i class="fas fa-calculator"></i>
+              <span v-text="ppTableShow ? 'PP Values' : 'Show PP Values'"></span>
+            </span>
+            <span class="bpp-toggle-hint">
+              <i class="bpp-chevron fas" :class="ppTableShow ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
+            </span>
+          </button>
+
+          <div class="bpp-body" v-show="ppTableShow">
+            <!-- Mod buttons -->
+            <div class="bpp-mods">
+              <button class="bpp-mod-btn" :class="{ 'bpp-mod-btn--active': ppTableMods === 0 }"
+                      @click="setPPModCombo(0)">NM</button>
+              <button class="bpp-mod-btn" :class="{ 'bpp-mod-btn--active': isPPModActive(8) }"
+                      @click="togglePPMod(8)">HD</button>
+              <button class="bpp-mod-btn" :class="{ 'bpp-mod-btn--active': isPPModActive(16) }"
+                      @click="togglePPMod(16)">HR</button>
+              <button class="bpp-mod-btn" :class="{ 'bpp-mod-btn--active': isPPModActive(64) }"
+                      @click="togglePPMod(64)">DT</button>
+              <button class="bpp-mod-btn" :class="{ 'bpp-mod-btn--active': isPPModActive(1024) }"
+                      @click="togglePPMod(1024)">FL</button>
+              <button class="bpp-mod-btn" :class="{ 'bpp-mod-btn--active': isPPModActive(2) }"
+                      @click="togglePPMod(2)">EZ</button>
+              <button class="bpp-mod-btn" :class="{ 'bpp-mod-btn--active': isPPModActive(256) }"
+                      @click="togglePPMod(256)">HT</button>
+              <span class="bpp-mods-sep"></span>
+              <button class="bpp-combo-btn" :class="{ 'bpp-mod-btn--active': ppTableMods === 24 }"
+                      @click="setPPModCombo(24)">HDHR</button>
+              <button class="bpp-combo-btn" :class="{ 'bpp-mod-btn--active': ppTableMods === 72 }"
+                      @click="setPPModCombo(72)">HDDT</button>
+              <button class="bpp-combo-btn" :class="{ 'bpp-mod-btn--active': ppTableMods === 88 }"
+                      @click="setPPModCombo(88)">HDDTHR</button>
+              <button class="bpp-combo-btn" :class="{ 'bpp-mod-btn--active': ppTableMods === 1032 }"
+                      @click="setPPModCombo(1032)">HDFL</button>
+            </div>
+
+            <!-- Active mods label -->
+            <div class="bpp-active-label" v-if="ppTableMods > 0">
+              Active: <span v-text="formatPPMods(ppTableMods)"></span>
+            </div>
+
+            <!-- Loading -->
+            <div class="bpp-loading" v-if="ppTableLoading">
+              <i class="fas fa-spinner fa-spin"></i> Calculating...
+            </div>
+
+            <!-- Error -->
+            <div class="bpp-error" v-if="ppTableError" v-text="ppTableError"></div>
+
+            <!-- Table -->
+            <div class="bpp-table-wrap" v-if="ppTableData && !ppTableLoading">
+              <table class="bpp-table">
+                <thead>
+                  <tr>
+                    <th class="bpp-col-diff">Difficulty</th>
+                    <th class="bpp-col-stars">Stars</th>
+                    <th class="bpp-col-val">100%</th>
+                    <th class="bpp-col-val">99%</th>
+                    <th class="bpp-col-val">98%</th>
+                    <th class="bpp-col-val">95%</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="d in getSortedDiffs(infoSet)" :key="'pp-' + d.id">
+                    <td class="bpp-col-diff" v-text="d.version"></td>
+                    <td class="bpp-col-stars" v-text="getPPStars(d.id, d.difficulty_rating)"></td>
+                    <td class="bpp-col-val" v-text="getPPValue(d.id, 0)"></td>
+                    <td class="bpp-col-val" v-text="getPPValue(d.id, 1)"></td>
+                    <td class="bpp-col-val" v-text="getPPValue(d.id, 2)"></td>
+                    <td class="bpp-col-val" v-text="getPPValue(d.id, 3)"></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
         <!-- Difficulties -->
         <div class="bm-modal-section">
           <h3 class="bm-modal-section-title"><i class="fas fa-star"></i> Difficulties</h3>
@@ -441,6 +522,11 @@
             <i class="fas fa-gamepad"></i> Josu
           </button>
         </div>
+
+        <!-- Mobile close button -->
+        <button class="bm-modal-close-bottom" @click="closeInfo">
+          <i class="fas fa-times"></i> Close
+        </button>
 
       </div>
     </div>

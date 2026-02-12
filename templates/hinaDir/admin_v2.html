@@ -9,7 +9,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/static/hinaDir/compiled/admin_v2.css?v=11">
+    <link rel="stylesheet" href="/static/hinaDir/compiled/admin_v2.css?v=13">
     <style>
         :root {
             {% if 'user_data' in session and session['user_data'].get('hue') %}
@@ -1186,10 +1186,17 @@
 
                             <!-- Difficulty List -->
                             <div class="av2-bm-detail-section">
-                                <h3 class="av2-card-title" style="padding: 0; border: none;">
-                                    Difficulties
-                                    (<span v-text="beatmaps.activeItem.diffs.length"></span>)
-                                </h3>
+                                <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+                                    <h3 class="av2-card-title" style="padding: 0; border: none; margin: 0;">
+                                        Difficulties
+                                        (<span v-text="beatmaps.activeItem.diffs.length"></span>)
+                                    </h3>
+                                    <button class="av2-btn av2-btn--sm av2-btn--accent"
+                                            @click="openPPTable()"
+                                            title="View PP values for all difficulties">
+                                        <i class="fas fa-calculator"></i> PP Values
+                                    </button>
+                                </div>
                                 <!-- Select All header (only when review not done) -->
                                 <div class="av2-bm-diff-header" v-if="beatmaps.activeItem.review_state !== 'done'">
                                     <label class="av2-bm-diff-checkbox">
@@ -1652,68 +1659,159 @@
                 </div>
 
                 <!-- Step 2: Map Info (loaded) -->
-                <div v-if="manualMap.info && !manualMap.result">
+                <div v-if="manualMap.info && !manualMap.result" class="av2-mm-step2">
                     <!-- Header with cover -->
                     <div class="av2-mm-header"
                          :style="'background-image: url(https://assets.ppy.sh/beatmaps/' + manualMap.info.set_id + '/covers/cover.jpg)'">
                         <div class="av2-mm-header-overlay">
-                            <button class="av2-btn av2-btn--sm" @click="resetManualMap" style="position: absolute; top: 12px; right: 12px;">
+                            <button class="av2-btn av2-btn--sm av2-mm-header-close" @click="resetManualMap">
                                 <i class="fas fa-times"></i>
                             </button>
                             <div class="av2-mm-header-title" v-text="manualMap.info.artist + ' - ' + manualMap.info.title"></div>
                             <div class="av2-mm-header-subtitle">
-                                Mapped by <span v-text="manualMap.info.creator"></span> | Set #<span v-text="manualMap.info.set_id"></span>
+                                Mapped by <span v-text="manualMap.info.creator"></span> &middot; Set #<span v-text="manualMap.info.set_id"></span>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Difficulty Table -->
-                    <div class="av2-card">
-                        <h3 class="av2-card-title" style="padding: 0 0 8px; border: none;">
-                            Difficulties (<span v-text="manualMap.info.diffs.length"></span>)
-                        </h3>
+                    <!-- ── Difficulties Card ── -->
+                    <div class="av2-card av2-mm-card">
+                        <div class="av2-mm-card-head">
+                            <h3 class="av2-mm-section-title">
+                                <i class="fas fa-layer-group"></i>
+                                Difficulties
+                                <span class="av2-mm-section-count" v-text="manualMap.info.diffs.length"></span>
+                            </h3>
+                        </div>
 
-                        <div class="av2-bm-diff-header">
-                            <label class="av2-bm-diff-checkbox">
+                        <!-- Toolbar row -->
+                        <div class="av2-mm-toolbar">
+                            <label class="av2-mm-toolbar-check">
                                 <input type="checkbox"
                                        :checked="allManualDiffsSelected()"
                                        @change="toggleAllManualDiffs()">
                                 <span v-text="allManualDiffsSelected() ? 'Deselect All' : 'Select All'"></span>
                             </label>
-                            <span class="av2-text-muted" v-if="manualMap.selectedDiffs.length > 0"
-                                  v-text="manualMap.selectedDiffs.length + ' selected'"></span>
+                            <span class="av2-mm-toolbar-count" v-if="manualMap.selectedDiffs.length > 0">
+                                <span v-text="manualMap.selectedDiffs.length"></span> selected
+                            </span>
                         </div>
 
-                        <div class="av2-bm-diff-list">
-                            <div v-for="d in manualMap.info.diffs" :key="d.id"
-                                 class="av2-bm-diff-row"
-                                 :class="{ 'av2-bm-diff-row--selected': isManualDiffSelected(d.id) }">
-                                <label class="av2-bm-diff-checkbox">
+                        <!-- Diff rows -->
+                        <div class="av2-mm-diff-list">
+                            <div v-for="(d, idx) in manualMap.info.diffs" :key="d.id"
+                                 class="av2-mm-diff-row"
+                                 :class="{ 'av2-mm-diff-row--selected': isManualDiffSelected(d.id), 'av2-mm-diff-row--even': idx % 2 === 0 }">
+                                <label class="av2-mm-diff-check">
                                     <input type="checkbox"
                                            :checked="isManualDiffSelected(d.id)"
                                            @change="toggleManualDiff(d.id)">
                                 </label>
-                                <span class="av2-bm-diff-stars" v-text="'\u2605' + (d.diff || 0).toFixed(2)"></span>
-                                <span class="av2-bm-diff-version" v-text="d.version"></span>
+                                <div class="av2-mm-diff-identity">
+                                    <span class="av2-mm-diff-stars" v-text="'\u2605 ' + (d.diff || 0).toFixed(2)"></span>
+                                    <span class="av2-mm-diff-name" v-text="d.version"></span>
+                                </div>
                                 <span class="av2-map-status-pill"
                                       :class="mapStatusClass(d.status)"
                                       v-text="mapStatusLabel(d.status)"></span>
-                                <span class="av2-bm-diff-stats av2-text-muted">
-                                    CS<span v-text="d.cs"></span>
-                                    AR<span v-text="d.ar"></span>
-                                    OD<span v-text="d.od"></span>
-                                    HP<span v-text="d.hp"></span>
-                                    BPM<span v-text="d.bpm"></span>
-                                </span>
-                                <span class="av2-bm-diff-length av2-text-muted" v-text="formatDuration(d.total_length)"></span>
-                                <span class="av2-bm-diff-plays av2-text-muted" v-text="formatNumber(d.plays) + ' plays'"></span>
+                                <div class="av2-mm-diff-stats">
+                                    <span class="av2-mm-stat">CS <b v-text="d.cs"></b></span>
+                                    <span class="av2-mm-stat">AR <b v-text="d.ar"></b></span>
+                                    <span class="av2-mm-stat">OD <b v-text="d.od"></b></span>
+                                    <span class="av2-mm-stat">HP <b v-text="d.hp"></b></span>
+                                </div>
+                                <div class="av2-mm-diff-meta">
+                                    <span><i class="fas fa-music"></i> <span v-text="d.bpm"></span></span>
+                                    <span><i class="fas fa-clock"></i> <span v-text="formatDuration(d.total_length)"></span></span>
+                                    <span><i class="fas fa-play"></i> <span v-text="formatNumber(d.plays)"></span></span>
+                                </div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Action Selection -->
-                    <div class="av2-card av2-mm-action-card">
-                        <h3 class="av2-card-title" style="padding: 0 0 8px; border: none;">Action</h3>
+                    <!-- ── PP Table Card ── -->
+                    <div class="av2-card av2-mm-card">
+                        <button class="av2-mm-pp-toggle" @click="toggleManualPP">
+                            <span><i class="fas fa-calculator"></i> <span v-text="manualMap.ppTable.show ? 'PP Values' : 'Show PP Values'"></span></span>
+                            <i class="fas" :class="manualMap.ppTable.show ? 'fa-chevron-up' : 'fa-chevron-down'" style="font-size: 0.7rem; opacity: 0.6;"></i>
+                        </button>
+
+                        <div v-show="manualMap.ppTable.show" class="av2-mm-pp-body">
+                            <div class="av2-pp-mods">
+                                <button class="av2-pp-mod-btn" :class="{ 'av2-pp-mod-btn--active': manualMap.ppTable.mods === 0 }"
+                                        @click="setManualPPCombo(0)">NM</button>
+                                <button class="av2-pp-mod-btn" :class="{ 'av2-pp-mod-btn--active': isManualPPModActive(8) }"
+                                        @click="toggleManualPPMod(8)">HD</button>
+                                <button class="av2-pp-mod-btn" :class="{ 'av2-pp-mod-btn--active': isManualPPModActive(16) }"
+                                        @click="toggleManualPPMod(16)">HR</button>
+                                <button class="av2-pp-mod-btn" :class="{ 'av2-pp-mod-btn--active': isManualPPModActive(64) }"
+                                        @click="toggleManualPPMod(64)">DT</button>
+                                <button class="av2-pp-mod-btn" :class="{ 'av2-pp-mod-btn--active': isManualPPModActive(1024) }"
+                                        @click="toggleManualPPMod(1024)">FL</button>
+                                <button class="av2-pp-mod-btn" :class="{ 'av2-pp-mod-btn--active': isManualPPModActive(2) }"
+                                        @click="toggleManualPPMod(2)">EZ</button>
+                                <button class="av2-pp-mod-btn" :class="{ 'av2-pp-mod-btn--active': isManualPPModActive(256) }"
+                                        @click="toggleManualPPMod(256)">HT</button>
+                                <span class="av2-pp-mods-sep"></span>
+                                <button class="av2-pp-combo-btn" :class="{ 'av2-pp-mod-btn--active': manualMap.ppTable.mods === 24 }"
+                                        @click="setManualPPCombo(24)">HDHR</button>
+                                <button class="av2-pp-combo-btn" :class="{ 'av2-pp-mod-btn--active': manualMap.ppTable.mods === 72 }"
+                                        @click="setManualPPCombo(72)">HDDT</button>
+                                <button class="av2-pp-combo-btn" :class="{ 'av2-pp-mod-btn--active': manualMap.ppTable.mods === 88 }"
+                                        @click="setManualPPCombo(88)">HDDTHR</button>
+                                <button class="av2-pp-combo-btn" :class="{ 'av2-pp-mod-btn--active': manualMap.ppTable.mods === 1032 }"
+                                        @click="setManualPPCombo(1032)">HDFL</button>
+                            </div>
+
+                            <div class="av2-pp-active-label av2-text-muted" v-if="manualMap.ppTable.mods > 0">
+                                Active: <span v-text="formatMods(manualMap.ppTable.mods)"></span>
+                            </div>
+
+                            <div class="av2-pp-loading" v-if="manualMap.ppTable.loading">
+                                <i class="fas fa-spinner fa-spin"></i> Calculating...
+                            </div>
+
+                            <div class="av2-hint av2-hint--warn" v-if="manualMap.ppTable.error"
+                                 v-text="manualMap.ppTable.error"></div>
+
+                            <div class="av2-pp-table-wrap" v-if="manualMap.ppTable.data && !manualMap.ppTable.loading">
+                                <table class="av2-pp-table">
+                                    <thead>
+                                        <tr>
+                                            <th class="av2-pp-col-diff">Difficulty</th>
+                                            <th class="av2-pp-col-stars">Stars</th>
+                                            <th class="av2-pp-col-val">100%</th>
+                                            <th class="av2-pp-col-val">99%</th>
+                                            <th class="av2-pp-col-val">98%</th>
+                                            <th class="av2-pp-col-val">95%</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr v-for="d in manualMap.info.diffs.slice().sort(function(a, b) { return a.diff - b.diff; })"
+                                            :key="'mmpp-' + d.id">
+                                            <td class="av2-pp-col-diff" v-text="d.version"></td>
+                                            <td class="av2-pp-col-stars av2-pp-stars" v-text="getManualPPStars(d.id, d.diff)"></td>
+                                            <td class="av2-pp-col-val" v-text="getManualPPValue(d.id, 0)"></td>
+                                            <td class="av2-pp-col-val" v-text="getManualPPValue(d.id, 1)"></td>
+                                            <td class="av2-pp-col-val" v-text="getManualPPValue(d.id, 2)"></td>
+                                            <td class="av2-pp-col-val" v-text="getManualPPValue(d.id, 3)"></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ── Action Card ── -->
+                    <div class="av2-card av2-mm-card">
+                        <div class="av2-mm-card-head">
+                            <h3 class="av2-mm-section-title">
+                                <i class="fas fa-bolt"></i>
+                                Action
+                            </h3>
+                        </div>
+
+                        <label class="av2-mm-action-group-label">Set status to</label>
                         <div class="av2-mm-actions">
                             <label class="av2-mm-action-radio av2-mm-action-radio--success"
                                    :class="{ active: manualMap.action === 'rank' }">
@@ -1742,17 +1840,20 @@
                             </label>
                         </div>
 
-                        <div class="av2-form-group" style="margin-top: 12px;">
-                            <label>Reason <small v-if="manualMap.action === 'unrank'" style="color: var(--av2-danger);">(required for unrank)</small></label>
+                        <div class="av2-mm-reason-group">
+                            <label class="av2-mm-action-group-label">
+                                Reason
+                                <small v-if="manualMap.action === 'unrank'" class="av2-mm-required">required for unrank</small>
+                            </label>
                             <textarea class="av2-input av2-textarea" v-model="manualMap.reason"
                                       placeholder="Optional reason for audit trail..." rows="2"></textarea>
                         </div>
 
-                        <button class="av2-btn av2-btn--accent" @click="executeManualAction"
+                        <button class="av2-btn av2-btn--accent av2-mm-execute-btn" @click="executeManualAction"
                                 :disabled="!manualMap.action || !manualMap.selectedDiffs.length || manualMap.executing">
                             <i class="fas fa-bolt" v-if="!manualMap.executing"></i>
                             <i class="fas fa-spinner fa-spin" v-if="manualMap.executing"></i>
-                            Execute
+                            Execute on <span v-text="manualMap.selectedDiffs.length"></span> diff<span v-if="manualMap.selectedDiffs.length !== 1">s</span>
                         </button>
                     </div>
                 </div>
@@ -1769,6 +1870,92 @@
                             <i class="fas fa-redo"></i> Do Another
                         </button>
                     </div>
+                </div>
+            </div>
+
+            <!-- PP Table Modal -->
+            <div class="av2-panel-overlay" v-if="beatmaps.ppTable.show && beatmaps.activeItem" @click.self="closePPTable()"></div>
+            <div class="av2-pp-table-modal" v-if="beatmaps.ppTable.show && beatmaps.activeItem">
+                <div class="av2-pp-header">
+                    <div>
+                        <h3>PP Values</h3>
+                        <span class="av2-text-muted" v-if="beatmaps.activeItem"
+                              v-text="beatmaps.activeItem.artist + ' - ' + beatmaps.activeItem.title"></span>
+                    </div>
+                    <button class="av2-btn av2-btn--sm" @click="closePPTable()">&times;</button>
+                </div>
+
+                <!-- Mod Toggles -->
+                <div class="av2-pp-mods">
+                    <button class="av2-pp-mod-btn" :class="{ 'av2-pp-mod-btn--active': beatmaps.ppTable.mods === 0 }"
+                            @click="setPPModCombo(0)">NM</button>
+                    <button class="av2-pp-mod-btn" :class="{ 'av2-pp-mod-btn--active': isPPModActive(8) }"
+                            @click="togglePPMod(8)">HD</button>
+                    <button class="av2-pp-mod-btn" :class="{ 'av2-pp-mod-btn--active': isPPModActive(16) }"
+                            @click="togglePPMod(16)">HR</button>
+                    <button class="av2-pp-mod-btn" :class="{ 'av2-pp-mod-btn--active': isPPModActive(64) }"
+                            @click="togglePPMod(64)">DT</button>
+                    <button class="av2-pp-mod-btn" :class="{ 'av2-pp-mod-btn--active': isPPModActive(4) }"
+                            @click="togglePPMod(4)">FL</button>
+                    <button class="av2-pp-mod-btn" :class="{ 'av2-pp-mod-btn--active': isPPModActive(2) }"
+                            @click="togglePPMod(2)">EZ</button>
+                    <button class="av2-pp-mod-btn" :class="{ 'av2-pp-mod-btn--active': isPPModActive(256) }"
+                            @click="togglePPMod(256)">HT</button>
+                    <span class="av2-pp-mods-sep"></span>
+                    <button class="av2-pp-combo-btn" :class="{ 'av2-pp-mod-btn--active': beatmaps.ppTable.mods === 24 }"
+                            @click="setPPModCombo(24)">HDHR</button>
+                    <button class="av2-pp-combo-btn" :class="{ 'av2-pp-mod-btn--active': beatmaps.ppTable.mods === 72 }"
+                            @click="setPPModCombo(72)">HDDT</button>
+                    <button class="av2-pp-combo-btn" :class="{ 'av2-pp-mod-btn--active': beatmaps.ppTable.mods === 88 }"
+                            @click="setPPModCombo(88)">HDDTHR</button>
+                    <button class="av2-pp-combo-btn" :class="{ 'av2-pp-mod-btn--active': beatmaps.ppTable.mods === 12 }"
+                            @click="setPPModCombo(12)">HDFL</button>
+                </div>
+
+                <!-- Active Mods Label -->
+                <div class="av2-pp-active-label av2-text-muted" v-if="beatmaps.ppTable.mods > 0">
+                    Active: <span v-text="formatMods(beatmaps.ppTable.mods)"></span>
+                </div>
+
+                <!-- Loading -->
+                <div class="av2-pp-loading" v-if="beatmaps.ppTable.loading">
+                    <i class="fas fa-spinner fa-spin"></i> Calculating...
+                </div>
+
+                <!-- Error -->
+                <div class="av2-hint av2-hint--warn" v-if="beatmaps.ppTable.error"
+                     v-text="beatmaps.ppTable.error"></div>
+
+                <!-- Table -->
+                <div class="av2-pp-table-wrap" v-if="beatmaps.ppTable.data && !beatmaps.ppTable.loading">
+                    <table class="av2-pp-table">
+                        <thead>
+                            <tr>
+                                <th class="av2-pp-col-diff">Difficulty</th>
+                                <th class="av2-pp-col-stars">Stars</th>
+                                <th class="av2-pp-col-val">100%</th>
+                                <th class="av2-pp-col-val">99%</th>
+                                <th class="av2-pp-col-val">98%</th>
+                                <th class="av2-pp-col-val">95%</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-for="d in beatmaps.activeItem.diffs.slice().sort(function(a, b) { return a.diff - b.diff; })"
+                                :key="'pp-' + d.id">
+                                <td class="av2-pp-col-diff" v-text="d.version"></td>
+                                <td class="av2-pp-col-stars av2-pp-stars"
+                                    v-text="beatmaps.ppTable.data[d.id] && beatmaps.ppTable.data[d.id].difficulty ? beatmaps.ppTable.data[d.id].difficulty.stars.toFixed(2) : (d.diff || 0).toFixed(2)"></td>
+                                <td class="av2-pp-col-val"
+                                    v-text="beatmaps.ppTable.data[d.id] && beatmaps.ppTable.data[d.id].pp_values ? Math.round(beatmaps.ppTable.data[d.id].pp_values[0].pp) + 'pp' : beatmaps.ppTable.data[d.id] && beatmaps.ppTable.data[d.id].error ? 'err' : '—'"></td>
+                                <td class="av2-pp-col-val"
+                                    v-text="beatmaps.ppTable.data[d.id] && beatmaps.ppTable.data[d.id].pp_values ? Math.round(beatmaps.ppTable.data[d.id].pp_values[1].pp) + 'pp' : '—'"></td>
+                                <td class="av2-pp-col-val"
+                                    v-text="beatmaps.ppTable.data[d.id] && beatmaps.ppTable.data[d.id].pp_values ? Math.round(beatmaps.ppTable.data[d.id].pp_values[2].pp) + 'pp' : '—'"></td>
+                                <td class="av2-pp-col-val"
+                                    v-text="beatmaps.ppTable.data[d.id] && beatmaps.ppTable.data[d.id].pp_values ? Math.round(beatmaps.ppTable.data[d.id].pp_values[3].pp) + 'pp' : '—'"></td>
+                            </tr>
+                        </tbody>
+                    </table>
                 </div>
             </div>
 
@@ -1862,6 +2049,6 @@
 
     <script src="/static/js/asserts/vue.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/timeago.js/4.0.2/timeago.min.js"></script>
-    <script src="/static/hinaDir/compiled/admin_v2.js?v=9"></script>
+    <script src="/static/hinaDir/compiled/admin_v2.js?v=11"></script>
 </body>
 </html>

@@ -951,3 +951,40 @@ $status-graveyard: #999;
     gap: 16px;
   }
 }
+
+// Mobile-only close button at bottom of modal
+.bm-modal-close-bottom {
+  display: none; // hidden on desktop
+}
+
+@media (max-width: 768px) {
+  .bm-modal-close-bottom {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    margin-top: 16px;
+    padding: 14px;
+    background: hsla(0, 0%, 100%, 0.06);
+    border: 1px solid hsla(0, 0%, 100%, 0.12);
+    border-radius: 10px;
+    color: hsla(0, 0%, 100%, 0.7);
+    font-size: 0.88rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+
+    &:hover, &:active {
+      background: hsla(0, 0%, 100%, 0.1);
+      color: hsla(0, 0%, 100%, 0.9);
+    }
+
+    i {
+      font-size: 0.8rem;
+    }
+  }
+}
+
+// PP Table (shared partial)
+@import "pp_table";
