@@ -10,6 +10,7 @@ from quart import Blueprint, render_template, request, jsonify, g
 
 from objects import glob
 import config as cfg
+from objects.utils import klogging, error_catcher
 
 hina_beatmaps = Blueprint('hina_beatmaps', __name__)
 
@@ -21,18 +22,6 @@ _pp_rate_limits: dict[str, list[float]] = defaultdict(list)
 _PP_RATE_WINDOW = 60  # seconds
 _PP_RATE_MAX = 10     # requests per window
 
-
-def error_catcher(func):
-    """JSON-safe error catcher (shared one returns HTML via flash())."""
-    @wraps(func)
-    async def wrapper(*args, **kwargs):
-        try:
-            return await func(*args, **kwargs)
-        except Exception as e:
-            import logging
-            logging.getLogger('console.error').error(f"Error in {func.__name__}: {e}")
-            return jsonify({'status': 'error', 'message': str(e)}), 500
-    return wrapper
 
 
 @hina_beatmaps.route('/beatmaps')
@@ -134,7 +123,8 @@ async def beatmaps_pp_table():
     # Warm the map cache: call get_map_info with the first diff ID.
     # Beatmap.from_bid fetches the entire set, so one call caches all diffs.
     try:
-        warm_url = f'http://bancho:10000/v1/get_map_info?id={valid_ids[0]}'
+        klogging.log(f"Warming PP cache for beatmap ID {valid_ids[0]}...", klogging.Ansi.LYELLOW)
+        warm_url = f'https://api.{glob.config.domain}/v1/get_map_info?id={valid_ids[0]}'
         async with glob.http.get(warm_url, headers=headers, timeout=15) as resp:
             pass  # We don't need the response, just trigger the cache
     except Exception:
@@ -146,7 +136,7 @@ async def beatmaps_pp_table():
     for bid in valid_ids:
         params.append(('id', bid))
 
-    url = 'http://bancho:10000/v1/calculate_pp_batch'
+    url = f'https://api.{glob.config.domain}/v1/calculate_pp_batch'
     try:
         async with glob.http.get(url, headers=headers, params=params) as resp:
             data = await resp.json(content_type=None)

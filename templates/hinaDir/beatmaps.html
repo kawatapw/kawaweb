@@ -99,7 +99,7 @@
         <img class="bm-cover"
              :src="getCoverUrl(set)"
              loading="lazy"
-             @error="$event.target.src='/static/images/no-bg.png'">
+             @error="$event.target.src='/static/images/default-bg.png'">
         <div class="bm-cover-overlay"></div>
         <!-- Status badge -->
         <span class="bm-status" :class="'bm-status--' + statusClass(set.status)"
@@ -196,7 +196,7 @@
       <!-- Modal header with cover -->
       <div class="bm-modal-banner">
         <img class="bm-modal-cover" :src="getCoverUrl(infoSet)"
-             @error="$event.target.src='/static/images/no-bg.png'">
+             @error="$event.target.src='/static/images/default-bg.png'">
         <div class="bm-modal-cover-overlay"></div>
         <div class="bm-modal-banner-info">
           <span class="bm-status" :class="'bm-status--' + statusClass(infoSet.status)"
