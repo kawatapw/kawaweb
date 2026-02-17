@@ -27,6 +27,11 @@ from quart import Response, request
 
 app = Quart(f'{glob.config.app_name}')
 
+# Auto-reload templates in dev so .html changes appear without container restart.
+# In production (QUART_ENV != 'development'), templates stay cached for performance.
+if os.environ.get('QUART_ENV') == 'development':
+    app.config['TEMPLATES_AUTO_RELOAD'] = True
+
 version = Version(1, 3, 0)
 
 # used to secure session data.
