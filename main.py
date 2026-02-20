@@ -153,6 +153,9 @@ app.register_blueprint(hina_admin, url_prefix='/admin-v2')
 from blueprints.hinaDir import hina_beatmaps
 app.register_blueprint(hina_beatmaps)
 
+from blueprints.hinaDir import hina_team
+app.register_blueprint(hina_team)
+
 @app.errorhandler(404)
 async def page_not_found(e):
     # NOTE: we set the 404 status explicitly

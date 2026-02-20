@@ -1,0 +1,137 @@
+{% extends 'base.html' %}
+{% block title %}Staff Team{% endblock %}
+
+{% block header %}
+<link rel="stylesheet" href="/static/hinaDir/compiled/team.css?v=2">
+{% endblock %}
+
+{% block content %}
+<div class="team-page">
+
+    <!-- ── Hero Header ────────────────────────────────────────────── -->
+    <header class="team-hero">
+        <div class="team-hero-bg"></div>
+        <div class="team-hero-content">
+            <h1 class="team-hero-title">
+                <i class="fas fa-shield-alt"></i> Staff Team
+            </h1>
+            <p class="team-hero-sub">Meet the people who keep Kawata running.</p>
+            <span class="team-hero-badge">
+                <i class="fas fa-users"></i> {{ total_staff }} member{{ 's' if total_staff != 1 }}
+            </span>
+        </div>
+    </header>
+
+    <!-- ── Role Filter Pills ──────────────────────────────────────── -->
+    {% if team_groups|length > 1 %}
+    <nav class="team-filters" aria-label="Filter by role">
+        <button class="team-pill is-active" data-filter="all">All</button>
+        {% for group in team_groups %}
+        <button class="team-pill" data-filter="{{ group.slug }}"
+                style="--pill-color: {{ group.color }};">
+            <span class="team-pill-dot" style="background: {{ group.color }};"></span>
+            {{ group.name }}
+            <span class="team-pill-count">{{ group.members|length }}</span>
+        </button>
+        {% endfor %}
+    </nav>
+    {% endif %}
+
+    <!-- ── Role Sections ──────────────────────────────────────────── -->
+    {% for group in team_groups %}
+    <section class="team-section" data-role="{{ group.slug }}" style="--section-color: {{ group.color }};">
+        <div class="team-section-header">
+            <div class="team-section-left">
+                <span class="team-section-dot" style="background: {{ group.color }}; box-shadow: 0 0 10px {{ group.color }}60;"></span>
+                <div>
+                    <h2 class="team-section-title">{{ group.name }}</h2>
+                    {% if group.desc %}
+                    <p class="team-section-desc">{{ group.desc }}</p>
+                    {% endif %}
+                </div>
+            </div>
+            <span class="team-section-count">{{ group.members|length }} member{{ 's' if group.members|length != 1 }}</span>
+        </div>
+
+        <div class="team-grid">
+            {% for member in group.members %}
+            <a href="/u/{{ member.id }}" class="team-card" style="--role-color: {{ group.color }};">
+                <div class="team-card-top-accent"></div>
+                <div class="team-card-body">
+                    <img src="https://a.{{ domain() }}/{{ member.id }}"
+                         class="team-card-avatar" alt="{{ member.name }}"
+                         loading="lazy">
+                    <span class="team-card-name">{{ member.name }}</span>
+                    <span class="team-card-role" style="background: {{ group.color }}18; color: {{ group.color }}; border-color: {{ group.color }}35;">
+                        {{ group.name }}
+                    </span>
+                    <div class="team-card-meta">
+                        {% if member.country and member.country != 'xx' %}
+                        <img src="/static/images/flags/{{ member.country|upper }}.png"
+                             class="team-card-flag" alt="{{ member.country }}">
+                        {% endif %}
+                        <span>Joined {{ member.joined }}</span>
+                    </div>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+    </section>
+    {% endfor %}
+
+    {% if not team_groups %}
+    <div class="team-empty">
+        <i class="fas fa-user-shield"></i>
+        <p>No staff members found.</p>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+(function() {
+    // ── Role filter pills ────────────────────────────────────────
+    var pills = document.querySelectorAll('.team-pill');
+    var sections = document.querySelectorAll('.team-section');
+
+    pills.forEach(function(pill) {
+        pill.addEventListener('click', function() {
+            pills.forEach(function(p) { p.classList.remove('is-active'); });
+            pill.classList.add('is-active');
+
+            var filter = pill.getAttribute('data-filter');
+            sections.forEach(function(sec) {
+                if (filter === 'all' || sec.getAttribute('data-role') === filter) {
+                    sec.style.display = '';
+                    // Re-trigger reveal for cards in this section
+                    sec.querySelectorAll('.team-card:not(.is-visible)').forEach(function(c) {
+                        observer && observer.observe(c);
+                    });
+                } else {
+                    sec.style.display = 'none';
+                }
+            });
+        });
+    });
+
+    // ── Scroll-reveal cards ──────────────────────────────────────
+    var cards = document.querySelectorAll('.team-card');
+    var observer = null;
+
+    if (!('IntersectionObserver' in window)) {
+        cards.forEach(function(c) { c.classList.add('is-visible'); });
+        return;
+    }
+
+    observer = new IntersectionObserver(function(entries) {
+        entries.forEach(function(entry) {
+            if (entry.isIntersecting) {
+                entry.target.classList.add('is-visible');
+                observer.unobserve(entry.target);
+            }
+        });
+    }, { threshold: 0.08, rootMargin: '0px 0px -30px 0px' });
+
+    cards.forEach(function(card) { observer.observe(card); });
+})();
+</script>
+{% endblock %}
