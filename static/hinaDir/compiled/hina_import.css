@@ -93,7 +93,7 @@
 }
 .footer .footer-links-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(200px, 280px));
+  grid-template-columns: repeat(3, minmax(140px, 240px));
   gap: 3rem;
 }
 @media (max-width: 768px) {
