@@ -1700,8 +1700,8 @@ async def api_bm_work_items():
         placeholders = ','.join(['%s'] * len(set_ids))
 
         set_meta = await glob.db.fetchall(
-            f"SELECT set_id, ANY_VALUE(artist) as artist, ANY_VALUE(title) as title, "
-            f"ANY_VALUE(creator) as creator, ANY_VALUE(mode) as mode "
+            f"SELECT set_id, artist, title, "
+            f"creator, mode "
             f"FROM maps WHERE set_id IN ({placeholders}) GROUP BY set_id",
             set_ids
         )
