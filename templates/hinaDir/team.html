@@ -2,7 +2,7 @@
 {% block title %}Staff Team{% endblock %}
 
 {% block header %}
-<link rel="stylesheet" href="/static/hinaDir/compiled/team.css?v=2">
+<link rel="stylesheet" href="/static/hinaDir/compiled/team.css?v=3">
 {% endblock %}
 
 {% block content %}
@@ -15,7 +15,10 @@
             <h1 class="team-hero-title">
                 <i class="fas fa-shield-alt"></i> Staff Team
             </h1>
-            <p class="team-hero-sub">Meet the people who keep Kawata running.</p>
+            <p class="team-hero-sub">
+                This is a list of the wonderful people who keep Kawata up
+                and running and deal with our amazing community.
+            </p>
             <span class="team-hero-badge">
                 <i class="fas fa-users"></i> {{ total_staff }} member{{ 's' if total_staff != 1 }}
             </span>
@@ -23,68 +26,141 @@
     </header>
 
     <!-- ── Role Filter Pills ──────────────────────────────────────── -->
-    {% if team_groups|length > 1 %}
+    {% if team_sections|length > 1 %}
     <nav class="team-filters" aria-label="Filter by role">
         <button class="team-pill is-active" data-filter="all">All</button>
-        {% for group in team_groups %}
-        <button class="team-pill" data-filter="{{ group.slug }}"
-                style="--pill-color: {{ group.color }};">
-            <span class="team-pill-dot" style="background: {{ group.color }};"></span>
-            {{ group.name }}
-            <span class="team-pill-count">{{ group.members|length }}</span>
+        {% for section in team_sections %}
+        <button class="team-pill" data-filter="{{ section.slug }}"
+                style="--pill-color: {{ section.color }};">
+            <span class="team-pill-dot" style="background: {{ section.color }};"></span>
+            {{ section.title }}
         </button>
         {% endfor %}
     </nav>
     {% endif %}
 
     <!-- ── Role Sections ──────────────────────────────────────────── -->
-    {% for group in team_groups %}
-    <section class="team-section" data-role="{{ group.slug }}" style="--section-color: {{ group.color }};">
+    {% for section in team_sections %}
+    <section class="team-section" data-role="{{ section.slug }}" style="--section-color: {{ section.color }};">
         <div class="team-section-header">
             <div class="team-section-left">
-                <span class="team-section-dot" style="background: {{ group.color }}; box-shadow: 0 0 10px {{ group.color }}60;"></span>
+                <span class="team-section-dot" style="background: {{ section.color }}; box-shadow: 0 0 10px {{ section.color }}60;"></span>
                 <div>
-                    <h2 class="team-section-title">{{ group.name }}</h2>
-                    {% if group.desc %}
-                    <p class="team-section-desc">{{ group.desc }}</p>
-                    {% endif %}
+                    <h2 class="team-section-title">{{ section.title }}</h2>
+                    <p class="team-section-desc">{{ section.desc }}</p>
                 </div>
             </div>
-            <span class="team-section-count">{{ group.members|length }} member{{ 's' if group.members|length != 1 }}</span>
         </div>
 
-        <div class="team-grid">
-            {% for member in group.members %}
-            <a href="/u/{{ member.id }}" class="team-card" style="--role-color: {{ group.color }};">
-                <div class="team-card-top-accent"></div>
-                <div class="team-card-body">
-                    <img src="https://a.{{ domain() }}/{{ member.id }}"
-                         class="team-card-avatar" alt="{{ member.name }}"
-                         loading="lazy">
-                    <span class="team-card-name">{{ member.name }}</span>
-                    <span class="team-card-role" style="background: {{ group.color }}18; color: {{ group.color }}; border-color: {{ group.color }}35;">
-                        {{ group.name }}
-                    </span>
-                    <div class="team-card-meta">
-                        {% if member.country and member.country != 'xx' %}
-                        <img src="/static/images/flags/{{ member.country|upper }}.png"
-                             class="team-card-flag" alt="{{ member.country }}">
-                        {% endif %}
-                        <span>Joined {{ member.joined }}</span>
-                    </div>
+        {% if section.is_multi %}
+            {# ── Multi sub-groups (e.g. Admins + Community Managers) ── #}
+            {% for group in section.groups %}
+            {% if group.members %}
+            <div class="team-subgroup">
+                <h3 class="team-subgroup-title" style="color: {{ group.color }};">
+                    <span class="team-subgroup-dot" style="background: {{ group.color }};"></span>
+                    {{ group.name }}
+                    <span class="team-subgroup-count">{{ group.members|length }}</span>
+                </h3>
+                <div class="team-grid">
+                    {% for member in group.members %}
+                    <a href="/u/{{ member.id }}" class="team-card" style="--role-color: {{ group.color }};">
+                        <div class="team-card-top-accent"></div>
+                        <div class="team-card-body">
+                            <img src="https://a.{{ domain() }}/{{ member.id }}"
+                                 class="team-card-avatar" alt="{{ member.name }}"
+                                 loading="lazy">
+                            <span class="team-card-name">{{ member.name }}</span>
+                            <span class="team-card-role" style="background: {{ group.color }}18; color: {{ group.color }}; border-color: {{ group.color }}35;">
+                                {{ group.name }}
+                            </span>
+                            <div class="team-card-meta">
+                                {% if member.country and member.country != 'xx' %}
+                                <img src="/static/images/flags/{{ member.country|upper }}.png"
+                                     class="team-card-flag" alt="{{ member.country }}">
+                                {% endif %}
+                                <span>{{ member.joined_ago }}</span>
+                            </div>
+                            <div class="team-card-activity">
+                                <i class="fas fa-clock"></i> {{ member.active_ago }}
+                            </div>
+                        </div>
+                    </a>
+                    {% endfor %}
                 </div>
-            </a>
+            </div>
+            {% endif %}
             {% endfor %}
-        </div>
+        {% else %}
+            {# ── Single group — cards directly ── #}
+            {% set group = section.groups[0] %}
+            <div class="team-grid">
+                {% for member in group.members %}
+                <a href="/u/{{ member.id }}" class="team-card" style="--role-color: {{ group.color }};">
+                    <div class="team-card-top-accent"></div>
+                    <div class="team-card-body">
+                        <img src="https://a.{{ domain() }}/{{ member.id }}"
+                             class="team-card-avatar" alt="{{ member.name }}"
+                             loading="lazy">
+                        <span class="team-card-name">{{ member.name }}</span>
+                        <span class="team-card-role" style="background: {{ group.color }}18; color: {{ group.color }}; border-color: {{ group.color }}35;">
+                            {{ group.name }}
+                        </span>
+                        <div class="team-card-meta">
+                            {% if member.country and member.country != 'xx' %}
+                            <img src="/static/images/flags/{{ member.country|upper }}.png"
+                                 class="team-card-flag" alt="{{ member.country }}">
+                            {% endif %}
+                            <span>{{ member.joined_ago }}</span>
+                        </div>
+                        <div class="team-card-activity">
+                            <i class="fas fa-clock"></i> {{ member.active_ago }}
+                        </div>
+                    </div>
+                </a>
+                {% endfor %}
+            </div>
+        {% endif %}
     </section>
     {% endfor %}
 
-    {% if not team_groups %}
+    {% if not team_sections %}
     <div class="team-empty">
         <i class="fas fa-user-shield"></i>
         <p>No staff members found.</p>
     </div>
     {% endif %}
+
+    <!-- ── Special Thanks ─────────────────────────────────────────── -->
+    <section class="team-thanks">
+        <h2 class="team-thanks-title">Special Thanks</h2>
+        <p class="team-thanks-intro">Here's a list of people who helped with Kawata.</p>
+        <ul class="team-thanks-list">
+            <li>
+                <strong>Franc[e]sco/lolisamurai</strong>, for oppai-ng, used as standard pp calculator.
+                <span class="team-thanks-license">oppai is licensed under GPL v3.</span>
+            </li>
+            <li>
+                <strong>Tom94</strong>, for osu-performance, used as a reference for our mania pp calculator.
+                <span class="team-thanks-license">osu-performance is licensed under AGPL v3.</span>
+            </li>
+            <li>
+                <strong>Sunpy</strong>, for catch-the-pp, used as catch the beat pp calculator.
+                <span class="team-thanks-license">catch-the-pp is licensed under GPL v3.</span>
+            </li>
+            <li>All our <strong>donors and Discord Boosters</strong> who are supporting Kawata.</li>
+            <li><strong>Everybody</strong> playing on our server!</li>
+        </ul>
+    </section>
+
+    <!-- ── Contact ────────────────────────────────────────────────── -->
+    <div class="team-contact">
+        <i class="fas fa-envelope"></i>
+        Looking for how you should contact our team? The best way to contact us
+        is to send an email to
+        <a href="mailto:accounts@kawata.pw">accounts@kawata.pw</a>,
+        and let us know the team member you would like to contact.
+    </div>
 </div>
 
 <script>
@@ -102,7 +178,6 @@
             sections.forEach(function(sec) {
                 if (filter === 'all' || sec.getAttribute('data-role') === filter) {
                     sec.style.display = '';
-                    // Re-trigger reveal for cards in this section
                     sec.querySelectorAll('.team-card:not(.is-visible)').forEach(function(c) {
                         observer && observer.observe(c);
                     });
