@@ -23,17 +23,6 @@ _FOUNDER_IDS = {1, 1000}
 
 _TEAM_LAYOUT = [
     {
-        'title': 'Founders',
-        'slug': 'founders',
-        'desc': (
-            'The original creators of Kawata. They laid the foundation '
-            'for everything the server has become.'
-        ),
-        'groups': [
-            {'db_name': 'Founder', 'flag': None, 'exclusive': True, 'fallback_color': '#FFD700'},
-        ],
-    },
-    {
         'title': 'Owners',
         'slug': 'owners',
         'desc': (
@@ -42,6 +31,17 @@ _TEAM_LAYOUT = [
         ),
         'groups': [
             {'db_name': 'Owner', 'flag': 17179869184, 'exclusive': True, 'fallback_color': '#FF69B4'},
+        ],
+    },
+    {
+        'title': 'Founders',
+        'slug': 'founders',
+        'desc': (
+            'The original creators of Kawata. They laid the foundation '
+            'for everything the server has become.'
+        ),
+        'groups': [
+            {'db_name': 'Founder', 'flag': None, 'exclusive': True, 'fallback_color': '#FFD700'},
         ],
     },
     {
