@@ -10,20 +10,38 @@ from objects.utils import error_catcher
 hina_team = Blueprint('hina_team', __name__)
 
 # ── Team page structure matching production roles ─────────────────────
-# Each section can have one or more sub-groups. Users can appear in
-# multiple groups (no exclusivity) — matches production behavior.
 # Privilege flags from kawata.py/app/constants/privileges.py.
+#
+# Dedup rules (per-group 'exclusive' flag):
+#   - exclusive groups: user placed here is skipped in ALL later groups
+#     (Founder, Owner, Developer, Administrator)
+#   - non-exclusive groups: user can appear in multiple sections, but
+#     within the same section earlier groups' members are skipped in
+#     later groups (e.g. Gestion members won't also appear under Support)
+
+_FOUNDER_IDS = {1, 1000}
 
 _TEAM_LAYOUT = [
+    {
+        'title': 'Founders',
+        'slug': 'founders',
+        'desc': (
+            'The original creators of Kawata. They laid the foundation '
+            'for everything the server has become.'
+        ),
+        'groups': [
+            {'db_name': 'Founder', 'flag': None, 'exclusive': True, 'fallback_color': '#FFD700'},
+        ],
+    },
     {
         'title': 'Owners',
         'slug': 'owners',
         'desc': (
-            'They created Kawata, they are the ones who run the server '
-            'and manage many things.'
+            'They are the ones in charge of running and maintaining '
+            'the server infrastructure and community.'
         ),
         'groups': [
-            {'db_name': 'Owner', 'flag': 17179869184, 'fallback_color': '#FF69B4'},
+            {'db_name': 'Owner', 'flag': 17179869184, 'exclusive': True, 'fallback_color': '#FF69B4'},
         ],
     },
     {
@@ -35,7 +53,7 @@ _TEAM_LAYOUT = [
             'maintenance. Without them, the server wouldn\'t be running at all!'
         ),
         'groups': [
-            {'db_name': 'Developer', 'flag': 17179869184, 'fallback_color': '#8A2BE2'},
+            {'db_name': 'Developer', 'flag': 17179869184, 'exclusive': True, 'fallback_color': '#8A2BE2'},
         ],
     },
     {
@@ -48,8 +66,8 @@ _TEAM_LAYOUT = [
             'the Moderator.'
         ),
         'groups': [
-            {'db_name': 'Administrator', 'flag': 65536, 'fallback_color': '#FF4444'},
-            {'db_name': 'Community Manager', 'flag': 131072, 'fallback_color': '#3498DB'},
+            {'db_name': 'Administrator', 'flag': 65536, 'exclusive': True, 'fallback_color': '#FF4444'},
+            {'db_name': 'Community Manager', 'flag': 131072, 'exclusive': False, 'fallback_color': '#3498DB'},
         ],
     },
     {
@@ -62,8 +80,8 @@ _TEAM_LAYOUT = [
             'sure the rules are respected, and take action if necessary.'
         ),
         'groups': [
-            {'db_name': 'Gestion Team', 'flag': 8192, 'fallback_color': '#9B59B6'},
-            {'db_name': 'Support Team', 'flag': 32, 'fallback_color': '#2ECC71'},
+            {'db_name': 'Gestion Team', 'flag': 8192, 'exclusive': False, 'fallback_color': '#9B59B6'},
+            {'db_name': 'Support Team', 'flag': 32, 'exclusive': False, 'fallback_color': '#2ECC71'},
         ],
     },
     {
@@ -74,7 +92,7 @@ _TEAM_LAYOUT = [
             'they are good enough to be ranked or not.'
         ),
         'groups': [
-            {'db_name': 'BAT', 'flag': 256, 'fallback_color': '#F39C12'},
+            {'db_name': 'BAT', 'flag': 256, 'exclusive': False, 'fallback_color': '#F39C12'},
         ],
     },
 ]
@@ -120,22 +138,61 @@ async def team_page():
         "ORDER BY name"
     )
 
-    # 3. Build sections — users can appear in multiple groups
+    # 3. Fetch founders separately (ID 1 is excluded by the staff query)
+    founder_ids_str = ','.join(str(i) for i in _FOUNDER_IDS)
+    founder_users = await glob.db.fetchall(
+        "SELECT id, name, country, creation_time, latest_activity, priv "
+        f"FROM users WHERE id IN ({founder_ids_str})"
+    )
+
+    # 4. Build sections with per-group exclusive dedup
+    #    - exclusive_placed: users in an exclusive group → skipped everywhere
+    #    - section_placed: within a multi-group section, earlier groups'
+    #      members are skipped in later groups (e.g. Gestion ≠ Support)
     team_sections = []
     seen_ids = set()
+    exclusive_placed = set()
 
     for layout in _TEAM_LAYOUT:
         section_groups = []
+        section_placed = set()
+
         for grp in layout['groups']:
+            is_grp_exclusive = grp.get('exclusive', False)
             members = []
-            for user in (staff_users or []):
-                if user['priv'] & grp['flag']:
+
+            if grp['flag'] is None:
+                # ID-based matching (Founders)
+                pool = founder_users or []
+                for user in pool:
+                    if user['id'] not in _FOUNDER_IDS:
+                        continue
+                    if user['id'] in exclusive_placed or user['id'] in section_placed:
+                        continue
                     members.append({
                         **user,
                         'joined_ago': _time_ago(user['creation_time']),
                         'active_ago': _time_ago(user['latest_activity']),
                     })
-                    seen_ids.add(user['id'])
+            else:
+                # Bitmask matching
+                for user in (staff_users or []):
+                    if user['id'] in exclusive_placed or user['id'] in section_placed:
+                        continue
+                    if user['priv'] & grp['flag']:
+                        members.append({
+                            **user,
+                            'joined_ago': _time_ago(user['creation_time']),
+                            'active_ago': _time_ago(user['latest_activity']),
+                        })
+
+            # Track per-group
+            for m in members:
+                seen_ids.add(m['id'])
+                section_placed.add(m['id'])
+                if is_grp_exclusive:
+                    exclusive_placed.add(m['id'])
+
             section_groups.append({
                 'name': grp['db_name'],
                 'color': color_map.get(grp['db_name'], grp['fallback_color']),
