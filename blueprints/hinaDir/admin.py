@@ -255,11 +255,11 @@ async def api_dashboard():
         'SELECT '
         '  COUNT(id) AS total_users, '
         '  (SELECT COUNT(id) FROM users WHERE NOT priv & 1) AS restricted, '
-        '  (SELECT COUNT(id) FROM users WHERE creation_time > DATE_SUB(NOW(), INTERVAL 7 DAY)) AS new_users_7d, '
-        '  (SELECT COUNT(id) FROM users WHERE creation_time > DATE_SUB(NOW(), INTERVAL 14 DAY) '
-        '    AND creation_time <= DATE_SUB(NOW(), INTERVAL 7 DAY)) AS new_users_prev_7d, '
+        '  (SELECT COUNT(id) FROM users WHERE creation_time > UNIX_TIMESTAMP(DATE_SUB(NOW(), INTERVAL 7 DAY))) AS new_users_7d, '
+        '  (SELECT COUNT(id) FROM users WHERE creation_time > UNIX_TIMESTAMP(DATE_SUB(NOW(), INTERVAL 14 DAY)) '
+        '    AND creation_time <= UNIX_TIMESTAMP(DATE_SUB(NOW(), INTERVAL 7 DAY))) AS new_users_prev_7d, '
         '  (SELECT COUNT(id) FROM users WHERE NOT priv & 1 '
-        '    AND creation_time <= DATE_SUB(NOW(), INTERVAL 7 DAY)) AS restricted_7d_ago, '
+        '    AND creation_time <= UNIX_TIMESTAMP(DATE_SUB(NOW(), INTERVAL 7 DAY))) AS restricted_7d_ago, '
         '  (SELECT COUNT(id) FROM scores WHERE play_time > DATE_SUB(NOW(), INTERVAL 1 HOUR)) AS scores_1h, '
         '  (SELECT COUNT(id) FROM scores WHERE play_time > DATE_SUB(NOW(), INTERVAL 1 DAY)) AS scores_24h '
         'FROM users'
@@ -281,7 +281,7 @@ async def api_dashboard():
     # ── Top countries (new users, 7d) ─────────────────────
     top_countries = await glob.db.fetchall(
         'SELECT country, COUNT(*) AS count FROM users '
-        'WHERE creation_time > DATE_SUB(NOW(), INTERVAL 7 DAY) '
+        'WHERE creation_time > UNIX_TIMESTAMP(DATE_SUB(NOW(), INTERVAL 7 DAY)) '
         'GROUP BY country ORDER BY count DESC LIMIT 5'
     )
 
@@ -507,10 +507,10 @@ async def api_users():
     # Advanced filters: registered
     if filter_registered:
         registered_map = {
-            '24h': "u.creation_time > DATE_SUB(NOW(), INTERVAL 1 DAY)",
-            '7d': "u.creation_time > DATE_SUB(NOW(), INTERVAL 7 DAY)",
-            '30d': "u.creation_time > DATE_SUB(NOW(), INTERVAL 30 DAY)",
-            '90d': "u.creation_time > DATE_SUB(NOW(), INTERVAL 90 DAY)",
+            '24h': "u.creation_time > UNIX_TIMESTAMP(DATE_SUB(NOW(), INTERVAL 1 DAY))",
+            '7d': "u.creation_time > UNIX_TIMESTAMP(DATE_SUB(NOW(), INTERVAL 7 DAY))",
+            '30d': "u.creation_time > UNIX_TIMESTAMP(DATE_SUB(NOW(), INTERVAL 30 DAY))",
+            '90d': "u.creation_time > UNIX_TIMESTAMP(DATE_SUB(NOW(), INTERVAL 90 DAY))",
         }
         if filter_registered in registered_map:
             conditions.append(registered_map[filter_registered])
