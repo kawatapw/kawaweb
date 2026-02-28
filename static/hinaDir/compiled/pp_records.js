@@ -70,7 +70,7 @@
                 self.loading = true;
                 self.error = null;
                 var offset = (self.page - 1) * self.pageSize;
-                var url = 'http://api.' + domain + '/v1/get_pp_records'
+                var url = 'https://api.' + domain + '/v1/get_pp_records'
                     + '?mode=' + self.mode
                     + '&limit=' + self.pageSize
                     + '&offset=' + offset;
