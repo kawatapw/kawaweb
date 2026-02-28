@@ -174,7 +174,7 @@
                 event.target.style.display = 'none';
             },
             gradeUrl: function (grade) {
-                return '/static/images/grades/' + grade + '.png';
+                return '/static/images/icons/grades/GradeSmall-' + grade + '.svg';
             },
             cheatDisplay: function (record) {
                 if (!this.activeCheatType || !record.cheat_values)
