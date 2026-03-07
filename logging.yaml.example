@@ -37,14 +37,6 @@
 ###    tags: ['python']
 ###    formatter: json.bytes
 ###  
-###  Not Recommended (has many issues):
-###  elasticsearch.INFO: Example handler for logging to Elasticsearch with INFO level. The .INFO is appended to the handler name to differentiate between the different levels.
-###    class: objects.utils.ElasticsearchHandler
-###    level: INFO
-###    hosts: [{'host': '<IP or Docker Container Name>', 'port': 9200, 'scheme': 'http'}]
-###    index: 'logs-kawatadev-web'
-###    formatter: json
-###  
 version: 1
 disable_existing_loggers: true
 loggers:
