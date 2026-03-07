@@ -65,7 +65,8 @@
                 var base;
                 if (self.mirror === 'osu_direct') {
                     base = 'https://osu.direct/api/d/' + setId;
-                } else {
+                }
+                else {
                     base = self.downloadBase + '/' + setId;
                 }
                 return noVideo ? base + '?noVideo=1' : base;
