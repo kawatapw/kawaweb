@@ -1,6 +1,4 @@
-"""hinaDir: Beatmap mirror browser routes.
-Currently only supports osu!direct.
-"""
+"""hinaDir: Beatmap mirror browser routes."""
 
 import time
 from collections import defaultdict
@@ -15,7 +13,7 @@ from objects.utils import klogging, error_catcher
 hina_beatmaps = Blueprint('hina_beatmaps', __name__)
 
 MIRROR_SEARCH = 'https://osu.direct/api/v2/search'
-MIRROR_DOWNLOAD = 'https://osu.direct/api/d'
+MIRROR_DOWNLOAD = 'https://mirror.hinamizawa.ai/api/v1/hinai/d'
 
 # Simple in-memory rate limiter: IP -> list of timestamps
 _pp_rate_limits: dict[str, list[float]] = defaultdict(list)

@@ -25,7 +25,7 @@
             hasMore: true,
             searchTimer: null,
             downloadBase: '',
-            mirror: 'osu_direct',
+            mirror: 'hinai',
             infoSet: null,
             ppTableShow: false,
             ppTableLoading: false,
@@ -49,6 +49,7 @@
                 { value: -2, name: 'Graveyard' },
             ],
             mirrors: [
+                { key: 'hinai', name: 'hinai', enabled: true },
                 { key: 'osu_direct', name: 'osu!direct', enabled: true },
                 { key: 'osu_api_v1', name: 'osu! API v1', enabled: false },
                 { key: 'osu_api_v2', name: 'osu! API v2', enabled: false },
@@ -59,6 +60,16 @@
             this.search();
         },
         methods: {
+            getDownloadUrl: function (setId, noVideo) {
+                var self = this;
+                var base;
+                if (self.mirror === 'osu_direct') {
+                    base = 'https://osu.direct/api/d/' + setId;
+                } else {
+                    base = self.downloadBase + '/' + setId;
+                }
+                return noVideo ? base + '?noVideo=1' : base;
+            },
             search: function () {
                 var self = this;
                 self.offset = 0;
@@ -172,7 +183,7 @@
                 // If user somehow selected a disabled mirror, revert
                 for (var i = 0; i < self.mirrors.length; i++) {
                     if (self.mirrors[i].key === self.mirror && !self.mirrors[i].enabled) {
-                        self.mirror = 'osu_direct';
+                        self.mirror = 'hinai';
                         return;
                     }
                 }
