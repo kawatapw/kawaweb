@@ -265,7 +265,7 @@ DELETE /_index_template/*
   "template": {
     "settings": {
       "number_of_shards": 1,
-      "number_of_replicas": 1,
+      "number_of_replicas": 0,
       "index.lifecycle.name": "logs-policy-legacy",
       "index.lifecycle.rollover_alias": "log-legacy"
     },
