@@ -45,6 +45,17 @@ from .utils import (
 )
 
 
+def _parse_optional_int(form, field_name: str):
+    """Parse an optional integer form field, raising ValidationError on bad input."""
+    val = form.get(field_name)
+    if not val:
+        return None
+    try:
+        return int(val)
+    except (ValueError, TypeError):
+        raise ValidationError(f"Invalid value for '{field_name}': must be an integer.")
+
+
 # Initialize services
 user_repo = UserRepository()
 map_repo = MapRepository()
@@ -111,17 +122,17 @@ async def action(action_type: str):
     request_data = ActionRequest(
         action=action_enum,
         reason=form.get("reason"),
-        user_id=int(form.get("user")) if form.get("user") else None,
-        map_id=int(form.get("map")) if form.get("map") else None,
-        duration=int(form.get("duration")) if form.get("duration") else None,
+        user_id=_parse_optional_int(form, "user"),
+        map_id=_parse_optional_int(form, "map"),
+        duration=_parse_optional_int(form, "duration"),
         password=form.get("password"),
-        privs=int(form.get("privs")) if form.get("privs") else None,
+        privs=_parse_optional_int(form, "privs"),
         username=form.get("username"),
         email=form.get("email"),
         country=form.get("country"),
         userpage_content=form.get("userpage_content"),
-        badge_id=int(form.get("badge")) if form.get("badge") else None,
-        score_id=int(form.get("score")) if form.get("score") else None
+        badge_id=_parse_optional_int(form, "badge"),
+        score_id=_parse_optional_int(form, "score"),
     )
     
     # Get current user ID
@@ -293,7 +304,12 @@ async def user(userid: int):
     
     # Get user detail
     user_detail = await user_service.get_user_detail(userid)
-    
+
+    # Strip sensitive data if caller lacks ViewSensitiveInfo
+    session_priv = SessionManager.get_user_priv()
+    if not PrivilegeChecker.has_privilege(session_priv, "ViewSensitiveInfo"):
+        user_detail.user.get("logs", {}).pop("hashes", None)
+
     return jsonify(user_detail.user)
 
 

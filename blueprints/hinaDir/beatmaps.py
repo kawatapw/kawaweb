@@ -7,7 +7,6 @@ from functools import wraps
 from quart import Blueprint, render_template, request, jsonify, g
 
 from objects import glob
-import config as cfg
 from objects.utils import klogging, error_catcher
 
 hina_beatmaps = Blueprint('hina_beatmaps', __name__)
@@ -93,7 +92,9 @@ async def beatmaps_pp_table():
     timestamps = _pp_rate_limits[ip]
     # Prune old entries
     _pp_rate_limits[ip] = [t for t in timestamps if now - t < _PP_RATE_WINDOW]
-    if len(_pp_rate_limits[ip]) >= _PP_RATE_MAX:
+    if not _pp_rate_limits[ip]:
+        del _pp_rate_limits[ip]
+    elif len(_pp_rate_limits[ip]) >= _PP_RATE_MAX:
         return jsonify({'status': 'error', 'message': 'Rate limit exceeded. Try again later.'}), 429
     _pp_rate_limits[ip].append(now)
 
@@ -114,7 +115,7 @@ async def beatmaps_pp_table():
         return jsonify({'status': 'error', 'message': 'No valid IDs provided.'}), 400
 
     headers = {
-        'Host': f'api.{cfg.domain}',
+        'Host': f'api.{glob.config.domain}',
         'Authorization': f'Bearer {glob.config.api_key}',
     }
 
@@ -125,8 +126,8 @@ async def beatmaps_pp_table():
         warm_url = f'https://api.{glob.config.domain}/v1/get_map_info?id={valid_ids[0]}'
         async with glob.http.get(warm_url, headers=headers, timeout=15) as resp:
             pass  # We don't need the response, just trigger the cache
-    except Exception:
-        pass  # Best-effort; calculate_pp_batch will return per-diff errors if needed
+    except Exception as e:
+        klogging.log(f"PP cache warm-up failed: {e}", klogging.Ansi.LYELLOW)
 
     # Build query params: repeat id= for each diff
     params = [('acc', '100'), ('acc', '99'), ('acc', '98'), ('acc', '95')]
@@ -142,4 +143,5 @@ async def beatmaps_pp_table():
                 return jsonify({'status': 'error', 'message': data.get('status', 'API error')}), resp.status
             return jsonify(data)
     except Exception as e:
-        return jsonify({'status': 'error', 'message': str(e)}), 500
+        klogging.log(f"PP table API error: {e}", klogging.Ansi.LRED)
+        return jsonify({'status': 'error', 'message': 'Failed to calculate PP values.'}), 500

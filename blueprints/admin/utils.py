@@ -16,7 +16,7 @@ from discord_webhook import DiscordWebhook, DiscordEmbed
 
 from objects import glob
 from objects.utils import flash, get_safe_name, klogging, error_catcher
-from objects.privileges import Privileges, GetPriv
+from objects.privileges import Privileges, GetPriv, ComparePrivs
 
 from .models import Action, ActionType, TargetType
 from .exceptions import AdminPanelError, AuthenticationError, AuthorizationError
@@ -72,7 +72,8 @@ class RequestValidator:
     @staticmethod
     def validate_content_type(expected: str = "application/x-www-form-urlencoded") -> None:
         """Validate request content type."""
-        if request.content_type != expected:
+        received = (request.content_type or "").split(";", 1)[0].strip()
+        if received != expected:
             raise ValueError(f"Invalid content type. Use {expected}.")
     
     @staticmethod
@@ -320,14 +321,14 @@ class PrivilegeChecker:
     @staticmethod
     def can_modify_privileges(mod_priv: int, target_priv: int, new_priv: Optional[int] = None) -> tuple:
         """Check if moderator can modify privileges."""
-        # Check if mod can modify target
-        if ComparePrivs(mod_priv, target_priv):
+        # Check if mod can modify target (target must be subset of mod's privs)
+        if target_priv and not ComparePrivs(mod_priv, target_priv):
             return False, "You cannot modify people with privileges that you don't possess."
-        
-        # Check if mod can grant new privileges
-        if new_priv is not None and ComparePrivs(new_priv, mod_priv):
+
+        # Check if mod can grant new privileges (new privs must be subset of mod's privs)
+        if new_priv is not None and new_priv and not ComparePrivs(mod_priv, new_priv):
             return False, "You cannot grant privileges that you don't possess."
-        
+
         return True, None
 
 
@@ -338,18 +339,19 @@ class MapStatusUpdater:
     async def update_status(map_id: int, status: int) -> bool:
         """Update map status via external API."""
         try:
-            status_update_url = f"https://api.{glob.config.domain}/v1/update_map_status"
+            url = "http://bancho:10000/v1/update_map_status"
             headers = {
-                "Authorization": f"Bearer {glob.config.api_key}"
+                "Authorization": f"Bearer {glob.config.api_key}",
+                "Host": f"api.{glob.config.domain}",
             }
             params = {
                 "id": map_id,
-                "s": status
+                "s": status,
             }
-            
-            response = requests.post(status_update_url, headers=headers, params=params)
-            json_response = response.json()
-            
+
+            async with glob.http.post(url, headers=headers, params=params) as response:
+                json_response = await response.json(content_type=None)
+
             if json_response.get("status") == "success":
                 return True
             else:

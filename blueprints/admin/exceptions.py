@@ -39,6 +39,8 @@ class ValidationError(AdminPanelError):
 class ResourceNotFoundError(AdminPanelError):
     """Raised when a requested resource is not found."""
     def __init__(self, resource_type: str, resource_id: int):
+        self.resource_type = resource_type
+        self.resource_id = resource_id
         message = f"{resource_type} with ID {resource_id} does not exist."
         super().__init__(message, 404)
 
@@ -155,7 +157,7 @@ def handle_admin_error(error: AdminPanelError) -> tuple:
         response["missing_fields"] = error.missing_fields
     
     if isinstance(error, ResourceNotFoundError):
-        response["resource_type"] = error.__class__.__name__.replace("Error", "").replace("Resource", "")
+        response["resource_type"] = error.resource_type
     
     return response, error.status_code
 

@@ -4,6 +4,7 @@ __all__ = ()
 
 import bcrypt
 import hashlib
+import io
 import os
 import time
 import re
@@ -33,7 +34,7 @@ app = Quart(__name__)
 
 SAFE_API_PATH_REGEX = re.compile(r'^[a-zA-Z0-9_/-]+$')
 
-@app.route("/api/<path:file_path>")
+@frontend.route("/api/<path:file_path>")
 async def api_redirect(file_path):
     # SECURITY: Validate path to prevent open redirects or internal access
     if not SAFE_API_PATH_REGEX.match(file_path):
@@ -260,6 +261,7 @@ async def settings_profile_post():
     # Hue-only change: update session and stay on page
     if new_hue is not None:
         session['user_data']['hue'] = new_hue
+        session.modified = True
     return await flash('success', 'Settings saved.', 'settings/profile')
 
 @frontend.route('/settings/hue', methods=['POST'])
@@ -316,36 +318,40 @@ async def settings_avatar_post():
             return await flash('error', 'Only donators can use .gif avatars!', 'settings/avatar')
         return await flash('error', 'The image you select must be either a .JPG, .JPEG, or .PNG file!', 'settings/avatar')
 
-    # Check file size
-    # Note: avatar.content_length might be None depending on the request headers
-    if avatar.content_length and avatar.content_length > MAX_IMAGE_SIZE:
-        msg = 'The image you selected is too large!' 
+    # Read file bytes and check actual size (content_length may be None)
+    avatar_data = await avatar.read()
+    if len(avatar_data) > MAX_IMAGE_SIZE:
+        msg = 'The image you selected is too large!'
         if not session['user_data']['is_donator']:
             msg += ' Become a donor to get double the size!'
         return await flash('error', msg, 'settings/avatar')
 
-    # Remove old avatars
-    for fx in ALLOWED_EXTENSIONS:
-        old_path = os.path.join(AVATARS_PATH, f'{session["user_data"]["id"]}{fx}')
-        if os.path.isfile(old_path):
-            os.remove(old_path)
-
     save_filename = f'{session["user_data"]["id"]}{file_extension.lower()}'
     save_path = os.path.join(AVATARS_PATH, save_filename)
+    temp_path = save_path + '.tmp'
 
+    # Save new avatar to temp file first
     try:
         if file_extension.lower() != '.gif':
-            # Avatar cropping to 1:1 for non-animated images
-            pilavatar = Image.open(avatar.stream)
+            pilavatar = Image.open(io.BytesIO(avatar_data))
             pilavatar = utils.crop_image(pilavatar)
-            pilavatar.save(save_path)
+            pilavatar.save(temp_path)
         else:
-            # Handle GIF images (no processing)
-            with open(save_path, "wb") as output_file:
-                output_file.write(avatar.read())
+            with open(temp_path, "wb") as output_file:
+                output_file.write(avatar_data)
     except Exception as e:
+        if os.path.isfile(temp_path):
+            os.remove(temp_path)
         klogging.log(f"Error saving avatar: {e}", klogging.Ansi.LRED)
         return await flash('error', 'Error saving avatar', 'settings/avatar')
+
+    # Only delete old avatars after new one saved successfully
+    for fx in ALLOWED_EXTENSIONS:
+        old_path = os.path.join(AVATARS_PATH, f'{session["user_data"]["id"]}{fx}')
+        if os.path.isfile(old_path) and old_path != temp_path:
+            os.remove(old_path)
+
+    os.rename(temp_path, save_path)
 
     return await flash('success', 'Your avatar has been successfully changed!', 'settings/avatar')
 

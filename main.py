@@ -135,8 +135,9 @@ async def inject_globals():
             g.isDevEnv = True
         if glob.sys.get('maintenance') == "True":
             g.maintenance = True
-    except Exception:
-        pass
+    except Exception as e:
+        import logging as _logging
+        _logging.getLogger(__name__).warning(f"inject_globals error: {e}")
 
 from blueprints.frontend import frontend
 app.register_blueprint(frontend)

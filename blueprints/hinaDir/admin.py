@@ -6,7 +6,6 @@ import json
 from functools import wraps
 
 import bcrypt
-import requests as sync_requests
 from quart import Blueprint, jsonify, render_template, request, session, redirect, url_for, g
 
 from objects import glob
@@ -475,9 +474,9 @@ async def api_users():
         elif filter_priv == 'supporter':
             conditions.append("u.priv & 4 != 0")
         elif filter_priv == 'mod':
-            conditions.append("u.priv & 1023 != 0 AND u.priv < 2047")
+            conditions.append(f"u.priv & {int(Privileges.AccessPanel)} != 0 AND NOT u.priv & {int(Privileges.ManagePrivs)}")
         elif filter_priv == 'admin':
-            conditions.append("u.priv & 2047 != 0")
+            conditions.append(f"u.priv & {int(Privileges.ManagePrivs)} != 0")
         elif filter_priv == 'restricted':
             conditions.append("NOT u.priv & 1")
 
@@ -750,9 +749,12 @@ async def action_wipe():
     user_id = int(data['user'])
     reason = data.get('reason', '')
 
-    user = await glob.db.fetch("SELECT id, name, country FROM users WHERE id = %s", [user_id])
+    user = await glob.db.fetch("SELECT id, name, country, priv FROM users WHERE id = %s", [user_id])
     if not user:
         return jsonify({'status': 'error', 'message': 'User not found.'}), 404
+
+    if user['priv'] and not ComparePrivs(mod_priv, user['priv']):
+        return jsonify({'status': 'error', 'message': 'Cannot modify users with privileges you do not possess.'}), 403
 
     # Backup scores → wiped_scores
     await glob.db.execute(
@@ -809,6 +811,8 @@ async def action_restrict():
     user = await glob.db.fetch("SELECT id, name, priv FROM users WHERE id = %s", [user_id])
     if not user:
         return jsonify({'status': 'error', 'message': 'User not found.'}), 404
+    if user['priv'] and not ComparePrivs(mod_priv, user['priv']):
+        return jsonify({'status': 'error', 'message': 'Cannot modify users with privileges you do not possess.'}), 403
     if user['priv'] == 0:
         return jsonify({'status': 'error', 'message': 'User is already restricted.'}), 400
 
@@ -839,6 +843,8 @@ async def action_unrestrict():
     user = await glob.db.fetch("SELECT id, name, priv FROM users WHERE id = %s", [user_id])
     if not user:
         return jsonify({'status': 'error', 'message': 'User not found.'}), 404
+    if user['priv'] and not ComparePrivs(mod_priv, user['priv']):
+        return jsonify({'status': 'error', 'message': 'Cannot modify users with privileges you do not possess.'}), 403
     if user['priv'] != 0:
         return jsonify({'status': 'error', 'message': 'User is not restricted.'}), 400
 
@@ -867,9 +873,11 @@ async def action_silence():
     duration_hours = int(data['duration'])
     reason = data.get('reason', '')
 
-    user = await glob.db.fetch("SELECT id, name, silence_end FROM users WHERE id = %s", [user_id])
+    user = await glob.db.fetch("SELECT id, name, priv, silence_end FROM users WHERE id = %s", [user_id])
     if not user:
         return jsonify({'status': 'error', 'message': 'User not found.'}), 404
+    if user['priv'] and not ComparePrivs(mod_priv, user['priv']):
+        return jsonify({'status': 'error', 'message': 'Cannot modify users with privileges you do not possess.'}), 403
     if user['silence_end'] != 0:
         return jsonify({'status': 'error', 'message': 'User is already silenced.'}), 400
 
@@ -898,9 +906,11 @@ async def action_unsilence():
     user_id = int(data['user'])
     reason = data.get('reason', '')
 
-    user = await glob.db.fetch("SELECT id, name, silence_end FROM users WHERE id = %s", [user_id])
+    user = await glob.db.fetch("SELECT id, name, priv, silence_end FROM users WHERE id = %s", [user_id])
     if not user:
         return jsonify({'status': 'error', 'message': 'User not found.'}), 404
+    if user['priv'] and not ComparePrivs(mod_priv, user['priv']):
+        return jsonify({'status': 'error', 'message': 'Cannot modify users with privileges you do not possess.'}), 403
     if user['silence_end'] == 0:
         return jsonify({'status': 'error', 'message': 'User is not silenced.'}), 400
 
@@ -932,9 +942,12 @@ async def action_changepassword():
     if not (8 < len(password) <= 32):
         return jsonify({'status': 'error', 'message': 'Password must be between 8 and 32 characters.'}), 400
 
-    user = await glob.db.fetch("SELECT id, name, safe_name FROM users WHERE id = %s", [user_id])
+    user = await glob.db.fetch("SELECT id, name, safe_name, priv FROM users WHERE id = %s", [user_id])
     if not user:
         return jsonify({'status': 'error', 'message': 'User not found.'}), 404
+
+    if user['priv'] and not ComparePrivs(mod_priv, user['priv']):
+        return jsonify({'status': 'error', 'message': 'Cannot modify users with privileges you do not possess.'}), 403
 
     # Invalidate bcrypt cache
     bcrypt_cache = glob.cache['bcrypt']
@@ -982,8 +995,8 @@ async def action_changeprivileges():
     if not user:
         return jsonify({'status': 'error', 'message': 'User not found.'}), 404
 
-    if ComparePrivs(user['priv'], new_priv):
-        return jsonify({'status': 'error', 'message': 'Privileges are already equivalent.'}), 400
+    if user['priv'] == new_priv:
+        return jsonify({'status': 'error', 'message': 'Privileges are already the same.'}), 400
 
     # ComparePrivs(a, b) returns True if b ⊆ a
     # Block if new_priv has privs the mod doesn't have
@@ -1021,6 +1034,9 @@ async def action_editaccount():
     user = await glob.db.fetch("SELECT * FROM users WHERE id = %s", [user_id])
     if not user:
         return jsonify({'status': 'error', 'message': 'User not found.'}), 404
+
+    if user['priv'] and not ComparePrivs(mod_priv, user['priv']):
+        return jsonify({'status': 'error', 'message': 'Cannot modify users with privileges you do not possess.'}), 403
 
     # Username change
     username = data.get('username')
@@ -1099,6 +1115,10 @@ async def action_bulk():
             results.append({'id': uid, 'status': 'error', 'message': 'Not found'})
             continue
 
+        if user['priv'] and not ComparePrivs(mod_priv, user['priv']):
+            results.append({'id': uid, 'status': 'error', 'message': 'Cannot modify users with higher privileges'})
+            continue
+
         if action == 'restrict':
             if not (user['priv'] & 1):
                 results.append({'id': uid, 'status': 'skipped', 'message': 'Already restricted'})
@@ -1152,9 +1172,16 @@ async def action_removescore():
         return jsonify({'status': 'error', 'message': 'User and score required.'}), 400
 
     mod_id, mod_name, mod_priv = _get_mod_info()
+    if not _check_priv(mod_priv, Privileges.ManageUsers):
+        return jsonify({'status': 'error', 'message': 'Insufficient privileges.'}), 403
+
     user_id = int(data['user'])
     score_id = int(data['score'])
     reason = data.get('reason', '')
+
+    score_owner = await glob.db.fetch("SELECT priv FROM users WHERE id = %s", [user_id])
+    if score_owner and score_owner['priv'] and not ComparePrivs(mod_priv, score_owner['priv']):
+        return jsonify({'status': 'error', 'message': 'Cannot modify scores of users with privileges you do not possess.'}), 403
 
     score = await glob.db.fetch("SELECT * FROM scores WHERE id = %s", [score_id])
     if not score:
@@ -1484,6 +1511,9 @@ def _map_action_handler(action_name, action_text, target_status, status_check_va
 
         # Proxy to kawata.py API
         api_result = await _update_map_status(map_id, target_status)
+        if not api_result or api_result.get('status') not in ('success',):
+            error_msg = api_result.get('message', 'Unknown error') if api_result else 'No response'
+            return jsonify({'status': 'error', 'message': f'Failed to update map status: {error_msg}'}), 502
 
         # Deactivate map request
         try:

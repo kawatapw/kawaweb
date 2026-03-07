@@ -8,7 +8,6 @@ coordinating between repositories, validators, and external services.
 
 import hashlib
 import bcrypt
-import requests
 from typing import Optional, List, Dict, Any
 from datetime import datetime
 
@@ -67,22 +66,22 @@ class PermissionService:
     @staticmethod
     def check_privilege_hierarchy(mod_priv: int, target_priv: int, new_priv: Optional[int] = None) -> PermissionCheck:
         """Check privilege hierarchy for privilege modification."""
-        # Check if mod can modify target
-        if ComparePrivs(mod_priv, target_priv):
+        # Check if mod can modify target (target must be subset of mod's privs)
+        if target_priv and not ComparePrivs(mod_priv, target_priv):
             return PermissionCheck(
                 has_permission=False,
                 error_message="You cannot modify people with privileges that you don't possess.",
                 status_code=403
             )
-        
-        # Check if mod can grant new privileges
-        if new_priv is not None and ComparePrivs(new_priv, mod_priv):
+
+        # Check if mod can grant new privileges (new privs must be subset of mod's privs)
+        if new_priv is not None and new_priv and not ComparePrivs(mod_priv, new_priv):
             return PermissionCheck(
                 has_permission=False,
                 error_message="You cannot grant privileges that you don't possess.",
                 status_code=403
             )
-        
+
         return PermissionCheck(has_permission=True)
 
 
@@ -231,7 +230,11 @@ class ActionService:
             raise ResourceNotFoundError("User", action.target_id)
         
         action.user = user  # type: ignore
-        
+
+        # Hierarchy guard: mod must outrank target
+        if action.user.priv and not ComparePrivs(action.mod.priv, action.user.priv):
+            raise AuthorizationError("You cannot modify people with privileges that you don't possess.")
+
         # Execute specific action
         if action.action == ActionType.WIPE:
             await self._execute_wipe(action)
@@ -526,7 +529,7 @@ class ActionService:
         """Execute remove score action."""
         # Check permission
         permission_check = PermissionService.check_user_permission(
-            action.mod.priv, "ManageScores"
+            action.mod.priv, "ManageUsers"
         )
         if not permission_check.has_permission:
             raise AuthorizationError(permission_check.error_message)
@@ -652,24 +655,27 @@ class ActionService:
     async def _update_map_status_via_api(self, map_id: int, status: int) -> None:
         """Update map status via external API."""
         try:
-            status_update_url = f"https://api.{glob.config.domain}/v1/update_map_status"
+            url = "http://bancho:10000/v1/update_map_status"
             headers = {
-                "Authorization": f"Bearer {glob.config.api_key}"
+                "Authorization": f"Bearer {glob.config.api_key}",
+                "Host": f"api.{glob.config.domain}",
             }
             params = {
                 "id": map_id,
-                "s": status
+                "s": status,
             }
-            
-            response = requests.post(status_update_url, headers=headers, params=params)
-            json_response = response.json()
-            
+
+            async with glob.http.post(url, headers=headers, params=params) as response:
+                json_response = await response.json(content_type=None)
+
             if json_response.get("status") != "success":
                 raise ExternalServiceError(
                     "Map Status API",
                     f"Failed to update map status: {json_response.get('status')}"
                 )
-        except requests.RequestException as e:
+        except ExternalServiceError:
+            raise
+        except Exception as e:
             raise ExternalServiceError("Map Status API", str(e))
     
     def _get_target_description(self, action: Action) -> str:
