@@ -13,7 +13,7 @@ import orjson
 from functools import wraps
 from PIL import Image
 from pathlib import Path
-from quart import Blueprint, redirect, render_template, request, session, send_file
+from quart import Blueprint, redirect, render_template, request, session, send_file, Response
 from quart import jsonify, g
 
 from constants import regexes
@@ -84,9 +84,9 @@ async def health_check():
         health_status["status"] = "unhealthy"
         health_status["checks"]["database"] = {
             "status": "failed",
-            "error": str(e)
+            "error": "unavailable"
         }
-    
+
     # Check Redis connectivity
     try:
         redis_start = time.time()
@@ -108,9 +108,9 @@ async def health_check():
         health_status["status"] = "unhealthy"
         health_status["checks"]["redis"] = {
             "status": "failed",
-            "error": str(e)
+            "error": "unavailable"
         }
-    
+
     # Calculate total response time
     health_status["response_time_ms"] = round((time.time() - start_time) * 1000, 2)
     
