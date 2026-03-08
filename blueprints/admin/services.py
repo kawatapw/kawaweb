@@ -12,7 +12,7 @@ from typing import Optional, List, Dict, Any
 from datetime import datetime
 
 from objects import glob
-from objects.utils import get_safe_name
+from objects.utils import get_safe_name, klogging
 from objects.privileges import Privileges, ComparePrivs, GetPriv
 
 from .models import (
@@ -201,16 +201,19 @@ class ActionService:
             elif action.is_badge_action:
                 await self._execute_badge_action(action, request)
             
-            # Log the action
-            await self.log_repo.create(
-                action_id=action.id,
-                action=action.action.value,
-                reason=action.reason,
-                mod_id=action.mod_id,
-                target_id=action.target_id,
-                target_type=action.target_type
-            )
-            
+            # Log the action (best-effort — action already succeeded)
+            try:
+                await self.log_repo.create(
+                    action_id=action.id,
+                    action=action.action.value,
+                    reason=action.reason,
+                    mod_id=action.mod_id,
+                    target_id=action.target_id,
+                    target_type=action.target_type
+                )
+            except Exception as log_err:
+                klogging.log(f"Audit log failed (action still succeeded): {log_err}", klogging.Ansi.LYELLOW)
+
             return ActionResponse(
                 status="success",
                 message=f"Successfully {action.text.lower()} {self._get_target_description(action)}.",
@@ -409,22 +412,21 @@ class ActionService:
         
         # Get current password hash
         bcrypt_cache = glob.cache['bcrypt']
-        pw_bcrypt = (await glob.db.fetch(
+        old_pw_bcrypt = (await glob.db.fetch(
             'SELECT pw_bcrypt FROM users WHERE id = %s',
             [action.user.id]
         ))['pw_bcrypt'].encode()
-        
-        # Remove from cache if exists
-        if pw_bcrypt in bcrypt_cache:
-            del bcrypt_cache[pw_bcrypt]
-        
+
         # Calculate new password hash
         pw_md5 = hashlib.md5(password.encode()).hexdigest().encode()
         pw_bcrypt = bcrypt.hashpw(pw_md5, bcrypt.gensalt())
-        
-        # Update cache and database
-        bcrypt_cache[pw_bcrypt] = pw_md5
+
+        # DB write FIRST — cache update only after success
         await self.user_repo.update_password(action.user.id, pw_bcrypt, action.user.safe_name)
+
+        if old_pw_bcrypt in bcrypt_cache:
+            del bcrypt_cache[old_pw_bcrypt]
+        bcrypt_cache[pw_bcrypt] = pw_md5
     
     async def _execute_change_privileges(self, action: Action, new_priv: int) -> None:
         """Execute change privileges action."""

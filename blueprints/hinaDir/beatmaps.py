@@ -2,7 +2,6 @@
 
 import time
 from collections import defaultdict
-from functools import wraps
 
 from quart import Blueprint, render_template, request, jsonify, g
 

@@ -20,7 +20,7 @@ from objects.utils import flash, get_safe_name, klogging, error_catcher
 from objects.privileges import Privileges, GetPriv, ComparePrivs
 
 from .models import Action, ActionType, TargetType
-from .exceptions import AdminPanelError, AuthenticationError, AuthorizationError
+from .exceptions import AdminPanelError, AuthenticationError, AuthorizationError, ValidationError
 from .repositories import LogRepository
 
 
@@ -75,22 +75,22 @@ class RequestValidator:
         """Validate request content type."""
         received = (request.content_type or "").split(";", 1)[0].strip()
         if received != expected:
-            raise ValueError(f"Invalid content type. Use {expected}.")
-    
+            raise ValidationError(f"Invalid content type. Use {expected}.")
+
     @staticmethod
     async def get_form_data() -> Dict[str, Any]:
         """Get form data from request."""
         form = await request.form
         if not form:
-            raise ValueError("No form data provided.")
+            raise ValidationError("No form data provided.")
         return form
-    
+
     @staticmethod
     async def get_json_data() -> Dict[str, Any]:
         """Get JSON data from request."""
         data = await request.get_json()
         if not data:
-            raise ValueError("No JSON data provided.")
+            raise ValidationError("No JSON data provided.")
         return data
     
     @staticmethod

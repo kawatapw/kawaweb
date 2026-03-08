@@ -13,7 +13,7 @@ from functools import wraps
 from PIL import Image
 from pathlib import Path
 from quart import Blueprint, redirect, render_template, request, session, send_file
-from quart import Quart, request, redirect, Response, g
+from quart import jsonify, g
 
 from constants import regexes
 from objects import glob
@@ -27,8 +27,6 @@ VALID_MODES = frozenset({'std', 'taiko', 'catch', 'mania'})
 VALID_MODS = frozenset({'vn', 'rx', 'ap'})
 
 frontend = Blueprint('frontend', __name__)
-
-app = Quart(__name__)
 
 # --- Security & Helper Middleware ---
 
@@ -297,7 +295,7 @@ async def settings_avatar():
 async def settings_avatar_post():
     MAX_IMAGE_SIZE = glob.config.max_image_size * 1024 * 1024
     if glob.config.seperate_data_path:
-        AVATARS_PATH = f'./.data/b.py/avatars'
+        AVATARS_PATH = './.data/b.py/avatars'
     else:
         AVATARS_PATH = f'{glob.config.path_to_gulag}.data/avatars'
         
@@ -550,7 +548,7 @@ async def profile_select(id):
                                    flash=f"This Website is the Dev Environment. Please play on <a href='https://{glob.config.official_domain}'>our Official Server</a>", status="success")
     if g.maintenance:
         return await render_template('profile.html', user=user_data, mode=mode, mods=mods, globalNotice=g.globalNotice, 
-                                   flash="Website is currently under maintenence", status="success")
+                                   flash="Website is currently under maintenance", status="success")
                                    
     return await render_template('profile.html', user=user_data, mode=mode, mods=mods, globalNotice=g.globalNotice)
 
@@ -565,7 +563,7 @@ async def leaderboard(mode='std', sort='pp', mods='vn'):
                                    flash=f"This Website is the Dev Environment. Please play on <a href='https://{glob.config.official_domain}'>our Official Server</a>", status="success")
     if g.maintenance:
         return await render_template('leaderboard.html', mode=mode, sort=sort, mods=mods, globalNotice=g.globalNotice, 
-                                   flash="Website is currently under maintenence", status="success")
+                                   flash="Website is currently under maintenance", status="success")
     return await render_template('leaderboard.html', mode=mode, sort=sort, mods=mods, globalNotice=g.globalNotice)
 
 @frontend.route('/clans')
@@ -574,7 +572,7 @@ async def clans():
     if g.isDevEnv:
         return await render_template('clans.html', globalNotice=g.globalNotice, flash=f"This Website is the Dev Environment. Please play on <a href='https://{glob.config.official_domain}'>our Official Server</a>", status="success")
     if g.maintenance:
-        return await render_template('clans.html', globalNotice=g.globalNotice, flash="Website is currently under maintenence", status="success")
+        return await render_template('clans.html', globalNotice=g.globalNotice, flash="Website is currently under maintenance", status="success")
     return await render_template('clans.html', globalNotice=g.globalNotice)
 
 @frontend.route('/login')
@@ -586,7 +584,7 @@ async def login():
     if g.isDevEnv:
         return await render_template('login.html', globalNotice=g.globalNotice, flash=f"This Website is the Dev Environment. Please play on <a href='https://{glob.config.official_domain}'>our Official Server</a>", status="success")
     if g.maintenance:
-        return await render_template('login.html', globalNotice=g.globalNotice, flash="Website is currently under maintenence", status="success")
+        return await render_template('login.html', globalNotice=g.globalNotice, flash="Website is currently under maintenance", status="success")
         
     return await render_template('login.html', globalNotice=g.globalNotice)
 
@@ -675,7 +673,7 @@ async def login_post():
         'is_staff': user_info['priv'] & Privileges.Staff != 0,
         'is_dev': user_info['priv'] & Privileges.Dangerous != 0,
         'is_donator': user_info['priv'] & Privileges.Donator != 0,
-        'hue': user_info['hue'] if user_info['hue'] is not None else None,
+        'hue': user_info['hue'],
         'clan_id': user_info['clan_id'] or 0,
         'clan_name': user_info.get('clan_name') or None,
         'clan_tag': user_info.get('clan_tag') or None,
@@ -708,7 +706,7 @@ async def register():
     if g.isDevEnv:
         return await render_template('register.html', globalNotice=g.globalNotice, flash=f"This Website is the Dev Environment. Please play on <a href='https://{glob.config.official_domain}'>our Official Server</a>", status="success")
     if g.maintenance:
-        return await render_template('register.html', globalNotice=g.globalNotice, flash="Website is currently under maintenence", status="success")
+        return await render_template('register.html', globalNotice=g.globalNotice, flash="Website is currently under maintenance", status="success")
         
     return await render_template('register.html', globalNotice=g.globalNotice)
 
@@ -841,7 +839,7 @@ async def changelog(type='frontend', category='all'):
                                    flash=f"This Website is the Dev Environment. Please play on <a href='https://{glob.config.official_domain}'>our Official Server</a>", status="success")
     if g.maintenance:
         return await render_template('changelog.html', changelogs=changelogs, type=type, category=category, globalNotice=g.globalNotice, 
-                                   flash="Website is currently under maintenence", status="success")
+                                   flash="Website is currently under maintenance", status="success")
         
     return await render_template('changelog.html', changelogs=changelogs, type=type, category=category, globalNotice=g.globalNotice)
 
@@ -880,7 +878,7 @@ async def get_profile_banner(user_id: int):
         path = BANNERS_PATH / f'{user_id}.{ext}'
         if path.exists():
             return await send_file(path)
-    return b'{"status":404}', 404
+    return jsonify({'status': 404}), 404
 
 @frontend.route('/backgrounds/<int:user_id>')
 @error_catcher
@@ -889,4 +887,4 @@ async def get_profile_background(user_id: int):
         path = BACKGROUND_PATH / f'{user_id}.{ext}'
         if path.exists():
             return await send_file(path)
-    return b'{"status":404}', 404
+    return jsonify({'status': 404}), 404
