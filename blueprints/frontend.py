@@ -51,9 +51,6 @@ async def health_check():
     - Redis connectivity
     - Returns JSON response with status and details
     """
-    import time
-    import json
-    
     start_time = time.time()
     health_status = {
         "status": "healthy",
