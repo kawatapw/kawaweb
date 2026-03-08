@@ -289,12 +289,12 @@ class PasswordManager:
         return pw_md5, pw_bcrypt
     
     @staticmethod
-    def update_password_cache(user_id: int, pw_bcrypt: bytes, pw_md5: bytes) -> None:
+    async def update_password_cache(user_id: int, pw_bcrypt: bytes, pw_md5: bytes) -> None:
         """Update password in cache."""
         bcrypt_cache = glob.cache['bcrypt']
-        
+
         # Get old password hash
-        old_pw_bcrypt = glob.db.fetch(
+        old_pw_bcrypt = await glob.db.fetch(
             'SELECT pw_bcrypt FROM users WHERE id = %s',
             [user_id]
         )
@@ -314,7 +314,7 @@ class PrivilegeChecker:
         """Check if user has required privilege."""
         try:
             priv_enum = getattr(Privileges, required_privilege)
-            return priv_enum in GetPriv(user_priv)
+            return bool(user_priv) and priv_enum in GetPriv(user_priv)
         except AttributeError:
             return False
     

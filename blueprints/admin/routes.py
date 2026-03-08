@@ -14,7 +14,7 @@ import timeago
 from quart import render_template, jsonify, request, session
 
 from objects import glob
-from objects.utils import flash, error_catcher
+from objects.utils import flash, klogging, error_catcher
 from objects.privileges import Privileges
 
 from . import admin
@@ -86,7 +86,6 @@ discord_logger = DiscordLogger(
 
 
 @admin.route("/action/<action_type>", methods=["POST"])
-@error_catcher
 async def action(action_type: str):
     """
     Execute an admin action on users or maps.
@@ -142,35 +141,38 @@ async def action(action_type: str):
     action_obj = await action_service.create_action(request_data, mod_id)
     response = await action_service.execute_action(action_obj, request_data)
     
-    # Log to Discord
-    if action_obj.is_user_action and hasattr(action_obj, 'user'):
-        discord_logger.log_user_action(
-            action_obj,
-            action_obj.mod.name,
-            action_obj.mod.id,
-            action_obj.user.name,
-            action_obj.user.id
-        )
-    elif action_obj.is_map_action and hasattr(action_obj, 'map'):
-        discord_logger.log_map_action(
-            action_obj,
-            action_obj.mod.name,
-            action_obj.mod.id,
-            action_obj.map
-        )
-    elif action_obj.is_badge_action and hasattr(action_obj, 'badge'):
-        discord_logger.log_badge_action(
-            action_obj,
-            action_obj.mod.name,
-            action_obj.mod.id,
-            action_obj.user.name,
-            action_obj.user.id,
-            {
-                'id': action_obj.badge.id,
-                'name': action_obj.badge.name,
-                'description': action_obj.badge.description
-            }
-        )
+    # Log to Discord (best-effort — don't fail the request if webhook fails)
+    try:
+        if action_obj.is_user_action and hasattr(action_obj, 'user'):
+            discord_logger.log_user_action(
+                action_obj,
+                action_obj.mod.name,
+                action_obj.mod.id,
+                action_obj.user.name,
+                action_obj.user.id
+            )
+        elif action_obj.is_map_action and hasattr(action_obj, 'map'):
+            discord_logger.log_map_action(
+                action_obj,
+                action_obj.mod.name,
+                action_obj.mod.id,
+                action_obj.map
+            )
+        elif action_obj.is_badge_action and hasattr(action_obj, 'badge'):
+            discord_logger.log_badge_action(
+                action_obj,
+                action_obj.mod.name,
+                action_obj.mod.id,
+                action_obj.user.name,
+                action_obj.user.id,
+                {
+                    'id': action_obj.badge.id,
+                    'name': action_obj.badge.name,
+                    'description': action_obj.badge.description
+                }
+            )
+    except Exception as e:
+        klogging.log(f"Discord webhook failed (action still succeeded): {e}", klogging.Ansi.LYELLOW)
     
     return jsonify(ResponseFormatter.success(
         response.message,
@@ -509,6 +511,13 @@ async def handle_admin_panel_error(error: AdminPanelError):
     """Handle AdminPanelError exceptions."""
     response, status_code = handle_admin_error(error)
     return jsonify(response), status_code
+
+
+@admin.errorhandler(Exception)
+async def handle_unexpected_error(error):
+    """Handle unexpected exceptions with JSON response."""
+    klogging.log(f"Unexpected admin error: {error}", klogging.Ansi.LRED)
+    return jsonify({"status": "error", "message": "An unexpected error occurred."}), 500
 
 
 # Import frontend blueprint for stuffbroke endpoint

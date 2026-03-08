@@ -7,7 +7,7 @@ from functools import wraps
 from quart import Blueprint, render_template, request, jsonify, g
 
 from objects import glob
-from objects.utils import klogging, error_catcher
+from objects.utils import klogging
 
 hina_beatmaps = Blueprint('hina_beatmaps', __name__)
 
@@ -27,7 +27,6 @@ async def beatmaps_page():
 
 
 @hina_beatmaps.route('/beatmaps/api/search')
-@error_catcher
 async def beatmaps_search():
     query = request.args.get('query', '', type=str)
 
@@ -83,7 +82,6 @@ async def beatmaps_search():
 
 
 @hina_beatmaps.route('/beatmaps/api/pp-table')
-@error_catcher
 async def beatmaps_pp_table():
     """Public proxy for batch PP calculation — no auth required, rate-limited."""
     # Simple IP-based rate limiting
@@ -145,3 +143,10 @@ async def beatmaps_pp_table():
     except Exception as e:
         klogging.log(f"PP table API error: {e}", klogging.Ansi.LRED)
         return jsonify({'status': 'error', 'message': 'Failed to calculate PP values.'}), 500
+
+
+@hina_beatmaps.errorhandler(Exception)
+async def handle_beatmaps_error(error):
+    """Handle unexpected exceptions with JSON response."""
+    klogging.log(f"Beatmaps API error: {error}", klogging.Ansi.LRED)
+    return jsonify({'status': 'error', 'message': 'An unexpected error occurred.'}), 500

@@ -42,7 +42,7 @@ class PermissionService:
         """Check if user has required privilege."""
         try:
             priv_enum = getattr(Privileges, required_privilege)
-            has_permission = priv_enum in GetPriv(user_priv)
+            has_permission = bool(user_priv) and priv_enum in GetPriv(user_priv)
             
             if not has_permission:
                 return PermissionCheck(
@@ -443,8 +443,8 @@ class ActionService:
             raise AuthorizationError(hierarchy_check.error_message)
         
         # Check if privileges are already set
-        if ComparePrivs(action.user.priv, new_priv):
-            raise StateConflictError(f"Privileges are already set to {action.user.priv}.")
+        if action.user.priv == new_priv:
+            raise StateConflictError(f"Privileges are already set to {new_priv}.")
         
         # Update privileges
         await self.user_repo.update_privileges(action.user.id, new_priv)
@@ -823,6 +823,8 @@ class UserService:
             }
             
             return UserDetail(user=user_dict, badges=badges, logs=logs)
+        except AdminPanelError:
+            raise
         except Exception as e:
             raise DatabaseError(f"Failed to get user detail: {str(e)}", e)
 
@@ -872,6 +874,8 @@ class BadgeService:
             }
             
             return BadgeDetail(badge=badge_dict, styles=badge_styles)
+        except AdminPanelError:
+            raise
         except Exception as e:
             raise DatabaseError(f"Failed to get badge detail: {str(e)}", e)
     
@@ -903,7 +907,13 @@ class BadgeService:
             badge = await self.badge_repo.get_by_id(badge_id)
             if not badge:
                 raise ResourceNotFoundError("Badge", badge_id)
-            
+
+            # Check for duplicate name on rename
+            if badge.name != name:
+                existing = await self.badge_repo.get_by_name(name)
+                if existing and existing.id != badge_id:
+                    raise AlreadyExistsError("Badge", name)
+
             # Update badge
             await self.badge_repo.update(badge_id, name, description, priority)
             

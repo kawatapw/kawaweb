@@ -118,12 +118,12 @@ async def home(doc=None, sid=None, id=None, flash=None, status=None):
             if str(e) == "'set_id'":
                 klogging.log(f"No set_id for map {map['map_id']}, deleting entry.", klogging.Ansi.LRED)
                 await glob.db.execute('DELETE FROM newly_ranked WHERE map_id = %s', [map['map_id']])
-                return await flash('error', 'Error fetching map information (auto-corrected). Please reload.', 'home')
-            klogging.log(f"KeyError in home route: {e}", klogging.Ansi.LRED)
-            return await flash('error', 'Error fetching map information.', 'home')
+            else:
+                klogging.log(f"KeyError in home route: {e}", klogging.Ansi.LRED)
+            continue
         except Exception as e:
             klogging.log(f"Unexpected error in home route: {e}", klogging.Ansi.LRED)
-            return await flash('error', 'Error fetching map information.', 'home')
+            continue
 
     # Process changelogs
     changelogs = await glob.db.fetchall('SELECT * FROM changelog ORDER BY time DESC LIMIT 5')
@@ -259,7 +259,7 @@ async def settings_profile_post():
         return await flash('success', 'Your username/email have been changed! Please login again.', 'login')
 
     # Hue-only change: update session and stay on page
-    if new_hue is not None:
+    if new_hue is not None and 0 <= new_hue <= 360:
         session['user_data']['hue'] = new_hue
         session.modified = True
     return await flash('success', 'Settings saved.', 'settings/profile')
@@ -335,7 +335,8 @@ async def settings_avatar_post():
         if file_extension.lower() != '.gif':
             pilavatar = Image.open(io.BytesIO(avatar_data))
             pilavatar = utils.crop_image(pilavatar)
-            pilavatar.save(temp_path)
+            img_format = 'PNG' if file_extension.lower() == '.png' else 'JPEG'
+            pilavatar.save(temp_path, format=img_format)
         else:
             with open(temp_path, "wb") as output_file:
                 output_file.write(avatar_data)
@@ -376,11 +377,6 @@ async def settings_custom_post():
     if banner is None and background is None:
         return await flash_with_customizations('error', 'No image was selected!', 'settings/custom')
 
-    # Check if user has customisations entry
-    query = 'SELECT COUNT(*) FROM user_customisations WHERE userid = %s'
-    row = await glob.db.fetch(query, [session['user_data']['id']])
-    user_has_customisations_entry = row['COUNT(*)']
-
     if banner is not None and banner.filename:
         _, file_extension = os.path.splitext(banner.filename.lower())
         if file_extension not in ALLOWED_EXTENSIONS:
@@ -389,7 +385,7 @@ async def settings_custom_post():
             return await flash_with_customizations('error', 'The banner you select must be either a .JPG, .JPEG, or .PNG file!', 'settings/custom')
 
         banner_file_no_ext = Path('.data/banners') / f'{session["user_data"]["id"]}'
-        
+
         # Remove old pictures
         for ext in ALLOWED_EXTENSIONS:
             if (banner_file_no_ext.with_suffix(ext)).exists():
@@ -397,10 +393,11 @@ async def settings_custom_post():
 
         await banner.save(f'{banner_file_no_ext}{file_extension}')
         try:
-            if user_has_customisations_entry == 1:
-                await glob.db.execute('UPDATE user_customisations SET has_banner = 1 WHERE userid = %s', [session['user_data']['id']])
-            else:
-                await glob.db.execute('INSERT INTO user_customisations (userid, has_banner) VALUES (%s, 1)', [session['user_data']['id']])
+            await glob.db.execute(
+                'INSERT INTO user_customisations (userid, has_banner) VALUES (%s, 1) '
+                'ON DUPLICATE KEY UPDATE has_banner = 1',
+                [session['user_data']['id']]
+            )
         except Exception as e:
             return await flash_with_customizations('error', f'Error updating banner in database: {e}', 'settings/custom')
 
@@ -412,7 +409,7 @@ async def settings_custom_post():
             return await flash_with_customizations('error', 'The background you select must be either a .JPG, .JPEG, or .PNG file!', 'settings/custom')
 
         background_file_no_ext = Path('.data/backgrounds') / f'{session["user_data"]["id"]}'
-        
+
         # Remove old pictures
         for ext in ALLOWED_EXTENSIONS:
             if (background_file_no_ext.with_suffix(ext)).exists():
@@ -420,10 +417,11 @@ async def settings_custom_post():
 
         await background.save(f'{background_file_no_ext}{file_extension}')
         try:
-            if user_has_customisations_entry == 1:
-                await glob.db.execute('UPDATE user_customisations SET has_background = 1 WHERE userid = %s', [session['user_data']['id']])
-            else:
-                await glob.db.execute('INSERT INTO user_customisations (userid, has_background) VALUES (%s, 1)', [session['user_data']['id']])
+            await glob.db.execute(
+                'INSERT INTO user_customisations (userid, has_background) VALUES (%s, 1) '
+                'ON DUPLICATE KEY UPDATE has_background = 1',
+                [session['user_data']['id']]
+            )
         except Exception as e:
             return await flash_with_customizations('error', f'Error updating background in database: {e}', 'settings/custom')
 
@@ -663,7 +661,7 @@ async def login_post():
         'is_staff': user_info['priv'] & Privileges.Staff != 0,
         'is_dev': user_info['priv'] & Privileges.Dangerous != 0,
         'is_donator': user_info['priv'] & Privileges.Donator != 0,
-        'hue': user_info['hue'] or None,
+        'hue': user_info['hue'] if user_info['hue'] is not None else None,
         'clan_id': user_info['clan_id'] or 0,
         'clan_name': user_info.get('clan_name') or None,
         'clan_tag': user_info.get('clan_tag') or None,
