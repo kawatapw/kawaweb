@@ -81,6 +81,7 @@ async def health_check():
                 "response_time_ms": round(db_time, 2)
             }
     except Exception as e:
+        klogging.log(f"Health check - database failed: {e}", klogging.Ansi.LRED)
         health_status["status"] = "unhealthy"
         health_status["checks"]["database"] = {
             "status": "failed",
@@ -105,6 +106,7 @@ async def health_check():
                 "response_time_ms": round(redis_time, 2)
             }
     except Exception as e:
+        klogging.log(f"Health check - redis failed: {e}", klogging.Ansi.LRED)
         health_status["status"] = "unhealthy"
         health_status["checks"]["redis"] = {
             "status": "failed",
