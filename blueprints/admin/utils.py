@@ -350,7 +350,7 @@ class MapStatusUpdater:
                 "s": status,
             }
 
-            async with glob.http.post(url, headers=headers, params=params) as response:
+            async with glob.http.post(url, headers=headers, params=params, timeout=15) as response:
                 json_response = await response.json(content_type=None)
 
             if json_response.get("status") == "success":
