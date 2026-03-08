@@ -385,13 +385,10 @@ async def settings_custom_post():
             return await flash_with_customizations('error', 'The banner you select must be either a .JPG, .JPEG, or .PNG file!', 'settings/custom')
 
         banner_file_no_ext = Path('.data/banners') / f'{session["user_data"]["id"]}'
+        save_path = f'{banner_file_no_ext}{file_extension}'
+        temp_path = save_path + '.tmp'
 
-        # Remove old pictures
-        for ext in ALLOWED_EXTENSIONS:
-            if (banner_file_no_ext.with_suffix(ext)).exists():
-                (banner_file_no_ext.with_suffix(ext)).unlink()
-
-        await banner.save(f'{banner_file_no_ext}{file_extension}')
+        await banner.save(temp_path)
         try:
             await glob.db.execute(
                 'INSERT INTO user_customisations (userid, has_banner) VALUES (%s, 1) '
@@ -399,7 +396,17 @@ async def settings_custom_post():
                 [session['user_data']['id']]
             )
         except Exception as e:
+            if Path(temp_path).exists():
+                Path(temp_path).unlink()
             return await flash_with_customizations('error', f'Error updating banner in database: {e}', 'settings/custom')
+
+        # Remove old files only after successful save + DB update
+        for ext in ALLOWED_EXTENSIONS:
+            old = banner_file_no_ext.with_suffix(ext)
+            if old.exists() and str(old) != temp_path:
+                old.unlink()
+
+        os.rename(temp_path, save_path)
 
     if background is not None and background.filename:
         _, file_extension = os.path.splitext(background.filename.lower())
@@ -409,13 +416,10 @@ async def settings_custom_post():
             return await flash_with_customizations('error', 'The background you select must be either a .JPG, .JPEG, or .PNG file!', 'settings/custom')
 
         background_file_no_ext = Path('.data/backgrounds') / f'{session["user_data"]["id"]}'
+        save_path = f'{background_file_no_ext}{file_extension}'
+        temp_path = save_path + '.tmp'
 
-        # Remove old pictures
-        for ext in ALLOWED_EXTENSIONS:
-            if (background_file_no_ext.with_suffix(ext)).exists():
-                (background_file_no_ext.with_suffix(ext)).unlink()
-
-        await background.save(f'{background_file_no_ext}{file_extension}')
+        await background.save(temp_path)
         try:
             await glob.db.execute(
                 'INSERT INTO user_customisations (userid, has_background) VALUES (%s, 1) '
@@ -423,7 +427,17 @@ async def settings_custom_post():
                 [session['user_data']['id']]
             )
         except Exception as e:
+            if Path(temp_path).exists():
+                Path(temp_path).unlink()
             return await flash_with_customizations('error', f'Error updating background in database: {e}', 'settings/custom')
+
+        # Remove old files only after successful save + DB update
+        for ext in ALLOWED_EXTENSIONS:
+            old = background_file_no_ext.with_suffix(ext)
+            if old.exists() and str(old) != temp_path:
+                old.unlink()
+
+        os.rename(temp_path, save_path)
 
     return await flash_with_customizations('success', 'Your customisation has been successfully changed!', 'settings/custom')
 

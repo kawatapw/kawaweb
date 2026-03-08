@@ -144,7 +144,7 @@ async def action(action_type: str):
     # Log to Discord (best-effort — don't fail the request if webhook fails)
     try:
         if action_obj.is_user_action and hasattr(action_obj, 'user'):
-            discord_logger.log_user_action(
+            await discord_logger.log_user_action(
                 action_obj,
                 action_obj.mod.name,
                 action_obj.mod.id,
@@ -152,14 +152,14 @@ async def action(action_type: str):
                 action_obj.user.id
             )
         elif action_obj.is_map_action and hasattr(action_obj, 'map'):
-            discord_logger.log_map_action(
+            await discord_logger.log_map_action(
                 action_obj,
                 action_obj.mod.name,
                 action_obj.mod.id,
                 action_obj.map
             )
         elif action_obj.is_badge_action and hasattr(action_obj, 'badge'):
-            discord_logger.log_badge_action(
+            await discord_logger.log_badge_action(
                 action_obj,
                 action_obj.mod.name,
                 action_obj.mod.id,
@@ -297,7 +297,6 @@ async def users(page: Optional[int] = None):
 
 
 @admin.route('/user/<int:userid>')
-@error_catcher
 async def user(userid: int):
     """Get detailed user information."""
     # Validate authentication
@@ -343,7 +342,6 @@ async def badges():
 
 
 @admin.route('/badge/<int:badgeid>')
-@error_catcher
 async def badge(badgeid: int):
     """Get detailed badge information."""
     # Validate authentication
@@ -357,7 +355,6 @@ async def badge(badgeid: int):
 
 
 @admin.route('/badge/<int:badgeid>/update', methods=['POST'])
-@error_catcher
 async def update_badge(badgeid: int):
     """Update an existing badge."""
     # Validate authentication
@@ -398,7 +395,6 @@ async def update_badge(badgeid: int):
 
 
 @admin.route('/badge/create', methods=['POST'])
-@error_catcher
 async def create_badge():
     """Create a new badge."""
     # Validate authentication

@@ -136,9 +136,14 @@ async def beatmaps_pp_table():
     url = f'https://api.{glob.config.domain}/v1/calculate_pp_batch'
     try:
         async with glob.http.get(url, headers=headers, params=params) as resp:
-            data = await resp.json(content_type=None)
             if resp.status != 200:
-                return jsonify({'status': 'error', 'message': data.get('status', 'API error')}), resp.status
+                try:
+                    data = await resp.json(content_type=None)
+                    msg = data.get('status', 'API error')
+                except Exception:
+                    msg = f'Upstream returned status {resp.status}'
+                return jsonify({'status': 'error', 'message': msg}), resp.status
+            data = await resp.json(content_type=None)
             return jsonify(data)
     except Exception as e:
         klogging.log(f"PP table API error: {e}", klogging.Ansi.LRED)

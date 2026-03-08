@@ -6,6 +6,7 @@ This module contains utility functions for the admin panel,
 providing common functionality used across different services.
 """
 
+import asyncio
 import hashlib
 import bcrypt
 from typing import Optional, Dict, Any
@@ -105,56 +106,56 @@ class DiscordLogger:
         self.admin_webhook_url = admin_webhook_url
         self.ranked_webhook_url = ranked_webhook_url
     
-    def log_user_action(self, action: Action, mod_name: str, mod_id: int, user_name: str, user_id: int) -> None:
+    async def log_user_action(self, action: Action, mod_name: str, mod_id: int, user_name: str, user_id: int) -> None:
         """Log user action to Discord."""
         if action.action == ActionType.CHANGE_PASSWORD:
             # Don't log password changes
             return
-        
+
         webhook = DiscordWebhook(self.admin_webhook_url)
-        
+
         embed = DiscordEmbed(
             title=f"{user_name} was {action.text} by {mod_name}",
             description=f"a {action.action.value} was performed.",
             color=5126045,
             timestamp=datetime.now()
         )
-        
+
         embed.set_author(
             name=f"New Action By {mod_name}",
             icon_url=f"https://a.kawata.pw/{mod_id}"
         )
-        
+
         embed.add_embed_field(
             name="Information:",
             value=f"Action ID: {action.id}\nAction Moderator: {mod_name} ({mod_id})\nAction User: {user_name} ({user_id})\nAction Type: {action.action.value}\nAction Reason: {action.reason}",
             inline=False
         )
-        
+
         embed.set_footer(
             text=f"ID: {action.id}",
             icon_url=f"https://a.kawata.pw/{user_id}"
         )
-        
+
         webhook.add_embed(embed)
-        webhook.execute()
+        await asyncio.to_thread(webhook.execute)
     
-    def log_map_action(self, action: Action, mod_name: str, mod_id: int, map_obj: Any) -> None:
+    async def log_map_action(self, action: Action, mod_name: str, mod_id: int, map_obj: Any) -> None:
         """Log map action to Discord."""
         webhook = DiscordWebhook(self.ranked_webhook_url)
-        
+
         embed = DiscordEmbed(
             title=f"{map_obj.title} [{map_obj.version}] was {action.text} by {mod_name} ({mod_id})",
             description=f"[{map_obj.title} [{map_obj.version}]](https://osu.ppy.sh/b/{map_obj.id}) was {action.text}",
             color=5126045,
             timestamp=datetime.now()
         )
-        
+
         embed.set_author(
             name=f"Diff {action.text} By {mod_name} ({mod_id})",
             icon_url=f"https://a.kawata.pw/{mod_id}"
         )
-        
+
         embed.add_embed_field(
             name="Information:",
             value=f"""
@@ -165,33 +166,33 @@ class DiscordLogger:
             """,
             inline=False
         )
-        
+
         embed.set_image(url=f"https://assets.ppy.sh/beatmaps/{map_obj.set_id}/covers/card@2x.jpg")
-        
+
         embed.set_footer(
             text=f"ID: {action.id}",
             icon_url=f"https://a.kawata.pw/{mod_id}"
         )
-        
+
         webhook.add_embed(embed)
-        webhook.execute()
+        await asyncio.to_thread(webhook.execute)
     
-    def log_badge_action(self, action: Action, mod_name: str, mod_id: int, user_name: str, user_id: int, badge: Any) -> None:
+    async def log_badge_action(self, action: Action, mod_name: str, mod_id: int, user_name: str, user_id: int, badge: Any) -> None:
         """Log badge action to Discord."""
         webhook = DiscordWebhook(self.admin_webhook_url)
-        
+
         embed = DiscordEmbed(
             title=f"{user_name} was {action.text} {badge['name']} by {mod_name}",
             description="",
             color=5126045,
             timestamp=datetime.now()
         )
-        
+
         embed.set_author(
             name=f"New Action By {mod_name}",
             icon_url=f"https://a.kawata.pw/{mod_id}"
         )
-        
+
         embed.add_embed_field(
             name="Information:",
             value=f"""
@@ -202,14 +203,14 @@ class DiscordLogger:
             """,
             inline=False
         )
-        
+
         embed.set_footer(
             text=f"ID: {action.id}",
             icon_url=f"https://a.kawata.pw/{user_id}"
         )
-        
+
         webhook.add_embed(embed)
-        webhook.execute()
+        await asyncio.to_thread(webhook.execute)
 
 
 class ResponseFormatter:
@@ -368,42 +369,40 @@ class ScoreManager:
     @staticmethod
     async def wipe_user_scores(user_id: int) -> None:
         """Wipe all scores for a user."""
-        # Move scores to wiped_scores
-        await glob.db.execute(
-            """
-            INSERT INTO wiped_scores (id, map_md5, score, pp, acc, max_combo, mods, n300, n100, n50, nmiss, ngeki, nkatu, grade, status, mode, play_time, time_elapsed, client_flags, userid, perfect, online_checksum, r_replay_id)
-            SELECT id, map_md5, score, pp, acc, max_combo, mods, n300, n100, n50, nmiss, ngeki, nkatu, grade, status, mode, play_time, time_elapsed, client_flags, userid, perfect, online_checksum, r_replay_id
-            FROM scores
-            WHERE userid = %s
-            """,
-            [user_id]
-        )
-        
-        # Delete from scores
-        await glob.db.execute(
-            "DELETE FROM scores WHERE userid = %s",
-            [user_id]
-        )
-    
+        async with glob.db.pool.acquire() as conn:
+            async with conn.cursor() as cur:
+                await cur.execute(
+                    """
+                    INSERT INTO wiped_scores (id, map_md5, score, pp, acc, max_combo, mods, n300, n100, n50, nmiss, ngeki, nkatu, grade, status, mode, play_time, time_elapsed, client_flags, userid, perfect, online_checksum, r_replay_id)
+                    SELECT id, map_md5, score, pp, acc, max_combo, mods, n300, n100, n50, nmiss, ngeki, nkatu, grade, status, mode, play_time, time_elapsed, client_flags, userid, perfect, online_checksum, r_replay_id
+                    FROM scores
+                    WHERE userid = %s
+                    """,
+                    [user_id]
+                )
+                await cur.execute(
+                    "DELETE FROM scores WHERE userid = %s",
+                    [user_id]
+                )
+
     @staticmethod
     async def remove_score(score_id: int) -> None:
         """Remove a specific score."""
-        # Move to wiped_scores
-        await glob.db.execute(
-            """
-            INSERT INTO wiped_scores (id, map_md5, score, pp, acc, max_combo, mods, n300, n100, n50, nmiss, ngeki, nkatu, grade, status, mode, play_time, time_elapsed, client_flags, userid, perfect, online_checksum, r_replay_id)
-            SELECT id, map_md5, score, pp, acc, max_combo, mods, n300, n100, n50, nmiss, ngeki, nkatu, grade, status, mode, play_time, time_elapsed, client_flags, userid, perfect, online_checksum, r_replay_id
-            FROM scores
-            WHERE id = %s
-            """,
-            [score_id]
-        )
-        
-        # Delete from scores
-        await glob.db.execute(
-            "DELETE FROM scores WHERE id = %s",
-            [score_id]
-        )
+        async with glob.db.pool.acquire() as conn:
+            async with conn.cursor() as cur:
+                await cur.execute(
+                    """
+                    INSERT INTO wiped_scores (id, map_md5, score, pp, acc, max_combo, mods, n300, n100, n50, nmiss, ngeki, nkatu, grade, status, mode, play_time, time_elapsed, client_flags, userid, perfect, online_checksum, r_replay_id)
+                    SELECT id, map_md5, score, pp, acc, max_combo, mods, n300, n100, n50, nmiss, ngeki, nkatu, grade, status, mode, play_time, time_elapsed, client_flags, userid, perfect, online_checksum, r_replay_id
+                    FROM scores
+                    WHERE id = %s
+                    """,
+                    [score_id]
+                )
+                await cur.execute(
+                    "DELETE FROM scores WHERE id = %s",
+                    [score_id]
+                )
 
 
 class StatsManager:

@@ -676,7 +676,7 @@ class ActionService:
         except ExternalServiceError:
             raise
         except Exception as e:
-            raise ExternalServiceError("Map Status API", str(e))
+            raise ExternalServiceError("Map Status API", str(e)) from e
     
     def _get_target_description(self, action: Action) -> str:
         """Get description of action target."""
