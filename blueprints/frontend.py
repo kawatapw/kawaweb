@@ -4,6 +4,7 @@ __all__ = ()
 
 import bcrypt
 import hashlib
+import json
 import os
 import time
 import re
@@ -41,6 +42,88 @@ async def api_redirect(file_path):
         
     redirect_url = f"https://api.{glob.config.domain}/{file_path}"
     return redirect(redirect_url, code=301)
+
+@frontend.route("/health")
+async def health_check():
+    """Robust health check endpoint for Docker health checks.
+    
+    Checks:
+    - Database connectivity
+    - Redis connectivity
+    - Returns JSON response with status and details
+    """
+    import time
+    import json
+    
+    start_time = time.time()
+    health_status = {
+        "status": "healthy",
+        "timestamp": time.time(),
+        "service": "kawaweb",
+        "checks": {},
+        "response_time_ms": 0
+    }
+    
+    # Check database connectivity
+    try:
+        db_start = time.time()
+        db_healthy = await glob.db.fetch("SELECT 1") is not None
+        db_time = (time.time() - db_start) * 1000
+        
+        if db_healthy:
+            health_status["checks"]["database"] = {
+                "status": "connected",
+                "response_time_ms": round(db_time, 2)
+            }
+        else:
+            health_status["status"] = "unhealthy"
+            health_status["checks"]["database"] = {
+                "status": "disconnected",
+                "response_time_ms": round(db_time, 2)
+            }
+    except Exception as e:
+        health_status["status"] = "unhealthy"
+        health_status["checks"]["database"] = {
+            "status": "failed",
+            "error": str(e)
+        }
+    
+    # Check Redis connectivity
+    try:
+        redis_start = time.time()
+        redis_healthy = await glob.redis.ping()
+        redis_time = (time.time() - redis_start) * 1000
+        
+        if redis_healthy:
+            health_status["checks"]["redis"] = {
+                "status": "connected",
+                "response_time_ms": round(redis_time, 2)
+            }
+        else:
+            health_status["status"] = "unhealthy"
+            health_status["checks"]["redis"] = {
+                "status": "disconnected",
+                "response_time_ms": round(redis_time, 2)
+            }
+    except Exception as e:
+        health_status["status"] = "unhealthy"
+        health_status["checks"]["redis"] = {
+            "status": "failed",
+            "error": str(e)
+        }
+    
+    # Calculate total response time
+    health_status["response_time_ms"] = round((time.time() - start_time) * 1000, 2)
+    
+    # Determine HTTP status code
+    status_code = 200 if health_status["status"] == "healthy" else 503
+    
+    # Return JSON response
+    return Response(
+        response=json.dumps(health_status),
+        status=status_code,
+        content_type="application/json"
+    )
 
 @frontend.before_request
 async def inject_globals():
