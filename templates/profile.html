@@ -2,14 +2,14 @@
 {% block title %} Profile {% endblock %}
 
 {% macro scores(title, id) %}
-<div class="log-block" id="hina-stats-block" v-bind:class="{ 'load' : data.scores.{{ id }}.load }">
+<div class="log-block" id="{{ id }}-scores" v-bind:class="{ 'load' : data.scores.{{ id }}.load }">
     <div class="header">
         <div class="title">
             <i class="fas fa-trophy"></i> {{ title }}
         </div>
     </div>
     <div v-if="data.scores.{{ id }}.out.length != 0" class="scores">
-        <score-card v-for="(map, index) in data.scores.{{ id }}.out" :score="map"></score-card>
+        <score-card v-for="(map, index) in data.scores.{{ id }}.out" :score="map" :type="'{{ id }}'"></score-card>
     </div>
     <div v-else-if="data.scores.{{ id }}.out.length == 0" class="stats-block">
         <div class="columns is-marginless">
@@ -29,7 +29,7 @@
 {% endmacro %}
 
 {% macro maps(title, id) %} <!-- id is 'most' -->
-<div class="log-block" v-bind:class="{ 'load' : data.maps.{{ id }}.load }">
+<div class="log-block" id="most-played" v-bind:class="{ 'load' : data.maps.{{ id }}.load }">
     <div class="header">
         <div class="title">
             <i class="fas fa-address-book"></i> Most Played Beatmaps
@@ -60,13 +60,20 @@
 </div>
 {% endmacro %}
 {% block header %}
-<link rel="stylesheet" href="/static/css/pages/profile.css">
+<style>
+    @import url("/static/css/pages/profile.css") layer(styles);
+</style>
 <script src="https://cdn.socket.io/4.2.0/socket.io.min.js"></script>
 <script>
     var userid = Number("{{ user['id'] }}"); //For text editor doesn't dizzy lmao
     var mode = '{{ mode }}';
     var mods = '{{ mods }}';
     var domain = "{{ domain() }}";
+    {% if 'user_data' in session and session['user_data']['id'] == user['id'] %}
+    var isOwnProfile = true;
+    {% else %}
+    var isOwnProfile = false;
+    {% endif %}
 </script>
 {% endblock %}
 
@@ -106,6 +113,20 @@
             <div class="profile-avatar-area">
                 <img src="https://a.{{ domain() }}/{{ user['id'] }}" alt="avatar" class="rounded-avatar profile-avatar"
                     onError="this.src='/static/images/avatar_notwork.png';">
+            </div>
+            <div class="profile-identity-mobile">
+                <div class="pim-name">
+                    <img src="/static/images/flags/{{ user['country']|upper }}.png" class="pim-flag">
+                    <span class="pim-username">{{ user['name'] }}</span>
+                </div>
+                <transition name="fade">
+                    <div class="pim-status" v-if='data.status.online == false'>
+                        <span class='circle'>●</span> Offline
+                    </div>
+                    <div class="pim-status pim-online" v-else-if='data.status.online == true'>
+                        <span class='circle green'>●</span> Online
+                    </div>
+                </transition>
             </div>
             <div class="bar-selection mode-selects">
                 <div class="select-left">
@@ -152,6 +173,37 @@
     <div class="second-block" style="overflow: hidden;">
         <div class="columns is-marginless two-sides">
             <div class="column is-one-third" id =""v-cloak> <!--Bookmark-->
+                <div class="profile-stats-summary" v-if="data.stats.out[modegulag]">
+                    <div class="pss-pill">
+                        <span class="pss-label">PP</span>
+                        <span class="pss-value"><% addCommas(data.stats.out[modegulag].pp) %></span>
+                    </div>
+                    <div class="pss-pill">
+                        <span class="pss-label">Rank</span>
+                        <span class="pss-value" v-if="data.stats.out[modegulag].rank != 0"><% '#' + data.stats.out[modegulag].rank %></span>
+                        <span class="pss-value" v-else>-</span>
+                    </div>
+                    <div class="pss-pill">
+                        <span class="pss-label">Acc</span>
+                        <span class="pss-value"><% data.stats.out[modegulag].acc %>%</span>
+                    </div>
+                    <div class="pss-grades" v-if="data.grades">
+                        <div class="pss-grade">
+                            <div class="map-rank rank-X">SS</div>
+                            <span class="pss-grade-count"><% data.stats.out[modegulag].x_count %></span>
+                        </div>
+                        <div class="pss-grade">
+                            <div class="map-rank rank-S">S</div>
+                            <span class="pss-grade-count"><% data.stats.out[modegulag].s_count %></span>
+                        </div>
+                        <div class="pss-grade">
+                            <div class="map-rank rank-A">A</div>
+                            <span class="pss-grade-count"><% data.stats.out[modegulag].a_count %></span>
+                        </div>
+                    </div>
+                </div>
+                <input type="checkbox" id="profile-stats-expand">
+                <div class="profile-stats-full">
                 <div class="header" v-if='(data.stats.out[modegulag].rank) != 0'>
                     <div class="title">
                         <i class="fas fa-user-friends"></i> Rank
@@ -282,8 +334,18 @@
                         </div>
                     </div>
                 </div>-->
+                </div>
+                <label for="profile-stats-expand" class="profile-stats-toggle">
+                    <span class="pst-show">Show full stats</span>
+                    <span class="pst-hide">Hide stats</span>
+                </label>
             </div>
             <div class="column">
+                <div class="profile-score-nav" v-cloak>
+                    <a href="#best-scores" class="score-nav-item">Best</a>
+                    <a href="#recent-scores" class="score-nav-item">Recent</a>
+                    <a href="#most-played" class="score-nav-item">Most Played</a>
+                </div>
                 {{ userpage('Userpage | Bio | !me', 'bio') }}
                 {{ scores('Best Scores', 'best')}}
                 {{ scores('Recent Scores', 'recent')}}
@@ -299,7 +361,8 @@
 
 <style id="style">
     :root {
-        --main: {{ user['hue'] or 180 }} !important;
+        --profile-hue: {{ user['hue'] or 180 }};
+        --main: {{ user['hue'] or 180 }};
         --accent1: calc(var(--main) + 20);
     }
 
@@ -307,14 +370,14 @@
     {% if user['customisation']['banner'] == True %}
         .profile-bg {
             min-height: 262px;
-            background: linear-gradient(hsl(var(--main), 25%, 25%, 20%), hsl(var(--main), 25%, 25%, 60%)), url("/banners/{{ user['id'] }}");
+            background: linear-gradient(hsl(var(--profile-hue), 25%, 25%, 20%), hsl(var(--profile-hue), 25%, 25%, 60%)), url("/banners/{{ user['id'] }}");
             background-size: cover;
             background-position: center;
         }
     {% endif %}
     {% if user['customisation']['background'] == True %}
         body {
-            background: linear-gradient(hsl(var(--main), 25%, 25%, 20%), hsl(var(--main), 10%, 10%)), url("/backgrounds/{{ user['id'] }}");
+            background: linear-gradient(hsl(var(--profile-hue), 25%, 25%, 20%), hsl(var(--profile-hue), 10%, 10%)), url("/backgrounds/{{ user['id'] }}");
             background-size: cover;
             background-clip: content-box;
         }

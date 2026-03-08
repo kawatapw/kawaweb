@@ -366,6 +366,7 @@ a.foot-link {
   flex-direction: row;
   text-align: center;
   justify-content: center;
+  margin-bottom: 8px;
 }
 
 .noti-column {
@@ -583,7 +584,7 @@ a.foot-link {
   height: 100%;
   width: 100%;
   content: "";
-  background-color: hsla(var(--main), 40%, 40%, 0.7) !important;
+  background-color: hsla(var(--main), 40%, 40%, 0.7);
 }
 
 @media (min-width: 900px) {
@@ -854,3 +855,48 @@ body::-webkit-scrollbar-thumb {
           font-size: 20px;
           top: 50%;
         }
+/*! Hina was here below code adjusted none .scss*/
+/* Desktop dropdown arrow animation (hover) */
+@media screen and (min-width: 1024px) {
+  .navbar-link:not(.is-arrowless)::after {
+    transition: transform 0.25s ease;
+  }
+
+  .navbar-item.has-dropdown.is-hoverable:hover > .navbar-link::after {
+    transform: rotate(225deg);
+  }
+}
+
+/* Mobile dropdown toggle fix */
+@media screen and (max-width: 1023px) {
+  .navbar-item.has-dropdown > .navbar-dropdown {
+    display: none;
+  }
+
+  .navbar-item.has-dropdown.is-active > .navbar-dropdown {
+    display: block;
+  }
+
+  /* Show dropdown arrow on mobile */
+  .navbar-link::after {
+    display: inline-block !important;
+    border-color: #fff;
+    border-style: solid;
+    border-width: 0 0.125em 0.125em 0;
+    content: " ";
+    pointer-events: none;
+    transform: rotate(45deg);
+    transform-origin: center;
+    width: 0.625em;
+    height: 0.625em;
+    margin-top: -0.3em;
+    right: 1.125em;
+    position: absolute;
+    top: 50%;
+    transition: transform 0.25s ease;
+  }
+
+  .navbar-item.has-dropdown.is-active > .navbar-link::after {
+    transform: rotate(-135deg);
+  }
+}

@@ -1,0 +1,178 @@
+{% extends 'base.html' %}
+{% block title %}PP Records{% endblock %}
+
+{% block header %}
+<link rel="stylesheet" href="/static/hinaDir/compiled/pp_records.css">
+{% endblock %}
+
+{% block content %}
+<div id="pp-records-app" v-cloak>
+
+  <!-- Header -->
+  <div class="ppr-header">
+    <h1 class="ppr-title">PP Records</h1>
+    <p class="ppr-subtitle" v-if="!loading && total > 0">
+      <span v-text="total.toLocaleString()"></span> scores found
+    </p>
+  </div>
+
+  <!-- Mode tabs -->
+  <div class="ppr-mode-tabs">
+    <button v-for="m in modes" :key="'mode-' + m.value"
+            class="ppr-mode-btn"
+            :class="{ active: mode === m.value }"
+            @click="switchMode(m.value)">
+      <span v-text="m.short"></span>
+    </button>
+  </div>
+
+  <!-- Filter toggle -->
+  <button class="ppr-filter-toggle" :class="{ open: filtersOpen }" @click="toggleFilters">
+    <i class="fas fa-filter"></i>
+    <span>Detection Filters</span>
+    <i class="fas fa-chevron-down"></i>
+  </button>
+
+  <!-- Filter panel -->
+  <div class="ppr-filter-panel" :class="{ open: filtersOpen }">
+    <div class="ppr-filter-row">
+      <div class="ppr-filter-group">
+        <span class="ppr-filter-label">Detection Type</span>
+        <select class="ppr-filter-select" v-model="cheatType" @change="onCheatTypeChange">
+          <option value="">None (all scores)</option>
+          <option v-for="ct in cheatTypes" :key="ct.key" :value="ct.key" :disabled="ct.disabled" v-text="ct.label"></option>
+        </select>
+      </div>
+      <div class="ppr-filter-group" v-if="cheatType && isNumericCheat">
+        <span class="ppr-filter-label">Min Value</span>
+        <input class="ppr-filter-input" type="number" step="any" v-model="cheatMin" placeholder="0">
+      </div>
+      <div class="ppr-filter-group" v-if="cheatType && isNumericCheat">
+        <span class="ppr-filter-label">Max Value</span>
+        <input class="ppr-filter-input" type="number" step="any" v-model="cheatMax" placeholder="any">
+      </div>
+      <button class="ppr-filter-apply" v-if="cheatType && isNumericCheat" @click="applyFilter">Apply Range</button>
+      <button class="ppr-filter-clear" v-if="activeCheatType" @click="clearFilter">Clear</button>
+    </div>
+  </div>
+
+  <!-- Loading -->
+  <div v-if="loading" class="ppr-loading">
+    <i class="fas fa-spinner"></i>
+    Loading records...
+  </div>
+
+  <!-- Error -->
+  <div v-if="!loading && error" class="ppr-error">
+    <i class="fas fa-exclamation-triangle"></i>
+    <span v-text="error"></span>
+  </div>
+
+  <!-- Empty -->
+  <div v-if="!loading && !error && records.length === 0" class="ppr-empty">
+    <i class="fas fa-trophy" style="font-size:2rem;display:block;margin-bottom:12px;opacity:0.3"></i>
+    No scores found for this mode/filter.
+  </div>
+
+  <!-- Desktop table -->
+  <div v-if="!loading && !error && records.length > 0" class="ppr-desktop">
+    <table class="ppr-table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Player</th>
+          <th>Beatmap</th>
+          <th>PP</th>
+          <th>Accuracy</th>
+          <th>Combo</th>
+          <th>Mods</th>
+          <th>Grade</th>
+          <th>Date</th>
+          <th v-if="activeCheatType">Detection</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr v-for="(r, i) in records" :key="r.id">
+          <td class="ppr-rank" :class="rankClass(i)" v-text="getRank(i)"></td>
+          <td>
+            <div class="ppr-player-cell">
+              <img class="ppr-flag"
+                   :src="'/static/images/flags/' + r.player_country.toUpperCase() + '.png'"
+                   :alt="r.player_country">
+              <a class="ppr-player-name"
+                 :href="'/u/' + r.player_id"
+                 v-text="r.player_name"></a>
+            </div>
+          </td>
+          <td>
+            <div class="ppr-beatmap-cell">
+              <img class="ppr-cover"
+                   :src="coverUrl(r.set_id)"
+                   @error="coverError($event)"
+                   loading="lazy">
+              <div class="ppr-map-info">
+                <span class="ppr-map-title" v-text="r.artist + ' - ' + r.title"></span>
+                <span class="ppr-map-diff" v-text="'[' + r.version + '] ★' + r.diff.toFixed(2)"></span>
+              </div>
+            </div>
+          </td>
+          <td class="ppr-pp" v-text="formatPP(r.pp)"></td>
+          <td class="ppr-acc" v-text="formatAcc(r.acc)"></td>
+          <td v-text="r.max_combo + 'x'"></td>
+          <td class="ppr-mods" v-text="r.mods_readable || 'NM'"></td>
+          <td>
+            <img class="ppr-grade" :src="gradeUrl(r.grade)" :alt="r.grade">
+          </td>
+          <td class="ppr-date" v-text="formatDate(r.play_time)"></td>
+          <td v-if="activeCheatType" class="ppr-cheat-val" v-text="cheatDisplay(r)"></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Mobile cards -->
+  <div v-if="!loading && !error && records.length > 0" class="ppr-mobile">
+    <div v-for="(r, i) in records" :key="'m-' + r.id" class="ppr-card">
+      <div class="ppr-card-rank" :class="rankClass(i)" v-text="getRank(i)"></div>
+      <img class="ppr-card-cover"
+           :src="coverUrl(r.set_id)"
+           @error="coverError($event)"
+           loading="lazy">
+      <div class="ppr-card-body">
+        <div class="ppr-card-top">
+          <span class="ppr-card-map" v-text="r.artist + ' - ' + r.title + ' [' + r.version + ']'"></span>
+          <span class="ppr-card-pp" v-text="formatPP(r.pp)"></span>
+        </div>
+        <div class="ppr-card-details">
+          <span class="ppr-card-player">
+            <img class="ppr-flag" :src="'/static/images/flags/' + r.player_country.toUpperCase() + '.png'" :alt="r.player_country">
+            <a :href="'/u/' + r.player_id" v-text="r.player_name"></a>
+          </span>
+          <span class="ppr-card-sep">|</span>
+          <span v-text="formatAcc(r.acc)"></span>
+          <span class="ppr-card-sep">|</span>
+          <span v-text="r.mods_readable || 'NM'"></span>
+          <span v-if="activeCheatType" class="ppr-card-sep">|</span>
+          <span v-if="activeCheatType" class="ppr-cheat-val" v-text="cheatDisplay(r)"></span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pagination -->
+  <div v-if="!loading && !error && total > pageSize" class="ppr-pagination">
+    <button class="ppr-page-btn" :disabled="page <= 1" @click="changePage(-1)">
+      <i class="fas fa-chevron-left"></i> Previous
+    </button>
+    <span class="ppr-page-info">
+      Page <span v-text="page"></span> of <span v-text="totalPages"></span>
+    </span>
+    <button class="ppr-page-btn" :disabled="page >= totalPages" @click="changePage(1)">
+      Next <i class="fas fa-chevron-right"></i>
+    </button>
+  </div>
+
+</div>
+
+<script src="/static/hinaDir/compiled/pp_records.js"></script>
+{% endblock %}

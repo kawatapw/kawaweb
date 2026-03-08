@@ -1,0 +1,157 @@
+// ── Admin V2 Side Panel (concept) ──
+// Dev-only right-slide panel for testing hinaWIP features.
+// Uses v-cloak + v-show pattern (same as navbar-user-card).
+
+// Overlay
+.hina-adminv2-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  z-index: 49;
+  backdrop-filter: blur(2px);
+  transition: opacity 0.25s ease;
+}
+
+.hina-adminv2-overlay[v-cloak] {
+  display: none;
+}
+
+// Panel
+.hina-adminv2-panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 300px;
+  height: 100vh;
+  background: hsl(var(--main, 220), 12%, 12%);
+  border-left: 1px solid hsl(var(--main, 220), 10%, 20%);
+  z-index: 50;
+  transform: translateX(100%);
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+
+  &.is-open {
+    transform: translateX(0);
+  }
+
+  &[v-cloak] {
+    display: none;
+  }
+}
+
+// Header
+.hina-av2-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid hsl(var(--main, 220), 10%, 18%);
+  flex-shrink: 0;
+}
+
+.hina-av2-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: hsl(var(--main, 220), 60%, 70%);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  i {
+    font-size: 0.85rem;
+    opacity: 0.8;
+  }
+}
+
+.hina-av2-close {
+  background: none;
+  border: none;
+  color: hsl(var(--main, 220), 10%, 55%);
+  font-size: 1rem;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: hsl(var(--main, 220), 10%, 18%);
+    color: hsl(var(--main, 220), 60%, 70%);
+  }
+}
+
+// Body
+.hina-av2-body {
+  padding: 12px 0;
+  flex: 1;
+  overflow-y: auto;
+}
+
+.hina-av2-notice {
+  font-size: 0.75rem;
+  color: hsl(var(--main, 220), 10%, 45%);
+  padding: 0 20px 12px;
+  margin: 0;
+  font-style: italic;
+}
+
+// Sections
+.hina-av2-section {
+  padding: 4px 0;
+
+  & + & {
+    border-top: 1px solid hsl(var(--main, 220), 10%, 16%);
+    margin-top: 4px;
+    padding-top: 8px;
+  }
+}
+
+.hina-av2-section-label {
+  display: block;
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: hsl(var(--main, 220), 10%, 40%);
+  padding: 4px 20px 6px;
+}
+
+// Items
+.hina-av2-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 20px;
+  color: hsl(var(--main, 220), 10%, 70%);
+  text-decoration: none;
+  font-size: 0.85rem;
+  font-weight: 400;
+  transition: all 0.15s ease;
+  cursor: pointer;
+
+  i {
+    width: 18px;
+    text-align: center;
+    font-size: 0.8rem;
+    color: hsl(var(--main, 220), 10%, 45%);
+    transition: color 0.15s ease;
+  }
+
+  &:hover {
+    background: hsl(var(--main, 220), 10%, 16%);
+    color: hsl(var(--main, 220), 60%, 75%);
+
+    i {
+      color: hsl(var(--main, 220), 60%, 65%);
+    }
+  }
+}
+
+// ── Responsive ──
+@media (max-width: 480px) {
+  .hina-adminv2-panel {
+    width: 100%;
+  }
+}

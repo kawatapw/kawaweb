@@ -12,6 +12,20 @@
         Customisation
       </div>
       <div class="right-block-content">
+        <div class="single-block-content" style="padding: 16px 20px; border-bottom: 1px solid hsl(var(--main), 10%, 20%);">
+          <h4 class="mb-4">Profile Hue</h4>
+          <div class="subtitle mb-4">Drag the slider or type a value (0-360) to change your profile colour. Saves automatically.</div>
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <input class="slider" id="HueSlider" type="range" min="0" max="360"
+              value="{{ session.user_data['hue'] or 180 }}"
+              style="flex: 1; appearance: none; height: 6px; background: linear-gradient(to right, hsl(0,70%,50%), hsl(60,70%,50%), hsl(120,70%,50%), hsl(180,70%,50%), hsl(240,70%,50%), hsl(300,70%,50%), hsl(360,70%,50%)); border-radius: 3px; outline: none; cursor: pointer;">
+            <input class="input" id="HueInput" type="number" min="0" max="360"
+              value="{{ session.user_data['hue'] or 180 }}"
+              style="width: 70px; appearance: textfield; -moz-appearance: textfield;">
+            <span id="HueSaved" style="font-size: 0.75rem; color: hsl(var(--main), 50%, 60%); opacity: 0; transition: opacity 0.3s;"></span>
+          </div>
+        </div>
+
         <div class="flex avatar-flex">
           <div class="column">
             <form id="upload-profile" action="/settings/custom" method="post" enctype="multipart/form-data">
@@ -114,6 +128,66 @@
         i.src = u;
         $('.top-block').css({'background': `linear-gradient(hsl(var(--main), 25%, 25%, 20%), hsl(var(--main), 25%, 25%, 60%)), url(${i.src})`, 'background-size': 'cover'})
       });
+
+  </script>
+
+  <script>
+    // ── Hue slider (AJAX, no logout) ──
+    // Separate script block so jQuery errors above can't kill this
+    var slider = document.getElementById('HueSlider');
+    var input  = document.getElementById('HueInput');
+    var saved  = document.getElementById('HueSaved');
+    var hueSaveTimer = null;
+
+    slider.addEventListener('input', function() {
+      var hue = slider.value;
+      input.value = hue;
+      document.documentElement.style.setProperty('--main', hue);
+    });
+
+    slider.addEventListener('change', function() {
+      var hue = slider.value;
+      clearTimeout(hueSaveTimer);
+      hueSaveTimer = setTimeout(function() {
+        var fd = new FormData();
+        fd.append('hue', hue);
+        fetch('/settings/hue', { method: 'POST', body: fd })
+          .then(function(r) { return r.json(); })
+          .then(function(d) {
+            if (d.status === 'success') {
+              saved.textContent = 'Saved';
+              saved.style.opacity = '1';
+              setTimeout(function() { saved.style.opacity = '0'; }, 1500);
+            }
+          })
+          .catch(function() {});
+      }, 400);
+    });
+
+    input.addEventListener('input', function() {
+      var hue = Math.max(0, Math.min(360, parseInt(input.value) || 0));
+      slider.value = hue;
+      document.documentElement.style.setProperty('--main', hue);
+    });
+
+    input.addEventListener('change', function() {
+      var hue = Math.max(0, Math.min(360, parseInt(input.value) || 0));
+      clearTimeout(hueSaveTimer);
+      hueSaveTimer = setTimeout(function() {
+        var fd = new FormData();
+        fd.append('hue', hue);
+        fetch('/settings/hue', { method: 'POST', body: fd })
+          .then(function(r) { return r.json(); })
+          .then(function(d) {
+            if (d.status === 'success') {
+              saved.textContent = 'Saved';
+              saved.style.opacity = '1';
+              setTimeout(function() { saved.style.opacity = '0'; }, 1500);
+            }
+          })
+          .catch(function() {});
+      }, 400);
+    });
   </script>
 </div>
 

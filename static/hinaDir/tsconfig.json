@@ -1,0 +1,13 @@
+{
+    "compilerOptions": {
+        "target": "ES2015",
+        "module": "none",
+        "lib": ["ES2015", "DOM"],
+        "outDir": "./compiled",
+        "rootDir": "./ts",
+        "strict": false,
+        "sourceMap": false,
+        "skipLibCheck": true
+    },
+    "include": ["ts/**/*.ts"]
+}

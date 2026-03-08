@@ -1,0 +1,531 @@
+// PP Records page
+// Compiled separately: npx sass scss/_pp_records.scss compiled/pp_records.css --no-source-map
+
+// ── Variables ──
+
+$accent: hsla(var(--main), 70%, 55%, 1);
+$accent-dim: hsla(var(--main), 50%, 40%, 0.3);
+$card-bg: hsla(0, 0%, 100%, 0.04);
+$card-bg-hover: hsla(0, 0%, 100%, 0.07);
+$border: hsla(0, 0%, 100%, 0.08);
+$text-primary: hsla(0, 0%, 100%, 0.92);
+$text-secondary: hsla(0, 0%, 100%, 0.55);
+$text-muted: hsla(0, 0%, 100%, 0.35);
+
+$medal-gold: #FFD700;
+$medal-silver: #C0C0C0;
+$medal-bronze: #CD7F32;
+
+// ── Root ──
+
+[v-cloak] { display: none !important; }
+
+.my-con:has(#pp-records-app) {
+  width: 100% !important;
+}
+
+#pp-records-app {
+  width: 100%;
+  padding-bottom: 40px;
+}
+
+// ── Header ──
+
+.ppr-header {
+  padding: 24px 0 16px;
+  text-align: center;
+}
+
+.ppr-title {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: $text-primary;
+  margin: 0;
+}
+
+.ppr-subtitle {
+  font-size: 0.92rem;
+  color: $text-secondary;
+  margin-top: 6px;
+}
+
+// ── Mode tabs ──
+
+.ppr-mode-tabs {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+  padding: 12px 0 20px;
+  flex-wrap: wrap;
+}
+
+.ppr-mode-btn {
+  background: $card-bg;
+  border: 1px solid $border;
+  border-radius: 8px;
+  padding: 8px 16px;
+  color: $text-secondary;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.15s;
+
+  &:hover {
+    background: $card-bg-hover;
+    color: $text-primary;
+  }
+
+  &.active {
+    background: $accent-dim;
+    border-color: $accent;
+    color: $text-primary;
+  }
+}
+
+// ── Filter panel ──
+
+.ppr-filter-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin: 0 auto 16px;
+  padding: 8px 20px;
+  background: $card-bg;
+  border: 1px solid $border;
+  border-radius: 8px;
+  color: $text-secondary;
+  font-size: 0.88rem;
+  cursor: pointer;
+  transition: all 0.15s;
+
+  &:hover {
+    background: $card-bg-hover;
+    color: $text-primary;
+  }
+
+  i {
+    transition: transform 0.2s;
+  }
+
+  &.open i {
+    transform: rotate(180deg);
+  }
+}
+
+.ppr-filter-panel {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease, padding 0.3s ease;
+  background: $card-bg;
+  border-radius: 10px;
+  margin-bottom: 16px;
+
+  &.open {
+    max-height: 300px;
+    padding: 16px;
+    border: 1px solid $border;
+  }
+}
+
+.ppr-filter-row {
+  display: flex;
+  gap: 12px;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.ppr-filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.ppr-filter-label {
+  font-size: 0.78rem;
+  color: $text-muted;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.ppr-filter-select,
+.ppr-filter-input {
+  background: hsla(0, 0%, 0%, 0.3);
+  border: 1px solid $border;
+  border-radius: 6px;
+  padding: 8px 12px;
+  color: $text-primary;
+  font-size: 0.88rem;
+  min-width: 140px;
+
+  &:focus {
+    outline: none;
+    border-color: $accent;
+  }
+
+  option:disabled {
+    color: hsla(0, 0%, 100%, 0.25);
+    font-style: italic;
+  }
+}
+
+.ppr-filter-input {
+  min-width: 90px;
+  width: 100px;
+}
+
+.ppr-filter-apply {
+  padding: 8px 20px;
+  background: $accent-dim;
+  border: 1px solid $accent;
+  border-radius: 6px;
+  color: $text-primary;
+  font-size: 0.88rem;
+  cursor: pointer;
+  transition: all 0.15s;
+
+  &:hover {
+    background: $accent;
+  }
+}
+
+.ppr-filter-clear {
+  padding: 8px 16px;
+  background: transparent;
+  border: 1px solid $border;
+  border-radius: 6px;
+  color: $text-secondary;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.15s;
+
+  &:hover {
+    color: $text-primary;
+    border-color: $text-secondary;
+  }
+}
+
+// ── Loading / Error / Empty ──
+
+.ppr-loading,
+.ppr-error,
+.ppr-empty {
+  text-align: center;
+  padding: 60px 20px;
+  color: $text-secondary;
+  font-size: 1rem;
+}
+
+.ppr-loading i {
+  font-size: 1.5rem;
+  margin-bottom: 12px;
+  display: block;
+  animation: ppr-spin 1s linear infinite;
+}
+
+@keyframes ppr-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.ppr-error {
+  color: #ff6b6b;
+}
+
+// ── Desktop table ──
+
+.ppr-desktop {
+  width: 100%;
+}
+
+.ppr-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.88rem;
+}
+
+.ppr-table thead th {
+  text-align: left;
+  padding: 10px 12px;
+  color: $text-muted;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  border-bottom: 1px solid $border;
+  white-space: nowrap;
+}
+
+.ppr-table tbody tr {
+  border-bottom: 1px solid hsla(0, 0%, 100%, 0.03);
+  transition: background 0.1s;
+
+  &:hover {
+    background: $card-bg-hover;
+  }
+}
+
+.ppr-table td {
+  padding: 10px 12px;
+  color: $text-primary;
+  vertical-align: middle;
+}
+
+.ppr-rank {
+  font-weight: 700;
+  font-size: 0.92rem;
+  width: 48px;
+  text-align: center;
+
+  &.gold { color: $medal-gold; }
+  &.silver { color: $medal-silver; }
+  &.bronze { color: $medal-bronze; }
+}
+
+.ppr-player-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ppr-flag {
+  width: 20px;
+  height: 14px;
+  border-radius: 2px;
+}
+
+.ppr-player-name {
+  color: $text-primary;
+  text-decoration: none;
+  font-weight: 500;
+
+  &:hover {
+    color: $accent;
+  }
+}
+
+.ppr-beatmap-cell {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: 320px;
+}
+
+.ppr-cover {
+  width: 48px;
+  height: 36px;
+  border-radius: 4px;
+  object-fit: cover;
+  flex-shrink: 0;
+  background: hsla(0, 0%, 100%, 0.05);
+}
+
+.ppr-map-info {
+  overflow: hidden;
+}
+
+.ppr-map-title {
+  color: $text-primary;
+  font-size: 0.85rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: block;
+}
+
+.ppr-map-diff {
+  color: $text-muted;
+  font-size: 0.78rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: block;
+}
+
+.ppr-pp {
+  font-weight: 700;
+  color: $accent;
+  white-space: nowrap;
+}
+
+.ppr-acc {
+  white-space: nowrap;
+}
+
+.ppr-mods {
+  font-size: 0.82rem;
+  color: $text-secondary;
+  white-space: nowrap;
+}
+
+.ppr-grade {
+  width: 28px;
+  height: auto;
+}
+
+.ppr-date {
+  color: $text-muted;
+  font-size: 0.82rem;
+  white-space: nowrap;
+}
+
+.ppr-cheat-val {
+  font-size: 0.82rem;
+  color: #ff9f43;
+  white-space: nowrap;
+}
+
+// ── Mobile cards ──
+
+.ppr-mobile {
+  display: none;
+}
+
+.ppr-card {
+  background: $card-bg;
+  border: 1px solid $border;
+  border-radius: 10px;
+  padding: 14px;
+  margin-bottom: 10px;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.ppr-card-rank {
+  font-weight: 700;
+  font-size: 1.1rem;
+  min-width: 32px;
+  text-align: center;
+
+  &.gold { color: $medal-gold; }
+  &.silver { color: $medal-silver; }
+  &.bronze { color: $medal-bronze; }
+}
+
+.ppr-card-cover {
+  width: 56px;
+  height: 42px;
+  border-radius: 6px;
+  object-fit: cover;
+  flex-shrink: 0;
+  background: hsla(0, 0%, 100%, 0.05);
+}
+
+.ppr-card-body {
+  flex: 1;
+  overflow: hidden;
+}
+
+.ppr-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.ppr-card-map {
+  font-size: 0.85rem;
+  color: $text-primary;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ppr-card-pp {
+  font-weight: 700;
+  font-size: 0.92rem;
+  color: $accent;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.ppr-card-details {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.8rem;
+  color: $text-secondary;
+  flex-wrap: wrap;
+}
+
+.ppr-card-player {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.ppr-card-player a {
+  color: $text-secondary;
+  text-decoration: none;
+
+  &:hover {
+    color: $text-primary;
+  }
+}
+
+.ppr-card-sep {
+  color: $text-muted;
+}
+
+// ── Pagination ──
+
+.ppr-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 24px 0;
+}
+
+.ppr-page-btn {
+  padding: 8px 20px;
+  background: $card-bg;
+  border: 1px solid $border;
+  border-radius: 8px;
+  color: $text-secondary;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.15s;
+
+  &:hover:not(:disabled) {
+    background: $card-bg-hover;
+    color: $text-primary;
+  }
+
+  &:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+  }
+}
+
+.ppr-page-info {
+  color: $text-muted;
+  font-size: 0.85rem;
+}
+
+// ── Responsive ──
+
+@media (max-width: 768px) {
+  .ppr-desktop {
+    display: none;
+  }
+
+  .ppr-mobile {
+    display: block;
+  }
+
+  .ppr-title {
+    font-size: 1.4rem;
+  }
+
+  .ppr-filter-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .ppr-filter-select,
+  .ppr-filter-input {
+    min-width: 100%;
+  }
+}

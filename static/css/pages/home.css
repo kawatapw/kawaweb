@@ -78,14 +78,14 @@
     background: hsla(var(--main), 40%, 30%, 0.6);
     border-radius: 16px;
     color: white;
-    font-size: 1.5em;
+    font-size: 1.5rem;
     font-weight: 500;
     text-align: center;
     margin: 0 10px 0 10px;
     padding: 4px 5px 4px 5px;
   }
     .home-stats .stat span {
-      font-size: 0.25em;
+      font-size: 0.9rem;
       font-weight: 400;
     }
 
@@ -101,7 +101,7 @@
   transform: translateX(-50%);
   color: white;
   cursor: pointer;
-  font-size: 0.5em;
+  font-size: 1rem;
   align-content: center;
   white-space: nowrap;
 }

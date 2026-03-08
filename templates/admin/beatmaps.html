@@ -2,10 +2,11 @@
 {% block title %} Beatmaps {% endblock %}
 {% block panel %} Beatmaps {% endblock %}
 {% block header %}
-<link rel="stylesheet" href="/static/css/pages/admin/beatmaps.css">
+<style>
+  @import url("/static/css/pages/admin/beatmaps.css") layer(styles);
+</style>
 <script src="/static/js/asserts/vue.js"></script>
 <script src="/static/js/asserts/vue-axios.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/timeago.js/4.0.2/timeago.min.js"></script>
 <script>
     var domain = "{{ domain() }}";
     var reqs = '{{ requests|tojson }}';

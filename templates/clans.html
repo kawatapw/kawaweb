@@ -9,8 +9,9 @@
     var page = "{{ page }}";
     var domain = "{{ domain() }}";
 </script>
-
-<link rel="stylesheet" href="/static/css/pages/clans.css">
+<style>
+    @import url("/static/css/pages/clans.css") layer(styles);
+</style>
 {% endblock %}
 
 {% block content %}

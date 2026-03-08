@@ -2,10 +2,11 @@
 {% block title %} Badges {% endblock %}
 {% block panel %} Badges {% endblock %}
 {% block header %}
-<link rel="stylesheet" href="/static/css/pages/admin/badges.css">
+<style>
+  @import url("/static/css/pages/admin/badges.css") layer(styles);
+</style>
 <script src="/static/js/asserts/vue.js"></script>
 <script src="/static/js/asserts/vue-axios.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/timeago.js/4.0.2/timeago.min.js"></script>
 <script>
     var domain = "{{ domain() }}";
     var badges = '{{ badges|tojson }}';

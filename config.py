@@ -55,7 +55,10 @@ path_to_gulag = os.environ["PATH_TO_GULAG"]
 seperate_data_path = os.environ["SEPERATE_DATA_PATH"]
 
 # enable debug (disable when in production to improve performance)
-debug = os.environ["DEBUG"]
+debug = os.environ.get("DEBUG", "False").lower() in ("true", "1", "yes")
+
+# developer mode (enables frontend debug logging, etc.)
+developer_mode = os.getenv("DEVELOPER_MODE", "False").lower() in ("true", "1", "yes")
 
 # Logging settings
 LOG_WITH_COLORS = os.environ["LOG_WITH_COLORS"]

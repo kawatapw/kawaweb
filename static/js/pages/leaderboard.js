@@ -15,6 +15,7 @@ new Vue({
         };
     },
     created() {
+        this.$log = ColorfulLogger.child('Leaderboard Page');
         this.LoadData(mode, mods, sort);
         this.LoadLeaderboard(sort, mode, mods);
     },

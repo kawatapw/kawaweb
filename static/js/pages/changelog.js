@@ -12,6 +12,7 @@ new Vue({
         };
     },
     created() {
+        this.$log = ColorfulLogger.child('Changelog Page');
         this.$log.info('LIFECYCLE', "Loading Changelog Page");
         this.changelogs = window.changelogs;
         this.$log.debug('DATA', "Changelogs:", this.changelogs);

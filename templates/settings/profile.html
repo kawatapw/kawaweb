@@ -63,78 +63,13 @@
           </div>
         </div>
         -->
-        <div class="single-block-content">
-          <div class="block-content--left">
-            <div class="field-label is-normal">
-              <label class="label">Hue</label>
-            </div>
-          </div>
-          <div class="block-content--right">
-            <div class="field">
-              <p class="control" id="HueControl">
-                <input class="slider" id="HueSlider" type="range" min="0" max="360" value="{{ session.user_data['hue'] or 180}}">
-                <input class="input"  id="HueInput" name="hue"  type="number"min="0" max="360" value="{{ session.user_data['hue'] or 180}}">
-              </p>
-            </div>
-          </div>
-        </div>
+        <input type="hidden" name="hue" value="{{ session.user_data['hue'] or 180 }}">
         <button class='button is-primary' type='submit'><span>Save</span><span class='icon is-small'><i class='fas fa-check'></i></span></button>
       </form>
     </div>
   </div>
 </div>
 
-<style>
-  #HueInput {
-    max-width: 60;
-    appearance: textfield;
-    -moz-appearance: textfield;
-    -webkit-appearance: textfield;
-    
-  }
-
-  #HueSlider {
-    margin-right: 51px;
-    appearance: none;
-    background: hsl(var(--main), 10%, 20%);
-    opacity: 0.25;
-    transition: opacity 0.2s ease-in;
-    outline: none;
-  }
-
-  #HueSlider:hover {
-    opacity: 1;
-  }
-
-  #HueSlider:-webkit-slider-thumb {
-    appearance: none;
-    width: 20px;
-    height: 20px;
-    background: hsl(var(--main), 100%, 50%);
-    cursor: pointer;
-  }
-  #HueControl {
-    display: flex;
-    align-items: center;
-  }
-</style>
-
-<script>
-  var slider = document.querySelector('#HueSlider');
-  var input = document.querySelector('#HueInput');
-
-  slider.addEventListener('input', function() {
-    var hue = slider.value;
-    input.value = hue; // Set the value of the input box to the slider's value
-    document.documentElement.style.setProperty('--main', hue);
-  });
-
-  input.addEventListener('input', function() {
-    var hue = input.value;
-    slider.value = hue; // Set the value of the slider to the input box's value
-    document.documentElement.style.setProperty('--main', hue);
-  });
-</script>
 
 {% if flash %}
 <div class='noti-banner noti-banner-warning'>
