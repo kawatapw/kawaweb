@@ -2,7 +2,7 @@ version: "3.8"
 
 services:
   web:
-    image: kawaweb:latest
+    image: ${GITHUB_OWNER}/${GITHUB_REPO}:${CONTAINER_VERSION}
     container_name: ${CONTAINER_NAME}
     network_mode: bridge
     restart: always
