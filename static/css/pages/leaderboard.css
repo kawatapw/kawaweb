@@ -326,3 +326,501 @@ table th {
     .lb-card-stat { font-size: 11px; }
     .simple-banner-switch { font-size: 12px; padding: 4px 8px; }
 }
+
+/* =============================================================================
+ * SEASONAL FILTERS STYLING
+ * ============================================================================= */
+
+/* View selector container - moves up when seasonal filters are shown */
+.leaderboard-banner .selector {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* When seasonal view is active, move the entire view selector container up */
+.leaderboard-banner .selector .center {
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.leaderboard-banner .selector .center.seasonal-active {
+  transform: translateY(-32px);
+}
+
+/* Fade-in animation for seasonal filters */
+@keyframes fadeIn {
+  0% {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  10% {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Individual seasonal dropdown styling - minimal design */
+.seasonal-dropdown {
+  position: relative;
+  display: inline-block;
+  margin: 0 6px;
+}
+
+.seasonal-dropdown select {
+  min-width: 50px;
+  max-width: 160px;
+  padding: 8px 28px 8px 8px;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid hsl(var(--main), 45%, 60%);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 500;
+  outline: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  height: 32px;
+}
+
+/* Minimal dropdown arrow styling */
+.seasonal-dropdown::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  right: 8px;
+  transform: translateY(-50%);
+  width: 0;
+  height: 0;
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+  border-top: 4px solid hsl(var(--main), 45%, 60%);
+  pointer-events: none;
+  transition: all 0.2s ease;
+}
+
+/* Hover effects - minimal styling */
+.seasonal-dropdown:hover select {
+  border-bottom-color: hsl(var(--main), 45%, 70%);
+  color: hsl(var(--main), 45%, 70%);
+}
+
+/* Focus effects - minimal styling */
+.seasonal-dropdown select:focus {
+  border-bottom-color: hsl(var(--main), 45%, 80%);
+  box-shadow: 0 2px 0 hsl(var(--main), 45%, 80%);
+}
+
+/* Arrow rotation only when dropdown is open (focused) */
+.seasonal-dropdown.select-focused::after,
+.seasonal-dropdown.select-active::after {
+  border-top-color: hsl(var(--main), 45%, 80%);
+  transform: translateY(-50%) rotate(180deg);
+}
+
+/* Ensure arrow resets when not focused */
+.seasonal-dropdown:not(.select-focused):not(.select-active)::after {
+  transform: translateY(-50%) rotate(0deg);
+}
+
+/* Active state */
+.seasonal-dropdown:active select {
+  border-bottom-color: hsl(var(--main), 45%, 80%);
+}
+
+/* Disabled state */
+.seasonal-dropdown select:disabled {
+  border-bottom-color: hsl(var(--main), 15%, 40%);
+  color: hsl(var(--main), 10%, 60%);
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* Dropdown options styling */
+.seasonal-dropdown select option {
+  background: hsl(var(--main), 15%, 25%);
+  color: #fff;
+  padding: 8px;
+  font-size: 12px;
+}
+
+.seasonal-dropdown select option:hover {
+  background: hsl(var(--main), 15%, 30%);
+}
+
+.seasonal-dropdown select option:checked {
+  background: hsl(var(--main), 45%, 45%);
+  color: #fff;
+  font-weight: 600;
+}
+
+/* Layout for desktop - three dropdowns side by side */
+.seasonal-dropdown-container {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  margin-top: 4px;
+}
+
+.seasonal-dropdown-container .seasonal-dropdown {
+  flex: none;
+}
+
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+  .seasonal-dropdown-container {
+    flex-direction: column;
+    gap: 6px;
+    margin-top: 6px;
+  }
+  
+  .seasonal-dropdown-container .seasonal-dropdown {
+    width: 100%;
+    margin: 0;
+  }
+  
+  .seasonal-dropdown select {
+    width: 100%;
+    font-size: 14px;
+    padding: 8px;
+    height: 32px;
+  }
+}
+
+@media (max-width: 480px) {
+  .seasonal-dropdown select {
+    font-size: 14px;
+    padding: 8px;
+    height: 34px;
+  }
+}
+
+/* Ensure --main-rgb fallback for browsers that don't support CSS custom properties in rgba() */
+:root {
+  --main-rgb: 210, 70%, 50%;
+}
+
+/* Fallback for browsers without CSS custom properties support */
+.no-custom-properties {
+  --main-rgb: 210, 70%, 50%;
+}
+
+/* =============================================================================
+ * SEASONS ERROR AND LOADING STATES
+ * ============================================================================= */
+
+/* Seasons Error Banner */
+.seasons-error-banner {
+  position: relative;
+  background: hsl(var(--main), 15%, 15%);
+  border: 2px solid hsl(var(--main), 45%, 60%);
+  border-bottom: none;
+  border-top-left-radius: 8px;
+  border-top-right-radius: 8px;
+  padding: 12px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  color: hsl(var(--main), 45%, 80%);
+  font-size: 14px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+  z-index: 10;
+}
+
+.error-message {
+  flex: 1;
+  font-weight: 500;
+}
+
+.retry-btn {
+  background: hsl(var(--main), 45%, 60%);
+  color: hsl(var(--main), 15%, 10%);
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 13px;
+}
+
+.retry-btn:hover:not(:disabled) {
+  background: hsl(var(--main), 45%, 70%);
+  transform: translateY(-1px);
+}
+
+.retry-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Seasons Loading Overlay */
+.seasons-loading-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  background: hsl(var(--main), 15%, 20%);
+  border-bottom: 2px solid hsl(var(--main), 45%, 60%);
+  padding: 12px 24px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  color: hsl(var(--main), 45%, 80%);
+  font-size: 14px;
+  font-weight: 500;
+  z-index: 10;
+  animation: fadeIn 0.3s ease;
+}
+
+.loading-spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid hsl(var(--main), 45%, 40%);
+  border-top: 2px solid hsl(var(--main), 45%, 80%);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+.loading-text {
+  opacity: 0.9;
+}
+
+/* Keyframes for animations */
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Ensure leaderboard banner has proper z-index to stack correctly */
+.leaderboard-banner {
+  position: relative;
+  z-index: 5;
+}
+
+/* Mobile responsiveness for error and loading states */
+@media (max-width: 768px) {
+  .seasons-error-banner {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 12px 16px;
+  }
+  
+  .seasons-loading-overlay {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 12px 16px;
+  }
+  
+  .retry-btn {
+    align-self: flex-end;
+  }
+}
+
+/* Dark theme adjustments */
+@media (prefers-color-scheme: dark) {
+  .seasons-error-banner {
+    background: hsl(var(--main), 15%, 12%);
+    border-color: hsl(var(--main), 45%, 50%);
+  }
+  
+  .seasons-loading-overlay {
+    background: hsl(var(--main), 15%, 16%);
+    border-color: hsl(var(--main), 45%, 50%);
+  }
+}
+
+/* =============================================================================
+ * DEBUG CONSOLE
+ * ============================================================================= */
+
+.debug-console {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  background: hsl(var(--main), 15%, 10%);
+  border: 2px solid hsl(var(--main), 45%, 60%);
+  border-bottom: none;
+  border-top-left-radius: 8px;
+  border-top-right-radius: 8px;
+  z-index: 20;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  animation: fadeIn 0.3s ease;
+}
+
+.debug-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  border-bottom: 1px solid hsl(var(--main), 45%, 30%);
+  background: hsl(var(--main), 15%, 12%);
+}
+
+.debug-title {
+  color: hsl(var(--main), 45%, 80%);
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.debug-toggle {
+  background: hsl(var(--main), 45%, 60%);
+  color: hsl(var(--main), 15%, 10%);
+  border: none;
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.debug-toggle:hover {
+  background: hsl(var(--main), 45%, 70%);
+  transform: translateY(-1px);
+}
+
+.debug-content {
+  padding: 16px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+}
+
+.debug-section {
+  background: hsl(var(--main), 15%, 14%);
+  padding: 12px;
+  border-radius: 6px;
+  border: 1px solid hsl(var(--main), 45%, 25%);
+}
+
+.debug-section h4 {
+  margin: 0 0 8px 0;
+  color: hsl(var(--main), 45%, 70%);
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.debug-item {
+  font-size: 12px;
+  color: hsl(var(--main), 10%, 70%);
+  margin-bottom: 4px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.debug-item strong {
+  color: hsl(var(--main), 45%, 80%);
+  font-weight: 600;
+}
+
+.debug-logs {
+  max-height: 120px;
+  overflow-y: auto;
+  border-top: 1px solid hsl(var(--main), 45%, 25%);
+  padding-top: 8px;
+}
+
+.debug-log-item {
+  display: flex;
+  gap: 8px;
+  font-size: 11px;
+  margin-bottom: 4px;
+  padding: 2px 0;
+  border-bottom: 1px solid hsl(var(--main), 15%, 16%);
+}
+
+.debug-log-item:last-child {
+  border-bottom: none;
+}
+
+.log-time {
+  color: hsl(var(--main), 10%, 50%);
+  min-width: 60px;
+  font-family: monospace;
+}
+
+.log-level {
+  min-width: 40px;
+  font-weight: 600;
+  font-size: 10px;
+  text-transform: uppercase;
+  padding: 1px 4px;
+  border-radius: 3px;
+}
+
+.log-level.INFO {
+  background: hsl(var(--main), 45%, 20%);
+  color: hsl(var(--main), 45%, 70%);
+}
+
+.log-level.WARN {
+  background: hsl(45, 70%, 20%);
+  color: hsl(45, 70%, 70%);
+}
+
+.log-level.ERROR {
+  background: hsl(0, 70%, 20%);
+  color: hsl(0, 70%, 70%);
+}
+
+.log-level.DEBUG {
+  background: hsl(210, 70%, 20%);
+  color: hsl(210, 70%, 70%);
+}
+
+.log-message {
+  color: hsl(var(--main), 10%, 60%);
+  flex: 1;
+}
+
+/* Scrollbar styling for debug console */
+.debug-logs::-webkit-scrollbar {
+  width: 6px;
+}
+
+.debug-logs::-webkit-scrollbar-track {
+  background: hsl(var(--main), 15%, 12%);
+}
+
+.debug-logs::-webkit-scrollbar-thumb {
+  background: hsl(var(--main), 45%, 30%);
+  border-radius: 3px;
+}
+
+.debug-logs::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--main), 45%, 40%);
+}
+
+/* Mobile responsiveness for debug console */
+@media (max-width: 768px) {
+  .debug-content {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  
+  .debug-header {
+    padding: 10px 12px;
+  }
+  
+  .debug-section {
+    padding: 10px;
+  }
+}

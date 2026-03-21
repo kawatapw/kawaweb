@@ -9,6 +9,8 @@
     var mode = "{{ mode }}";
     var mods = "{{ mods }}";
     var sort = "{{ sort }}";
+    var view = "{{ view }}";
+    var season = "{{ season }}";
     var domain = "{{ domain() }}";
 </script>
 <style>
@@ -24,7 +26,62 @@
   <div class="lb-stars" id="stars3"></div>
 </div>
 <div id="app" :class="(load ? 'load' : '')">
+    <!-- Seasons Error Display -->
+    <div v-if="seasonsError" class="seasons-error-banner">
+        <span class="error-message"><% seasonsError %></span>
+        <button class="retry-btn" @click="fetchSeasonData()" :disabled="seasonsLoading">
+            <% seasonsLoading ? 'Retrying...' : 'Retry' %>
+        </button>
+    </div>
+    
+    <!-- Seasons Loading Overlay -->
+    <div v-if="seasonsLoading" class="seasons-loading-overlay">
+        <div class="loading-spinner"></div>
+        <span class="loading-text">Loading seasonal data...</span>
+    </div>
+
     <div class="leaderboard-banner main-banner">
+        <!-- Debug Console (Hidden by default, toggle with F12) -->
+        <div v-if="debugMode" class="debug-console">
+            <div class="debug-header">
+                <span class="debug-title">Seasons Debug Console</span>
+                <button class="debug-toggle" @click="debugMode = false">Close</button>
+            </div>
+            <div class="debug-content">
+                <div class="debug-section">
+                    <h4>State</h4>
+                    <div class="debug-item">View: <strong><% view %></strong></div>
+                    <div class="debug-item">Season: <strong><% season %></strong></div>
+                    <div class="debug-item">Selected Schedule: <strong><% selectedSchedule ? selectedSchedule.name : 'None' %></strong></div>
+                    <div class="debug-item">Selected Year: <strong><% selectedYear || 'None' %></strong></div>
+                    <div class="debug-item">Seasons Available: <strong><% seasonsAvailable %></strong></div>
+                    <div class="debug-item">Seasons Loading: <strong><% seasonsLoading %></strong></div>
+                </div>
+                <div class="debug-section">
+                    <h4>Data</h4>
+                    <div class="debug-item">Schedules: <strong><% schedules.length %></strong></div>
+                    <div class="debug-item">All Seasons: <strong><% allSeasons.length %></strong></div>
+                    <div class="debug-item">Year Options: <strong><% yearOptions.length %></strong></div>
+                    <div class="debug-item">Season Options: <strong><% seasonOptions.length %></strong></div>
+                </div>
+                <div class="debug-section">
+                    <h4>Validation</h4>
+                    <div class="debug-item">Season Selection Valid: <strong><% validateSeasonSelection() %></strong></div>
+                    <div class="debug-item">Active Season Found: <strong><% allSeasons.find(se => se.is_active) ? 'Yes' : 'No' %></strong></div>
+                </div>
+                <div class="debug-section">
+                    <h4>Recent Logs</h4>
+                    <div class="debug-logs">
+                        <div v-for="log in debugLogs.slice(-5)" class="debug-log-item">
+                            <span class="log-time"><% log.time %></span>
+                            <span class="log-level" :class="log.level"><% log.level %></span>
+                            <span class="log-message"><% log.message %></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
         <div class="main-selector" style="align-items: center;">
             <a class="mode-select" v-bind:class="{ 'active': mode === 'std' }"
             @click="LoadLeaderboard(sort, 'std', mods)">
@@ -45,23 +102,59 @@
         </div>
         <div class="banner-text">Leaderboard</div>
         <div class="selector" style="margin: 0 0 4px; padding: 0 24px;">
-            <div class="left">
+            <div class="left" style="margin-right: auto; padding-right: 70px;">
                 <a class="simple-banner-switch" v-bind:class="{ 'active': sort === 'pp' }"
-                @click="LoadLeaderboard('pp', mode, mods, '')">PP</a>
+                @click="LoadLeaderboard('pp', mode, mods, view, season)">PP</a>
                 <a class="simple-banner-switch" v-bind:class="{ 'active': sort === 'rscore' }"
-                @click="LoadLeaderboard('rscore', mode, mods, '')">Score</a>
+                @click="LoadLeaderboard('rscore', mode, mods, view, season)">Score</a>
+            </div>
+            <div class="center" style="display: flex; flex-direction: column; align-items: center;" v-bind:class="{ 'seasonal-active': view === 'seasonal' }">
+                <div style="display: flex; gap: 8px;">
+                    <a class="simple-banner-switch" v-bind:class="{ 'active': view === 'alltime' }"
+                        @click="LoadLeaderboard(sort, mode, mods, 'alltime', season)">All-Time</a>
+                    <a class="simple-banner-switch" v-bind:class="{ 'active': view === 'seasonal' }"
+                        @click="LoadLeaderboard(sort, mode, mods, 'seasonal', season)">Seasonal</a>
+                </div>
+                <div v-show="view === 'seasonal'" class="seasonal-filters-container" style="animation: fadeIn 0.3s ease 0.3s both;">
+                    <div class="seasonal-dropdown-container">
+                        <!-- Schedule Dropdown -->
+                        <div class="seasonal-dropdown" :class="{ 'select-focused': scheduleFocused }">
+                            <select v-model="selectedSchedule" @change="handleScheduleChange" @focus="scheduleFocused = true" @blur="scheduleFocused = false">
+                                <option :value="null" disabled>Schedule</option>
+                                <option v-for="s in schedules" :key="s.id" :value="s"><% s.name %></option>
+                            </select>
+                        </div>
+                    
+                        <!-- Year Dropdown -->
+                        <div class="seasonal-dropdown" :class="{ 'select-focused': yearFocused }">
+                            <select v-model="selectedYear" @change="handleYearChange" @focus="yearFocused = true" @blur="yearFocused = false">
+                                <option :value="null" disabled>Year</option>
+                                <option v-for="yearOpt in yearOptions" :key="yearOpt.year" :value="yearOpt.year"><% yearOpt.name %></option>
+                            </select>
+                        </div>
+                    
+                        <!-- Season Dropdown -->
+                        <div class="seasonal-dropdown" :class="{ 'select-focused': seasonFocused }">
+                            <select v-model="season" @change="handleSeasonChange" @focus="seasonFocused = true" @blur="seasonFocused = false">
+                                <option :value="0" disabled>Season</option>
+                                <option v-for="seasonOpt in seasonOptions" :key="seasonOpt.id" :value="seasonOpt.id"><% seasonOpt.name %></option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
             </div>
             <div class="right">
                 <a class="simple-banner-switch" v-bind:class=" { 'active': mods === 'vn' }"
-                @click="LoadLeaderboard(sort, mode, 'vn')">Vanilla</a>
+                @click="LoadLeaderboard(sort, mode, 'vn', view, season)">Vanilla</a>
                 <a class="simple-banner-switch" v-bind:class=" { 'active': mods === 'rx', 'disabled': mode === 'mania' }"
-                @click="LoadLeaderboard(sort, mode, 'rx')">Relax</a>
+                @click="LoadLeaderboard(sort, mode, 'rx', view, season)">Relax</a>
                 <a class="simple-banner-switch" v-bind:class=" { 'active': mods === 'ap', 'disabled': mode === 'taiko' || mode === 'catch' || mode === 'mania'  }"
-                @click="LoadLeaderboard(sort, mode, 'ap')">Autopilot</a>
+                @click="LoadLeaderboard(sort, mode, 'ap', view, season)">Autopilot</a>
             </div>
         </div>
-    </div>
-    <div class="main-block">
+</div>
+
+<div class="main-block">
         <div class="leaderboard-main-bg table-responsive">
             <div v-if="boards.length != undefined && boards.length != 0">
                 <!-- ===== MOBILE CARDS ===== -->
