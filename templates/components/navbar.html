@@ -55,7 +55,7 @@
                         <span class="navbar-username">{{ session.user_data['name'] }}</span>
                         <i class="fas fa-chevron-down nuc-chevron" :class="{ 'is-flipped': isUserDropdownOpen }"></i>
                     </button>
-                    <div class="navbar-user-card" :class="{ 'is-active': isUserDropdownOpen }" style="--user-banner: url(/banners/{{session.user_data['id']}}); --user-background: url(/backgrounds/{{session.user_data['id']}});}">
+                    <div class="navbar-user-card" v-show="isUserDropdownOpen" :class="{ 'is-active': isUserDropdownOpen }" style="--user-banner: url(/banners/{{session.user_data['id']}}); --user-background: url(/backgrounds/{{session.user_data['id']}});}">
                         {# Header — links to profile #}
                         <a class="nuc-header" href="/u/{{ session.user_data['id'] }}">
                             <div class="user-banner"></div> 

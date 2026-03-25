@@ -60,8 +60,10 @@
     z-index: 1001;
     overflow: hidden;
 
-    // Entrance animation
-    animation: nuc-slide-in 0.15s ease-out;
+    // Entrance animation — only when opening (prevents flash on page load)
+    &.is-active {
+        animation: nuc-slide-in 0.15s ease-out;
+    }
 }
 
 @keyframes nuc-slide-in {
