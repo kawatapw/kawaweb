@@ -71,13 +71,13 @@ def _gen_action_id():
 
 async def _log_action(mod_id, mod_name, target_id, action_name, action_text,
                        reason, action_type, badge=None, map_obj=None):
-    """Insert into admin_v2_logs table and post to Discord webhook."""
+    """Insert into logs table and post to Discord webhook."""
     action_id = _gen_action_id()
     reason = reason or 'No reason specified.'
     now = datetime.datetime.now()
 
     await glob.db.execute(
-        "INSERT INTO admin_v2_logs (from_id, to_id, action, msg, created_at, action_type) "
+        "INSERT INTO logs (from_id, to_id, action, msg, created_at, action_type) "
         "VALUES (%s, %s, %s, %s, %s, %s)",
         [mod_id, target_id, action_name, reason, now, action_type]
     )
@@ -285,11 +285,11 @@ async def api_dashboard():
     )
 
     # ── Recent staff actions ──────────────────────────────
-    # admin_v2_logs schema: id, from_id, to_id, action, msg, created_at, action_type
+    # logs schema: id, from_id, to_id, action, msg, created_at, action_type
     action_placeholders = ', '.join(['%s'] * len(_STAFF_ACTION_WHITELIST))
     raw_actions = await glob.db.fetchall(
         'SELECT l.id, l.action, l.msg, l.created_at AS time, l.from_id AS mod_id, l.to_id AS target_id '
-        f'FROM admin_v2_logs l WHERE l.action IN ({action_placeholders}) '
+        f'FROM logs l WHERE l.action IN ({action_placeholders}) '
         'ORDER BY l.created_at DESC LIMIT 10',
         list(_STAFF_ACTION_WHITELIST)
     )
@@ -643,10 +643,10 @@ async def api_user_detail(userid):
             [userid]
         )
 
-    # Admin logs (admin_v2_logs schema: id, from_id, to_id, action, msg, created_at, action_type)
+    # Admin logs (logs schema: id, from_id, to_id, action, msg, created_at, action_type)
     admin_logs = await glob.db.fetchall(
         "SELECT id, from_id AS mod_id, to_id AS target_id, action, msg, created_at AS `time` "
-        "FROM admin_v2_logs WHERE to_id = %s ORDER BY created_at DESC LIMIT 50",
+        "FROM logs WHERE to_id = %s ORDER BY created_at DESC LIMIT 50",
         [userid]
     )
     for log_entry in (admin_logs or []):
@@ -1855,8 +1855,8 @@ async def api_bm_work_item_detail(item_id):
         [item_id]
     )
 
-    # Action history from admin_v2_logs
-    # admin_v2_logs schema: id, from_id, to_id, action, msg, created_at, action_type
+    # Action history from logs
+    # logs schema: id, from_id, to_id, action, msg, created_at, action_type
     map_ids = [d['id'] for d in (diffs or [])]
     history = []
     if map_ids:
@@ -1864,7 +1864,7 @@ async def api_bm_work_item_detail(item_id):
         history = await glob.db.fetchall(
             f"SELECT l.id, l.from_id as `mod`, l.to_id as target, l.action, "
             f"l.msg as reason, l.created_at as time, u.name as mod_name "
-            f"FROM admin_v2_logs l LEFT JOIN users u ON u.id = l.from_id "
+            f"FROM logs l LEFT JOIN users u ON u.id = l.from_id "
             f"WHERE l.to_id IN ({ip}) AND l.action_type = 1 "
             f"ORDER BY l.created_at DESC LIMIT 20",
             map_ids
@@ -2207,7 +2207,7 @@ async def api_staff_list():
 
     staff = await glob.db.fetchall(
         "SELECT DISTINCT u.id, u.name FROM users u "
-        "INNER JOIN admin_v2_logs l ON u.id = l.from_id "
+        "INNER JOIN logs l ON u.id = l.from_id "
         "ORDER BY u.name"
     )
     return jsonify({'staff': staff or []})
@@ -2261,14 +2261,14 @@ async def api_staff_log():
 
     # Count
     total_row = await glob.db.fetch(
-        "SELECT COUNT(*) as total FROM admin_v2_logs l" + where, params
+        "SELECT COUNT(*) as total FROM logs l" + where, params
     )
     total = total_row['total'] if total_row else 0
 
     # Fetch page
     rows = await glob.db.fetchall(
         "SELECT l.id, l.from_id, l.to_id, l.action, l.action_type, l.msg, l.created_at "
-        "FROM admin_v2_logs l" + where +
+        "FROM logs l" + where +
         " ORDER BY l.created_at DESC LIMIT %s OFFSET %s",
         params + [page_size, offset]
     )

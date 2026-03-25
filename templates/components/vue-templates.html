@@ -870,15 +870,16 @@
                                             </div>
                                             
                                             <div class="mode-icons">
+                                            <template v-for="(childMap, index) in getNormalizedDifficulties(map)">
                                                 <difficulty-icon
-                                                    v-for="(childMap, index) in getNormalizedDifficulties(map)"
+                                                    v-if="index < 8 && childMap && childMap.id"
                                                     :key="childMap.id"
-                                                    v-if="index < 8"
                                                     :diff="childMap"
                                                     :setId="map.SetID"
                                                     :interactive="true"
                                                 ></difficulty-icon>
-                                                <div v-if="map.ChildrenBeatmaps.length > 8" class="mode-icon" title="More difficulties available">
+                                            </template>
+                                                <div v-if="map.ChildrenBeatmaps && map.ChildrenBeatmaps.length > 8" class="mode-icon" title="More difficulties available">
                                                     <span style="font-size: 0.7rem; color: hsl(var(--main), 40%, 60%);" v-text="'+' + (map.ChildrenBeatmaps.length - 8)"></span>
                                                 </div>
                                             </div>

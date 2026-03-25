@@ -636,17 +636,21 @@ async def profile_select(id):
 
 @frontend.route('/leaderboard')
 @frontend.route('/lb')
-@frontend.route('/leaderboard/<mode>/<sort>/<mods>')
-@frontend.route('/lb/<mode>/<sort>/<mods>')
+@frontend.route('/leaderboard/<mode>/<sort>/<mods>/')
+@frontend.route('/leaderboard/<mode>/<sort>/<mods>/<view>')
+@frontend.route('/leaderboard/<mode>/<sort>/<mods>/<view>/<season>')
+@frontend.route('/lb/<mode>/<sort>/<mods>/')
+@frontend.route('/lb/<mode>/<sort>/<mods>/<view>')
+@frontend.route('/lb/<mode>/<sort>/<mods>/<view>/<season>')
 @error_catcher
-async def leaderboard(mode='std', sort='pp', mods='vn'):
+async def leaderboard(mode='std', sort='pp', mods='vn', view='alltime', season='0'):
     if g.isDevEnv:
-        return await render_template('leaderboard.html', mode=mode, sort=sort, mods=mods, globalNotice=g.globalNotice, 
+        return await render_template('leaderboard.html', mode=mode, sort=sort, mods=mods, view=view, season=season, globalNotice=g.globalNotice, 
                                    flash=f"This Website is the Dev Environment. Please play on <a href='https://{glob.config.official_domain}'>our Official Server</a>", status="success")
     if g.maintenance:
-        return await render_template('leaderboard.html', mode=mode, sort=sort, mods=mods, globalNotice=g.globalNotice, 
+        return await render_template('leaderboard.html', mode=mode, sort=sort, mods=mods, view=view, season=season, globalNotice=g.globalNotice,
                                    flash="Website is currently under maintenance", status="success")
-    return await render_template('leaderboard.html', mode=mode, sort=sort, mods=mods, globalNotice=g.globalNotice)
+    return await render_template('leaderboard.html', mode=mode, sort=sort, mods=mods, view=view, season=season, globalNotice=g.globalNotice)
 
 @frontend.route('/clans')
 @error_catcher

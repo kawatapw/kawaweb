@@ -55,9 +55,10 @@
                         <span class="navbar-username">{{ session.user_data['name'] }}</span>
                         <i class="fas fa-chevron-down nuc-chevron" :class="{ 'is-flipped': isUserDropdownOpen }"></i>
                     </button>
-                    <div class="navbar-user-card" v-cloak v-show="isUserDropdownOpen">
+                    <div class="navbar-user-card" :class="{ 'is-active': isUserDropdownOpen }" style="--user-banner: url(/banners/{{session.user_data['id']}}); --user-background: url(/backgrounds/{{session.user_data['id']}});}">
                         {# Header — links to profile #}
                         <a class="nuc-header" href="/u/{{ session.user_data['id'] }}">
+                            <div class="user-banner"></div> 
                             <img src="https://a.{{domain()}}/{{ session.user_data['id'] }}" alt="{{ session.user_data['name'] }}" class="nuc-avatar">
                             <div class="nuc-header-info">
                                 <span class="nuc-username">{{ session.user_data['name'] }}</span>
@@ -81,6 +82,7 @@
 
                         {# Menu items #}
                         <div class="nuc-menu">
+                            <div class="user-background"></div>
                             {# Clan row — only if clan_id > 0 #}
                             {% if session.user_data.get('clan_id', 0) > 0 %}
                             <a class="nuc-menu-item" href="/clan/{{ session.user_data['clan_id'] }}">
@@ -247,14 +249,28 @@
                                 <div class="navbar-mobile-search-section-results">
                                     <div
                                         v-for="player in searchResults.players"
-                                        :key="player.info.id"
+                                        :key="player.info && player.info.id ? player.info.id : player.name"
                                         class="navbar-mobile-search-result player"
                                         @click="openPlayerProfile(player)"
                                     >
-                                        <img :src="'https://a.' + domain + '/' + player.info.id" :alt="player.info.name" class="navbar-mobile-search-result-avatar">
+                                        <img 
+                                            v-if="player.info && player.info.id" 
+                                            :src="'https://a.' + domain + '/' + player.info.id" 
+                                            :alt="player.info && player.info.name ? player.info.name : 'Player'" 
+                                            class="navbar-mobile-search-result-avatar"
+                                        >
+                                        <div v-else class="navbar-mobile-search-result-avatar navbar-mobile-search-result-avatar-fallback">
+                                            <i class="fas fa-user"></i>
+                                        </div>
                                         <div class="navbar-mobile-search-result-info">
-                                            <span class="navbar-mobile-search-result-title" v-text="player.info.name"></span>
-                                            <span class="navbar-mobile-search-result-subtitle" v-text="'Rank #' + player.info.rank"></span>
+                                            <span 
+                                                class="navbar-mobile-search-result-title" 
+                                                v-text="player.info && player.info.name ? player.info.name : 'Unknown Player'"
+                                            ></span>
+                                            <span 
+                                                class="navbar-mobile-search-result-subtitle" 
+                                                v-text="player.info && player.info.rank ? 'Rank #' + player.info.rank : 'Rank #?'"
+                                            ></span>
                                         </div>
                                     </div>
                                 </div>

@@ -65,6 +65,7 @@ class KawataApp {
             name: 'Kawata-Web',
             showTimestamp: true,
         });
+        const logger = this.logger;
     }
 
     async _loadDependencies() {

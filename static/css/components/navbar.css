@@ -200,6 +200,129 @@
     border-color: var(--navbar-accent);
 }
 
+/* User Dropdown Card - Prevent initial flicker on page load */
+.navbar-user-card {
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease-in-out;
+    will-change: opacity;
+}
+
+/* Ensure the card starts hidden and only becomes visible when explicitly activated */
+.navbar-user-card:not(.is-active) {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.navbar-user-card.is-active {
+    opacity: 1;
+    pointer-events: auto;
+    transition: opacity 0.2s ease-in-out;
+}
+
+/* Force hardware acceleration for smoother transitions */
+.navbar-user-card .nuc-header .user-banner::before {
+    will-change: opacity;
+    transform: translateZ(0);
+}
+
+/* Prevent initial flicker during Vue.js initialization */
+.navbar-user-dropdown-container .navbar-user-card {
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease-in-out;
+}
+
+.navbar-user-dropdown-container .navbar-user-card.is-active {
+    opacity: 1;
+    pointer-events: auto;
+    transition: opacity 0.2s ease-in-out;
+}
+
+/* Additional rule to prevent flicker without breaking transitions */
+.navbar-user-dropdown-container .navbar-user-card:not(.is-active) {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.nuc-header {
+    position: relative;
+}
+.nuc-header > * {
+    z-index: 1;
+}
+
+.nuc-menu {
+    position: relative;
+}
+.nuc-menu > * {
+    z-index: 1;
+}
+.nuc-menu .nuc-menu-item {
+    position: relative;
+}
+
+.navbar-user-card .nuc-header .user-banner {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background-image: var(--user-banner);
+    background-size: cover;
+    background-position: center;
+}
+
+.navbar-user-card .nuc-header .user-banner::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: linear-gradient(hsl(var(--main), 25%, 25%, 20%), hsl(var(--main), 25%, 25%, 60%));
+    background-size: cover;
+    background-position: center;
+    opacity: 0;
+    transition: opacity 0.5s ease-in-out;
+}
+
+.navbar-user-card.is-active .nuc-header .user-banner::before {
+    opacity: 1;
+}
+
+.nuc-menu .user-background {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    opacity: 0.5;
+    background-image: var(--user-background);
+    background-size: cover;
+    background-position: center;
+}
+
+.navbar-user-card .nuc-menu .user-background::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: linear-gradient(hsl(var(--main), 25%, 25%, 20%), hsl(var(--main), 25%, 25%, 60%));
+    background-size: cover;
+    background-position: center;
+    opacity: 0;
+    transition: opacity 0.5s ease-in-out;
+}
+
+.navbar-user-card.is-active .nuc-menu .user-background::before {
+    opacity: 1;
+}
+
 .navbar-avatar {
     width: 32px;
     height: 32px;

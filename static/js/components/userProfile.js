@@ -77,7 +77,6 @@ Vue.component('badge', {
 });
 
 
-
 /**
  * ============================================================================
  * Component: User-Status-Controller (Batch Status Manager)
@@ -482,8 +481,9 @@ Vue.component('user-status-controller', {
         console.warn('UserStatusController: ColorfulLogger is not available yet, waiting...');
         return false;
       }
-      
-      console.log('UserStatusController: Vue and ColorfulLogger are available, creating controller...');
+
+      logger = ColorfulLogger.child('User Status Controller');
+      logger.info('LIFECYCLE', 'UserStatusController: Vue and ColorfulLogger are available, creating controller...');
       
       // Create a container element for the controller
       const controllerElement = document.createElement('div');
@@ -1073,6 +1073,7 @@ Vue.component('user-profile', {
   },
   
   created() {
+    this.$log = logger.child(`UserProfile[uid:${this._uid}]`);
     this.$log.debug('LIFECYCLE', 'Component created', {
       userid: this.userid,
       hasUser: !!this.user,
@@ -1592,6 +1593,7 @@ Vue.component('user-profile-hover-panel', {
     mouseLeavePanel: { type: Function, required: true }
   },
   created() {
+    this.$log = logger.child(`UserProfileHoverPanel[uid:${this._uid}]`);
     this.$log.debug('LIFECYCLE', 'Component created', {
       hasUser: !!this.user,
       hasAvatarUrl: !!this.avatarUrl,
@@ -1753,6 +1755,7 @@ Vue.component('user-profile-username', {
     mouseLeavePanel: { type: Function, required: true }
   },
   created() {
+    this.$log = logger.child(`UserProfileUsername[uid:${this._uid}]`);
     this.$log.debug('LIFECYCLE', 'Component created', {
       hasUser: !!this.user,
       hasAvatarUrl: !!this.avatarUrl,
@@ -1821,6 +1824,7 @@ Vue.component('user-profile-card', {
     statusString: { type: String, required: true }
   },
   created() {
+    this.$log = logger.child(`UserProfileCard[uid:${this._uid}]`);
     this.$log.debug('LIFECYCLE', 'Component created', {
       hasUser: !!this.user,
       hasAvatarUrl: !!this.avatarUrl,
@@ -1875,6 +1879,7 @@ Vue.component('user-profile-search', {
     formatAccuracy: { type: Function, required: true }
   },
   created() {
+    this.$log = logger.child(`UserProfileSearch[uid:${this._uid}]`);
     this.$log.debug('LIFECYCLE', 'Component created', {
       hasUser: !!this.user,
       hasAvatarUrl: !!this.avatarUrl,
