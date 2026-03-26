@@ -26,248 +26,251 @@
   <div class="lb-stars" id="stars3"></div>
 </div>
 <div id="app" :class="(load ? 'load' : '')">
-    <!-- Seasons Error Display -->
-    <div v-if="seasonsError" class="seasons-error-banner">
-        <span class="error-message"><% seasonsError %></span>
-        <button class="retry-btn" @click="fetchSeasonData()" :disabled="seasonsLoading">
-            <% seasonsLoading ? 'Retrying...' : 'Retry' %>
-        </button>
-    </div>
-    
-    <!-- Seasons Loading Overlay -->
-    <div v-if="seasonsLoading" class="seasons-loading-overlay">
-        <div class="loading-spinner"></div>
-        <span class="loading-text">Loading seasonal data...</span>
-    </div>
+    <!-- User Data Provider: Makes user data available to all child components via provide/inject -->
+    <user-data-provider :auto-refresh-status="true">
+        <!-- Seasons Error Display -->
+        <div v-if="seasonsError" class="seasons-error-banner">
+            <span class="error-message"><% seasonsError %></span>
+            <button class="retry-btn" @click="fetchSeasonData()" :disabled="seasonsLoading">
+                <% seasonsLoading ? 'Retrying...' : 'Retry' %>
+            </button>
+        </div>
 
-    <div class="leaderboard-banner main-banner">
-        <!-- Debug Console (Hidden by default, toggle with F12) -->
-        <div v-if="debugMode" class="debug-console">
-            <div class="debug-header">
-                <span class="debug-title">Seasons Debug Console</span>
-                <button class="debug-toggle" @click="debugMode = false">Close</button>
-            </div>
-            <div class="debug-content">
-                <div class="debug-section">
-                    <h4>State</h4>
-                    <div class="debug-item">View: <strong><% view %></strong></div>
-                    <div class="debug-item">Season: <strong><% season %></strong></div>
-                    <div class="debug-item">Selected Schedule: <strong><% selectedSchedule ? selectedSchedule.name : 'None' %></strong></div>
-                    <div class="debug-item">Selected Year: <strong><% selectedYear || 'None' %></strong></div>
-                    <div class="debug-item">Seasons Available: <strong><% seasonsAvailable %></strong></div>
-                    <div class="debug-item">Seasons Loading: <strong><% seasonsLoading %></strong></div>
+        <!-- Seasons Loading Overlay -->
+        <div v-if="seasonsLoading" class="seasons-loading-overlay">
+            <div class="loading-spinner"></div>
+            <span class="loading-text">Loading seasonal data...</span>
+        </div>
+
+        <div class="leaderboard-banner main-banner">
+            <!-- Debug Console (Hidden by default, toggle with F12) -->
+            <div v-if="debugMode" class="debug-console">
+                <div class="debug-header">
+                    <span class="debug-title">Seasons Debug Console</span>
+                    <button class="debug-toggle" @click="debugMode = false">Close</button>
                 </div>
-                <div class="debug-section">
-                    <h4>Data</h4>
-                    <div class="debug-item">Schedules: <strong><% schedules.length %></strong></div>
-                    <div class="debug-item">All Seasons: <strong><% allSeasons.length %></strong></div>
-                    <div class="debug-item">Year Options: <strong><% yearOptions.length %></strong></div>
-                    <div class="debug-item">Season Options: <strong><% seasonOptions.length %></strong></div>
-                </div>
-                <div class="debug-section">
-                    <h4>Validation</h4>
-                    <div class="debug-item">Season Selection Valid: <strong><% validateSeasonSelection() %></strong></div>
-                    <div class="debug-item">Active Season Found: <strong><% allSeasons.find(se => se.is_active) ? 'Yes' : 'No' %></strong></div>
-                </div>
-                <div class="debug-section">
-                    <h4>Recent Logs</h4>
-                    <div class="debug-logs">
-                        <div v-for="log in debugLogs.slice(-5)" class="debug-log-item">
-                            <span class="log-time"><% log.time %></span>
-                            <span class="log-level" :class="log.level"><% log.level %></span>
-                            <span class="log-message"><% log.message %></span>
+                <div class="debug-content">
+                    <div class="debug-section">
+                        <h4>State</h4>
+                        <div class="debug-item">View: <strong><% view %></strong></div>
+                        <div class="debug-item">Season: <strong><% season %></strong></div>
+                        <div class="debug-item">Selected Schedule: <strong><% selectedSchedule ? selectedSchedule.name : 'None' %></strong></div>
+                        <div class="debug-item">Selected Year: <strong><% selectedYear || 'None' %></strong></div>
+                        <div class="debug-item">Seasons Available: <strong><% seasonsAvailable %></strong></div>
+                        <div class="debug-item">Seasons Loading: <strong><% seasonsLoading %></strong></div>
+                    </div>
+                    <div class="debug-section">
+                        <h4>Data</h4>
+                        <div class="debug-item">Schedules: <strong><% schedules.length %></strong></div>
+                        <div class="debug-item">All Seasons: <strong><% allSeasons.length %></strong></div>
+                        <div class="debug-item">Year Options: <strong><% yearOptions.length %></strong></div>
+                        <div class="debug-item">Season Options: <strong><% seasonOptions.length %></strong></div>
+                    </div>
+                    <div class="debug-section">
+                        <h4>Validation</h4>
+                        <div class="debug-item">Season Selection Valid: <strong><% validateSeasonSelection() %></strong></div>
+                        <div class="debug-item">Active Season Found: <strong><% allSeasons.find(se => se.is_active) ? 'Yes' : 'No' %></strong></div>
+                    </div>
+                    <div class="debug-section">
+                        <h4>Recent Logs</h4>
+                        <div class="debug-logs">
+                            <div v-for="log in debugLogs.slice(-5)" class="debug-log-item">
+                                <span class="log-time"><% log.time %></span>
+                                <span class="log-level" :class="log.level"><% log.level %></span>
+                                <span class="log-message"><% log.message %></span>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
-        
-        <div class="main-selector" style="align-items: center;">
-            <a class="mode-select" v-bind:class="{ 'active': mode === 'std' }"
-            @click="LoadLeaderboard(sort, 'std', mods)">
-                <i class="mode-icon mode-osu"></i><span class="modetext"> osu!</span>
-            </a>
-            <a class="mode-select" v-bind:class="{ 'active': mode === 'taiko', 'disabled': mods === 'ap' }"
-            @click="LoadLeaderboard(sort, 'taiko', mods)">
-                <i class="mode-icon mode-taiko"></i><span class="modetext"> osu!taiko</span>
-            </a>
-            <a class="mode-select" v-bind:class="{ 'active': mode === 'catch', 'disabled': mods === 'ap' }"
-            @click="LoadLeaderboard(sort, 'catch', mods)">
-                <i class="mode-icon mode-catch"></i><span class="modetext"> osu!catch</span>
-            </a>
-            <a class="mode-select" v-bind:class="{ 'active': mode === 'mania', 'disabled': mods === 'ap' || mods === 'rx' }"
-            @click="LoadLeaderboard(sort, 'mania', mods)">
-                <i class="mode-icon mode-mania"></i><span class="modetext"> osu!mania</span>
-            </a>
-        </div>
-        <div class="banner-text">Leaderboard</div>
-        <div class="selector" style="margin: 0 0 4px; padding: 0 24px;">
-            <div class="left" style="margin-right: auto; padding-right: 70px;">
-                <a class="simple-banner-switch" v-bind:class="{ 'active': sort === 'pp' }"
-                @click="LoadLeaderboard('pp', mode, mods, view, season)">PP</a>
-                <a class="simple-banner-switch" v-bind:class="{ 'active': sort === 'rscore' }"
-                @click="LoadLeaderboard('rscore', mode, mods, view, season)">Score</a>
+
+            <div class="main-selector" style="align-items: center;">
+                <a class="mode-select" v-bind:class="{ 'active': mode === 'std' }"
+                @click="LoadLeaderboard(sort, 'std', mods)">
+                    <i class="mode-icon mode-osu"></i><span class="modetext"> osu!</span>
+                </a>
+                <a class="mode-select" v-bind:class="{ 'active': mode === 'taiko', 'disabled': mods === 'ap' }"
+                @click="LoadLeaderboard(sort, 'taiko', mods)">
+                    <i class="mode-icon mode-taiko"></i><span class="modetext"> osu!taiko</span>
+                </a>
+                <a class="mode-select" v-bind:class="{ 'active': mode === 'catch', 'disabled': mods === 'ap' }"
+                @click="LoadLeaderboard(sort, 'catch', mods)">
+                    <i class="mode-icon mode-catch"></i><span class="modetext"> osu!catch</span>
+                </a>
+                <a class="mode-select" v-bind:class="{ 'active': mode === 'mania', 'disabled': mods === 'ap' || mods === 'rx' }"
+                @click="LoadLeaderboard(sort, 'mania', mods)">
+                    <i class="mode-icon mode-mania"></i><span class="modetext"> osu!mania</span>
+                </a>
             </div>
-            <div class="center" style="display: flex; flex-direction: column; align-items: center;" v-bind:class="{ 'seasonal-active': view === 'seasonal' }">
-                <div style="display: flex; gap: 8px;">
-                    <a class="simple-banner-switch" v-bind:class="{ 'active': view === 'alltime' }"
-                        @click="LoadLeaderboard(sort, mode, mods, 'alltime', season)">All-Time</a>
-                    <a class="simple-banner-switch" v-bind:class="{ 'active': view === 'seasonal' }"
-                        @click="LoadLeaderboard(sort, mode, mods, 'seasonal', season)">Seasonal</a>
+            <div class="banner-text">Leaderboard</div>
+            <div class="selector" style="margin: 0 0 4px; padding: 0 24px;">
+                <div class="left" style="margin-right: auto; padding-right: 70px;">
+                    <a class="simple-banner-switch" v-bind:class="{ 'active': sort === 'pp' }"
+                    @click="LoadLeaderboard('pp', mode, mods, view, season)">PP</a>
+                    <a class="simple-banner-switch" v-bind:class="{ 'active': sort === 'rscore' }"
+                    @click="LoadLeaderboard('rscore', mode, mods, view, season)">Score</a>
                 </div>
-                <div v-show="view === 'seasonal'" class="seasonal-filters-container" style="animation: fadeIn 0.3s ease 0.3s both;">
-                    <div class="seasonal-dropdown-container">
-                        <!-- Schedule Dropdown -->
-                        <div class="seasonal-dropdown" :class="{ 'select-focused': scheduleFocused }">
-                            <select v-model="selectedSchedule" @change="handleScheduleChange" @focus="scheduleFocused = true" @blur="scheduleFocused = false">
-                                <option :value="null" disabled>Schedule</option>
-                                <option v-for="s in schedules" :key="s.id" :value="s"><% s.name %></option>
-                            </select>
-                        </div>
-                    
-                        <!-- Year Dropdown -->
-                        <div class="seasonal-dropdown" :class="{ 'select-focused': yearFocused }">
-                            <select v-model="selectedYear" @change="handleYearChange" @focus="yearFocused = true" @blur="yearFocused = false">
-                                <option :value="null" disabled>Year</option>
-                                <option v-for="yearOpt in yearOptions" :key="yearOpt.year" :value="yearOpt.year"><% yearOpt.name %></option>
-                            </select>
-                        </div>
-                    
-                        <!-- Season Dropdown -->
-                        <div class="seasonal-dropdown" :class="{ 'select-focused': seasonFocused }">
-                            <select v-model="season" @change="handleSeasonChange" @focus="seasonFocused = true" @blur="seasonFocused = false">
-                                <option :value="0" disabled>Season</option>
-                                <option v-for="seasonOpt in seasonOptions" :key="seasonOpt.id" :value="seasonOpt.id"><% seasonOpt.name %></option>
-                            </select>
+                <div class="center" style="display: flex; flex-direction: column; align-items: center;" v-bind:class="{ 'seasonal-active': view === 'seasonal' }">
+                    <div style="display: flex; gap: 8px;">
+                        <a class="simple-banner-switch" v-bind:class="{ 'active': view === 'alltime' }"
+                            @click="LoadLeaderboard(sort, mode, mods, 'alltime', season)">All-Time</a>
+                        <a class="simple-banner-switch" v-bind:class="{ 'active': view === 'seasonal' }"
+                            @click="LoadLeaderboard(sort, mode, mods, 'seasonal', season)">Seasonal</a>
+                    </div>
+                    <div v-show="view === 'seasonal'" class="seasonal-filters-container" style="animation: fadeIn 0.3s ease 0.3s both;">
+                        <div class="seasonal-dropdown-container">
+                            <!-- Schedule Dropdown -->
+                            <div class="seasonal-dropdown" :class="{ 'select-focused': scheduleFocused }">
+                                <select v-model="selectedSchedule" @change="handleScheduleChange" @focus="scheduleFocused = true" @blur="scheduleFocused = false">
+                                    <option :value="null" disabled>Schedule</option>
+                                    <option v-for="s in schedules" :key="s.id" :value="s"><% s.name %></option>
+                                </select>
+                            </div>
+                        
+                            <!-- Year Dropdown -->
+                            <div class="seasonal-dropdown" :class="{ 'select-focused': yearFocused }">
+                                <select v-model="selectedYear" @change="handleYearChange" @focus="yearFocused = true" @blur="yearFocused = false">
+                                    <option :value="null" disabled>Year</option>
+                                    <option v-for="yearOpt in yearOptions" :key="yearOpt.year" :value="yearOpt.year"><% yearOpt.name %></option>
+                                </select>
+                            </div>
+                        
+                            <!-- Season Dropdown -->
+                            <div class="seasonal-dropdown" :class="{ 'select-focused': seasonFocused }">
+                                <select v-model="season" @change="handleSeasonChange" @focus="seasonFocused = true" @blur="seasonFocused = false">
+                                    <option :value="0" disabled>Season</option>
+                                    <option v-for="seasonOpt in seasonOptions" :key="seasonOpt.id" :value="seasonOpt.id"><% seasonOpt.name %></option>
+                                </select>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
-            <div class="right">
-                <a class="simple-banner-switch" v-bind:class=" { 'active': mods === 'vn' }"
-                @click="LoadLeaderboard(sort, mode, 'vn', view, season)">Vanilla</a>
-                <a class="simple-banner-switch" v-bind:class=" { 'active': mods === 'rx', 'disabled': mode === 'mania' }"
-                @click="LoadLeaderboard(sort, mode, 'rx', view, season)">Relax</a>
-                <a class="simple-banner-switch" v-bind:class=" { 'active': mods === 'ap', 'disabled': mode === 'taiko' || mode === 'catch' || mode === 'mania'  }"
-                @click="LoadLeaderboard(sort, mode, 'ap', view, season)">Autopilot</a>
+                <div class="right">
+                    <a class="simple-banner-switch" v-bind:class=" { 'active': mods === 'vn' }"
+                    @click="LoadLeaderboard(sort, mode, 'vn', view, season)">Vanilla</a>
+                    <a class="simple-banner-switch" v-bind:class=" { 'active': mods === 'rx', 'disabled': mode === 'mania' }"
+                    @click="LoadLeaderboard(sort, mode, 'rx', view, season)">Relax</a>
+                    <a class="simple-banner-switch" v-bind:class=" { 'active': mods === 'ap', 'disabled': mode === 'taiko' || mode === 'catch' || mode === 'mania'  }"
+                    @click="LoadLeaderboard(sort, mode, 'ap', view, season)">Autopilot</a>
+                </div>
             </div>
         </div>
-</div>
 
-<div class="main-block">
-        <div class="leaderboard-main-bg table-responsive">
-            <div v-if="boards.length != undefined && boards.length != 0">
-                <!-- ===== MOBILE CARDS ===== -->
-                <div class="lb-mobile">
-                    <a
-                        v-for="(user, index) in boards"
-                        :key="'mobile-' + user.player_id"
-                        :href="'/u/' + user.player_id"
-                        class="lb-player-card"
-                        :class="index % 2 === 0 ? 'row2p' : 'row1p'"
-                    >
-                        <!-- Primary row -->
-                        <div class="lb-card-main">
-                            <div class="lb-card-rank" :class="{'champ': getRank(index) === 1, 'leader': getRank(index) > 1 && getRank(index) <= 10}">
-                                <span class="lb-rank-hash">#</span><span class="lb-rank-num" v-text="getRank(index)"></span>
-                            </div>
-                            <div class="lb-card-player">
-                                <img class="lb-card-flag"
-                                    :src="'/static/images/flags/' + user.country.toUpperCase() + '.png'"
-                                    :alt="flags[user.country.toUpperCase()]"
-                                    :title="flags[user.country.toUpperCase()]">
-                                <span class="lb-card-name">
-                                    <span v-text="user.name"></span>
-                                    <span v-if="user.clan_tag" class="lb-card-clan" v-text="' [' + user.clan_tag + ']'"></span>
-                                </span>
-                            </div>
-                            <div class="lb-card-value">
-                                <span class="lb-card-value-num" v-if="sort === 'pp'" v-text="addCommas(user.pp)"></span>
-                                <span class="lb-card-value-num" v-else v-text="scoreFormat(user.rscore)"></span>
-                                <span class="lb-card-value-label" v-text="sort === 'pp' ? 'pp' : ''"></span>
-                            </div>
-                        </div>
-                        <!-- Secondary row -->
-                        <div class="lb-card-stats">
-                            <span class="lb-card-stat"><span class="lb-card-stat-value" v-text="user.acc.toFixed(2) + '%'"></span></span>
-                            <span class="lb-card-stat-sep">·</span>
-                            <span class="lb-card-stat"><span class="lb-card-stat-value" v-text="addCommas(user.plays)"></span><span class="lb-card-stat-label"> plays</span></span>
-                            <span class="lb-card-stat-sep">·</span>
-                            <span class="lb-card-stat"><span class="lb-card-stat-value" v-text="addCommas(user.max_combo) + 'x'"></span><span class="lb-card-stat-label"> combo</span></span>
-                        </div>
-                    </a>
-                </div>
-
-                <!-- ===== DESKTOP TABLE ===== -->
-                <div class="lb-desktop">
-                    <table class="leaderboard-table table-responsive">
-                        <thead>
-                            <tr>
-                                <th class="t-heading"> </th>
-                                <th class="t-heading t-heading--main"></th>
-                                <th class="t-heading"> Clan </th>
-                                <th v-if="sort == 'pp' || sort == 'rscore'" class="t-heading table--selected">
-                                    <% (sort=='pp' ? "PP" : "" ) %>
-                                        <% (sort=='rscore' ? "Score" : "" ) %>
-                                </th>
-                                <th class="t-heading"> Accuracy </th>
-                                <th class="t-heading"> Playcount </th>
-                                <th class="t-heading"> Max Combo </th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr v-for="(user, index) in boards" class="leaderboard-column">
-                                <td :class="{'column-player-rank': true, 'champ': getRank(index) === 1, 'leader': getRank(index) > 1 && getRank(index) <= 10}">
-                                    #<% getRank(index) %>
-                                </td>
-                                <td class="column-player-name text-left">
-                                    <a :title="flags[user.country.toUpperCase()]"
-                                        :style="'background-image: url(/static/images/flags/' + user.country.toUpperCase() + '.png)'"
-                                        class="player-flag">
-                                        <div class="flag-dropdown">
-                                            <% flags[user.country.toUpperCase()] %>
-                                        </div>
-                                    </a>
-                                    <user-profile :user="user"></user-profile>
-                                </td>
-                                <td id="clan-tag" >
-                                    <span v-if="user.clan_tag">
-                                        <a>
-                                            [<% user.clan_tag %>]
-                                        </a>
+        <div class="main-block">
+            <div class="leaderboard-main-bg table-responsive">
+                <div v-if="boards.length != undefined && boards.length != 0">
+                    <!-- ===== MOBILE CARDS ===== -->
+                    <div class="lb-mobile">
+                        <a
+                            v-for="(user, index) in boards"
+                            :key="'mobile-' + user.player_id"
+                            :href="'/u/' + user.player_id"
+                            class="lb-player-card"
+                            :class="index % 2 === 0 ? 'row2p' : 'row1p'"
+                        >
+                            <!-- Primary row -->
+                            <div class="lb-card-main">
+                                <div class="lb-card-rank" :class="{'champ': getRank(index) === 1, 'leader': getRank(index) > 1 && getRank(index) <= 10}">
+                                    <span class="lb-rank-hash">#</span><span class="lb-rank-num" v-text="getRank(index)"></span>
+                                </div>
+                                <div class="lb-card-player">
+                                    <img class="lb-card-flag"
+                                        :src="'/static/images/flags/' + user.country.toUpperCase() + '.png'"
+                                        :alt="flags[user.country.toUpperCase()]"
+                                        :title="flags[user.country.toUpperCase()]">
+                                    <span class="lb-card-name">
+                                        <span v-text="user.name"></span>
+                                        <span v-if="user.clan_tag" class="lb-card-clan" v-text="' [' + user.clan_tag + ']'"></span>
                                     </span>
-                                </td>
-                                <td id="pp-score"  v-if="sort == 'pp' || sort == 'rscore'">
-                                    <% (sort=='pp' ? user.pp+'pp' : "" ) %>
-                                        <% (sort=='rscore' ? scoreFormat(user.rscore) : "" ) %>
-                                </td>
-                                <td id="accuracy" >
-                                    <% user.acc.toFixed(2) %>%
-                                </td>
-                                <td id="playcount" >
-                                    <% addCommas(user.plays) %>
-                                </td>
-                                <td id="max-combo">
-                                    <% addCommas(user.max_combo) %>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
+                                </div>
+                                <div class="lb-card-value">
+                                    <span class="lb-card-value-num" v-if="sort === 'pp'" v-text="addCommas(user.pp)"></span>
+                                    <span class="lb-card-value-num" v-else v-text="scoreFormat(user.rscore)"></span>
+                                    <span class="lb-card-value-label" v-text="sort === 'pp' ? 'pp' : ''"></span>
+                                </div>
+                            </div>
+                            <!-- Secondary row -->
+                            <div class="lb-card-stats">
+                                <span class="lb-card-stat"><span class="lb-card-stat-value" v-text="user.acc.toFixed(2) + '%'"></span></span>
+                                <span class="lb-card-stat-sep">·</span>
+                                <span class="lb-card-stat"><span class="lb-card-stat-value" v-text="addCommas(user.plays)"></span><span class="lb-card-stat-label"> plays</span></span>
+                                <span class="lb-card-stat-sep">·</span>
+                                <span class="lb-card-stat"><span class="lb-card-stat-value" v-text="addCommas(user.max_combo) + 'x'"></span><span class="lb-card-stat-label"> combo</span></span>
+                            </div>
+                        </a>
+                    </div>
+
+                    <!-- ===== DESKTOP TABLE ===== -->
+                    <div class="lb-desktop">
+                        <table class="leaderboard-table table-responsive">
+                            <thead>
+                                <tr>
+                                    <th class="t-heading"> </th>
+                                    <th class="t-heading t-heading--main"></th>
+                                    <th class="t-heading"> Clan </th>
+                                    <th v-if="sort == 'pp' || sort == 'rscore'" class="t-heading table--selected">
+                                        <% (sort=='pp' ? "PP" : "" ) %>
+                                            <% (sort=='rscore' ? "Score" : "" ) %>
+                                    </th>
+                                    <th class="t-heading"> Accuracy </th>
+                                    <th class="t-heading"> Playcount </th>
+                                    <th class="t-heading"> Max Combo </th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr v-for="(user, index) in boards" class="leaderboard-column">
+                                    <td :class="{'column-player-rank': true, 'champ': getRank(index) === 1, 'leader': getRank(index) > 1 && getRank(index) <= 10}">
+                                        #<% getRank(index) %>
+                                    </td>
+                                    <td class="column-player-name text-left">
+                                        <a :title="flags[user.country.toUpperCase()]"
+                                            :style="'background-image: url(/static/images/flags/' + user.country.toUpperCase() + '.png)'"
+                                            class="player-flag">
+                                            <div class="flag-dropdown">
+                                                <% flags[user.country.toUpperCase()] %>
+                                            </div>
+                                        </a>
+                                        <user-profile :user="user" display-style="username" show-badges show-status interactive></user-profile>
+                                    </td>
+                                    <td id="clan-tag" >
+                                        <span v-if="user.clan_tag">
+                                            <a>
+                                                [<% user.clan_tag %>]
+                                            </a>
+                                        </span>
+                                    </td>
+                                    <td id="pp-score"  v-if="sort == 'pp' || sort == 'rscore'">
+                                        <% (sort=='pp' ? user.pp+'pp' : "" ) %>
+                                            <% (sort=='rscore' ? scoreFormat(user.rscore) : "" ) %>
+                                    </td>
+                                    <td id="accuracy" >
+                                        <% user.acc.toFixed(2) %>%
+                                    </td>
+                                    <td id="playcount" >
+                                        <% addCommas(user.plays) %>
+                                    </td>
+                                    <td id="max-combo">
+                                        <% addCommas(user.max_combo) %>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
-            </div>
-            <div v-else>
-                <div class="text-center">
-                    There are no players to display!
+                <div v-else>
+                    <div class="text-center">
+                        There are no players to display!
+                    </div>
                 </div>
-            </div>
-            <div class="leaderboard-pagination">
-                <div class="pagination">
-                    <button class="pagination-previous" @click="changePage(page - 1)" :disabled="page === 1">Previous</button>
-                    <button class="pagination-next" @click="changePage(page + 1)" :disabled="boards.length != 50">Next</button>
+                <div class="leaderboard-pagination">
+                    <div class="pagination">
+                        <button class="pagination-previous" @click="changePage(page - 1)" :disabled="page === 1">Previous</button>
+                        <button class="pagination-next" @click="changePage(page + 1)" :disabled="boards.length != 50">Next</button>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
+    </user-data-provider>
 </div>
 
 <script src="/static/js/asserts/vue-flags.js"></script>

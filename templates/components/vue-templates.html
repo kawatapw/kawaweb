@@ -2086,16 +2086,15 @@
                                         <div class="user">
                                             <span v-if="topScore.clan_id != null"
                                                   v-text="'[' + topScore.clan_tag + ']'"></span>
+                                            <div
+                                                class="user-flag"
+                                                :style="'background-image: url(/static/images/flags/' + topScore.player_country.toUpperCase() + '.png);'"
+                                            ></div>
                                             <a
                                                 class="username"
                                                 :href="'/u/' + topScore.userid"
                                                 v-text="topScore.player_name"
                                             ></a>
-
-                                            <div
-                                                class="user-flag"
-                                                :style="'background-image: url(/static/images/flags/' + topScore.player_country.toUpperCase() + '.png);'"
-                                            ></div>
                                         </div>
 
                                         <div class="playstats-block">
@@ -2337,6 +2336,8 @@
     
             <!-- Main Content - Only show when data is ready -->
             <div v-if="fetchState === 'success'" id="score-panel" data-panel="Score" class="modal-content" :class="{ 'hidden': !show && fetchState !== 'success' }" style="animation: scaleIn 0.3s ease-out;">
+                <!-- User Data Provider: Makes user data available to all child components via provide/inject -->
+                <user-data-provider :auto-refresh-status="true">
                 <!-- Panel close button -->
                 <button class="panel-close-btn" @click="close" aria-label="Close score panel">
                     <i class="fas fa-times"></i>
@@ -2596,6 +2597,7 @@
                         </div>
                     </div>
                 </transition>
+                </user-data-provider>
             </div>
         </div>
     </script>

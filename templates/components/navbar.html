@@ -63,7 +63,7 @@
                             <img src="https://a.{{domain()}}/{{ session.user_data['id'] }}" alt="{{ session.user_data['name'] }}" class="nuc-avatar">
                             <div class="nuc-header-info">
                                 <span class="nuc-username">{{ session.user_data['name'] }}</span>
-                                <span class="nuc-safe-name">@{{ session.user_data.get('safe_name', session.user_data['name']|lower|replace(' ', '_')) }}</span>
+                                <span class="nuc-user-badges"></span>
                             </div>
                             <i class="fas fa-eye nuc-header-arrow"></i>
                         </a>
