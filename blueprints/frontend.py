@@ -147,7 +147,7 @@ def login_required(func):
     @wraps(func)
     async def wrapper(*args, **kwargs):
         if not session or 'authenticated' not in session:
-            return await flash('error', 'You must be logged in to access that page.', 'login')
+            return await flash('error', 'You must be logged in to access that page.', 'hinaDir/login')
         return await func(*args, **kwargs)
     return wrapper
 
@@ -336,7 +336,7 @@ async def settings_profile_post():
     if new_name != old_name or new_email != old_email:
         session.pop('authenticated', None)
         session.pop('user_data', None)
-        return await flash('success', 'Your username/email have been changed! Please login again.', 'login')
+        return await flash('success', 'Your username/email have been changed! Please login again.', 'hinaDir/login')
 
     # Hue-only change: update session and stay on page
     if new_hue is not None and 0 <= new_hue <= 360:
@@ -556,7 +556,7 @@ async def settings_password_post():
     
     user_row = await glob.db.fetch('SELECT pw_bcrypt FROM users WHERE id = %s', [session['user_data']['id']])
     if not user_row:
-        return await flash('error', 'User not found.', 'login')
+        return await flash('error', 'User not found.', 'hinaDir/login')
         
     pw_bcrypt = user_row['pw_bcrypt'].encode()
     pw_md5 = hashlib.md5(old_password.encode()).hexdigest().encode()
@@ -590,7 +590,7 @@ async def settings_password_post():
 
     session.pop('authenticated', None)
     session.pop('user_data', None)
-    return await flash('success', 'Your password has been changed! Please log in again.', 'login')
+    return await flash('success', 'Your password has been changed! Please log in again.', 'hinaDir/login')
 
 @frontend.route('/u/<id>')
 @error_catcher
@@ -668,11 +668,11 @@ async def login():
         return await flash('error', "You're already logged in!", 'home')
     
     if g.isDevEnv:
-        return await render_template('login.html', globalNotice=g.globalNotice, flash=f"This Website is the Dev Environment. Please play on <a href='https://{glob.config.official_domain}'>our Official Server</a>", status="success")
+        return await render_template('hinaDir/login.html', globalNotice=g.globalNotice, flash=f"This Website is the Dev Environment. Please play on <a href='https://{glob.config.official_domain}'>our Official Server</a>", status="success")
     if g.maintenance:
-        return await render_template('login.html', globalNotice=g.globalNotice, flash="Website is currently under maintenance", status="success")
+        return await render_template('hinaDir/login.html', globalNotice=g.globalNotice, flash="Website is currently under maintenance", status="success")
         
-    return await render_template('login.html', globalNotice=g.globalNotice)
+    return await render_template('hinaDir/login.html', globalNotice=g.globalNotice)
 
 @frontend.route('/login', methods=['POST'])
 @error_catcher
@@ -716,7 +716,7 @@ async def login_post():
     if not user_info or user_info['id'] == 1:
         if glob.config.debug:
             klogging.log(f"{username}'s login failed - account doesn't exist.", klogging.Ansi.LYELLOW)
-        return await flash('error', 'Account does not exist.', 'login')
+        return await flash('error', 'Account does not exist.', 'hinaDir/login')
 
     bcrypt_cache = glob.cache['bcrypt']
     pw_bcrypt = user_info['pw_bcrypt'].encode()
@@ -726,12 +726,12 @@ async def login_post():
         if pw_md5 != bcrypt_cache[pw_bcrypt]:
             if glob.config.debug:
                 klogging.log(f"{username}'s login failed - pw incorrect.", klogging.Ansi.LYELLOW)
-            return await flash('error', 'Password is incorrect.', 'login')
+            return await flash('error', 'Password is incorrect.', 'hinaDir/login')
     else:
         if not bcrypt.checkpw(pw_md5, pw_bcrypt):
             if glob.config.debug:
                 klogging.log(f"{username}'s login failed - pw incorrect.", klogging.Ansi.LYELLOW)
-            return await flash('error', 'Password is incorrect.', 'login')
+            return await flash('error', 'Password is incorrect.', 'hinaDir/login')
         bcrypt_cache[pw_bcrypt] = pw_md5
 
     if not user_info['priv'] & Privileges.Verified:
@@ -742,7 +742,7 @@ async def login_post():
     if not user_info['priv'] & Privileges.Normal:
         if glob.config.debug:
             klogging.log(f"{username}'s login failed - banned.", klogging.Ansi.RED)
-        return await flash('error', 'Your account is restricted. You are not allowed to log in.', 'login')
+        return await flash('error', 'Your account is restricted. You are not allowed to log in.', 'hinaDir/login')
 
     if glob.config.debug:
         klogging.log(f"{username}'s login succeeded.", klogging.Ansi.LGREEN)
@@ -790,11 +790,11 @@ async def register():
         return await flash('error', 'Registrations are currently disabled.', 'home')
 
     if g.isDevEnv:
-        return await render_template('register.html', globalNotice=g.globalNotice, flash=f"This Website is the Dev Environment. Please play on <a href='https://{glob.config.official_domain}'>our Official Server</a>", status="success")
+        return await render_template('hinaDir/register.html', globalNotice=g.globalNotice, flash=f"This Website is the Dev Environment. Please play on <a href='https://{glob.config.official_domain}'>our Official Server</a>", status="success")
     if g.maintenance:
-        return await render_template('register.html', globalNotice=g.globalNotice, flash="Website is currently under maintenance", status="success")
+        return await render_template('hinaDir/register.html', globalNotice=g.globalNotice, flash="Website is currently under maintenance", status="success")
         
-    return await render_template('register.html', globalNotice=g.globalNotice)
+    return await render_template('hinaDir/register.html', globalNotice=g.globalNotice)
 
 @frontend.route('/register', methods=['POST'])
 @error_catcher
@@ -816,34 +816,34 @@ async def register_post():
     if glob.config.hCaptcha_sitekey != 'changeme':
         captcha_data = form.get('h-captcha-response', type=str)
         if not captcha_data or not await utils.validate_captcha(captcha_data):
-            return await flash('error', 'Captcha failed.', 'register')
+            return await flash('error', 'Captcha failed.', 'hinaDir/register')
 
     if not regexes.username.match(username):
-        return await flash('error', 'Invalid username syntax.', 'register')
+        return await flash('error', 'Invalid username syntax.', 'hinaDir/register')
 
     if '_' in username and ' ' in username:
-        return await flash('error', 'Username may contain "_" or " ", but not both.', 'register')
+        return await flash('error', 'Username may contain "_" or " ", but not both.', 'hinaDir/register')
 
     if username in glob.config.disallowed_names:
-        return await flash('error', 'Disallowed username; pick another.', 'register')
+        return await flash('error', 'Disallowed username; pick another.', 'hinaDir/register')
 
     if await glob.db.fetch('SELECT 1 FROM users WHERE name = %s', username):
-        return await flash('error', 'Username already taken by another user.', 'register')
+        return await flash('error', 'Username already taken by another user.', 'hinaDir/register')
 
     if not regexes.email.match(email):
-        return await flash('error', 'Invalid email syntax.', 'register')
+        return await flash('error', 'Invalid email syntax.', 'hinaDir/register')
 
     if await glob.db.fetch('SELECT 1 FROM users WHERE email = %s', email):
-        return await flash('error', 'Email already taken by another user.', 'register')
+        return await flash('error', 'Email already taken by another user.', 'hinaDir/register')
 
     if not 8 <= len(passwd_txt) <= 32:
-        return await flash('error', 'Password must be 8-32 characters in length.', 'register')
+        return await flash('error', 'Password must be 8-32 characters in length.', 'hinaDir/register')
 
     if len(set(passwd_txt)) <= 3:
-        return await flash('error', 'Password must have more than 3 unique characters.', 'register')
+        return await flash('error', 'Password must have more than 3 unique characters.', 'hinaDir/register')
 
     if passwd_txt.lower() in glob.config.disallowed_passwords:
-        return await flash('error', 'That password was deemed too simple.', 'register')
+        return await flash('error', 'That password was deemed too simple.', 'hinaDir/register')
 
     # Hashing
     pw_md5 = hashlib.md5(passwd_txt.encode()).hexdigest().encode()
@@ -884,7 +884,7 @@ async def register_post():
 @error_catcher
 async def logout():
     if 'authenticated' not in session:
-        return await flash('error', "You can't logout if you aren't logged in!", 'login')
+        return await flash('error', "You can't logout if you aren't logged in!", 'hinaDir/login')
 
     if glob.config.debug:
         klogging.log(f'{session["user_data"]["name"]} logged out.', klogging.Ansi.LGREEN)
@@ -892,7 +892,7 @@ async def logout():
     session.pop('authenticated', None)
     session.pop('user_data', None)
 
-    return await flash('success', 'Successfully logged out!', 'login')
+    return await flash('success', 'Successfully logged out!', 'hinaDir/login')
 
 @frontend.route('/changelog')
 @frontend.route('/changelog/<type>/<category>')

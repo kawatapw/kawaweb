@@ -160,6 +160,9 @@ app.register_blueprint(hina_team)
 from blueprints.hinaDir import hina_pp_records
 app.register_blueprint(hina_pp_records)
 
+from blueprints.hinaDir import hina_auth
+app.register_blueprint(hina_auth)
+
 @app.errorhandler(404)
 async def page_not_found(e):
     # NOTE: we set the 404 status explicitly
