@@ -3,10 +3,10 @@
 import time
 from collections import defaultdict
 
-from quart import Blueprint, render_template, request, jsonify, g
+from quart import Blueprint, render_template, request, jsonify, g, session
 
 from objects import glob
-from objects.utils import klogging
+from objects.utils import klogging, flash
 
 hina_beatmaps = Blueprint('hina_beatmaps', __name__)
 
@@ -22,6 +22,8 @@ _PP_RATE_MAX = 10     # requests per window
 
 @hina_beatmaps.route('/beatmaps')
 async def beatmaps_page():
+    if not session or 'authenticated' not in session:
+        return await flash('error', 'You must be logged in to access that page.', 'hinaDir/login')
     return await render_template('hinaDir/beatmaps.html', globalNotice=g.globalNotice)
 
 

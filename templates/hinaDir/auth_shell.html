@@ -5,7 +5,7 @@
 {% block title %}{{ 'Login' if active_tab == 'login' else ('Register' if active_tab == 'register' else 'Forgot Password') }}{% endblock %}
 
 {% block header %}
-<link rel="stylesheet" href="/static/hinaDir/compiled/auth.css?v=7">
+<link rel="stylesheet" href="/static/hinaDir/compiled/auth.css?v=8">
 {% endblock %}
 
 {% block content %}
@@ -206,6 +206,8 @@
       </div>
 
       <p class="auth-tagline">Your rhythm, your rules.</p>
+
+      <p class="auth-copyright">&copy; 2018&ndash;{{ now().year }} {{ appName() }}<br>All osu! content belongs to osu! / ppy.</p>
     </div>
   </div>
 
@@ -262,6 +264,27 @@
       t.classList.toggle('auth-tab--active', isActive);
       t.setAttribute('aria-selected', isActive ? 'true' : 'false');
     });
+
+    // Measure active pane height and lock container to prevent hero resize
+    var panesContainer = document.querySelector('.auth-panes');
+    var activePane = document.getElementById('auth-pane-' + tab);
+
+    // Temporarily show the new pane to measure it
+    activePane.classList.add('auth-pane--active');
+    activePane.style.position = 'relative';
+    var newHeight = activePane.offsetHeight;
+    activePane.classList.remove('auth-pane--active');
+    activePane.style.position = '';
+
+    // Set explicit height for smooth transition
+    if (animate && panesContainer) {
+      panesContainer.style.height = panesContainer.offsetHeight + 'px';
+      // Force reflow
+      panesContainer.offsetHeight;
+      panesContainer.style.height = newHeight + 'px';
+      // Clear after transition
+      setTimeout(function() { panesContainer.style.height = ''; }, 260);
+    }
 
     // Animate panes
     panes.forEach(function(p) {

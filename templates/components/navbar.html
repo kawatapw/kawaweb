@@ -11,7 +11,9 @@
         <div class="navbar-links">
             <a class="navbar-link is-arrowless" href="/home">Home</a>
             <a class="navbar-link is-arrowless" href="/leaderboard">Leaderboards</a>
+            {% if session.authenticated %}
             <a class="navbar-link is-arrowless" href="/beatmaps">Beatmaps</a>
+            {% endif %}
             <a class="navbar-link is-arrowless" @click="showDocsPanel('Rules')">Docs</a>
             
             
@@ -332,10 +334,12 @@
                         <i class="fas fa-trophy"></i>
                         <span>Leaderboards</span>
                     </a>
+                    {% if session.authenticated %}
                     <a class="navbar-mobile-link" href="/beatmaps">
                         <i class="fas fa-music"></i>
                         <span>Beatmaps</span>
                     </a>
+                    {% endif %}
                     <a class="navbar-mobile-link" @click="showDocsPanel('Rules'); closeMobileMenu()">
                         <i class="fas fa-book"></i>
                         <span>Docs</span>

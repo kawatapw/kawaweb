@@ -185,6 +185,8 @@ $auth-anim: 0.18s ease;
 .auth-panes {
   position: relative;
   overflow: hidden;
+  // Smooth height changes when switching between forms of different lengths
+  transition: height 250ms ease;
 }
 
 .auth-pane {
@@ -521,6 +523,17 @@ $auth-anim: 0.18s ease;
   font-weight: 300;
   font-style: italic;
   color: hsla(0, 0%, 100%, 0.25);
+  letter-spacing: 0.02em;
+}
+
+// ── Copyright ──
+p.auth-copyright {
+  text-align: center;
+  margin: 0.6rem 0 0;
+  padding: 0;
+  font-size: 0.6rem !important;
+  color: hsla(0, 0%, 100%, 0.18);
+  line-height: 1.5;
   letter-spacing: 0.02em;
 }
 

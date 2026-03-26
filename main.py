@@ -121,6 +121,11 @@ def domain() -> str:
 def developerMode() -> bool:
     return glob.config.developer_mode
 
+@app.template_global()
+def now():
+    from datetime import datetime
+    return datetime.now()
+
 @app.before_request
 async def inject_globals():
     """App-wide defaults for g — ensures all blueprints have these set."""
