@@ -5,7 +5,7 @@
 {% block title %}{{ 'Login' if active_tab == 'login' else ('Register' if active_tab == 'register' else 'Forgot Password') }}{% endblock %}
 
 {% block header %}
-<link rel="stylesheet" href="/static/hinaDir/compiled/auth.css?v=6">
+<link rel="stylesheet" href="/static/hinaDir/compiled/auth.css?v=7">
 {% endblock %}
 
 {% block content %}
@@ -211,6 +211,11 @@
 
   {# ── RIGHT PANEL: Hero ── #}
   <div class="auth-hero-panel">
+    <div class="auth-stars-container">
+      <div id="stars"></div>
+      <div id="stars2"></div>
+      <div id="stars3"></div>
+    </div>
     <div class="auth-hero-particles"></div>
     <div class="auth-hero-particle-extra"></div>
     <div class="auth-hero-overlay"></div>
