@@ -84,6 +84,11 @@ bootstrapVue('score-panel', {
             // Check if there are any non-Misc cheat values
             const categories = this.getCheatValuesByCategory();
             return categories.length > 0;
+        },
+        josuUrl() {
+            if (!this.scoreId) return null;
+            const replayUrl = `${window.location.protocol}//api.${domain}/v1/get_replay?id=${this.scoreId}`;
+            return `https://beatmap.try-z.net/?r=${encodeURIComponent(replayUrl)}`;
         }
     },
     
@@ -464,7 +469,6 @@ bootstrapVue('score-panel', {
                 return String(n);
             }
         },
-
         /**
          * Formats a date string or Unix timestamp to a "time ago" string.
          * @param {string|number} dateString - The date string from your score object (e.g., '2023-01-10T14:59:00Z') or Unix timestamp in seconds.
@@ -550,7 +554,6 @@ bootstrapVue('score-panel', {
             
             return result;
         },
-        
         // Computed-like helper methods for template safety
         hasScore() {
             return this.score !== null && this.score !== undefined;
@@ -629,7 +632,6 @@ bootstrapVue('score-panel', {
             });
             return defaultValue;
         },
-        
         /**
          * Determines if a grade should have the "passed" class based on the score's grade.
          * Grades are ordered from highest to lowest: SS, S, A, B, C, D
@@ -659,7 +661,6 @@ bootstrapVue('score-panel', {
             // (higher index in the array means lower grade)
             return checkIndex >= scoreIndex;
         },
-        
         /**
          * Check if the score has cheat values
          * @returns {boolean} - True if cheat values exist
@@ -667,7 +668,6 @@ bootstrapVue('score-panel', {
         hasCheatValues() {
             return this.score && this.score.cheat_values && typeof this.score.cheat_values === 'object';
         },
-        
         /**
          * Get the cheat values object
          * @returns {object|null} - The cheat values object or null
@@ -678,7 +678,6 @@ bootstrapVue('score-panel', {
             }
             return this.score.cheat_values;
         },
-        
         /**
          * Get a specific cheat value
          * @param {string} key - The key to retrieve
@@ -692,7 +691,6 @@ bootstrapVue('score-panel', {
             }
             return cheats[key] !== undefined ? cheats[key] : defaultValue;
         },
-        
         /**
          * Check if a cheat value exists
          * @param {string} key - The key to check
@@ -702,7 +700,6 @@ bootstrapVue('score-panel', {
             const cheats = this.getCheatValues();
             return cheats && cheats.hasOwnProperty(key);
         },
-        
         /**
          * Get the cheat values as a formatted string for display
          * @returns {string} - Formatted cheat values
@@ -723,7 +720,6 @@ bootstrapVue('score-panel', {
                 return 'Error formatting cheat values';
             }
         },
-        
         /**
          * Get cheat values as a formatted object for display
          * @returns {Array} - Array of cheat value objects with key and value
@@ -775,7 +771,6 @@ bootstrapVue('score-panel', {
             
             return result;
         },
-        
         /**
          * Get cheat values grouped by category (excluding Misc)
          * @returns {Array} - Array of category objects with name and values
@@ -860,7 +855,6 @@ bootstrapVue('score-panel', {
             
             return result;
         },
-        
         /**
          * Format a cheat value for display
          * @param {*} value - The value to format
@@ -881,7 +875,6 @@ bootstrapVue('score-panel', {
                 return String(value);
             }
         },
-        
         /**
          * Get a human-readable name for a cheat key
          * @param {string} key - The cheat key
@@ -957,6 +950,24 @@ bootstrapVue('score-panel', {
             };
             
             return names[key] || key;
+        },
+        openReplay(scoreId, external) {
+          if (!scoreId) {
+            this.$log.error('UTIL', 'openReplay called without scoreId');
+            return;
+          }
+
+          if (external) {
+            // Open JoSu in a new tab
+            const replayUrl = `${window.location.protocol}//api.${domain}/v1/get_replay?id=${scoreId}`;
+            const josuUrl = `https://beatmap.try-z.net/?r=${encodeURIComponent(replayUrl)}`;
+            this.$log.info('UTIL', 'Opening replay in JoSu (external)', { scoreId, josuUrl });
+            window.open(josuUrl, '_blank');
+          } else {
+            // Switch to Replay tab (iframe loads automatically via computed josuUrl)
+            this.$log.info('UTIL', 'Switching to Replay tab', { scoreId });
+            this.activeTab = 'Replay';
+          }
         }
     }
 });
