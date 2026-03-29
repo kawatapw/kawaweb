@@ -2442,6 +2442,13 @@
                             >
                                 Comments
                             </a>
+                            <a
+                                class="tab-item"
+                                :class="{ 'is-active': activeTab === 'Replay' }"
+                                @click="activeTab = 'Replay'"
+                            >
+                                Replay
+                            </a>
                         </div>
                         <div class="tab-content" :class="{ 'active': activeTab === 'Score' }">
                             <div class="score-overview">
@@ -2520,6 +2527,17 @@
                                 <span>Comments are not yet available.</span>
                             </div>
                         </div>
+                        <div class="tab-content" :class="{ 'active': activeTab === 'Replay' }">
+                            <div class="replay-container">
+                                <iframe 
+                                    v-if="josuUrl"
+                                    :src="josuUrl"
+                                    class="josu-iframe"
+                                    frameborder="0"
+                                    allowfullscreen
+                                ></iframe>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -2533,8 +2551,8 @@
                         <button class="button score-button" @click="viewBeatmapPage()" :disabled="!safeBeatmap">
                             View Beatmap Page
                         </button>
-                        <button class="button score-button not-ready" @click="" :disabled="!safeScore" tooltip="You can use this to watch a replay of this score in your browser!">
-                            Open Beatmap in JoSu!
+                        <button class="button score-button" @click="openReplay(safeScore.id, false)" :disabled="!safeScore" tooltip="Watch the replay embedded in JoSu!">
+                            Watch Replay in JoSu!
                         </button>
                         <button class="button score-button" @click="shareScore()" :disabled="!safeScore">
                             Share Score
@@ -2583,9 +2601,9 @@
                                     <span>View Beatmap Page</span>
                                     <i class="fas fa-chevron-right action-sheet-chevron"></i>
                                 </button>
-                                <button class="action-sheet-item" disabled>
-                                    <i class="fas fa-external-link-alt"></i>
-                                    <span>Open Beatmap in JoSu!</span>
+                                <button class="action-sheet-item" @click="openReplay(safeScore.id, false); closeActionSheet()" :disabled="!safeScore">
+                                    <i class="fas fa-play-circle"></i>
+                                    <span>Watch Replay in JoSu!</span>
                                     <i class="fas fa-chevron-right action-sheet-chevron"></i>
                                 </button>
                                 <button class="action-sheet-item" @click="shareScore(); closeActionSheet()" :disabled="!safeScore">

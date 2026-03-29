@@ -89,7 +89,7 @@
     }
 
     [data-panel="Score"].modal-content {
-        max-width: 95vw;
+        max-width: 98vw;
         max-height: 90vh;
         overflow-y: auto;
         display: flex;
@@ -600,7 +600,7 @@
            offset content below the fixed navbar (4rem / 64px) */
         #score-panel-modal.modal {
             /*align-items: flex-start; Commented out cause causes panel to show from left instead of centered. */
-            padding-top: 4rem;
+            padding-bottom: 4rem;
         }
 
         /* Modal: full-width, height fills below navbar */
@@ -1025,6 +1025,35 @@
                     line-height: 1.2;
                 }
     
+    /* ================= REPLAY / JOSU IFRAME STYLES ================= */
+
+        [data-panel="Score"] .replay-container {
+            width: 100%;
+            aspect-ratio: 9 / 10;
+            border-radius: 8px;
+            overflow: hidden;
+            background: #000;
+            border: 1px solid hsla(var(--main), 25%, 20%, 0.3);
+            box-shadow: 
+                0 2px 8px rgba(0, 0, 0, 0.25),
+                inset 0 1px 0 hsla(var(--main), 25%, 25%, 0.1);
+        }
+
+        [data-panel="Score"] .josu-iframe {
+            width: 100%;
+            height: 100%;
+            zoom: 0.7;
+            border: none;
+        }
+
+        /* Mobile adjustments for replay container */
+        @media (max-width: 768px) {
+            [data-panel="Score"] .replay-container {
+                aspect-ratio: 9 / 10;
+                border-radius: 6px;
+            }
+        }
+
     /* ================= CHEAT VALUES STYLES ================= */
 
         [data-panel="Score"] .no-cheats-message {
