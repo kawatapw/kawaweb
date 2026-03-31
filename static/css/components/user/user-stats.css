@@ -1,0 +1,89 @@
+/* ============================================================================
+ * User Component - Stats
+ * ============================================================================
+ *
+ * Displays user statistics (PP, accuracy, plays, etc.)
+ */
+
+/* === Stats Container === */
+.user-stats {
+    display: flex;
+    padding: 0 16px 16px;
+    justify-content: space-between;
+}
+
+.user-stats--horizontal {
+    flex-direction: row;
+}
+
+.user-stats--vertical {
+    flex-direction: column;
+    gap: 8px;
+}
+
+.user-stats--compact {
+    gap: 4px;
+    padding: 0 8px 8px;
+}
+
+/* === Stat Item === */
+.user-stats__item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex: 1;
+}
+
+.user-stats__value {
+    font-size: 18px;
+    font-weight: 700;
+    margin-bottom: 2px;
+}
+
+.user-stats__label {
+    font-size: 12px;
+    opacity: 0.7;
+    text-transform: uppercase;
+}
+
+/* === Card Stats Variant === */
+.user-card__stats {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    text-shadow: 1px 1px 2px rgb(0, 0, 0), 2px 2px 4px rgb(0, 0, 0);
+}
+
+.user-card__stats .user-stats__item {
+    background-color: rgba(0, 0, 0, 0.15);
+    border-radius: 12px;
+    padding: 0 8px;
+}
+
+.user-card__stats .user-stats__value {
+    font-size: 14px;
+}
+
+.user-card__stats .user-stats__label {
+    font-size: 10px;
+}
+
+/* === Panel Stats Variant === */
+.user-hover-panel__stats .user-stats__value {
+    font-size: 18px;
+}
+
+.user-hover-panel__stats .user-stats__label {
+    font-size: 12px;
+}
+
+/* === Responsive Adjustments === */
+@media (max-width: 480px) {
+    .user-stats {
+        padding: 0 8px 12px;
+    }
+
+    .user-stats__value {
+        font-size: 16px;
+    }
+}

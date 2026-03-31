@@ -31,7 +31,7 @@
     <script type="text/x-template" id="user-avatar-template">
         <div :class="avatarClasses" :style="avatarStyles">
             <!-- Loading state -->
-            <div v-if="!userData" class="user-profile-avatar__loading">
+            <div v-if="!userData" class="user-avatar__loading">
                 <i class="fas fa-spinner fa-spin"></i>
             </div>
         </div>
@@ -97,8 +97,8 @@
 
   <!-- User Banner Template -->
     <script type="text/x-template" id="user-banner-template">
-        <div class="user-profile-card-background" :style="bannerStyles">
-            <div class="user-profile-overlay"></div>
+        <div class="user-banner" :style="bannerStyles">
+            <div class="user-overlay"></div>
         </div>
     </script>
 
@@ -159,11 +159,11 @@
 
   <!-- User Rank Template -->
     <script type="text/x-template" id="user-rank-template">
-        <div class="user-profile-card-ranks">
-            <span class="user-profile-card-global-rank" v-if="globalRank">
+        <div class="user-rank">
+            <span class="user-rank__global" v-if="globalRank">
                 <span v-text="formatRank(globalRank)"></span>
             </span>
-            <span class="user-profile-card-country-rank" v-if="showCountry && countryRank && country">
+            <span class="user-rank__country" v-if="showCountry && countryRank && country">
                 <img :src="flagUrl" :alt="country" class="user-flag" />
                 <span v-text="formatRank(countryRank)"></span>
             </span>
@@ -180,14 +180,14 @@
              @mouseenter="handleMouseEnter"
              @mouseleave="handleMouseLeave">
             <!-- Panel background -->
-            <user-banner :userId="userId" type="banner" class="user-profile-panel-background"></user-banner>
+            <user-banner :userId="userId" type="banner" class="user-hover-panel__background"></user-banner>
 
             <!-- Panel header -->
-            <div class="user-profile-panel-header">
-                <user-avatar :userId="userId" class="user-profile-panel-avatar"></user-avatar>
+            <div class="user-hover-panel__header">
+                <user-avatar :userId="userId" class="user-hover-panel__avatar"></user-avatar>
 
-                <div class="user-profile-panel-info">
-                    <div class="user-profile-panel-name">
+                <div class="user-hover-panel__info">
+                    <div class="user-hover-panel__name">
                         <user-clan :userId="userId" v-if="showClan"></user-clan>
                         <span v-text="userData?.info?.name || 'Loading...'"></span>
                     </div>
@@ -208,22 +208,22 @@
 
   <!-- User Card Template -->
     <script type="text/x-template" id="user-card-template">
-        <div class="user-profile-card-container">
-            <a :href="profileUrl" class="user-profile-card">
+        <div class="user-card">
+            <a :href="profileUrl" class="user-card__inner">
                 <!-- Card background (banner) -->
                 <user-banner :userId="userId" type="banner"></user-banner>
 
                 <!-- Card content -->
-                <div class="user-profile-card-content">
+                <div class="user-card__content">
                     <!-- Avatar and basic info -->
-                    <div class="user-profile-card-header">
-                        <div class="user-profile-card-avatar-container" 
+                    <div class="user-card__header">
+                        <div class="user-card__avatar-wrap" 
                              :style="showStatus && statusData ? { '--user-status': 'var(--status-' + statusString + ')' } : {}">
-                            <user-avatar :userId="userId" :showStatus="showStatus" class="user-profile-avatar with-status"></user-avatar>
+                            <user-avatar :userId="userId" :showStatus="showStatus" class="user-avatar with-status"></user-avatar>
                         </div>
 
-                        <div class="user-profile-card-info">
-                            <div class="user-profile-card-name">
+                        <div class="user-card__info">
+                            <div class="user-card__name">
                                 <user-flag :userId="userId" v-if="showCountry"></user-flag>
                                 <user-clan :userId="userId" v-if="showClan"></user-clan>
                                 <span v-text="userData?.info?.name || 'Loading...'"></span>
@@ -245,28 +245,28 @@
 
   <!-- User Search Template -->
     <script type="text/x-template" id="user-search-template">
-        <div class="user-profile-search-container">
-            <a :href="profileUrl" class="user-profile-search">
-                <div class="user-profile-overlay"></div>
-                <user-avatar :userId="userId" class="user-profile-avatar search"></user-avatar>
+        <div class="user-search">
+            <a :href="profileUrl" class="user-search__inner">
+                <div class="user-overlay"></div>
+                <user-avatar :userId="userId" class="user-avatar user-avatar--small"></user-avatar>
 
-                <div class="user-profile-search-info">
-                    <div class="user-profile-search-name">
+                <div class="user-search__info">
+                    <div class="user-search__name">
                         <user-flag :userId="userId" v-if="showCountry"></user-flag>
                         <user-clan :userId="userId" v-if="showClan"></user-clan>
                         <span v-text="userData?.info?.name || 'Loading...'"></span>
                     </div>
 
-                    <div class="user-profile-search-stats" v-if="currentStats">
-                        <span class="user-profile-search-stat">
+                    <div class="user-search__stats" v-if="currentStats">
+                        <span class="user-search__stat">
                             <i class="fas fa-star"></i>
                             <span v-text="formatNumber(currentStats.pp) + 'pp'"></span>
                         </span>
-                        <span class="user-profile-search-stat">
+                        <span class="user-search__stat">
                             <i class="fas fa-crosshairs"></i>
                             <span v-text="formatAccuracy(currentStats.acc) + '%'"></span>
                         </span>
-                        <span v-if="currentStats.rank" class="user-profile-search-stat">
+                        <span v-if="currentStats.rank" class="user-search__stat">
                             <i class="fas fa-trophy"></i>
                             <span v-text="'#' + formatNumber(currentStats.rank)"></span>
                         </span>
