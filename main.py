@@ -6,6 +6,7 @@ __all__ = ()
 import os
 import asyncio
 import threading
+from datetime import datetime, timezone
 
 import aiohttp
 from redis import asyncio as aioredis
@@ -149,9 +150,8 @@ def developerMode() -> bool:
     return glob.config.developer_mode
 
 @app.template_global()
-def now():
-    from datetime import datetime
-    return datetime.now()
+def now() -> 'datetime':
+    return datetime.now(timezone.utc)
 
 @app.before_request
 async def inject_globals():

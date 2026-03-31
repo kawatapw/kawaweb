@@ -2,9 +2,6 @@
 {% block title %} Leaderboard {% endblock %}
 
 {% block header %}
-<script src="{{ bust('/static/js/asserts/vue.js') }}"></script>
-<script src="{{ bust('/static/js/asserts/vue-axios.js') }}"></script>
-
 <script>
     var mode = "{{ mode }}";
     var mods = "{{ mods }}";
@@ -13,9 +10,7 @@
     var season = "{{ season }}";
     var domain = "{{ domain() }}";
 </script>
-<style>
-    @import url("/static/css/pages/leaderboard.css") layer(styles);
-</style>
+<link rel="stylesheet" href="{{ bust('/static/css/pages/leaderboard.css') }}">
 {% endblock %}
 
 {% block content %}
@@ -43,7 +38,7 @@
         </div>
 
         <div class="leaderboard-banner main-banner">
-            <!-- Debug Console (Hidden by default, toggle with F12) -->
+            <!-- Debug Console (Hidden by default, toggle with Ctrl+Shift+D) -->
             <div v-if="debugMode" class="debug-console">
                 <div class="debug-header">
                     <span class="debug-title">Seasons Debug Console</span>
@@ -230,7 +225,7 @@
                                                 <% flags[user.country.toUpperCase()] %>
                                             </div>
                                         </a>
-                                        <user-username-hover :user-id="user.player_id" show-clan show-badges show-status></user-username-hover>
+                                        <user-username-hover :user-id="user.player_id" show-badges show-status></user-username-hover>
                                     </td>
                                     <td id="clan-tag" >
                                         <span v-if="user.clan_tag">

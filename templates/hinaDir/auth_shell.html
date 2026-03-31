@@ -51,7 +51,7 @@
             {% if flash and active_tab == 'login' %}
             <div class="auth-alert auth-alert--{{ status }}">
               <i class="fas fa-{{ 'exclamation-circle' if status == 'error' else 'check-circle' }}"></i>
-              <span>{{ flash }}</span>
+              <span>{{ flash | safe }}</span>
             </div>
             {% endif %}
 
@@ -94,7 +94,7 @@
             {% if flash and active_tab == 'register' %}
             <div class="auth-alert auth-alert--{{ status }}">
               <i class="fas fa-{{ 'exclamation-circle' if status == 'error' else 'check-circle' }}"></i>
-              <span>{{ flash }}</span>
+              <span>{{ flash | safe }}</span>
             </div>
             {% endif %}
 

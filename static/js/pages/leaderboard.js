@@ -41,9 +41,9 @@ new Vue({
         // Fetch schedule and season data when component is mounted
         this.fetchSeasonData();
         
-        // Add keyboard shortcut for debug mode (F12)
+        // Add keyboard shortcut for debug mode (Ctrl+Shift+D)
         document.addEventListener('keydown', (event) => {
-            if (event.key === 'F12') {
+            if (event.ctrlKey && event.shiftKey && event.key === 'D') {
                 event.preventDefault();
                 this.toggleDebugMode();
             }
@@ -52,8 +52,9 @@ new Vue({
     
     created() {
         this.$log = ColorfulLogger.child('Leaderboard Page');
-        this.LoadData(mode, mods, sort, view, season) ;
-        this.LoadLeaderboard(sort, mode, mods, view, season);
+        var seasonNum = Number(season);
+        this.LoadData(mode, mods, sort, view, seasonNum) ;
+        this.LoadLeaderboard(sort, mode, mods, view, seasonNum);
     },
     
     methods: {
@@ -64,7 +65,7 @@ new Vue({
             }
             
             for (const field of requiredFields) {
-                if (!response.data[field]) {
+                if (!(field in response.data)) {
                     throw new Error(`Missing required field: ${field}`);
                 }
             }

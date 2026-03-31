@@ -1,6 +1,7 @@
 {# hinaDir: Minimal base template for auth pages (login, forgot-password, register).
    Includes CSS layers + hue system but NO navbar, footer, Vue, HTMX, Three.js, or panels. #}
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
   <title>{{ appName() }} - {% block title %}{% endblock %}</title>
 
@@ -31,7 +32,7 @@
   {% block bottom %}
   <style>
     :root {
-      {% if 'user_data' in session and 'hue' in session['user_data'] and session['user_data']['hue'] %}
+      {% if 'user_data' in session and 'hue' in session['user_data'] and session['user_data']['hue'] is not none %}
         --main: {{ session['user_data']['hue'] }};
       {% else %}
         --main: 330;

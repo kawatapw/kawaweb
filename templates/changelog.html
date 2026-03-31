@@ -4,8 +4,6 @@
 {% block header %}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/timeago.js/4.0.2/timeago.min.js"></script>
 <script src="https://cdn.socket.io/4.2.0/socket.io.min.js"></script>
-<script src="{{ bust('/static/js/asserts/vue.js') }}"></script>
-<script src="{{ bust('/static/js/asserts/vue-axios.js') }}"></script>
 
 <script>
     var domain = "{{ domain() }}";
@@ -13,9 +11,7 @@
     var type = "{{ type }}";
     var category = "{{ category }}";
 </script>
-<style>
-    @import url("/static/css/pages/changelog.css") layer(styles);
-</style>
+<link rel="stylesheet" href="{{ bust('/static/css/pages/changelog.css') }}">
 {% endblock %}
 
 {% block content %}
