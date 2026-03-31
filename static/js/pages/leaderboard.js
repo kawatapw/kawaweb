@@ -53,8 +53,14 @@ new Vue({
     created() {
         this.$log = ColorfulLogger.child('Leaderboard Page');
         var seasonNum = Number(season);
-        this.LoadData(mode, mods, sort, view, seasonNum) ;
-        this.LoadLeaderboard(sort, mode, mods, view, seasonNum);
+        this.LoadData(mode, mods, sort, view, seasonNum);
+        // Only load leaderboard immediately if we're in all-time view.
+        // For seasonal view, defer until fetchSeasonData resolves the
+        // active season — otherwise we fire with season=0 before the
+        // seasonal bootstrap has a chance to determine the real season.
+        if (view !== 'seasonal') {
+            this.LoadLeaderboard(sort, mode, mods, view, seasonNum);
+        }
     },
     
     methods: {
@@ -202,9 +208,18 @@ new Vue({
                 
                 // Initialize selections with validation
                 await this.initializeSeasonSelections();
-                
+
                 this.seasonsAvailable = true;
                 this.$log.info('Seasons data loaded successfully');
+
+                // Reload leaderboard now that the active season is resolved.
+                // For seasonal view, LoadLeaderboard was deferred in created()
+                // to avoid firing with season=0 before the real season was
+                // known — so we must load it here. For all-time view, skip
+                // to avoid a redundant API call (created() already loaded it).
+                if (this.view === 'seasonal') {
+                    this.reloadLeaderboard();
+                }
                 
             } catch (error) {
                 // Only show error if it's not a 404 (API doesn't exist)
@@ -349,9 +364,10 @@ new Vue({
             
             return schedules
                 .filter(schedule => {
-                    // Basic validation
-                    return schedule && 
-                           typeof schedule.id === 'number' && 
+                    // Basic validation — accept both number and non-empty string IDs
+                    // since the subsequent map calls parseInt() on them
+                    return schedule &&
+                           (typeof schedule.id === 'number' || (typeof schedule.id === 'string' && schedule.id !== '')) &&
                            typeof schedule.name === 'string' &&
                            schedule.name.trim().length > 0;
                 })
@@ -376,10 +392,11 @@ new Vue({
             
             return seasons
                 .filter(season => {
-                    // Basic validation
-                    const hasValidId = typeof season.id === 'number' && season.id > 0;
+                    // Basic validation — accept both number and non-empty string IDs
+                    // since the subsequent map calls parseInt() on them
+                    const hasValidId = (typeof season.id === 'number' || (typeof season.id === 'string' && season.id !== '')) && Number(season.id) > 0;
                     const hasValidName = typeof season.name === 'string' && season.name.trim().length > 0;
-                    const hasValidSchedule = typeof season.schedule_id === 'number' && season.schedule_id > 0;
+                    const hasValidSchedule = (typeof season.schedule_id === 'number' || (typeof season.schedule_id === 'string' && season.schedule_id !== '')) && Number(season.schedule_id) > 0;
                     
                     // Validate year if present
                     let hasValidYear = true;

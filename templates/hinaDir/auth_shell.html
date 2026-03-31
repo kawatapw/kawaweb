@@ -28,13 +28,13 @@
 
         {# ── Tab switcher ── #}
         <div class="auth-tabs" role="tablist">
-          <button class="auth-tab" role="tab" data-tab="login"
+          <button type="button" class="auth-tab" role="tab" data-tab="login"
                   aria-selected="{{ 'true' if active_tab == 'login' else 'false' }}"
                   aria-controls="auth-pane-login">Log in</button>
-          <button class="auth-tab" role="tab" data-tab="register"
+          <button type="button" class="auth-tab" role="tab" data-tab="register"
                   aria-selected="{{ 'true' if active_tab == 'register' else 'false' }}"
                   aria-controls="auth-pane-register">Register</button>
-          <button class="auth-tab" role="tab" data-tab="forgot"
+          <button type="button" class="auth-tab" role="tab" data-tab="forgot"
                   aria-selected="{{ 'true' if active_tab == 'forgot' else 'false' }}"
                   aria-controls="auth-pane-forgot">Forgot</button>
           <div class="auth-tab-indicator"></div>
@@ -179,7 +179,7 @@
                 If an account exists with that username and email,
                 we'll send password reset instructions shortly.
               </p>
-              <button class="auth-btn auth-btn--primary" style="margin-top: 1rem;" onclick="switchTab('login')">
+              <button type="button" class="auth-btn auth-btn--primary" style="margin-top: 1rem;" onclick="switchTab('login')">
                 <i class="fas fa-arrow-left"></i> Back to login
               </button>
             </div>
