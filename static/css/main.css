@@ -15,7 +15,7 @@
         @import url("/static/css/components.css") layer(components);
         @import url("/static/css/components/badges.css") layer(components);
         @import url("/static/css/components/navbar.css") layer(components);
-        @import url("/static/css/components/user/user-profile.css") layer(components);
+        @import url("/static/css/components/user/user-components.css") layer(components);
         @import url("/static/css/components/panels/panels.css") layer(components);
         @import url("/static/css/components/panels/panel-search.css") layer(components);
         @import url("/static/css/components/panels/panel-docs.css") layer(components);

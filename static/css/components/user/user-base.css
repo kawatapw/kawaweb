@@ -1,0 +1,172 @@
+/* ============================================================================
+ * User Component - Base Styles
+ * ============================================================================
+ *
+ * Shared foundation styles for all user components:
+ * - CSS custom properties (status colors)
+ * - Overlay
+ * - Avatar
+ * - Flag
+ * - Loading/Error/No-data states
+ */
+
+/* === CSS Custom Properties === */
+:root {
+    --status-offline: 150, 150, 150;
+    --status-online: 0, 200, 100;
+    --status-playing: 0, 150, 255;
+    --status-afk: 255, 200, 0;
+    --status-paused: 226, 223, 210;
+    --status-idle: 255, 179, 0;
+
+    --user-status: var(--status-offline);
+}
+
+/* === Overlay === */
+.user-overlay {
+    position: absolute !important;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+        to bottom,
+        rgba(20, 20, 30, 0.25) 0%,
+        rgba(20, 20, 30, 0.5) 100%
+    );
+}
+
+/* === Avatar === */
+.user-avatar {
+    height: 56px;
+    width: 56px;
+    background-size: cover;
+    background-position: center;
+    border-radius: 50%;
+    box-shadow:
+        0 0 2px rgba(0, 0, 0, 0.1),
+        0 2px 4px rgba(0, 0, 0, 0.15),
+        0 4px 8px rgba(0, 0, 0, 0.12),
+        0 8px 16px rgba(0, 0, 0, 0.1),
+        0 16px 32px rgba(0, 0, 0, 0.08),
+        0 32px 64px rgba(0, 0, 0, 0.06);
+    position: relative;
+}
+
+.user-avatar.with-status {
+    box-shadow:
+        0 0 2px rgba(0, 0, 0, 0.1),
+        0 2px 4px rgba(0, 0, 0, 0.15),
+        0 4px 8px rgba(0, 0, 0, 0.12),
+        0 8px 16px rgba(0, 0, 0, 0.1),
+        0 16px 32px rgba(0, 0, 0, 0.08),
+        0 32px 64px rgba(0, 0, 0, 0.06),
+        0 0 0 1px rgba(var(--user-status), 0.08),
+        0 0 16px rgba(var(--user-status), 0.25),
+        inset 0 0 1px rgba(var(--user-status), 0.1);
+}
+
+.user-avatar__loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(255, 255, 255, 0.05);
+    border-radius: 50%;
+}
+
+.user-avatar__loading i {
+    font-size: 16px;
+    color: #4fc0ff;
+}
+
+/* Avatar size variants */
+.user-avatar--small {
+    height: 40px;
+    width: 40px;
+}
+
+.user-avatar--large {
+    height: 72px;
+    width: 72px;
+}
+
+/* === Flag === */
+.user-flag {
+    width: 20px;
+    height: 14px;
+    border-radius: 2px;
+    object-fit: cover;
+    display: inline-block;
+}
+
+.user-flag--small {
+    width: 16px;
+    height: 11px;
+}
+
+.user-flag--large {
+    width: 24px;
+    height: 16px;
+    border-radius: 15%;
+}
+
+/* === Loading / Error / No Data States === */
+.user-loading,
+.user-error,
+.user-no-data {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background-color: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.user-loading i,
+.user-error i,
+.user-no-data i {
+    font-size: 16px;
+}
+
+.user-loading i {
+    color: #4fc0ff;
+}
+
+.user-error i {
+    color: #ff6b6b;
+}
+
+.user-no-data i {
+    color: #888;
+}
+
+/* === Animations === */
+@keyframes user-spin {
+    to { transform: rotate(360deg); }
+}
+
+.user-loading i.fa-spin {
+    animation: user-spin 1s linear infinite;
+}
+
+@keyframes user-fade-in {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* === Responsive Adjustments === */
+@media (max-width: 480px) {
+    .user-avatar {
+        height: 48px;
+        width: 48px;
+    }
+
+    .user-avatar--small {
+        height: 32px;
+        width: 32px;
+    }
+}

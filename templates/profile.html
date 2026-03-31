@@ -66,6 +66,9 @@
 <script src="https://cdn.socket.io/4.2.0/socket.io.min.js"></script>
 <script>
     var userid = Number("{{ user['id'] }}"); //For text editor doesn't dizzy lmao
+    console.log('[Profile Debug] user object:', {{ user | tojson }});
+    console.log('[Profile Debug] user["id"]:', "{{ user['id'] }}");
+    console.log('[Profile Debug] userid variable:', userid);
     var mode = '{{ mode }}';
     var mods = '{{ mods }}';
     var domain = "{{ domain() }}";
@@ -80,7 +83,7 @@
 {% block content %}
 <div id="app">
     <!-- User Data Provider: Makes user data available to all child components via provide/inject -->
-    <user-data-provider :auto-refresh-status="true">
+    <user-data-provider :auto-refresh-status="true" :userId="userid">
         <div class="main-block">
             <div class="profile-bg">
                 <div class="info-block">
@@ -88,7 +91,6 @@
                         <p class="ranks">
                             <img src="/static/images/flags/{{ user['country']|upper }}.png" class="profile-flag">
                             <span class="bgf">{{ user['name'] }}</span>
-                            <user-profile user="{{ user['id'] }}" display-style="username" show-badges show-status interactive></user-profile>
                         </p>
                     </h1>
                     <transition name="fade">
@@ -161,7 +163,7 @@
                 <div class="bar-selection badge-selects">
                     <div v-if="data.badges != undefined" class="select-left badge-block">
                         <span class="badge-select-spacer"></span>
-                        <user-badges :badges="data.badges"></user-badges>
+                        <user-badges :userId="userid"></user-badges>
                     </div>
                     <div v-else class="select-left">
                         <div class="badge-block">

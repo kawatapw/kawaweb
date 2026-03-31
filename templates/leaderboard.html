@@ -230,7 +230,7 @@
                                                 <% flags[user.country.toUpperCase()] %>
                                             </div>
                                         </a>
-                                        <user-profile :user="user" display-style="username" show-badges show-status interactive></user-profile>
+                                        <user-username-hover :user-id="user.player_id" show-clan show-badges show-status></user-username-hover>
                                     </td>
                                     <td id="clan-tag" >
                                         <span v-if="user.clan_tag">

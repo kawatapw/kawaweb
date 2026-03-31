@@ -143,27 +143,29 @@ class KawataApp {
         // Load new modular user profile components
         // These provide a modern, provide/inject-based architecture
         try {
-            // Load user utilities first (dependencies for controller/provider)
-            await this._loadComponent('/static/js/components/user/utils/constants.js', 'user-constants');
-            await this._loadComponent('/static/js/components/user/utils/formatters.js', 'user-formatters');
-            
             // Load core controller and provider
-            await this._loadComponent('/static/js/components/user/user-data-controller.js', 'user-data-controller');
-            await this._loadComponent('/static/js/components/user/user-data-provider.js', 'user-data-provider');
+            await this._loadComponent('/static/js/components/user/userDataController.js', 'user-data-controller');
+            await this._loadComponent('/static/js/components/user/userDataProvider.js', 'user-data-provider');
             
             // Load all individual user components (these register themselves with Vue)
             const userComponents = [
-              'user-avatar',
-              'user-name',
-              'user-badges',
-              'user-status',
-              'user-stats',
-              'user-card',
-              'user-profile'
+              'userAvatar',
+              'userUsername',
+              'userBanner',
+              'userBadges',
+              'userStatus',
+              'userStats',
+              'userFlag',
+              'userClan',
+              'userRank',
+              'userHoverPanel',
+              'userCard',
+              'userSearch',
+              'userUsernameHover'
             ];
             
             for (const componentName of userComponents) {
-              const path = `/static/js/components/user/components/${componentName}.js`;
+              const path = `/static/js/components/user/comps/${componentName}.js`;
               await this._loadComponent(path, componentName);
             }
             

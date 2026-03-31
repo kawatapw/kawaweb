@@ -1,0 +1,33 @@
+/* ============================================================================
+ * User Component - Badges
+ * ============================================================================
+ *
+ * Layout wrappers for badge display within user panels and cards.
+ * Actual badge styles are in components/badges.css.
+ */
+
+/* === Badge Container === */
+.user-badges {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-top: 4px;
+}
+
+.user-badges .badge,
+.user-badges .iconBadge {
+    text-shadow: 0 2px 2px rgba(0, 0, 0, 0.56);
+    transition: transform 0.2s ease;
+}
+
+.user-badges .badge:hover,
+.user-badges .iconBadge:hover {
+    transform: scale(1.15);
+    z-index: 2;
+}
+
+.user-badges-empty {
+    display: none;
+}

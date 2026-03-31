@@ -1,0 +1,28 @@
+/* ============================================================================
+ * User Components - Import Aggregator
+ * ============================================================================
+ *
+ * Imports all user component CSS files.
+ * This file is imported by main.css in the components layer.
+ */
+
+/* Base styles (shared) */
+@import url("/static/css/components/user/user-base.css");
+
+/* Atomic components */
+@import url("/static/css/components/user/user-badges.css");
+@import url("/static/css/components/user/user-username.css");
+@import url("/static/css/components/user/user-rank.css");
+@import url("/static/css/components/user/user-stats.css");
+@import url("/static/css/components/user/user-status.css");
+@import url("/static/css/components/user/user-clan.css");
+@import url("/static/css/components/user/user-banner.css");
+
+/* Composed components */
+@import url("/static/css/components/user/user-hover-panel.css");
+@import url("/static/css/components/user/user-card.css");
+@import url("/static/css/components/user/user-search.css");
+@import url("/static/css/components/user/user-username-hover.css");
+
+/* Legacy (backward compatibility) */
+@import url("/static/css/components/user/user-legacy.css");
