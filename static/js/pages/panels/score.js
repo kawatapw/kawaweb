@@ -960,7 +960,7 @@ bootstrapVue('score-panel', {
           if (external) {
             // Open JoSu in a new tab
             const replayUrl = `${window.location.protocol}//api.${domain}/v1/get_replay?id=${scoreId}`;
-            const josuUrl = `https://beatmap.try-z.net/?r=${encodeURIComponent(replayUrl)}`;
+            const josuUrl = `https://josu.hinamizawa.ai/?r=${encodeURIComponent(replayUrl)}`;
             this.$log.info('UTIL', 'Opening replay in JoSu (external)', { scoreId, josuUrl });
             window.open(josuUrl, '_blank');
           } else {
