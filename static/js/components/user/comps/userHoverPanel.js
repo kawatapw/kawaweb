@@ -68,7 +68,7 @@
        */
       panelClasses() {
         return {
-          'user-profile-panel': true,
+          'user-hover-panel': true,
           'visible': this.visible
         };
       }
