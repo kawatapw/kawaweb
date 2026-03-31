@@ -2,8 +2,8 @@
 {% block title %} Home {% endblock %}
 
 {% block header %}
-<script src="/static/js/asserts/vue.js"></script>
-<script src="/static/js/asserts/vue-axios.js"></script>
+<script src="{{ bust('/static/js/asserts/vue.js') }}"></script>
+<script src="{{ bust('/static/js/asserts/vue-axios.js') }}"></script>
 <style>
   @import url("/static/css/pages/home.css") layer(styles);
   @import url("/static/css/pages/changelog.css") layer(styles);
@@ -216,5 +216,5 @@ Open to more ideas.
   </div>
 </section>
 {% endif %}
-<script src="/static/js/pages/home.js"></script>
+<script src="{{ bust('/static/js/pages/home.js') }}"></script>
 {% endblock %}

@@ -2,8 +2,8 @@
 {% block title %} Dashboard {% endblock %}
 {% block panel %} Dashboard {% endblock %}
 {% block header %}
-<script src="/static/js/asserts/vue.js"></script>
-<script src="/static/js/asserts/vue-axios.js"></script>
+<script src="{{ bust('/static/js/asserts/vue.js') }}"></script>
+<script src="{{ bust('/static/js/asserts/vue-axios.js') }}"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/timeago.js/4.0.2/timeago.min.js"></script>
 {% endblock%}
 
@@ -140,6 +140,6 @@
     {% endif %}
 </div>
 
-<script src="/static/js/pages/admin/dashboard.js"></script>
+<script src="{{ bust('/static/js/pages/admin/dashboard.js') }}"></script>
 
 {% endblock %}

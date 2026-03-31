@@ -9,7 +9,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/static/hinaDir/compiled/admin_v2.css?v=13">
+    <link rel="stylesheet" href="{{ bust('/static/hinaDir/compiled/admin_v2.css') }}">
     <style>
         :root {
             {% if 'user_data' in session and session['user_data'].get('hue') %}
@@ -2047,8 +2047,8 @@
         </main>
     </div>
 
-    <script src="/static/js/asserts/vue.js"></script>
+    <script src="{{ bust('/static/js/asserts/vue.js') }}"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/timeago.js/4.0.2/timeago.min.js"></script>
-    <script src="/static/hinaDir/compiled/admin_v2.js?v=11"></script>
+    <script src="{{ bust('/static/hinaDir/compiled/admin_v2.js') }}"></script>
 </body>
 </html>
