@@ -101,6 +101,33 @@ async def shutdown() -> None:
     await glob.http.close()    
 
 # globals which can be used in template code
+
+# Dynamic cache buster — appends ?v={mtime_hex} to static file paths.
+# mtime changes only when the file changes, so browsers cache forever
+# but instantly pick up new versions on deploy.
+_static_root = os.path.join(os.path.dirname(__file__), 'static')
+_bust_cache: dict[str, str] = {}
+
+@app.template_global()
+def bust(path: str) -> str:
+    """Return path with ?v=<mtime_hex> for cache busting.
+    Usage in templates: {{ bust('/static/css/main.css') }}
+    """
+    cached = _bust_cache.get(path)
+    if cached and not app.debug:
+        return cached
+
+    file_path = path.replace('/static/', '', 1)
+    full_path = os.path.join(_static_root, file_path)
+    try:
+        mtime = int(os.path.getmtime(full_path))
+        result = f"{path}?v={mtime:x}"
+    except OSError:
+        result = path
+
+    _bust_cache[path] = result
+    return result
+
 @app.template_global()
 def appVersion() -> str:
     return repr(version)

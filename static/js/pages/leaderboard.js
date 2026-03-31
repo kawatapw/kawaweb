@@ -144,12 +144,12 @@ new Vue({
             if (window.event)
                 window.event.preventDefault();
 
-            window.history.replaceState('', document.title, `/leaderboard/${this.mode}/${this.sort}/${this.mods}/${this.view}/${this.season}`);
             this.$set(this, 'mode', mode);
             this.$set(this, 'mods', mods);
             this.$set(this, 'sort', sort);
             this.$set(this, 'view', view);
             this.$set(this, 'season', season);
+            window.history.replaceState('', document.title, `/leaderboard/${this.mode}/${this.sort}/${this.mods}/${this.view}/${this.season}`);
             this.$set(this, 'load', true);
             const offset = (this.page - 1) * this.pageSize; // Calculate the offset
             const season_id = this.view === 'alltime' ? 0 : this.season;
@@ -164,6 +164,9 @@ new Vue({
             }).then(res => {
                 this.$log.debug("LB-DATA", "Leaderboard data loaded", res.data);
                 this.boards = res.data.leaderboard;
+            }).catch(err => {
+                console.error("Leaderboard API error:", err);
+            }).finally(() => {
                 this.$set(this, 'load', false);
             });
         },
@@ -348,10 +351,10 @@ new Vue({
                            schedule.name.trim().length > 0;
                 })
                 .map(schedule => ({
+                    // Spread raw object first so normalized fields override
+                    ...schedule,
                     id: parseInt(schedule.id),
                     name: schedule.name.trim(),
-                    // Add any additional fields safely
-                    ...schedule
                 }))
                 .sort((a, b) => a.id - b.id); // Sort by ID
         },
@@ -383,13 +386,13 @@ new Vue({
                     return hasValidId && hasValidName && hasValidSchedule && hasValidYear;
                 })
                 .map(season => ({
+                    // Spread raw object first so normalized fields override
+                    ...season,
                     id: parseInt(season.id),
                     name: season.name.trim(),
                     schedule_id: parseInt(season.schedule_id),
                     year: season.year ? parseInt(season.year) : this.extractYearFromSeason(season),
                     is_active: Boolean(season.is_active),
-                    // Add any additional fields safely
-                    ...season
                 }))
                 .sort((a, b) => {
                     // Sort by year (descending), then by name
@@ -412,25 +415,29 @@ new Vue({
                 this.selectedSchedule = this.schedules[0];
             }
             
-            // Set initial season
-            if (activeSeason) {
-                this.season = activeSeason.id;
-            } else {
-                // Default to first season of selected schedule or 0 (all-time)
-                const scheduleSeasons = this.allSeasons.filter(se => se.schedule_id === this.selectedSchedule.id);
-                this.season = scheduleSeasons.length > 0 ? scheduleSeasons[0].id : 0;
+            // Set initial season only if not already set from route
+            if (this.season == null || this.season === '' || this.season === 0) {
+                if (activeSeason) {
+                    this.season = activeSeason.id;
+                } else {
+                    // Default to first season of selected schedule or 0 (all-time)
+                    const scheduleSeasons = this.allSeasons.filter(se => se.schedule_id === this.selectedSchedule.id);
+                    this.season = scheduleSeasons.length > 0 ? scheduleSeasons[0].id : 0;
+                }
             }
             
             // Compute and set year options
             this.yearOptions = this.computeYearOptions();
             
-            // Set selected year
-            if (activeSeason && activeSeason.year) {
-                this.selectedYear = activeSeason.year;
-            } else if (this.yearOptions.length > 0) {
-                this.selectedYear = this.yearOptions[0].year;
-            } else {
-                this.selectedYear = new Date().getFullYear();
+            // Set selected year only if not already determined from route
+            if (this.selectedYear == null || this.selectedYear === '') {
+                if (activeSeason && activeSeason.year) {
+                    this.selectedYear = activeSeason.year;
+                } else if (this.yearOptions.length > 0) {
+                    this.selectedYear = this.yearOptions[0].year;
+                } else {
+                    this.selectedYear = new Date().getFullYear();
+                }
             }
             
             // Compute season options and validate selection
@@ -717,8 +724,8 @@ new Vue({
         reloadLeaderboard() {
             try {
                 // Validate parameters before making API call
-                const season_id = this.view === 'alltime' ? 0 : this.season;
-                
+                let season_id = this.view === 'alltime' ? 0 : this.season;
+
                 // Ensure season_id is valid
                 if (season_id < 0) {
                     this.$log.warn('Invalid season_id, defaulting to 0 (all-time)');

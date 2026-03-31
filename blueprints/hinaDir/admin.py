@@ -297,8 +297,8 @@ async def api_dashboard():
         '  UNION ALL '
         '  SELECT CAST(l.id AS CHAR) AS id, '
         '    CONVERT(l.action USING utf8mb4) AS action, '
-        '    CONVERT(l.reason USING utf8mb4) AS msg, '
-        '    l.time AS time, l.`mod` AS mod_id, l.target AS target_id '
+        '    CONVERT(l.msg USING utf8mb4) AS msg, '
+        '    l.created_at AS time, l.from_id AS mod_id, l.to_id AS target_id '
         f'  FROM logs l WHERE l.action IN ({action_placeholders}) '
         ') combined ORDER BY time DESC LIMIT 10',
         whitelist + whitelist
@@ -656,7 +656,7 @@ async def api_user_detail(userid):
     # Admin logs (logs schema: id, from_id, to_id, action, msg, created_at, action_type)
     admin_logs = await glob.db.fetchall(
         "SELECT id, from_id AS mod_id, to_id AS target_id, action, msg, created_at AS `time` "
-        "FROM logs WHERE to_id = %s ORDER BY created_at DESC LIMIT 50",
+        "FROM logs WHERE to_id = %s AND action_type = 0 ORDER BY created_at DESC LIMIT 50",
         [userid]
     )
     for log_entry in (admin_logs or []):

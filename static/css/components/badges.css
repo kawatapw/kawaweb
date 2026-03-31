@@ -6,12 +6,12 @@
     --badge-font-size: 12px;
     --icon-size: 24px;
     --icon-border-radius: 50%;
-    --panel-bg-color: white;
-    --panel-border-radius: 6px;
-    --panel-padding: 10px;
-    --panel-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
-    --panel-width: 150px;
-    --panel-min-width: 75px;
+    --panel-bg-color: hsl(var(--main), 12%, 22%);
+    --panel-border-radius: 8px;
+    --panel-padding: 14px;
+    --panel-shadow: 0px 4px 16px rgba(0, 0, 0, 0.5);
+    --panel-width: 200px;
+    --panel-min-width: 120px;
     --panel-max-width: 300px;
     --badge-glow-intensity: 0px;
     --badge-animation-duration: 2s;
@@ -365,9 +365,11 @@
     .badge-panel {
         display: none;
         position: absolute;
-        background-color: var(--panel-bg-color);
+        background-color: var(--panel-bg-color, hsl(220, 12%, 22%));
+        color: hsl(var(--main), 0%, 92%);
         padding: var(--panel-padding);
         border-radius: var(--panel-border-radius);
+        border: 1px solid rgba(255, 255, 255, 0.1);
         box-shadow: var(--panel-shadow);
         width: var(--panel-width);
         min-width: var(--panel-min-width);
@@ -513,12 +515,14 @@
         margin-bottom: 8px;
         font-size: 14px;
         font-weight: 600;
+        color: hsl(var(--main), 0%, 100%);
     }
-    
+
     .badge-panel p {
         margin: 0;
         font-size: 12px;
         opacity: 0.9;
+        color: hsl(var(--main), 0%, 90%);
     }
 
 /* === RESPONSIVE ADJUSTMENTS === */

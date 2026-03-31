@@ -485,8 +485,8 @@
                                                     :interactive="true"
                                                 ></difficulty-icon>
                                             </template>
-                                                <div v-if="map.ChildrenBeatmaps && map.ChildrenBeatmaps.length > 8" class="mode-icon" title="More difficulties available">
-                                                    <span style="font-size: 0.7rem; color: hsl(var(--main), 40%, 60%);" v-text="'+' + (map.ChildrenBeatmaps.length - 8)"></span>
+                                                <div v-if="getNormalizedDifficulties(map).length > 8" class="mode-icon" title="More difficulties available">
+                                                    <span style="font-size: 0.7rem; color: hsl(var(--main), 40%, 60%);" v-text="'+' + (getNormalizedDifficulties(map).length - 8)"></span>
                                                 </div>
                                             </div>
                                         </div>
@@ -2137,8 +2137,8 @@
                         <div class="tab-content" :class="{ 'active': activeTab === 'Replay' }">
                             <div class="replay-container">
                                 <iframe 
-                                    v-if="josuUrl"
-                                    :src="josuUrl"
+                                    v-if="josuUrl()"
+                                    :src="josuUrl()"
                                     class="josu-iframe"
                                     frameborder="0"
                                     allowfullscreen

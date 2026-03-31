@@ -66,9 +66,6 @@
 <script src="https://cdn.socket.io/4.2.0/socket.io.min.js"></script>
 <script>
     var userid = Number("{{ user['id'] }}"); //For text editor doesn't dizzy lmao
-    console.log('[Profile Debug] user object:', {{ user | tojson }});
-    console.log('[Profile Debug] user["id"]:', "{{ user['id'] }}");
-    console.log('[Profile Debug] userid variable:', userid);
     var mode = '{{ mode }}';
     var mods = '{{ mods }}';
     var domain = "{{ domain() }}";
@@ -163,7 +160,7 @@
                 <div class="bar-selection badge-selects">
                     <div v-if="data.badges != undefined" class="select-left badge-block">
                         <span class="badge-select-spacer"></span>
-                        <user-badges :userId="userid"></user-badges>
+                        <user-badges :userId="userid" :badges="data.badges"></user-badges>
                     </div>
                     <div v-else class="select-left">
                         <div class="badge-block">
@@ -363,7 +360,7 @@
 {% endblock %}
 
 {% block bottom %}
-<script src="/static/js/pages/profile.js"></script>
+<script src="{{ bust('/static/js/pages/profile.js') }}"></script>
 
 <style id="style">
     :root {

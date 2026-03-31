@@ -5,7 +5,7 @@
 {% block title %}{{ 'Login' if active_tab == 'login' else ('Register' if active_tab == 'register' else 'Forgot Password') }}{% endblock %}
 
 {% block header %}
-<link rel="stylesheet" href="/static/hinaDir/compiled/auth.css?v=8">
+<link rel="stylesheet" href="{{ bust('/static/hinaDir/compiled/auth.css') }}">
 {% endblock %}
 
 {% block content %}
@@ -51,7 +51,7 @@
             {% if flash and active_tab == 'login' %}
             <div class="auth-alert auth-alert--{{ status }}">
               <i class="fas fa-{{ 'exclamation-circle' if status == 'error' else 'check-circle' }}"></i>
-              <span>{{ flash | safe }}</span>
+              <span>{{ flash }}</span>
             </div>
             {% endif %}
 
@@ -94,7 +94,7 @@
             {% if flash and active_tab == 'register' %}
             <div class="auth-alert auth-alert--{{ status }}">
               <i class="fas fa-{{ 'exclamation-circle' if status == 'error' else 'check-circle' }}"></i>
-              <span>{{ flash | safe }}</span>
+              <span>{{ flash }}</span>
             </div>
             {% endif %}
 
@@ -337,6 +337,20 @@
     document.getElementById('forgot-success-state').style.display = 'block';
     return false;
   };
+
+  // Override the success message to indicate feature is not yet available
+  (function() {
+    var successState = document.getElementById('forgot-success-state');
+    if (successState) {
+      successState.querySelector('.auth-heading').textContent = 'Not yet available';
+      successState.querySelector('.auth-subheading').textContent =
+        'Password reset is not yet available. Please contact a staff member for assistance.';
+      var icon = successState.querySelector('.auth-success-icon i');
+      if (icon) {
+        icon.className = 'fas fa-exclamation-circle';
+      }
+    }
+  })();
 })();
 </script>
 {% endblock %}
