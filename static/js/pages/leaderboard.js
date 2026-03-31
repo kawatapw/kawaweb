@@ -150,6 +150,7 @@ new Vue({
             this.$set(this, 'sort', sort);
             this.$set(this, 'view', view);
             this.$set(this, 'season', season);
+            this.$set(this, 'page', 1);
             window.history.replaceState('', document.title, `/leaderboard/${this.mode}/${this.sort}/${this.mods}/${this.view}/${this.season}`);
             this.$set(this, 'load', true);
             const offset = (this.page - 1) * this.pageSize; // Calculate the offset
@@ -237,6 +238,9 @@ new Vue({
             this.seasonOptions = [{ id: 0, name: 'All-Time' }];
             
             this.$log.info('Fallback mode activated - seasons API not available');
+
+            // Reload leaderboard with fallback settings
+            this.reloadLeaderboard();
         },
         
         // Check if seasons API endpoints exist
@@ -587,8 +591,27 @@ new Vue({
             }
         },
         changePage(page) {
-            this.page = page;
-            this.LoadLeaderboard(this.sort, this.mode, this.mods, this.view, this.season);
+            this.$set(this, 'page', page);
+            this.$set(this, 'load', true);
+            window.history.replaceState('', document.title, `/leaderboard/${this.mode}/${this.sort}/${this.mods}/${this.view}/${this.season}`);
+            const offset = (this.page - 1) * this.pageSize;
+            const season_id = this.view === 'alltime' ? 0 : this.season;
+            this.$axios.get(`${window.location.protocol}//api.${domain}/v1/get_leaderboard`, {
+                params: {
+                    mode: this.StrtoGulagInt(),
+                    sort: this.sort,
+                    offset: offset,
+                    limit: this.pageSize,
+                    season: season_id
+                }
+            }).then(res => {
+                this.$log.debug("LB-DATA", "Leaderboard data loaded", res.data);
+                this.boards = res.data.leaderboard;
+            }).catch(err => {
+                console.error("Leaderboard API error:", err);
+            }).finally(() => {
+                this.$set(this, 'load', false);
+            });
         },
         getRank(index) {
             return (this.page - 1) * this.pageSize + index + 1;

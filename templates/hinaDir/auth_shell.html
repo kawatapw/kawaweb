@@ -126,7 +126,7 @@
                          class="auth-input" autocomplete="new-password" required>
                 </div>
               </div>
-              {% if not captchaKey() == 'changeme' %}
+              {% if captchaKey() and captchaKey() != 'changeme' %}
               <div class="auth-field auth-captcha-wrap">
                 <div class="h-captcha" data-sitekey="{{ captchaKey() }}" data-theme="dark"></div>
               </div>
@@ -232,7 +232,7 @@
 
 </div>
 
-{% if not captchaKey() == 'changeme' %}
+{% if captchaKey() and captchaKey() != 'changeme' %}
 <script src="https://hcaptcha.com/1/api.js" async defer></script>
 {% endif %}
 
