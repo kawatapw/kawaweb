@@ -72,13 +72,22 @@
           </div>
         </div>
 
-        {# Total Users #}
+        {# Total Users + recent registered avatar stack #}
         <div class="stat-pill">
           <i class="fas fa-users stat-pill-icon users"></i>
           <div class="stat-pill-content">
             <span class="stat-pill-label">Total Users</span>
             <span class="stat-pill-value">{{ dash_data.count | default(0) }}</span>
           </div>
+          {% if recent_users %}
+          <div class="avatar-stack">
+            {% for u in recent_users %}
+            <a class="avatar-stack-item" href="/u/{{ u.id }}" title="{{ u.name }}">
+              <user-avatar :user-id="{{ u.id }}" class="avatar-stack-avatar"></user-avatar>
+            </a>
+            {% endfor %}
+          </div>
+          {% endif %}
         </div>
 
         {# Users Online — live count + avatar stack of online players #}
