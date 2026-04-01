@@ -87,10 +87,17 @@
     font-size: 15px;
     line-height: 1.6;
     color: hsl(var(--main), 10%, 70%);
-    margin: 0 0 24px;
-    max-width: 500px;
+    margin: 0 0 16px;
+    max-width: 560px;
     margin-left: auto;
     margin-right: auto;
+}
+
+.hero-timer {
+    font-size: 13px;
+    color: hsl(var(--main), 10%, 50%);
+    font-style: italic;
+    margin: 0 0 24px;
 }
 
 .hero-buttons {

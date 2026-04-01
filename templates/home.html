@@ -11,6 +11,7 @@
    The Vue 2 app mounts on #home-app, wrapping all content that uses
    Vue expressions (<% ... %>). Server-rendered sections use Jinja2 {{ }}.
    ═══════════════════════════════════════════════════════════════════════════ #}
+{% include 'hinaDir/components/home-templates.html' %}
 <div id="home-app">
 
   {# ╔═══════════════════════════════════════════════════════════════════════╗
@@ -28,9 +29,23 @@
       </h1>
       <p class="hero-motto">A different kind of osu! experience</p>
       <p class="hero-description">
-        Custom PP calculators, free osu!direct, supporter features for everyone,
-        and an active community of players.
+        Kawata is a private osu! server that allows the use of modified clients as long as they are within our rules.
+        Enjoy features like Timewarp, Aim Assist, HD Remover, and more while playing in a fair and welcoming community!
       </p>
+      <p class="hero-timer" id="timesincestuffbroke"></p>
+      <script>
+        (function() {
+          var timestamp = {{ unix_timestamp }};
+          setInterval(function() {
+            var diff = Math.floor((Date.now() / 1000) - timestamp);
+            var hours = Math.floor(diff / 3600);
+            var minutes = Math.floor((diff % 3600) / 60);
+            var seconds = diff % 60;
+            document.getElementById('timesincestuffbroke').textContent =
+              "It's been " + hours + " hours, " + minutes + " minutes, and " + seconds + " seconds since something last broke.";
+          }, 1000);
+        })();
+      </script>
 
       <div class="hero-buttons">
         {% if 'authenticated' not in session %}
@@ -39,6 +54,8 @@
         {% else %}
         <a href="/u/{{ session.user_data.id }}" class="hero-btn hero-btn--primary">My Profile</a>
         {% endif %}
+        <a href="/beatmaps" class="hero-btn hero-btn--outline">Beatmaps</a>
+        <a href="/leaderboard" class="hero-btn hero-btn--outline">Leaderboards</a>
       </div>
 
       <div class="stats-ribbon">
@@ -62,7 +79,7 @@
           <div class="avatar-stack">
             {% for u in recent_users %}
             <a class="avatar-stack-item" href="/u/{{ u.id }}" title="{{ u.name }}">
-              <img src="https://a.{{ domain() }}/{{ u.id }}" alt="{{ u.name }}" loading="lazy">
+              <user-avatar :user-id="{{ u.id }}" class="avatar-stack-avatar"></user-avatar>
             </a>
             {% endfor %}
           </div>
@@ -97,74 +114,14 @@
 
 
   {# ╔═══════════════════════════════════════════════════════════════════════╗
-     ║  SECTION 2 — Why Choose Us Carousel                                 ║
+     ║  SECTION 2 — Why Choose Us Carousel (Vue component)                 ║
      ╚═══════════════════════════════════════════════════════════════════════╝ #}
   <div class="home-section">
     <div class="home-section-header scroll-reveal">
       <h2>Why Choose Us</h2>
     </div>
-
-    <div class="kw-carousel scroll-reveal" data-carousel data-delay="5000">
-      <div class="kw-carousel-track">
-        {# Card 1: Free Features #}
-        <div class="kw-carousel-slide">
-          <div class="kw-carousel-card">
-            <div class="kw-carousel-card-image-placeholder"><i class="fas fa-gift"></i></div>
-            <div class="kw-carousel-card-body">
-              <h3>Free Features</h3>
-              <p>osu!direct, supporter features, and more &mdash; all completely free. No paywalls, no restrictions.</p>
-            </div>
-          </div>
-        </div>
-
-        {# Card 2: PP System #}
-        <div class="kw-carousel-slide">
-          <div class="kw-carousel-card">
-            <div class="kw-carousel-card-image-placeholder"><i class="fas fa-calculator"></i></div>
-            <div class="kw-carousel-card-body">
-              <h3>Custom PP System</h3>
-              <p>Runtime-switchable PP calculators with fair formulas for Relax and Autopilot. Your skills, fairly rewarded.</p>
-            </div>
-          </div>
-        </div>
-
-        {# Card 3: Custom Client #}
-        <div class="kw-carousel-slide">
-          <div class="kw-carousel-card">
-            <div class="kw-carousel-card-image-placeholder"><i class="fas fa-gamepad"></i></div>
-            <div class="kw-carousel-card-body">
-              <h3>Custom Client</h3>
-              <p>A purpose-built osu! client with exclusive features, better performance, and built-in server support.</p>
-            </div>
-          </div>
-        </div>
-
-        {# Card 4: Active Community #}
-        <div class="kw-carousel-slide">
-          <div class="kw-carousel-card">
-            <div class="kw-carousel-card-image-placeholder"><i class="fas fa-comments"></i></div>
-            <div class="kw-carousel-card-body">
-              <h3>Active Community</h3>
-              <p>A welcoming Discord community with active staff, tournaments, and players from around the world.</p>
-            </div>
-          </div>
-        </div>
-
-        {# Card 5: Open Development #}
-        <div class="kw-carousel-slide">
-          <div class="kw-carousel-card">
-            <div class="kw-carousel-card-image-placeholder"><i class="fas fa-code-branch"></i></div>
-            <div class="kw-carousel-card-body">
-              <h3>Open Development</h3>
-              <p>Transparent changelog, community-driven features, and an open development process you can follow.</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <button class="kw-carousel-prev" type="button" aria-label="Previous slide">&#8249;</button>
-      <button class="kw-carousel-next" type="button" aria-label="Next slide">&#8250;</button>
-      <div class="kw-carousel-dots"></div>
+    <div class="scroll-reveal">
+      <why-choose-carousel :cards="carouselCards" :delay="5000"></why-choose-carousel>
     </div>
   </div>
 
@@ -209,7 +166,7 @@
 
 
   {# ╔═══════════════════════════════════════════════════════════════════════╗
-     ║  SECTION 4 — Recently Ranked Beatmaps (server-rendered)             ║
+     ║  SECTION 4 — Recently Ranked Beatmaps (server-rendered)              ║
      ╚═══════════════════════════════════════════════════════════════════════╝ #}
   {% if rankedmaps %}
   <div class="home-section">
@@ -217,38 +174,30 @@
       <h2>Recently Ranked</h2>
       <p>Fresh maps added to the ranked pool</p>
     </div>
-
     <div class="beatmap-grid scroll-reveal">
-      {% for map in rankedmaps %}
-      <a class="beatmap-card" href="/b/{{ map.id }}">
+      {% for m in rankedmaps %}
+      <a class="beatmap-card" href="/b/{{ m.id }}">
         <div class="beatmap-card-banner"
-             style="background-image: url(https://assets.ppy.sh/beatmaps/{{ map.set_id }}/covers/cover.jpg);">
-        </div>
+             style="background-image: url(https://assets.ppy.sh/beatmaps/{{ m.set_id }}/covers/cover.jpg);"></div>
         <div class="beatmap-card-body">
-          <div class="beatmap-card-title">{{ map.title }}</div>
-          <div class="beatmap-card-artist">{{ map.artist }} // {{ map.creator }}</div>
-
-          {% if map.diffs %}
+          <div class="beatmap-card-title">{{ m.title }}</div>
+          <div class="beatmap-card-artist">{{ m.artist }} // {{ m.creator }}</div>
+          {% if m.diffs %}
           <div class="beatmap-card-diffs">
-            {% for diff in map.diffs %}
-            <div class="beatmap-card-diff"
-                 title="{{ diff.version }} &#10;Stars: {{ diff.diff }}">
+            {% for d in m.diffs %}
+            <div class="beatmap-card-diff" title="{{ d.version }}&#10;Stars: {{ d.diff }}">
               <img src="/static/images/icons/mode-osu.png" alt="diff" width="16" height="16">
             </div>
             {% endfor %}
           </div>
           {% endif %}
-
           <div class="beatmap-card-footer">
+            {% if m.mod %}
             <div class="beatmap-card-mod">
-              <img class="beatmap-card-mod-avatar"
-                   src="https://a.{{ domain() }}/{{ map.get('mod', {}).get('id', '1') }}"
-                   alt="{{ map.get('mod', {}).get('name', 'Staff') }}"
-                   loading="lazy">
-              <span class="beatmap-card-mod-name">
-                Ranked by {{ map.get('mod', {}).get('name', 'Staff') }}
-              </span>
+              <user-avatar :user-id="{{ m.mod.id }}" class="beatmap-card-mod-avatar"></user-avatar>
+              <span class="beatmap-card-mod-name">Ranked by {{ m.mod.name }}</span>
             </div>
+            {% endif %}
           </div>
         </div>
       </a>
@@ -257,9 +206,8 @@
   </div>
   {% endif %}
 
-
   {# ╔═══════════════════════════════════════════════════════════════════════╗
-     ║  SECTION 5 — Most Played This Week (server-rendered)                ║
+     ║  SECTION 5 — Most Played This Week (server-rendered)                 ║
      ╚═══════════════════════════════════════════════════════════════════════╝ #}
   {% if most_played %}
   <div class="home-section">
@@ -267,21 +215,17 @@
       <h2>Most Played This Week</h2>
       <p>The hottest maps over the last 7 days</p>
     </div>
-
     <div class="beatmap-grid scroll-reveal">
-      {% for map in most_played %}
-      <a class="beatmap-card" href="/b/{{ map.id }}">
+      {% for m in most_played %}
+      <a class="beatmap-card" href="/b/{{ m.id }}">
         <div class="beatmap-card-banner"
-             style="background-image: url(https://assets.ppy.sh/beatmaps/{{ map.set_id }}/covers/cover.jpg);">
-        </div>
+             style="background-image: url(https://assets.ppy.sh/beatmaps/{{ m.set_id }}/covers/cover.jpg);"></div>
         <div class="beatmap-card-body">
-          <div class="beatmap-card-title">{{ map.title }}</div>
-          <div class="beatmap-card-artist">{{ map.artist }} // {{ map.creator }}</div>
+          <div class="beatmap-card-title">{{ m.title }}</div>
+          <div class="beatmap-card-artist">{{ m.artist }} // {{ m.creator }}</div>
           <div class="beatmap-card-footer">
-            <span class="beatmap-card-mod-name">{{ map.diff }}</span>
-            <span class="beatmap-card-plays">
-              <i class="fas fa-play"></i> {{ "{:,}".format(map.play_count) }}
-            </span>
+            <span class="beatmap-card-mod-name">{{ m.diff }}</span>
+            <span class="beatmap-card-plays"><i class="fas fa-play"></i> {{ "{:,}".format(m.play_count) }}</span>
           </div>
         </div>
       </a>
@@ -305,10 +249,7 @@
       {% for log in changelogs %}
       <div class="changelog-entry">
         <a href="/u/{{ log.poster.id }}">
-          <img class="changelog-avatar"
-               src="https://a.{{ domain() }}/{{ log.poster.id }}"
-               alt="{{ log.poster.name }}"
-               loading="lazy">
+          <user-avatar :user-id="{{ log.poster.id }}" class="changelog-avatar"></user-avatar>
         </a>
         <div class="changelog-content">
           <div class="changelog-header">
@@ -350,5 +291,7 @@
 </div>{# /home-app #}
 
 <script src="{{ bust('/static/hinaDir/js/carousel.js') }}"></script>
+<script src="{{ bust('/static/hinaDir/js/whyChooseCarousel.js') }}"></script>
+<script src="{{ bust('/static/hinaDir/js/rankedBeatmaps.js') }}"></script>
 <script src="{{ bust('/static/hinaDir/js/home.js') }}"></script>
 {% endblock %}

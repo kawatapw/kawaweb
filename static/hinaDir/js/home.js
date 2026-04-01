@@ -7,10 +7,22 @@ bootstrapVue('home', {
     delimiters: ['<%', '%>'],
 
     data: function () {
+        var homeData = window.__homeData || {};
         return {
             online_users: 0,
             online_players: [],
             domain: window.domain || '',
+            // Carousel cards — static content, reusable on any page
+            carouselCards: [
+                { icon: 'fas fa-gift', title: 'Free Features', description: 'osu!direct, hinai!mirror, supporter features, and more \u2014 all completely free. No paywalls, no restrictions.' },
+                { icon: 'fas fa-calculator', title: 'Custom PP System', description: 'Runtime-switchable PP calculators with fair formulas for Relax and Autopilot. Your skills, fairly rewarded.' },
+                { icon: 'fas fa-gamepad', title: 'Custom Client', description: 'A purpose-built osu! client with exclusive features, better performance, and built-in server support.' },
+                { icon: 'fas fa-comments', title: 'Active Community', description: 'A welcoming Discord community with active staff, tournaments, and players from around the world.' },
+                { icon: 'fas fa-code-branch', title: 'Open Development', description: 'Transparent changelog, community-driven features, and an open development process you can follow.' },
+            ],
+            // Server-rendered map data passed via window.__homeData
+            rankedMaps: homeData.rankedMaps || [],
+            mostPlayedMaps: homeData.mostPlayedMaps || [],
         };
     },
 

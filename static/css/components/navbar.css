@@ -893,7 +893,7 @@
 
 .navbar-mobile-dropdown-menu {
     max-height: 0;
-    overflow: scroll;
+    overflow: hidden;
     transition: max-height 0.3s ease;
     background: hsl(var(--main), 8%, 18%);
 }
@@ -901,6 +901,7 @@
 .navbar-mobile-dropdown:hover .navbar-mobile-dropdown-menu,
 .navbar-mobile-dropdown.active .navbar-mobile-dropdown-menu {
     max-height: 240px;
+    overflow-y: auto;
 }
 
 .navbar-mobile-dropdown-item {

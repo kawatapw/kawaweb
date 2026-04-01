@@ -1,0 +1,70 @@
+<!-- ============================================================================
+   hinaDir Home Page Component Templates
+   Vue 2 x-templates for reusable home page components.
+   ============================================================================ -->
+
+<!-- Why Choose Us Carousel -->
+<script type="text/x-template" id="why-choose-carousel-template">
+  <div class="kw-carousel" ref="carousel">
+    <div class="kw-carousel-track">
+      <div class="kw-carousel-slide" v-for="(card, index) in cards" :key="index">
+        <div class="kw-carousel-card">
+          <div v-if="card.image" class="kw-carousel-card-image-wrapper">
+            <img :src="card.image" :alt="card.title" class="kw-carousel-card-image" loading="lazy">
+          </div>
+          <div v-else class="kw-carousel-card-image-placeholder">
+            <i :class="card.icon || 'fas fa-star'"></i>
+          </div>
+          <div class="kw-carousel-card-body">
+            <h3 v-text="card.title"></h3>
+            <p v-text="card.description"></p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <button class="kw-carousel-prev" type="button" aria-label="Previous slide">&#8249;</button>
+    <button class="kw-carousel-next" type="button" aria-label="Next slide">&#8250;</button>
+    <div class="kw-carousel-dots"></div>
+  </div>
+</script>
+
+<!-- Ranked Beatmaps Grid -->
+<script type="text/x-template" id="ranked-beatmaps-template">
+  <div class="home-section" v-if="hasMaps">
+    <div class="home-section-header scroll-reveal">
+      <h2 v-text="title"></h2>
+      <p v-text="subtitle"></p>
+    </div>
+    <div class="beatmap-grid scroll-reveal">
+      <a class="beatmap-card" v-for="map in maps" :key="map.id || map.map_md5" :href="'/b/' + map.id">
+        <div class="beatmap-card-banner" :style="'background-image: url(' + coverUrl(map) + ')'"></div>
+        <div class="beatmap-card-body">
+          <div class="beatmap-card-title" v-text="map.title"></div>
+          <div class="beatmap-card-artist"><span v-text="map.artist"></span> // <span v-text="map.creator"></span></div>
+
+          <div class="beatmap-card-diffs" v-if="map.diffs && map.diffs.length">
+            <div class="beatmap-card-diff"
+                 v-for="diff in map.diffs"
+                 :key="diff.id"
+                 :title="(diff.version || '') + '\nStars: ' + (diff.diff || '?')">
+              <img src="/static/images/icons/mode-osu.png" alt="diff" width="16" height="16">
+            </div>
+          </div>
+
+          <div class="beatmap-card-footer">
+            <div class="beatmap-card-mod" v-if="!showPlayCount">
+              <img class="beatmap-card-mod-avatar"
+                   :src="avatarUrl(modId(map))"
+                   :alt="modName(map)"
+                   loading="lazy">
+              <span class="beatmap-card-mod-name">Ranked by <span v-text="modName(map)"></span></span>
+            </div>
+            <div class="beatmap-card-plays" v-if="showPlayCount">
+              <i class="fas fa-play"></i> <span v-text="formatPlays(map.play_count)"></span> plays
+            </div>
+          </div>
+        </div>
+      </a>
+    </div>
+  </div>
+</script>

@@ -34,8 +34,9 @@
       this.delay = parseInt(opts.delay || el.dataset.delay || 5000, 10);
       this.loop = opts.loop !== undefined ? opts.loop : el.dataset.loop !== 'false';
       this.autoplayTimer = null;
-      this.progressTimer = null;
       this.paused = false;
+      this._elapsed = 0;        // ms elapsed on current slide before pause
+      this._slideStartTime = 0; // timestamp when current slide timer started
 
       this._buildDots();
       this._bindEvents();
@@ -65,9 +66,17 @@
       if (this.prevBtn) this.prevBtn.addEventListener('click', () => this.prev());
       if (this.nextBtn) this.nextBtn.addEventListener('click', () => this.next());
 
-      // Pause on hover
-      this.el.addEventListener('mouseenter', () => { this.paused = true; this._stopAutoplay(); });
-      this.el.addEventListener('mouseleave', () => { this.paused = false; this._startAutoplay(); });
+      // Pause on hover — freezes progress bar and timer, resumes from same point
+      this.el.addEventListener('mouseenter', () => {
+        this.paused = true;
+        this._elapsed += Date.now() - this._slideStartTime;
+        this._stopAutoplay();
+        this._pauseDotAnimation();
+      });
+      this.el.addEventListener('mouseleave', () => {
+        this.paused = false;
+        this._resumeAutoplay();
+      });
 
       // Touch swipe
       let startX = 0;
@@ -115,17 +124,18 @@
       this._updateDots();
     }
 
-    _updateDots() {
+    _updateDots(duration) {
       if (!this.dots) return;
+      var dur = duration !== undefined ? duration : this.delay;
       this.dots.forEach((dot, i) => {
         dot.classList.toggle('active', i === this.current);
         const bar = dot.querySelector('.kw-carousel-dot-progress');
         if (bar) {
           if (i === this.current) {
             bar.style.animation = 'none';
-            // Force reflow
+            bar.style.animationPlayState = 'running';
             void bar.offsetHeight;
-            bar.style.animation = `carousel-progress ${this.delay}ms linear forwards`;
+            bar.style.animation = `carousel-progress ${dur}ms linear forwards`;
           } else {
             bar.style.animation = 'none';
             bar.style.width = '0';
@@ -134,31 +144,57 @@
       });
     }
 
-    _startAutoplay() {
+    _startAutoplay(remaining) {
       this._stopAutoplay();
       if (this.paused) return;
-      this.autoplayTimer = setInterval(() => this.next(), this.delay);
-      this._updateDots(); // restart progress animation
+      var wait = remaining !== undefined ? remaining : this.delay;
+      this._slideStartTime = Date.now();
+      this._elapsed = this.delay - wait;
+      this.autoplayTimer = setTimeout(() => {
+        this.next();
+      }, wait);
+      this._updateDots(wait);
     }
 
     _stopAutoplay() {
       if (this.autoplayTimer) {
-        clearInterval(this.autoplayTimer);
+        clearTimeout(this.autoplayTimer);
         this.autoplayTimer = null;
       }
     }
 
+    _resumeAutoplay() {
+      var remaining = Math.max(0, this.delay - this._elapsed);
+      this._startAutoplay(remaining);
+      this._resumeDotAnimation();
+    }
+
+    _pauseDotAnimation() {
+      if (!this.dots) return;
+      var bar = this.dots[this.current] && this.dots[this.current].querySelector('.kw-carousel-dot-progress');
+      if (bar) bar.style.animationPlayState = 'paused';
+    }
+
+    _resumeDotAnimation() {
+      if (!this.dots) return;
+      var bar = this.dots[this.current] && this.dots[this.current].querySelector('.kw-carousel-dot-progress');
+      if (bar) bar.style.animationPlayState = 'running';
+    }
+
     goTo(index) {
+      this._elapsed = 0;
       this._goTo(index);
       this._startAutoplay();
     }
 
     next() {
+      this._elapsed = 0;
       this._goTo(this.current + 1);
       if (!this.paused) this._startAutoplay();
     }
 
     prev() {
+      this._elapsed = 0;
       this._goTo(this.current - 1);
       if (!this.paused) this._startAutoplay();
     }
