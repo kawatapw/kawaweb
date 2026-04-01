@@ -68,30 +68,26 @@
           </div>
         </div>
 
-        {# Total Users with avatar stack #}
+        {# Total Users #}
         <div class="stat-pill">
           <i class="fas fa-users stat-pill-icon users"></i>
           <div class="stat-pill-content">
             <span class="stat-pill-label">Total Users</span>
             <span class="stat-pill-value">{{ dash_data.count | default(0) }}</span>
           </div>
-          {% if recent_users %}
-          <div class="avatar-stack">
-            {% for u in recent_users %}
-            <a class="avatar-stack-item" href="/u/{{ u.id }}" title="{{ u.name }}">
-              <user-avatar :user-id="{{ u.id }}" class="avatar-stack-avatar"></user-avatar>
-            </a>
-            {% endfor %}
-          </div>
-          {% endif %}
         </div>
 
-        {# Users Online — live count from Vue #}
+        {# Users Online — live count + avatar stack of online players #}
         <div class="stat-pill">
           <i class="fas fa-signal stat-pill-icon online"></i>
           <div class="stat-pill-content">
             <span class="stat-pill-label">Online</span>
             <span class="stat-pill-value"><% online_users %></span>
+          </div>
+          <div class="avatar-stack" v-if="online_players.length > 0">
+            <a class="avatar-stack-item" v-for="p in online_players.slice(0, 5)" :key="p.id" :href="'/u/' + p.id" :title="p.name">
+              <user-avatar :user-id="p.id" class="avatar-stack-avatar"></user-avatar>
+            </a>
           </div>
         </div>
 
@@ -173,10 +169,15 @@
     <div class="home-section-header scroll-reveal">
       <h2>Recently Ranked</h2>
       <p>Fresh maps added to the ranked pool</p>
+      {% if 'authenticated' in session %}
+      <a href="/beatmaps" class="home-section-btn">View All Beatmaps</a>
+      {% else %}
+      <span class="home-section-btn disabled" title="Log in to browse beatmaps">View All Beatmaps</span>
+      {% endif %}
     </div>
     <div class="beatmap-grid scroll-reveal">
       {% for m in rankedmaps %}
-      <a class="beatmap-card" href="/b/{{ m.id }}">
+      <div class="beatmap-card" onclick="beatmapBus.$emit('show-beatmap-panel', {{ m.id }}, {{ m.set_id }})">
         <div class="beatmap-card-banner"
              style="background-image: url(https://assets.ppy.sh/beatmaps/{{ m.set_id }}/covers/cover.jpg);"></div>
         <div class="beatmap-card-body">
@@ -200,7 +201,7 @@
             {% endif %}
           </div>
         </div>
-      </a>
+      </div>
       {% endfor %}
     </div>
   </div>
@@ -214,10 +215,15 @@
     <div class="home-section-header scroll-reveal">
       <h2>Most Played This Week</h2>
       <p>The hottest maps over the last 7 days</p>
+      {% if 'authenticated' in session %}
+      <a href="/beatmaps" class="home-section-btn">View All Beatmaps</a>
+      {% else %}
+      <span class="home-section-btn disabled" title="Log in to browse beatmaps">View All Beatmaps</span>
+      {% endif %}
     </div>
     <div class="beatmap-grid scroll-reveal">
       {% for m in most_played %}
-      <a class="beatmap-card" href="/b/{{ m.id }}">
+      <div class="beatmap-card" onclick="beatmapBus.$emit('show-beatmap-panel', {{ m.id }}, {{ m.set_id }})">
         <div class="beatmap-card-banner"
              style="background-image: url(https://assets.ppy.sh/beatmaps/{{ m.set_id }}/covers/cover.jpg);"></div>
         <div class="beatmap-card-body">
@@ -228,7 +234,7 @@
             <span class="beatmap-card-plays"><i class="fas fa-play"></i> {{ "{:,}".format(m.play_count) }}</span>
           </div>
         </div>
-      </a>
+      </div>
       {% endfor %}
     </div>
   </div>

@@ -171,7 +171,7 @@ async def home(doc=None, sid=None, id=None, flash=None, status=None):
         'FROM users'
     )
     
-    newly_ranked = await glob.db.fetchall('SELECT * FROM newly_ranked ORDER BY time DESC LIMIT 5')
+    newly_ranked = await glob.db.fetchall('SELECT * FROM newly_ranked ORDER BY time DESC LIMIT 6')
     
     # Process newly ranked maps
     for map in newly_ranked:

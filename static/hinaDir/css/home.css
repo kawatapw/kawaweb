@@ -252,6 +252,31 @@
     margin: 0;
 }
 
+.home-section-btn {
+    display: inline-block;
+    margin-top: 12px;
+    padding: 8px 20px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    background: hsla(var(--main), 40%, 50%, 0.15);
+    color: hsl(var(--main), 60%, 70%);
+    border: 1px solid hsla(var(--main), 40%, 50%, 0.2);
+    text-decoration: none;
+    transition: background 0.2s, border-color 0.2s;
+}
+
+.home-section-btn:hover {
+    background: hsla(var(--main), 40%, 50%, 0.25);
+    border-color: hsla(var(--main), 40%, 50%, 0.4);
+}
+
+.home-section-btn.disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
 /* === ONLINE PLAYERS SHOWCASE === */
 .players-showcase {
     display: flex;
@@ -387,6 +412,7 @@
     overflow: hidden;
     background: hsl(var(--main), 12%, 14%);
     border: 1px solid rgba(255, 255, 255, 0.06);
+    cursor: pointer;
     transition: transform 0.2s, border-color 0.2s;
 }
 
