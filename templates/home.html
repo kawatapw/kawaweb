@@ -13,300 +13,301 @@
    ═══════════════════════════════════════════════════════════════════════════ #}
 {% include 'hinaDir/components/home-templates.html' %}
 <div id="home-app">
+  <!--<user-data-provider :auto-refresh-status="true">-->
 
-  {# ╔═══════════════════════════════════════════════════════════════════════╗
-     ║  SECTION 1 — Hero Banner                                            ║
-     ╚═══════════════════════════════════════════════════════════════════════╝ #}
-  <div class="hero splash" id="home-hero">
-    <div id="stars"></div>
-    <div id="stars1"></div>
-    <div id="stars2"></div>
-    <div id="stars3"></div>
+    {# ╔═══════════════════════════════════════════════════════════════════════╗
+       ║  SECTION 1 — Hero Banner                                              ║
+       ╚═══════════════════════════════════════════════════════════════════════╝ #}
+    <div class="hero splash" id="home-hero">
+      <div id="stars"></div>
+      <div id="stars1"></div>
+      <div id="stars2"></div>
+      <div id="stars3"></div>
 
-    <div class="hero-content">
-      <h1 class="hero-title">
-        <span class="accent">{{ appName().split()[0] }}</span>{% if appName().split()|length > 1 %} {{ appName().split()[1:] | join(' ') }}{% endif %}
-      </h1>
-      <p class="hero-motto">A different kind of osu! experience</p>
-      <p class="hero-description">
-        Kawata is a private osu! server that allows the use of modified clients as long as they are within our rules.
-        Enjoy features like Timewarp, Aim Assist, HD Remover, and more while playing in a fair and welcoming community!
-      </p>
-      <p class="hero-timer" id="timesincestuffbroke"></p>
-      <script>
-        (function() {
-          var timestamp = {{ unix_timestamp }};
-          setInterval(function() {
-            var diff = Math.floor((Date.now() / 1000) - timestamp);
-            var hours = Math.floor(diff / 3600);
-            var minutes = Math.floor((diff % 3600) / 60);
-            var seconds = diff % 60;
-            document.getElementById('timesincestuffbroke').textContent =
-              "It's been " + hours + " hours, " + minutes + " minutes, and " + seconds + " seconds since something last broke.";
-          }, 1000);
-        })();
-      </script>
+      <div class="hero-content">
+        <h1 class="hero-title">
+          <span class="accent">{{ appName().split()[0] }}</span>{% if appName().split()|length > 1 %} {{ appName().split()[1:] | join(' ') }}{% endif %}
+        </h1>
+        <p class="hero-motto">A different kind of osu! experience</p>
+        <p class="hero-description">
+          Kawata is a private osu! server that allows the use of modified clients as long as they are within our rules.
+          Enjoy features like Timewarp, Aim Assist, HD Remover, and more while playing in a fair and welcoming community!
+        </p>
+        <p class="hero-timer" id="timesincestuffbroke"></p>
+        <script>
+          (function() {
+            var timestamp = {{ unix_timestamp }};
+            setInterval(function() {
+              var diff = Math.floor((Date.now() / 1000) - timestamp);
+              var hours = Math.floor(diff / 3600);
+              var minutes = Math.floor((diff % 3600) / 60);
+              var seconds = diff % 60;
+              document.getElementById('timesincestuffbroke').textContent =
+                "It's been " + hours + " hours, " + minutes + " minutes, and " + seconds + " seconds since something last broke.";
+            }, 1000);
+          })();
+        </script>
 
-      <div class="hero-buttons">
-        {% if 'authenticated' not in session %}
-        <a href="/register" class="hero-btn hero-btn--primary">Register</a>
-        <a href="/login" class="hero-btn hero-btn--outline">Sign In</a>
-        {% else %}
-        <a href="/u/{{ session.user_data.id }}" class="hero-btn hero-btn--primary">My Profile</a>
-        {% endif %}
-        {% if 'authenticated' in session %}
-        <a href="/beatmaps" class="hero-btn hero-btn--outline">Beatmaps</a>
-        {% else %}
-        <span class="hero-btn hero-btn--outline disabled" title="Log in to browse beatmaps">Beatmaps</span>
-        {% endif %}
-        <a href="/leaderboard" class="hero-btn hero-btn--outline">Leaderboards</a>
-      </div>
-
-      <div class="stats-ribbon">
-        {# Server Status #}
-        <div class="stat-pill">
-          <i class="fas fa-wifi stat-pill-icon status-ok"></i>
-          <div class="stat-pill-content">
-            <span class="stat-pill-label">Server</span>
-            <span class="stat-pill-value">Online</span>
-          </div>
-        </div>
-
-        {# Total Users + recent registered avatar stack #}
-        <div class="stat-pill">
-          <i class="fas fa-users stat-pill-icon users"></i>
-          <div class="stat-pill-content">
-            <span class="stat-pill-label">Total Users</span>
-            <span class="stat-pill-value">{{ dash_data.count | default(0) }}</span>
-          </div>
-          {% if recent_users %}
-          <div class="avatar-stack">
-            {% for u in recent_users %}
-            <a class="avatar-stack-item" href="/u/{{ u.id }}" title="{{ u.name }}">
-              <img src="https://a.{{ domain() }}/{{ u.id }}" alt="{{ u.name }}" loading="lazy">
-            </a>
-            {% endfor %}
-          </div>
+        <div class="hero-buttons">
+          {% if 'authenticated' not in session %}
+          <a href="/register" class="hero-btn hero-btn--primary">Register</a>
+          <a href="/login" class="hero-btn hero-btn--outline">Sign In</a>
+          {% else %}
+          <a href="/u/{{ session.user_data.id }}" class="hero-btn hero-btn--primary">My Profile</a>
           {% endif %}
+          {% if 'authenticated' in session %}
+          <a href="/beatmaps" class="hero-btn hero-btn--outline">Beatmaps</a>
+          {% else %}
+          <span class="hero-btn hero-btn--outline disabled" title="Log in to browse beatmaps">Beatmaps</span>
+          {% endif %}
+          <a href="/leaderboard" class="hero-btn hero-btn--outline">Leaderboards</a>
         </div>
 
-        {# Users Online — live count + avatar stack of online players #}
-        <div class="stat-pill">
-          <i class="fas fa-signal stat-pill-icon online"></i>
-          <div class="stat-pill-content">
-            <span class="stat-pill-label">Online</span>
-            <span class="stat-pill-value"><% online_users %></span>
-          </div>
-          <div class="avatar-stack" v-if="online_players.length > 0">
-            <a class="avatar-stack-item" v-for="p in online_players.slice(0, 5)" :key="p.id" :href="'/u/' + p.id" :title="p.name">
-              <img :src="'https://a.' + domain + '/' + p.id" :alt="p.name" loading="lazy">
-            </a>
-          </div>
-        </div>
-
-        {# Total Scores #}
-        <div class="stat-pill">
-          <i class="fas fa-trophy stat-pill-icon scores"></i>
-          <div class="stat-pill-content">
-            <span class="stat-pill-label">Total Scores</span>
-            <span class="stat-pill-value">{{ "{:,}".format(total_scores | default(0)) }}</span>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="scroll-down">
-      <span>Scroll down</span>
-      <i class="fas fa-chevron-down"></i>
-    </div>
-  </div>
-
-
-  {# ╔═══════════════════════════════════════════════════════════════════════╗
-     ║  SECTION 2 — Why Choose Us Carousel (Vue component)                 ║
-     ╚═══════════════════════════════════════════════════════════════════════╝ #}
-  <div class="home-section">
-    <div class="home-section-header scroll-reveal">
-      <h2>Why Choose Us</h2>
-    </div>
-    <div class="scroll-reveal">
-      <why-choose-carousel :cards="carouselCards" :delay="5000"></why-choose-carousel>
-    </div>
-  </div>
-
-
-  {# ╔═══════════════════════════════════════════════════════════════════════╗
-     ║  SECTION 3 — Currently Playing (Vue-driven, client-side fetch)      ║
-     ╚═══════════════════════════════════════════════════════════════════════╝ #}
-  <div class="home-section" v-if="online_players.length > 0">
-    <div class="home-section-header scroll-reveal">
-      <h2>Currently Playing</h2>
-      <p><% online_users %> players online right now</p>
-    </div>
-
-    <div class="players-showcase scroll-reveal">
-      <div class="player-showcase-card" v-for="p in online_players" :key="p.id">
-        <div class="player-showcase-banner"
-             :style="'background-image: url(/banners/' + p.id + ')'"></div>
-        <div class="player-showcase-avatar"
-             :style="'background-image: url(https://a.' + domain + '/' + p.id + ')'"></div>
-        <div class="player-showcase-info">
-          <div class="player-showcase-name">
-            <span v-if="p.clan_tag" style="opacity:0.6">[<% p.clan_tag %>]&nbsp;</span>
-            <a :href="'/u/' + p.id"><% p.name %></a>
-          </div>
-          <div class="player-showcase-rank">
-            #<% p.rank %> &mdash; <% Math.round(p.pp).toLocaleString() %>pp
-          </div>
-          <div class="player-showcase-stats">
-            <div class="player-showcase-stat">
-              <span class="player-showcase-stat-value"><% Math.round(p.pp).toLocaleString() %></span>
-              <span class="player-showcase-stat-label">PP</span>
+        <div class="stats-ribbon">
+          {# Server Status #}
+          <div class="stat-pill">
+            <i class="fas fa-wifi stat-pill-icon status-ok"></i>
+            <div class="stat-pill-content">
+              <span class="stat-pill-label">Server</span>
+              <span class="stat-pill-value">Online</span>
             </div>
           </div>
-        </div>
-        <div class="player-showcase-status">
-          <span class="player-showcase-status-dot" :class="getStatusClass(p.status)"></span>
-          <span><% getStatusText(p.status) %></span>
-        </div>
-      </div>
-    </div>
-  </div>
 
-
-  {# ╔═══════════════════════════════════════════════════════════════════════╗
-     ║  SECTION 4 — Recently Ranked Beatmaps (server-rendered)              ║
-     ╚═══════════════════════════════════════════════════════════════════════╝ #}
-  {% if rankedmaps %}
-  <div class="home-section">
-    <div class="home-section-header scroll-reveal">
-      <h2>Recently Ranked</h2>
-      <p>Fresh maps added to the ranked pool</p>
-      {% if 'authenticated' in session %}
-      <a href="/beatmaps" class="home-section-btn">View All Beatmaps</a>
-      {% else %}
-      <span class="home-section-btn disabled" title="Log in to browse beatmaps">View All Beatmaps</span>
-      {% endif %}
-    </div>
-    <div class="beatmap-grid scroll-reveal">
-      {% for m in rankedmaps %}
-      <div class="beatmap-card" onclick="beatmapBus.$emit('show-beatmap-panel', {{ m.id }}, {{ m.set_id }})">
-        <div class="beatmap-card-banner"
-             style="background-image: url(https://assets.ppy.sh/beatmaps/{{ m.set_id }}/covers/cover.jpg);"></div>
-        <div class="beatmap-card-body">
-          <div class="beatmap-card-title">{{ m.title }}</div>
-          <div class="beatmap-card-artist">{{ m.artist }} // {{ m.creator }}</div>
-          {% if m.diffs %}
-          <div class="beatmap-card-diffs">
-            {% for d in m.diffs %}
-            <div class="beatmap-card-diff" title="{{ d.version }}&#10;Stars: {{ d.diff }}">
-              <img src="/static/images/icons/mode-osu.png" alt="diff" width="16" height="16">
+          {# Total Users + recent registered avatar stack #}
+          <div class="stat-pill">
+            <i class="fas fa-users stat-pill-icon users"></i>
+            <div class="stat-pill-content">
+              <span class="stat-pill-label">Total Users</span>
+              <span class="stat-pill-value">{{ dash_data.count | default(0) }}</span>
             </div>
-            {% endfor %}
-          </div>
-          {% endif %}
-          <div class="beatmap-card-footer">
-            {% if m.mod %}
-            <div class="beatmap-card-mod">
-              <img class="beatmap-card-mod-avatar" src="https://a.{{ domain() }}/{{ m.mod.id }}" alt="{{ m.mod.name }}" loading="lazy">
-              <span class="beatmap-card-mod-name">Ranked by {{ m.mod.name }}</span>
+            {% if recent_users %}
+            <div class="avatar-stack">
+              {% for u in recent_users %}
+              <a class="avatar-stack-item" href="/u/{{ u.id }}" title="{{ u.name }}">
+                <img src="https://a.{{ domain() }}/{{ u.id }}" alt="{{ u.name }}" loading="lazy">
+              </a>
+              {% endfor %}
             </div>
             {% endif %}
           </div>
-        </div>
-      </div>
-      {% endfor %}
-    </div>
-  </div>
-  {% endif %}
 
-  {# ╔═══════════════════════════════════════════════════════════════════════╗
-     ║  SECTION 5 — Most Played This Week (server-rendered)                 ║
-     ╚═══════════════════════════════════════════════════════════════════════╝ #}
-  {% if most_played %}
-  <div class="home-section">
-    <div class="home-section-header scroll-reveal">
-      <h2>Most Played This Week</h2>
-      <p>The hottest maps over the last 7 days</p>
-      {% if 'authenticated' in session %}
-      <a href="/beatmaps" class="home-section-btn">View All Beatmaps</a>
-      {% else %}
-      <span class="home-section-btn disabled" title="Log in to browse beatmaps">View All Beatmaps</span>
-      {% endif %}
-    </div>
-    <div class="beatmap-grid scroll-reveal">
-      {% for m in most_played %}
-      <div class="beatmap-card" onclick="beatmapBus.$emit('show-beatmap-panel', {{ m.id }}, {{ m.set_id }})">
-        <div class="beatmap-card-banner"
-             style="background-image: url(https://assets.ppy.sh/beatmaps/{{ m.set_id }}/covers/cover.jpg);"></div>
-        <div class="beatmap-card-body">
-          <div class="beatmap-card-title">{{ m.title }}</div>
-          <div class="beatmap-card-artist">{{ m.artist }} // {{ m.creator }}</div>
-          <div class="beatmap-card-footer">
-            <span class="beatmap-card-mod-name">{{ m.diff }}</span>
-            <span class="beatmap-card-plays"><i class="fas fa-play"></i> {{ "{:,}".format(m.play_count) }}</span>
+          {# Users Online — live count + avatar stack of online players #}
+          <div class="stat-pill">
+            <i class="fas fa-signal stat-pill-icon online"></i>
+            <div class="stat-pill-content">
+              <span class="stat-pill-label">Online</span>
+              <span class="stat-pill-value"><% online_users %></span>
+            </div>
+            <div class="avatar-stack" v-if="online_players.length > 0">
+              <a class="avatar-stack-item" v-for="p in online_players.slice(0, 5)" :key="p.id" :href="'/u/' + p.id" :title="p.name">
+                <img :src="'https://a.' + domain + '/' + p.id" :alt="p.name" loading="lazy">
+              </a>
+            </div>
+          </div>
+
+          {# Total Scores #}
+          <div class="stat-pill">
+            <i class="fas fa-trophy stat-pill-icon scores"></i>
+            <div class="stat-pill-content">
+              <span class="stat-pill-label">Total Scores</span>
+              <span class="stat-pill-value">{{ "{:,}".format(total_scores | default(0)) }}</span>
+            </div>
           </div>
         </div>
       </div>
-      {% endfor %}
-    </div>
-  </div>
-  {% endif %}
 
-
-  {# ╔═══════════════════════════════════════════════════════════════════════╗
-     ║  SECTION 6 — Changelog (server-rendered)                            ║
-     ╚═══════════════════════════════════════════════════════════════════════╝ #}
-  {% if changelogs %}
-  <div class="home-section">
-    <div class="home-section-header scroll-reveal">
-      <h2><a href="/changelog" style="color: inherit; text-decoration: none;">Changelog</a></h2>
-      <p>Latest updates and improvements</p>
+      <div class="scroll-down">
+        <span>Scroll down</span>
+        <i class="fas fa-chevron-down"></i>
+      </div>
     </div>
 
-    <div class="changelog-list scroll-reveal">
-      {% for log in changelogs %}
-      <div class="changelog-entry">
-        <a href="/u/{{ log.poster.id }}">
-          <img class="changelog-avatar" src="https://a.{{ domain() }}/{{ log.poster.id }}" alt="{{ log.poster.name }}" loading="lazy">
-        </a>
-        <div class="changelog-content">
-          <div class="changelog-header">
-            <a href="/u/{{ log.poster.id }}" class="changelog-author" style="text-decoration: none;">
-              {{ log.poster.name }}
-            </a>
-            <span class="changelog-type">
-              {% if log.type == 0 %}Frontend{% elif log.type == 1 %}Backend{% elif log.type == 2 %}Client{% endif %}
-              {% if log.category %}&mdash; {{ log.category }}{% endif %}
-            </span>
-            <span class="changelog-time">{{ log.time }}</span>
+
+    {# ╔═══════════════════════════════════════════════════════════════════════╗
+       ║  SECTION 2 — Why Choose Us Carousel (Vue component)                 ║
+       ╚═══════════════════════════════════════════════════════════════════════╝ #}
+    <div class="home-section">
+      <div class="home-section-header scroll-reveal">
+        <h2>Why Choose Us</h2>
+      </div>
+      <div class="scroll-reveal">
+        <why-choose-carousel :cards="carouselCards" :delay="5000"></why-choose-carousel>
+      </div>
+    </div>
+
+
+    {# ╔═══════════════════════════════════════════════════════════════════════╗
+       ║  SECTION 3 — Currently Playing (Vue-driven, client-side fetch)      ║
+       ╚═══════════════════════════════════════════════════════════════════════╝ #}
+    <div class="home-section" v-if="online_players.length > 0">
+      <div class="home-section-header scroll-reveal">
+        <h2>Currently Playing</h2>
+        <p><% online_users %> players online right now</p>
+      </div>
+
+      <div class="players-showcase scroll-reveal">
+        <div class="player-showcase-card" v-for="p in online_players" :key="p.id">
+          <div class="player-showcase-banner"
+               :style="'background-image: url(/banners/' + p.id + ')'"></div>
+          <div class="player-showcase-avatar"
+               :style="'background-image: url(https://a.' + domain + '/' + p.id + ')'"></div>
+          <div class="player-showcase-info">
+            <div class="player-showcase-name">
+              <span v-if="p.clan_tag" style="opacity:0.6">[<% p.clan_tag %>]&nbsp;</span>
+              <a :href="'/u/' + p.id"><% p.name %></a>
+            </div>
+            <div class="player-showcase-rank">
+              #<% p.rank %> &mdash; <% Math.round(p.pp).toLocaleString() %>pp
+            </div>
+            <div class="player-showcase-stats">
+              <div class="player-showcase-stat">
+                <span class="player-showcase-stat-value"><% Math.round(p.pp).toLocaleString() %></span>
+                <span class="player-showcase-stat-label">PP</span>
+              </div>
+            </div>
           </div>
-          <div class="changelog-text">{{ log.content }}</div>
+          <div class="player-showcase-status">
+            <span class="player-showcase-status-dot" :class="getStatusClass(p.status)"></span>
+            <span><% getStatusText(p.status) %></span>
+          </div>
         </div>
       </div>
-      {% endfor %}
     </div>
-  </div>
-  {% endif %}
 
 
-  {# ╔═══════════════════════════════════════════════════════════════════════╗
-     ║  SECTION 7 — Call-to-Action Footer (unauthenticated only)           ║
-     ╚═══════════════════════════════════════════════════════════════════════╝ #}
-  {% if 'authenticated' not in session %}
-  <div class="cta-section">
-    <h2>Ready to play?</h2>
-    <p class="hero-description" style="margin: 0 auto 24px;">
-      Join {{ appName() }} today. It's completely free, won't affect your official
-      osu! account, and you can switch between servers any time.
-    </p>
-    <div class="hero-buttons">
-      <a href="/register" class="hero-btn hero-btn--primary">Create Account</a>
-      <a href="/login" class="hero-btn hero-btn--outline">Sign In</a>
+    {# ╔═══════════════════════════════════════════════════════════════════════╗
+       ║  SECTION 4 — Recently Ranked Beatmaps (server-rendered)              ║
+       ╚═══════════════════════════════════════════════════════════════════════╝ #}
+    {% if rankedmaps %}
+    <div class="home-section">
+      <div class="home-section-header scroll-reveal">
+        <h2>Recently Ranked</h2>
+        <p>Fresh maps added to the ranked pool</p>
+        {% if 'authenticated' in session %}
+        <a href="/beatmaps" class="home-section-btn">View All Beatmaps</a>
+        {% else %}
+        <span class="home-section-btn disabled" title="Log in to browse beatmaps">View All Beatmaps</span>
+        {% endif %}
+      </div>
+      <div class="beatmap-grid scroll-reveal">
+        {% for m in rankedmaps %}
+        <div class="beatmap-card" onclick="beatmapBus.$emit('show-beatmap-panel', {{ m.id }}, {{ m.set_id }})">
+          <div class="beatmap-card-banner"
+               style="background-image: url(https://assets.ppy.sh/beatmaps/{{ m.set_id }}/covers/cover.jpg);"></div>
+          <div class="beatmap-card-body">
+            <div class="beatmap-card-title">{{ m.title }}</div>
+            <div class="beatmap-card-artist">{{ m.artist }} // {{ m.creator }}</div>
+            {% if m.diffs %}
+            <div class="beatmap-card-diffs">
+              {% for d in m.diffs %}
+              <div class="beatmap-card-diff" title="{{ d.version }}&#10;Stars: {{ d.diff }}">
+                <img src="/static/images/icons/mode-osu.png" alt="diff" width="16" height="16">
+              </div>
+              {% endfor %}
+            </div>
+            {% endif %}
+            <div class="beatmap-card-footer">
+              {% if m.mod %}
+              <div class="beatmap-card-mod">
+                <img class="beatmap-card-mod-avatar" src="https://a.{{ domain() }}/{{ m.mod.id }}" alt="{{ m.mod.name }}" loading="lazy">
+                <span class="beatmap-card-mod-name">Ranked by {{ m.mod.name }}</span>
+              </div>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
     </div>
-  </div>
-  {% endif %}
+    {% endif %}
 
+    {# ╔═══════════════════════════════════════════════════════════════════════╗
+       ║  SECTION 5 — Most Played This Week (server-rendered)                 ║
+       ╚═══════════════════════════════════════════════════════════════════════╝ #}
+    {% if most_played %}
+    <div class="home-section">
+      <div class="home-section-header scroll-reveal">
+        <h2>Most Played This Week</h2>
+        <p>The hottest maps over the last 7 days</p>
+        {% if 'authenticated' in session %}
+        <a href="/beatmaps" class="home-section-btn">View All Beatmaps</a>
+        {% else %}
+        <span class="home-section-btn disabled" title="Log in to browse beatmaps">View All Beatmaps</span>
+        {% endif %}
+      </div>
+      <div class="beatmap-grid scroll-reveal">
+        {% for m in most_played %}
+        <div class="beatmap-card" onclick="beatmapBus.$emit('show-beatmap-panel', {{ m.id }}, {{ m.set_id }})">
+          <div class="beatmap-card-banner"
+               style="background-image: url(https://assets.ppy.sh/beatmaps/{{ m.set_id }}/covers/cover.jpg);"></div>
+          <div class="beatmap-card-body">
+            <div class="beatmap-card-title">{{ m.title }}</div>
+            <div class="beatmap-card-artist">{{ m.artist }} // {{ m.creator }}</div>
+            <div class="beatmap-card-footer">
+              <span class="beatmap-card-mod-name">{{ m.diff }}</span>
+              <span class="beatmap-card-plays"><i class="fas fa-play"></i> {{ "{:,}".format(m.play_count) }}</span>
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+
+    {# ╔═══════════════════════════════════════════════════════════════════════╗
+       ║  SECTION 6 — Changelog (server-rendered)                            ║
+       ╚═══════════════════════════════════════════════════════════════════════╝ #}
+    {% if changelogs %}
+    <div class="home-section">
+      <div class="home-section-header scroll-reveal">
+        <h2><a href="/changelog" style="color: inherit; text-decoration: none;">Changelog</a></h2>
+        <p>Latest updates and improvements</p>
+      </div>
+
+      <div class="changelog-list scroll-reveal">
+        {% for log in changelogs %}
+        <div class="changelog-entry">
+          <a href="/u/{{ log.poster.id }}">
+            <img class="changelog-avatar" src="https://a.{{ domain() }}/{{ log.poster.id }}" alt="{{ log.poster.name }}" loading="lazy">
+          </a>
+          <div class="changelog-content">
+            <div class="changelog-header">
+              <a href="/u/{{ log.poster.id }}" class="changelog-author" style="text-decoration: none;">
+                {{ log.poster.name }}
+              </a>
+              <span class="changelog-type">
+                {% if log.type == 0 %}Frontend{% elif log.type == 1 %}Backend{% elif log.type == 2 %}Client{% endif %}
+                {% if log.category %}&mdash; {{ log.category }}{% endif %}
+              </span>
+              <span class="changelog-time">{{ log.time }}</span>
+            </div>
+            <div class="changelog-text">{{ log.content }}</div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+
+    {# ╔═══════════════════════════════════════════════════════════════════════╗
+       ║  SECTION 7 — Call-to-Action Footer (unauthenticated only)           ║
+       ╚═══════════════════════════════════════════════════════════════════════╝ #}
+    {% if 'authenticated' not in session %}
+    <div class="cta-section">
+      <h2>Ready to play?</h2>
+      <p class="hero-description" style="margin: 0 auto 24px;">
+        Join {{ appName() }} today. It's completely free, won't affect your official
+        osu! account, and you can switch between servers any time.
+      </p>
+      <div class="hero-buttons">
+        <a href="/register" class="hero-btn hero-btn--primary">Create Account</a>
+        <a href="/login" class="hero-btn hero-btn--outline">Sign In</a>
+      </div>
+    </div>
+    {% endif %}
+  <!--</user-data-provider>-->
 </div>{# /home-app #}
 
 <script src="{{ bust('/static/hinaDir/js/carousel.js') }}"></script>
