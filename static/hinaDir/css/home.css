@@ -145,6 +145,12 @@
     border-color: rgba(255, 255, 255, 0.35);
 }
 
+.hero-btn.disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
 /* === STATS RIBBON === */
 .stats-ribbon {
     display: flex;

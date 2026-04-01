@@ -54,7 +54,11 @@
         {% else %}
         <a href="/u/{{ session.user_data.id }}" class="hero-btn hero-btn--primary">My Profile</a>
         {% endif %}
+        {% if 'authenticated' in session %}
         <a href="/beatmaps" class="hero-btn hero-btn--outline">Beatmaps</a>
+        {% else %}
+        <span class="hero-btn hero-btn--outline disabled" title="Log in to browse beatmaps">Beatmaps</span>
+        {% endif %}
         <a href="/leaderboard" class="hero-btn hero-btn--outline">Leaderboards</a>
       </div>
 
