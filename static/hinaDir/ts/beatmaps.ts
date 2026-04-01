@@ -103,7 +103,7 @@ new Vue({
         hasMore: true,
         searchTimer: null as number | null,
         downloadBase: '',
-        mirror: 'osu_direct',
+        mirror: 'hinai',
         infoSet: null as BeatmapSet | null,
         ppTableShow: false,
         ppTableLoading: false,
@@ -127,6 +127,7 @@ new Vue({
             { value: -2, name: 'Graveyard' },
         ] as StatusOption[],
         mirrors: [
+            { key: 'hinai', name: 'hinai', enabled: true },
             { key: 'osu_direct', name: 'osu!direct', enabled: true },
             { key: 'osu_api_v1', name: 'osu! API v1', enabled: false },
             { key: 'osu_api_v2', name: 'osu! API v2', enabled: false },
@@ -137,6 +138,17 @@ new Vue({
         this.search();
     },
     methods: {
+        getDownloadUrl: function(setId: number, noVideo?: boolean): string {
+            var self = this as any;
+            var base: string;
+            if (self.mirror === 'osu_direct') {
+                base = 'https://osu.direct/api/d/' + setId;
+            } else {
+                base = self.downloadBase + '/' + setId;
+            }
+            return noVideo ? base + '?noVideo=1' : base;
+        },
+
         search: function() {
             var self = this as any;
             self.offset = 0;
@@ -265,7 +277,7 @@ new Vue({
             // If user somehow selected a disabled mirror, revert
             for (var i = 0; i < self.mirrors.length; i++) {
                 if (self.mirrors[i].key === self.mirror && !self.mirrors[i].enabled) {
-                    self.mirror = 'osu_direct';
+                    self.mirror = 'hinai';
                     return;
                 }
             }

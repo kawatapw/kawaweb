@@ -2,7 +2,7 @@
 {% block title %}Friend Leaderboards{% endblock %}
 
 {% block header %}
-<link rel="stylesheet" href="/static/hinaDir/compiled/friends_leaderboard.css">
+<link rel="stylesheet" href="{{ bust('/static/hinaDir/compiled/friends_leaderboard.css') }}">
 {% endblock %}
 
 {% block content %}
@@ -287,5 +287,5 @@
 <script>
   var userId = {{ session.user_data['id'] }};
 </script>
-<script src="/static/hinaDir/compiled/friends_leaderboard.js"></script>
+<script src="{{ bust('/static/hinaDir/compiled/friends_leaderboard.js') }}"></script>
 {% endblock %}

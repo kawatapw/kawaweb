@@ -14,7 +14,7 @@ import timeago
 from quart import render_template, jsonify, request, session
 
 from objects import glob
-from objects.utils import flash, error_catcher
+from objects.utils import flash, klogging, error_catcher
 from objects.privileges import Privileges
 
 from . import admin
@@ -43,6 +43,17 @@ from .utils import (
     PasswordManager, PrivilegeChecker, MapStatusUpdater, ScoreManager,
     StatsManager, FormValidator
 )
+
+
+def _parse_optional_int(form, field_name: str):
+    """Parse an optional integer form field, raising ValidationError on bad input."""
+    val = form.get(field_name)
+    if not val:
+        return None
+    try:
+        return int(val)
+    except (ValueError, TypeError):
+        raise ValidationError(f"Invalid value for '{field_name}': must be an integer.")
 
 
 # Initialize services
@@ -75,7 +86,6 @@ discord_logger = DiscordLogger(
 
 
 @admin.route("/action/<action_type>", methods=["POST"])
-@error_catcher
 async def action(action_type: str):
     """
     Execute an admin action on users or maps.
@@ -111,17 +121,17 @@ async def action(action_type: str):
     request_data = ActionRequest(
         action=action_enum,
         reason=form.get("reason"),
-        user_id=int(form.get("user")) if form.get("user") else None,
-        map_id=int(form.get("map")) if form.get("map") else None,
-        duration=int(form.get("duration")) if form.get("duration") else None,
+        user_id=_parse_optional_int(form, "user"),
+        map_id=_parse_optional_int(form, "map"),
+        duration=_parse_optional_int(form, "duration"),
         password=form.get("password"),
-        privs=int(form.get("privs")) if form.get("privs") else None,
+        privs=_parse_optional_int(form, "privs"),
         username=form.get("username"),
         email=form.get("email"),
         country=form.get("country"),
         userpage_content=form.get("userpage_content"),
-        badge_id=int(form.get("badge")) if form.get("badge") else None,
-        score_id=int(form.get("score")) if form.get("score") else None
+        badge_id=_parse_optional_int(form, "badge"),
+        score_id=_parse_optional_int(form, "score"),
     )
     
     # Get current user ID
@@ -131,35 +141,38 @@ async def action(action_type: str):
     action_obj = await action_service.create_action(request_data, mod_id)
     response = await action_service.execute_action(action_obj, request_data)
     
-    # Log to Discord
-    if action_obj.is_user_action and hasattr(action_obj, 'user'):
-        discord_logger.log_user_action(
-            action_obj,
-            action_obj.mod.name,
-            action_obj.mod.id,
-            action_obj.user.name,
-            action_obj.user.id
-        )
-    elif action_obj.is_map_action and hasattr(action_obj, 'map'):
-        discord_logger.log_map_action(
-            action_obj,
-            action_obj.mod.name,
-            action_obj.mod.id,
-            action_obj.map
-        )
-    elif action_obj.is_badge_action and hasattr(action_obj, 'badge'):
-        discord_logger.log_badge_action(
-            action_obj,
-            action_obj.mod.name,
-            action_obj.mod.id,
-            action_obj.user.name,
-            action_obj.user.id,
-            {
-                'id': action_obj.badge.id,
-                'name': action_obj.badge.name,
-                'description': action_obj.badge.description
-            }
-        )
+    # Log to Discord (best-effort — don't fail the request if webhook fails)
+    try:
+        if action_obj.is_user_action and hasattr(action_obj, 'user'):
+            await discord_logger.log_user_action(
+                action_obj,
+                action_obj.mod.name,
+                action_obj.mod.id,
+                action_obj.user.name,
+                action_obj.user.id
+            )
+        elif action_obj.is_map_action and hasattr(action_obj, 'map'):
+            await discord_logger.log_map_action(
+                action_obj,
+                action_obj.mod.name,
+                action_obj.mod.id,
+                action_obj.map
+            )
+        elif action_obj.is_badge_action and hasattr(action_obj, 'badge'):
+            await discord_logger.log_badge_action(
+                action_obj,
+                action_obj.mod.name,
+                action_obj.mod.id,
+                action_obj.user.name,
+                action_obj.user.id,
+                {
+                    'id': action_obj.badge.id,
+                    'name': action_obj.badge.name,
+                    'description': action_obj.badge.description
+                }
+            )
+    except Exception as e:
+        klogging.log(f"Discord webhook failed (action still succeeded): {e}", klogging.Ansi.LYELLOW)
     
     return jsonify(ResponseFormatter.success(
         response.message,
@@ -284,7 +297,6 @@ async def users(page: Optional[int] = None):
 
 
 @admin.route('/user/<int:userid>')
-@error_catcher
 async def user(userid: int):
     """Get detailed user information."""
     # Validate authentication
@@ -293,7 +305,12 @@ async def user(userid: int):
     
     # Get user detail
     user_detail = await user_service.get_user_detail(userid)
-    
+
+    # Strip sensitive data if caller lacks ViewSensitiveInfo
+    session_priv = SessionManager.get_user_priv()
+    if not PrivilegeChecker.has_privilege(session_priv, "ViewSensitiveInfo"):
+        user_detail.user.get("logs", {}).pop("hashes", None)
+
     return jsonify(user_detail.user)
 
 
@@ -325,7 +342,6 @@ async def badges():
 
 
 @admin.route('/badge/<int:badgeid>')
-@error_catcher
 async def badge(badgeid: int):
     """Get detailed badge information."""
     # Validate authentication
@@ -339,7 +355,6 @@ async def badge(badgeid: int):
 
 
 @admin.route('/badge/<int:badgeid>/update', methods=['POST'])
-@error_catcher
 async def update_badge(badgeid: int):
     """Update an existing badge."""
     # Validate authentication
@@ -380,7 +395,6 @@ async def update_badge(badgeid: int):
 
 
 @admin.route('/badge/create', methods=['POST'])
-@error_catcher
 async def create_badge():
     """Create a new badge."""
     # Validate authentication
@@ -493,6 +507,13 @@ async def handle_admin_panel_error(error: AdminPanelError):
     """Handle AdminPanelError exceptions."""
     response, status_code = handle_admin_error(error)
     return jsonify(response), status_code
+
+
+@admin.errorhandler(Exception)
+async def handle_unexpected_error(error):
+    """Handle unexpected exceptions with JSON response."""
+    klogging.log(f"Unexpected admin error: {error}", klogging.Ansi.LRED)
+    return jsonify({"status": "error", "message": "An unexpected error occurred."}), 500
 
 
 # Import frontend blueprint for stuffbroke endpoint

@@ -1,21 +1,17 @@
-"""hinaDir: Beatmap mirror browser routes.
-Currently only supports osu!direct.
-"""
+"""hinaDir: Beatmap mirror browser routes."""
 
 import time
 from collections import defaultdict
-from functools import wraps
 
-from quart import Blueprint, render_template, request, jsonify, g
+from quart import Blueprint, render_template, request, jsonify, g, session
 
 from objects import glob
-import config as cfg
-from objects.utils import klogging, error_catcher
+from objects.utils import klogging, flash
 
 hina_beatmaps = Blueprint('hina_beatmaps', __name__)
 
 MIRROR_SEARCH = 'https://osu.direct/api/v2/search'
-MIRROR_DOWNLOAD = 'https://osu.direct/api/d'
+MIRROR_DOWNLOAD = 'https://mirror.hinamizawa.ai/api/v1/hinai/d'
 
 # Simple in-memory rate limiter: IP -> list of timestamps
 _pp_rate_limits: dict[str, list[float]] = defaultdict(list)
@@ -26,11 +22,12 @@ _PP_RATE_MAX = 10     # requests per window
 
 @hina_beatmaps.route('/beatmaps')
 async def beatmaps_page():
+    if not session or 'authenticated' not in session:
+        return await flash('error', 'You must be logged in to access that page.', 'hinaDir/login')
     return await render_template('hinaDir/beatmaps.html', globalNotice=g.globalNotice)
 
 
 @hina_beatmaps.route('/beatmaps/api/search')
-@error_catcher
 async def beatmaps_search():
     query = request.args.get('query', '', type=str)
 
@@ -86,7 +83,6 @@ async def beatmaps_search():
 
 
 @hina_beatmaps.route('/beatmaps/api/pp-table')
-@error_catcher
 async def beatmaps_pp_table():
     """Public proxy for batch PP calculation — no auth required, rate-limited."""
     # Simple IP-based rate limiting
@@ -95,7 +91,9 @@ async def beatmaps_pp_table():
     timestamps = _pp_rate_limits[ip]
     # Prune old entries
     _pp_rate_limits[ip] = [t for t in timestamps if now - t < _PP_RATE_WINDOW]
-    if len(_pp_rate_limits[ip]) >= _PP_RATE_MAX:
+    if not _pp_rate_limits[ip]:
+        del _pp_rate_limits[ip]
+    elif len(_pp_rate_limits[ip]) >= _PP_RATE_MAX:
         return jsonify({'status': 'error', 'message': 'Rate limit exceeded. Try again later.'}), 429
     _pp_rate_limits[ip].append(now)
 
@@ -116,7 +114,7 @@ async def beatmaps_pp_table():
         return jsonify({'status': 'error', 'message': 'No valid IDs provided.'}), 400
 
     headers = {
-        'Host': f'api.{cfg.domain}',
+        'Host': f'api.{glob.config.domain}',
         'Authorization': f'Bearer {glob.config.api_key}',
     }
 
@@ -127,8 +125,8 @@ async def beatmaps_pp_table():
         warm_url = f'https://api.{glob.config.domain}/v1/get_map_info?id={valid_ids[0]}'
         async with glob.http.get(warm_url, headers=headers, timeout=15) as resp:
             pass  # We don't need the response, just trigger the cache
-    except Exception:
-        pass  # Best-effort; calculate_pp_batch will return per-diff errors if needed
+    except Exception as e:
+        klogging.log(f"PP cache warm-up failed: {e}", klogging.Ansi.LYELLOW)
 
     # Build query params: repeat id= for each diff
     params = [('acc', '100'), ('acc', '99'), ('acc', '98'), ('acc', '95')]
@@ -139,9 +137,22 @@ async def beatmaps_pp_table():
     url = f'https://api.{glob.config.domain}/v1/calculate_pp_batch'
     try:
         async with glob.http.get(url, headers=headers, params=params) as resp:
-            data = await resp.json(content_type=None)
             if resp.status != 200:
-                return jsonify({'status': 'error', 'message': data.get('status', 'API error')}), resp.status
+                try:
+                    data = await resp.json(content_type=None)
+                    msg = data.get('status', 'API error')
+                except Exception:
+                    msg = f'Upstream returned status {resp.status}'
+                return jsonify({'status': 'error', 'message': msg}), resp.status
+            data = await resp.json(content_type=None)
             return jsonify(data)
     except Exception as e:
-        return jsonify({'status': 'error', 'message': str(e)}), 500
+        klogging.log(f"PP table API error: {e}", klogging.Ansi.LRED)
+        return jsonify({'status': 'error', 'message': 'Failed to calculate PP values.'}), 500
+
+
+@hina_beatmaps.errorhandler(Exception)
+async def handle_beatmaps_error(error):
+    """Handle unexpected exceptions with JSON response."""
+    klogging.log(f"Beatmaps API error: {error}", klogging.Ansi.LRED)
+    return jsonify({'status': 'error', 'message': 'An unexpected error occurred.'}), 500

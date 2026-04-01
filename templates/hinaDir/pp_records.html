@@ -2,7 +2,7 @@
 {% block title %}PP Records{% endblock %}
 
 {% block header %}
-<link rel="stylesheet" href="/static/hinaDir/compiled/pp_records.css">
+<link rel="stylesheet" href="{{ bust('/static/hinaDir/compiled/pp_records.css') }}">
 {% endblock %}
 
 {% block content %}
@@ -174,5 +174,5 @@
 
 </div>
 
-<script src="/static/hinaDir/compiled/pp_records.js"></script>
+<script src="{{ bust('/static/hinaDir/compiled/pp_records.js') }}"></script>
 {% endblock %}

@@ -47,18 +47,15 @@
     },
 
     data() {
-      return {
-        controller: null
-      };
-    },
-
-    created() {
-      // Get or create the global controller
-      this.controller = window.__userDataController;
-      
-      if (!this.controller) {
+      // Initialize controller in data() so it's available when provide() runs
+      // (Vue 2 evaluates provide() before created(), so created() is too late)
+      const controller = window.__userDataController;
+      if (!controller) {
         console.warn('[UserDataProvider] UserDataController not available');
       }
+      return {
+        controller: controller || null
+      };
     },
 
     provide() {

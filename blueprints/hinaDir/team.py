@@ -30,7 +30,7 @@ _TEAM_LAYOUT = [
             'the server infrastructure and community.'
         ),
         'groups': [
-            {'db_name': 'Owner', 'flag': 17179869184, 'exclusive': True, 'fallback_color': '#FF69B4'},
+            {'db_name': 'Owner', 'flag': 17179869184, 'exclusive': False, 'fallback_color': '#FF69B4'},
         ],
     },
     {

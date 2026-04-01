@@ -10,6 +10,7 @@ from typing import Optional, List, Dict, Any
 from datetime import datetime
 
 from objects import glob
+from objects.privileges import Privileges
 from .models import User, Map, Badge, ActionType, TargetType
 from .exceptions import DatabaseError, ResourceNotFoundError
 
@@ -164,9 +165,9 @@ class UserRepository:
                     elif filter_priv == 'supporter':
                         conditions.append("priv & 4 != 0")
                     elif filter_priv == 'mod':
-                        conditions.append("priv & 1023 != 0 AND priv < 2047")
+                        conditions.append(f"priv & {int(Privileges.AccessPanel)} != 0 AND NOT priv & {int(Privileges.ManagePrivs)}")
                     elif filter_priv == 'admin':
-                        conditions.append("priv & 2047 != 0")
+                        conditions.append(f"priv & {int(Privileges.ManagePrivs)} != 0")
                     elif filter_priv == 'restricted':
                         conditions.append("NOT priv & 1")
                 
@@ -213,9 +214,9 @@ class UserRepository:
                     elif filter_priv == 'supporter':
                         conditions.append("priv & 4 != 0")
                     elif filter_priv == 'mod':
-                        conditions.append("priv & 1023 != 0 AND priv < 2047")
+                        conditions.append(f"priv & {int(Privileges.AccessPanel)} != 0 AND NOT priv & {int(Privileges.ManagePrivs)}")
                     elif filter_priv == 'admin':
-                        conditions.append("priv & 2047 != 0")
+                        conditions.append(f"priv & {int(Privileges.ManagePrivs)} != 0")
                     elif filter_priv == 'restricted':
                         conditions.append("NOT priv & 1")
                 

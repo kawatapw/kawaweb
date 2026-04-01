@@ -442,6 +442,8 @@
   box-shadow: var(--navbar-shadow), 0 8px 32px rgba(0, 0, 0, 0.4);
   z-index: 1001;
   overflow: hidden;
+}
+.navbar-user-card.is-active {
   animation: nuc-slide-in 0.15s ease-out;
 }
 
@@ -1471,3 +1473,5 @@ html, body {
   }
 }
 /* Admin V2 is now standalone — compiled separately as admin_v2.css */
+
+/*# sourceMappingURL=hina_import.css.map */

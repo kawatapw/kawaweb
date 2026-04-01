@@ -105,7 +105,7 @@ new Vue({
             self.error = null;
 
             var offset = (self.page - 1) * self.pageSize;
-            var url = 'http://api.' + domain + '/v1/get_pp_records'
+            var url = 'https://api.' + domain + '/v1/get_pp_records'
                 + '?mode=' + self.mode
                 + '&limit=' + self.pageSize
                 + '&offset=' + offset;
@@ -218,7 +218,12 @@ new Vue({
         },
 
         gradeUrl: function(grade: string): string {
-            return '/static/images/grades/' + grade + '.png';
+            var gradeMap: Record<string, string> = {
+                'X': 'SS', 'XH': 'SS',
+                'SH': 'S',
+            };
+            var mapped = gradeMap[grade] || grade;
+            return '/static/images/icons/grades/GradeSmall-' + mapped + '.svg';
         },
 
         cheatDisplay: function(record: PPRecord): string {

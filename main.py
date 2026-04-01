@@ -6,6 +6,7 @@ __all__ = ()
 import os
 import asyncio
 import threading
+from datetime import datetime, timezone
 
 import aiohttp
 from redis import asyncio as aioredis
@@ -101,6 +102,33 @@ async def shutdown() -> None:
     await glob.http.close()    
 
 # globals which can be used in template code
+
+# Dynamic cache buster — appends ?v={mtime_hex} to static file paths.
+# mtime changes only when the file changes, so browsers cache forever
+# but instantly pick up new versions on deploy.
+_static_root = os.path.join(os.path.dirname(__file__), 'static')
+_bust_cache: dict[str, str] = {}
+
+@app.template_global()
+def bust(path: str) -> str:
+    """Return path with ?v=<mtime_hex> for cache busting.
+    Usage in templates: {{ bust('/static/css/main.css') }}
+    """
+    cached = _bust_cache.get(path)
+    if cached and not app.debug:
+        return cached
+
+    file_path = path.replace('/static/', '', 1)
+    full_path = os.path.join(_static_root, file_path)
+    try:
+        mtime = int(os.path.getmtime(full_path))
+        result = f"{path}?v={mtime:x}"
+    except OSError:
+        result = path
+
+    _bust_cache[path] = result
+    return result
+
 @app.template_global()
 def appVersion() -> str:
     return repr(version)
@@ -121,6 +149,10 @@ def domain() -> str:
 def developerMode() -> bool:
     return glob.config.developer_mode
 
+@app.template_global()
+def now() -> 'datetime':
+    return datetime.now(timezone.utc)
+
 @app.before_request
 async def inject_globals():
     """App-wide defaults for g — ensures all blueprints have these set."""
@@ -135,8 +167,9 @@ async def inject_globals():
             g.isDevEnv = True
         if glob.sys.get('maintenance') == "True":
             g.maintenance = True
-    except Exception:
-        pass
+    except Exception as e:
+        import logging as _logging
+        _logging.getLogger(__name__).warning(f"inject_globals error: {e}")
 
 from blueprints.frontend import frontend
 app.register_blueprint(frontend)
@@ -158,6 +191,9 @@ app.register_blueprint(hina_team)
 
 from blueprints.hinaDir import hina_pp_records
 app.register_blueprint(hina_pp_records)
+
+from blueprints.hinaDir import hina_auth
+app.register_blueprint(hina_auth)
 
 @app.errorhandler(404)
 async def page_not_found(e):

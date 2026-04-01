@@ -962,7 +962,7 @@ bootstrapVue('score-panel', {
             const replayUrl = `${window.location.protocol}//api.${domain}/v1/get_replay?id=${scoreId}`;
             const josuUrl = `https://josu.hinamizawa.ai/?r=${encodeURIComponent(replayUrl)}`;
             this.$log.info('UTIL', 'Opening replay in JoSu (external)', { scoreId, josuUrl });
-            window.open(josuUrl, '_blank');
+            window.open(josuUrl, '_blank', 'noopener,noreferrer');
           } else {
             // Switch to Replay tab (iframe loads automatically via computed josuUrl)
             this.$log.info('UTIL', 'Switching to Replay tab', { scoreId });

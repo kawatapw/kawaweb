@@ -200,49 +200,9 @@
     border-color: var(--navbar-accent);
 }
 
-/* User Dropdown Card - Prevent initial flicker on page load */
+/* User Dropdown Card - visibility controlled by v-show, animation on open */
 .navbar-user-card {
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.2s ease-in-out;
-    will-change: opacity;
-}
-
-/* Ensure the card starts hidden and only becomes visible when explicitly activated */
-.navbar-user-card:not(.is-active) {
-    opacity: 0;
-    pointer-events: none;
-}
-
-.navbar-user-card.is-active {
-    opacity: 1;
     pointer-events: auto;
-    transition: opacity 0.2s ease-in-out;
-}
-
-/* Force hardware acceleration for smoother transitions */
-.navbar-user-card .nuc-header .user-banner::before {
-    will-change: opacity;
-    transform: translateZ(0);
-}
-
-/* Prevent initial flicker during Vue.js initialization */
-.navbar-user-dropdown-container .navbar-user-card {
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.2s ease-in-out;
-}
-
-.navbar-user-dropdown-container .navbar-user-card.is-active {
-    opacity: 1;
-    pointer-events: auto;
-    transition: opacity 0.2s ease-in-out;
-}
-
-/* Additional rule to prevent flicker without breaking transitions */
-.navbar-user-dropdown-container .navbar-user-card:not(.is-active) {
-    opacity: 0;
-    pointer-events: none;
 }
 
 .nuc-header {
@@ -933,7 +893,7 @@
 
 .navbar-mobile-dropdown-menu {
     max-height: 0;
-    overflow: scroll;
+    overflow: hidden;
     transition: max-height 0.3s ease;
     background: hsl(var(--main), 8%, 18%);
 }
@@ -941,6 +901,7 @@
 .navbar-mobile-dropdown:hover .navbar-mobile-dropdown-menu,
 .navbar-mobile-dropdown.active .navbar-mobile-dropdown-menu {
     max-height: 240px;
+    overflow-y: auto;
 }
 
 .navbar-mobile-dropdown-item {

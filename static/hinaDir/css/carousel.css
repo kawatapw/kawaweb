@@ -1,0 +1,179 @@
+/* ============================================================================
+ * Kawata Carousel Component
+ * Lightweight auto-advancing carousel with dot navigation.
+ * ============================================================================ */
+
+.kw-carousel {
+    position: relative;
+    width: 100%;
+    overflow: hidden;
+}
+
+.kw-carousel-track {
+    display: flex;
+    gap: 16px;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    padding: 16px 8px;
+}
+
+.kw-carousel-track::-webkit-scrollbar {
+    display: none;
+}
+
+.kw-carousel-slide {
+    flex: 0 0 calc(33.333% - 12px);
+    scroll-snap-align: center;
+    transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1),
+                opacity 0.5s ease;
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+@media (max-width: 1024px) {
+    .kw-carousel-slide {
+        flex: 0 0 calc(50% - 12px);
+    }
+}
+
+@media (max-width: 640px) {
+    .kw-carousel-slide {
+        flex: 0 0 calc(85% - 12px);
+    }
+}
+
+/* Slide card styling */
+.kw-carousel-card {
+    background: hsl(var(--main), 12%, 18%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    overflow: hidden;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    height: 100%;
+}
+
+.kw-carousel-slide.active .kw-carousel-card {
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+    border-color: hsla(var(--main), 60%, 50%, 0.3);
+}
+
+.kw-carousel-card-image {
+    width: 100%;
+    height: 180px;
+    object-fit: cover;
+    display: block;
+}
+
+.kw-carousel-card-image-placeholder {
+    width: 100%;
+    height: 180px;
+    background: linear-gradient(135deg,
+        hsl(var(--main), 30%, 25%) 0%,
+        hsl(var(--main), 20%, 15%) 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 48px;
+    opacity: 0.3;
+}
+
+.kw-carousel-card-body {
+    padding: 16px;
+}
+
+.kw-carousel-card-body h3 {
+    font-size: 16px;
+    font-weight: 700;
+    margin: 0 0 8px;
+    color: hsl(var(--main), 0%, 95%);
+}
+
+.kw-carousel-card-body p {
+    font-size: 13px;
+    line-height: 1.5;
+    color: hsl(var(--main), 0%, 65%);
+    margin: 0;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+/* Navigation arrows */
+.kw-carousel-prev,
+.kw-carousel-next {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 10;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    background: hsl(var(--main), 12%, 20%);
+    color: hsl(var(--main), 0%, 80%);
+    font-size: 20px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s, border-color 0.2s;
+    backdrop-filter: blur(8px);
+}
+
+.kw-carousel-prev:hover,
+.kw-carousel-next:hover {
+    background: hsl(var(--main), 15%, 30%);
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+.kw-carousel-prev { left: 8px; }
+.kw-carousel-next { right: 8px; }
+
+/* Dot navigation */
+.kw-carousel-dots {
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+    margin-top: 12px;
+    padding: 0 16px;
+}
+
+.kw-carousel-dot {
+    height: 4px;
+    flex: 1;
+    max-width: 60px;
+    border-radius: 4px;
+    background: hsl(var(--main), 10%, 25%);
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    position: relative;
+    overflow: hidden;
+    transition: background 0.2s;
+}
+
+.kw-carousel-dot:hover {
+    background: hsl(var(--main), 10%, 35%);
+}
+
+.kw-carousel-dot-progress {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 0;
+    background: hsl(var(--main), 60%, 55%);
+    border-radius: 4px;
+}
+
+.kw-carousel-dot.active {
+    background: hsl(var(--main), 15%, 30%);
+}
+
+@keyframes carousel-progress {
+    from { width: 0; }
+    to { width: 100%; }
+}

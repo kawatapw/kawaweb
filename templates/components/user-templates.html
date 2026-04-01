@@ -189,7 +189,7 @@
                 <div class="user-hover-panel__info">
                     <div class="user-hover-panel__name">
                         <user-clan :userId="userId" v-if="showClan"></user-clan>
-                        <span v-text="userData?.info?.name || 'Loading...'"></span>
+                        <span v-text="(userData && userData.info && userData.info.name) || 'Loading...'"></span>
                     </div>
 
                     <user-rank :userId="userId" :showCountry="showCountry"></user-rank>
@@ -226,7 +226,7 @@
                             <div class="user-card__name">
                                 <user-flag :userId="userId" v-if="showCountry"></user-flag>
                                 <user-clan :userId="userId" v-if="showClan"></user-clan>
-                                <span v-text="userData?.info?.name || 'Loading...'"></span>
+                                <span v-text="(userData && userData.info && userData.info.name) || 'Loading...'"></span>
                             </div>
 
                             <user-rank :userId="userId" :showCountry="showCountry"></user-rank>
@@ -254,7 +254,7 @@
                     <div class="user-search__name">
                         <user-flag :userId="userId" v-if="showCountry"></user-flag>
                         <user-clan :userId="userId" v-if="showClan"></user-clan>
-                        <span v-text="userData?.info?.name || 'Loading...'"></span>
+                        <span v-text="(userData && userData.info && userData.info.name) || 'Loading...'"></span>
                     </div>
 
                     <div class="user-search__stats" v-if="currentStats">

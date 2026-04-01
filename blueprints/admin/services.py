@@ -8,12 +8,11 @@ coordinating between repositories, validators, and external services.
 
 import hashlib
 import bcrypt
-import requests
 from typing import Optional, List, Dict, Any
 from datetime import datetime
 
 from objects import glob
-from objects.utils import get_safe_name
+from objects.utils import get_safe_name, klogging
 from objects.privileges import Privileges, ComparePrivs, GetPriv
 
 from .models import (
@@ -43,7 +42,7 @@ class PermissionService:
         """Check if user has required privilege."""
         try:
             priv_enum = getattr(Privileges, required_privilege)
-            has_permission = priv_enum in GetPriv(user_priv)
+            has_permission = bool(user_priv) and priv_enum in GetPriv(user_priv)
             
             if not has_permission:
                 return PermissionCheck(
@@ -67,22 +66,22 @@ class PermissionService:
     @staticmethod
     def check_privilege_hierarchy(mod_priv: int, target_priv: int, new_priv: Optional[int] = None) -> PermissionCheck:
         """Check privilege hierarchy for privilege modification."""
-        # Check if mod can modify target
-        if ComparePrivs(mod_priv, target_priv):
+        # Check if mod can modify target (target must be subset of mod's privs)
+        if target_priv and not ComparePrivs(mod_priv, target_priv):
             return PermissionCheck(
                 has_permission=False,
                 error_message="You cannot modify people with privileges that you don't possess.",
                 status_code=403
             )
-        
-        # Check if mod can grant new privileges
-        if new_priv is not None and ComparePrivs(new_priv, mod_priv):
+
+        # Check if mod can grant new privileges (new privs must be subset of mod's privs)
+        if new_priv is not None and new_priv and not ComparePrivs(mod_priv, new_priv):
             return PermissionCheck(
                 has_permission=False,
                 error_message="You cannot grant privileges that you don't possess.",
                 status_code=403
             )
-        
+
         return PermissionCheck(has_permission=True)
 
 
@@ -202,16 +201,19 @@ class ActionService:
             elif action.is_badge_action:
                 await self._execute_badge_action(action, request)
             
-            # Log the action
-            await self.log_repo.create(
-                action_id=action.id,
-                action=action.action.value,
-                reason=action.reason,
-                mod_id=action.mod_id,
-                target_id=action.target_id,
-                target_type=action.target_type
-            )
-            
+            # Log the action (best-effort — action already succeeded)
+            try:
+                await self.log_repo.create(
+                    action_id=action.id,
+                    action=action.action.value,
+                    reason=action.reason,
+                    mod_id=action.mod_id,
+                    target_id=action.target_id,
+                    target_type=action.target_type
+                )
+            except Exception as log_err:
+                klogging.log(f"Audit log failed (action still succeeded): {log_err}", klogging.Ansi.LYELLOW)
+
             return ActionResponse(
                 status="success",
                 message=f"Successfully {action.text.lower()} {self._get_target_description(action)}.",
@@ -231,7 +233,11 @@ class ActionService:
             raise ResourceNotFoundError("User", action.target_id)
         
         action.user = user  # type: ignore
-        
+
+        # Hierarchy guard: mod must outrank target
+        if action.user.priv and not ComparePrivs(action.mod.priv, action.user.priv):
+            raise AuthorizationError("You cannot modify people with privileges that you don't possess.")
+
         # Execute specific action
         if action.action == ActionType.WIPE:
             await self._execute_wipe(action)
@@ -406,22 +412,21 @@ class ActionService:
         
         # Get current password hash
         bcrypt_cache = glob.cache['bcrypt']
-        pw_bcrypt = (await glob.db.fetch(
+        old_pw_bcrypt = (await glob.db.fetch(
             'SELECT pw_bcrypt FROM users WHERE id = %s',
             [action.user.id]
         ))['pw_bcrypt'].encode()
-        
-        # Remove from cache if exists
-        if pw_bcrypt in bcrypt_cache:
-            del bcrypt_cache[pw_bcrypt]
-        
+
         # Calculate new password hash
         pw_md5 = hashlib.md5(password.encode()).hexdigest().encode()
         pw_bcrypt = bcrypt.hashpw(pw_md5, bcrypt.gensalt())
-        
-        # Update cache and database
-        bcrypt_cache[pw_bcrypt] = pw_md5
+
+        # DB write FIRST — cache update only after success
         await self.user_repo.update_password(action.user.id, pw_bcrypt, action.user.safe_name)
+
+        if old_pw_bcrypt in bcrypt_cache:
+            del bcrypt_cache[old_pw_bcrypt]
+        bcrypt_cache[pw_bcrypt] = pw_md5
     
     async def _execute_change_privileges(self, action: Action, new_priv: int) -> None:
         """Execute change privileges action."""
@@ -440,8 +445,8 @@ class ActionService:
             raise AuthorizationError(hierarchy_check.error_message)
         
         # Check if privileges are already set
-        if ComparePrivs(action.user.priv, new_priv):
-            raise StateConflictError(f"Privileges are already set to {action.user.priv}.")
+        if action.user.priv == new_priv:
+            raise StateConflictError(f"Privileges are already set to {new_priv}.")
         
         # Update privileges
         await self.user_repo.update_privileges(action.user.id, new_priv)
@@ -526,7 +531,7 @@ class ActionService:
         """Execute remove score action."""
         # Check permission
         permission_check = PermissionService.check_user_permission(
-            action.mod.priv, "ManageScores"
+            action.mod.priv, "ManageUsers"
         )
         if not permission_check.has_permission:
             raise AuthorizationError(permission_check.error_message)
@@ -652,25 +657,28 @@ class ActionService:
     async def _update_map_status_via_api(self, map_id: int, status: int) -> None:
         """Update map status via external API."""
         try:
-            status_update_url = f"https://api.{glob.config.domain}/v1/update_map_status"
+            url = "http://bancho:10000/v1/update_map_status"
             headers = {
-                "Authorization": f"Bearer {glob.config.api_key}"
+                "Authorization": f"Bearer {glob.config.api_key}",
+                "Host": f"api.{glob.config.domain}",
             }
             params = {
                 "id": map_id,
-                "s": status
+                "s": status,
             }
-            
-            response = requests.post(status_update_url, headers=headers, params=params)
-            json_response = response.json()
-            
+
+            async with glob.http.post(url, headers=headers, params=params, timeout=15) as response:
+                json_response = await response.json(content_type=None)
+
             if json_response.get("status") != "success":
                 raise ExternalServiceError(
                     "Map Status API",
                     f"Failed to update map status: {json_response.get('status')}"
                 )
-        except requests.RequestException as e:
-            raise ExternalServiceError("Map Status API", str(e))
+        except ExternalServiceError:
+            raise
+        except Exception as e:
+            raise ExternalServiceError("Map Status API", str(e)) from e
     
     def _get_target_description(self, action: Action) -> str:
         """Get description of action target."""
@@ -817,6 +825,8 @@ class UserService:
             }
             
             return UserDetail(user=user_dict, badges=badges, logs=logs)
+        except AdminPanelError:
+            raise
         except Exception as e:
             raise DatabaseError(f"Failed to get user detail: {str(e)}", e)
 
@@ -866,6 +876,8 @@ class BadgeService:
             }
             
             return BadgeDetail(badge=badge_dict, styles=badge_styles)
+        except AdminPanelError:
+            raise
         except Exception as e:
             raise DatabaseError(f"Failed to get badge detail: {str(e)}", e)
     
@@ -897,7 +909,13 @@ class BadgeService:
             badge = await self.badge_repo.get_by_id(badge_id)
             if not badge:
                 raise ResourceNotFoundError("Badge", badge_id)
-            
+
+            # Check for duplicate name on rename
+            if badge.name != name:
+                existing = await self.badge_repo.get_by_name(name)
+                if existing and existing.id != badge_id:
+                    raise AlreadyExistsError("Badge", name)
+
             # Update badge
             await self.badge_repo.update(badge_id, name, description, priority)
             

@@ -4,6 +4,7 @@ __all__ = ()
 
 import bcrypt
 import hashlib
+import io
 import json
 import os
 import time
@@ -12,8 +13,8 @@ import orjson
 from functools import wraps
 from PIL import Image
 from pathlib import Path
-from quart import Blueprint, redirect, render_template, request, session, send_file
-from quart import Quart, request, redirect, Response, g
+from quart import Blueprint, redirect, render_template, request, session, send_file, Response
+from quart import jsonify, g
 
 from constants import regexes
 from objects import glob
@@ -28,13 +29,11 @@ VALID_MODS = frozenset({'vn', 'rx', 'ap'})
 
 frontend = Blueprint('frontend', __name__)
 
-app = Quart(__name__)
-
 # --- Security & Helper Middleware ---
 
 SAFE_API_PATH_REGEX = re.compile(r'^[a-zA-Z0-9_/-]+$')
 
-@app.route("/api/<path:file_path>")
+@frontend.route("/api/<path:file_path>")
 async def api_redirect(file_path):
     # SECURITY: Validate path to prevent open redirects or internal access
     if not SAFE_API_PATH_REGEX.match(file_path):
@@ -52,9 +51,6 @@ async def health_check():
     - Redis connectivity
     - Returns JSON response with status and details
     """
-    import time
-    import json
-    
     start_time = time.time()
     health_status = {
         "status": "healthy",
@@ -82,12 +78,13 @@ async def health_check():
                 "response_time_ms": round(db_time, 2)
             }
     except Exception as e:
+        klogging.log(f"Health check - database failed: {e}", klogging.Ansi.LRED)
         health_status["status"] = "unhealthy"
         health_status["checks"]["database"] = {
             "status": "failed",
-            "error": str(e)
+            "error": "unavailable"
         }
-    
+
     # Check Redis connectivity
     try:
         redis_start = time.time()
@@ -106,12 +103,13 @@ async def health_check():
                 "response_time_ms": round(redis_time, 2)
             }
     except Exception as e:
+        klogging.log(f"Health check - redis failed: {e}", klogging.Ansi.LRED)
         health_status["status"] = "unhealthy"
         health_status["checks"]["redis"] = {
             "status": "failed",
-            "error": str(e)
+            "error": "unavailable"
         }
-    
+
     # Calculate total response time
     health_status["response_time_ms"] = round((time.time() - start_time) * 1000, 2)
     
@@ -149,7 +147,7 @@ def login_required(func):
     @wraps(func)
     async def wrapper(*args, **kwargs):
         if not session or 'authenticated' not in session:
-            return await flash('error', 'You must be logged in to access that page.', 'login')
+            return await flash('error', 'You must be logged in to access that page.', 'hinaDir/login')
         return await func(*args, **kwargs)
     return wrapper
 
@@ -173,7 +171,7 @@ async def home(doc=None, sid=None, id=None, flash=None, status=None):
         'FROM users'
     )
     
-    newly_ranked = await glob.db.fetchall('SELECT * FROM newly_ranked ORDER BY time DESC LIMIT 5')
+    newly_ranked = await glob.db.fetchall('SELECT * FROM newly_ranked ORDER BY time DESC LIMIT 6')
     
     # Process newly ranked maps
     for map in newly_ranked:
@@ -200,12 +198,12 @@ async def home(doc=None, sid=None, id=None, flash=None, status=None):
             if str(e) == "'set_id'":
                 klogging.log(f"No set_id for map {map['map_id']}, deleting entry.", klogging.Ansi.LRED)
                 await glob.db.execute('DELETE FROM newly_ranked WHERE map_id = %s', [map['map_id']])
-                return await flash('error', 'Error fetching map information (auto-corrected). Please reload.', 'home')
-            klogging.log(f"KeyError in home route: {e}", klogging.Ansi.LRED)
-            return await flash('error', 'Error fetching map information.', 'home')
+            else:
+                klogging.log(f"KeyError in home route: {e}", klogging.Ansi.LRED)
+            continue
         except Exception as e:
             klogging.log(f"Unexpected error in home route: {e}", klogging.Ansi.LRED)
-            return await flash('error', 'Error fetching map information.', 'home')
+            continue
 
     # Process changelogs
     changelogs = await glob.db.fetchall('SELECT * FROM changelog ORDER BY time DESC LIMIT 5')
@@ -239,6 +237,40 @@ async def home(doc=None, sid=None, id=None, flash=None, status=None):
             # Don't return error, just skip this log entry
             continue
 
+    # Most played beatmaps in the last 7 days
+    try:
+        most_played = await glob.db.fetchall(
+            "SELECT s.map_md5, COUNT(*) as play_count, "
+            "m.id, m.set_id, m.artist, m.title, m.creator, m.diff, m.mode "
+            "FROM scores s "
+            "JOIN maps m ON s.map_md5 = m.md5 "
+            "WHERE s.play_time > NOW() - INTERVAL 7 DAY "
+            "AND m.status IN (2, 3) "
+            "GROUP BY s.map_md5 "
+            "ORDER BY play_count DESC "
+            "LIMIT 8"
+        )
+    except Exception:
+        most_played = []
+
+    # Recent registered users (for avatar stack)
+    try:
+        recent_users = await glob.db.fetchall(
+            "SELECT id, name, country FROM users "
+            "WHERE priv & 1 "
+            "ORDER BY id DESC LIMIT 5"
+        )
+    except Exception:
+        recent_users = []
+
+    try:
+        total_scores_row = await glob.db.fetch(
+            "SELECT COUNT(*) as cnt FROM scores"
+        )
+        total_scores = total_scores_row['cnt'] if total_scores_row else 0
+    except Exception:
+        total_scores = 0
+
     # Determine flash messages based on global state (if not provided)
     if flash is None:
         if g.isDevEnv:
@@ -249,15 +281,18 @@ async def home(doc=None, sid=None, id=None, flash=None, status=None):
             status = "success"
 
     return await render_template(
-        'home.html', 
-        unix_timestamp=unix_timestamp, 
-        changelogs=changelogs, 
-        rankedmaps=newly_ranked, 
-        doc=doc, 
-        dash_data=dash_data, 
-        globalNotice=g.globalNotice, 
-        flash=flash, 
-        status=status
+        'home.html',
+        unix_timestamp=unix_timestamp,
+        changelogs=changelogs,
+        rankedmaps=newly_ranked,
+        doc=doc,
+        dash_data=dash_data,
+        globalNotice=g.globalNotice,
+        flash=flash,
+        status=status,
+        most_played=most_played or [],
+        recent_users=recent_users or [],
+        total_scores=total_scores
     )
 
 @frontend.route('/home/account/edit')
@@ -338,11 +373,12 @@ async def settings_profile_post():
     if new_name != old_name or new_email != old_email:
         session.pop('authenticated', None)
         session.pop('user_data', None)
-        return await flash('success', 'Your username/email have been changed! Please login again.', 'login')
+        return await flash('success', 'Your username/email have been changed! Please login again.', 'hinaDir/login')
 
     # Hue-only change: update session and stay on page
-    if new_hue is not None:
+    if new_hue is not None and 0 <= new_hue <= 360:
         session['user_data']['hue'] = new_hue
+        session.modified = True
     return await flash('success', 'Settings saved.', 'settings/profile')
 
 @frontend.route('/settings/hue', methods=['POST'])
@@ -378,7 +414,7 @@ async def settings_avatar():
 async def settings_avatar_post():
     MAX_IMAGE_SIZE = glob.config.max_image_size * 1024 * 1024
     if glob.config.seperate_data_path:
-        AVATARS_PATH = f'./.data/b.py/avatars'
+        AVATARS_PATH = './.data/b.py/avatars'
     else:
         AVATARS_PATH = f'{glob.config.path_to_gulag}.data/avatars'
         
@@ -399,36 +435,41 @@ async def settings_avatar_post():
             return await flash('error', 'Only donators can use .gif avatars!', 'settings/avatar')
         return await flash('error', 'The image you select must be either a .JPG, .JPEG, or .PNG file!', 'settings/avatar')
 
-    # Check file size
-    # Note: avatar.content_length might be None depending on the request headers
-    if avatar.content_length and avatar.content_length > MAX_IMAGE_SIZE:
-        msg = 'The image you selected is too large!' 
+    # Read file bytes and check actual size (content_length may be None)
+    avatar_data = await avatar.read()
+    if len(avatar_data) > MAX_IMAGE_SIZE:
+        msg = 'The image you selected is too large!'
         if not session['user_data']['is_donator']:
             msg += ' Become a donor to get double the size!'
         return await flash('error', msg, 'settings/avatar')
 
-    # Remove old avatars
-    for fx in ALLOWED_EXTENSIONS:
-        old_path = os.path.join(AVATARS_PATH, f'{session["user_data"]["id"]}{fx}')
-        if os.path.isfile(old_path):
-            os.remove(old_path)
-
     save_filename = f'{session["user_data"]["id"]}{file_extension.lower()}'
     save_path = os.path.join(AVATARS_PATH, save_filename)
+    temp_path = save_path + '.tmp'
 
+    # Save new avatar to temp file first
     try:
         if file_extension.lower() != '.gif':
-            # Avatar cropping to 1:1 for non-animated images
-            pilavatar = Image.open(avatar.stream)
+            pilavatar = Image.open(io.BytesIO(avatar_data))
             pilavatar = utils.crop_image(pilavatar)
-            pilavatar.save(save_path)
+            img_format = 'PNG' if file_extension.lower() == '.png' else 'JPEG'
+            pilavatar.save(temp_path, format=img_format)
         else:
-            # Handle GIF images (no processing)
-            with open(save_path, "wb") as output_file:
-                output_file.write(avatar.read())
+            with open(temp_path, "wb") as output_file:
+                output_file.write(avatar_data)
     except Exception as e:
+        if os.path.isfile(temp_path):
+            os.remove(temp_path)
         klogging.log(f"Error saving avatar: {e}", klogging.Ansi.LRED)
         return await flash('error', 'Error saving avatar', 'settings/avatar')
+
+    # Only delete old avatars after new one saved successfully
+    for fx in ALLOWED_EXTENSIONS:
+        old_path = os.path.join(AVATARS_PATH, f'{session["user_data"]["id"]}{fx}')
+        if os.path.isfile(old_path) and old_path != temp_path:
+            os.remove(old_path)
+
+    os.rename(temp_path, save_path)
 
     return await flash('success', 'Your avatar has been successfully changed!', 'settings/avatar')
 
@@ -453,11 +494,6 @@ async def settings_custom_post():
     if banner is None and background is None:
         return await flash_with_customizations('error', 'No image was selected!', 'settings/custom')
 
-    # Check if user has customisations entry
-    query = 'SELECT COUNT(*) FROM user_customisations WHERE userid = %s'
-    row = await glob.db.fetch(query, [session['user_data']['id']])
-    user_has_customisations_entry = row['COUNT(*)']
-
     if banner is not None and banner.filename:
         _, file_extension = os.path.splitext(banner.filename.lower())
         if file_extension not in ALLOWED_EXTENSIONS:
@@ -466,20 +502,28 @@ async def settings_custom_post():
             return await flash_with_customizations('error', 'The banner you select must be either a .JPG, .JPEG, or .PNG file!', 'settings/custom')
 
         banner_file_no_ext = Path('.data/banners') / f'{session["user_data"]["id"]}'
-        
-        # Remove old pictures
-        for ext in ALLOWED_EXTENSIONS:
-            if (banner_file_no_ext.with_suffix(ext)).exists():
-                (banner_file_no_ext.with_suffix(ext)).unlink()
+        save_path = f'{banner_file_no_ext}{file_extension}'
+        temp_path = save_path + '.tmp'
 
-        await banner.save(f'{banner_file_no_ext}{file_extension}')
+        await banner.save(temp_path)
         try:
-            if user_has_customisations_entry == 1:
-                await glob.db.execute('UPDATE user_customisations SET has_banner = 1 WHERE userid = %s', [session['user_data']['id']])
-            else:
-                await glob.db.execute('INSERT INTO user_customisations (userid, has_banner) VALUES (%s, 1)', [session['user_data']['id']])
+            await glob.db.execute(
+                'INSERT INTO user_customisations (userid, has_banner) VALUES (%s, 1) '
+                'ON DUPLICATE KEY UPDATE has_banner = 1',
+                [session['user_data']['id']]
+            )
         except Exception as e:
+            if Path(temp_path).exists():
+                Path(temp_path).unlink()
             return await flash_with_customizations('error', f'Error updating banner in database: {e}', 'settings/custom')
+
+        # Remove old files only after successful save + DB update
+        for ext in ALLOWED_EXTENSIONS:
+            old = banner_file_no_ext.with_suffix(ext)
+            if old.exists() and str(old) != temp_path:
+                old.unlink()
+
+        os.rename(temp_path, save_path)
 
     if background is not None and background.filename:
         _, file_extension = os.path.splitext(background.filename.lower())
@@ -489,20 +533,28 @@ async def settings_custom_post():
             return await flash_with_customizations('error', 'The background you select must be either a .JPG, .JPEG, or .PNG file!', 'settings/custom')
 
         background_file_no_ext = Path('.data/backgrounds') / f'{session["user_data"]["id"]}'
-        
-        # Remove old pictures
-        for ext in ALLOWED_EXTENSIONS:
-            if (background_file_no_ext.with_suffix(ext)).exists():
-                (background_file_no_ext.with_suffix(ext)).unlink()
+        save_path = f'{background_file_no_ext}{file_extension}'
+        temp_path = save_path + '.tmp'
 
-        await background.save(f'{background_file_no_ext}{file_extension}')
+        await background.save(temp_path)
         try:
-            if user_has_customisations_entry == 1:
-                await glob.db.execute('UPDATE user_customisations SET has_background = 1 WHERE userid = %s', [session['user_data']['id']])
-            else:
-                await glob.db.execute('INSERT INTO user_customisations (userid, has_background) VALUES (%s, 1)', [session['user_data']['id']])
+            await glob.db.execute(
+                'INSERT INTO user_customisations (userid, has_background) VALUES (%s, 1) '
+                'ON DUPLICATE KEY UPDATE has_background = 1',
+                [session['user_data']['id']]
+            )
         except Exception as e:
+            if Path(temp_path).exists():
+                Path(temp_path).unlink()
             return await flash_with_customizations('error', f'Error updating background in database: {e}', 'settings/custom')
+
+        # Remove old files only after successful save + DB update
+        for ext in ALLOWED_EXTENSIONS:
+            old = background_file_no_ext.with_suffix(ext)
+            if old.exists() and str(old) != temp_path:
+                old.unlink()
+
+        os.rename(temp_path, save_path)
 
     return await flash_with_customizations('success', 'Your customisation has been successfully changed!', 'settings/custom')
 
@@ -541,7 +593,7 @@ async def settings_password_post():
     
     user_row = await glob.db.fetch('SELECT pw_bcrypt FROM users WHERE id = %s', [session['user_data']['id']])
     if not user_row:
-        return await flash('error', 'User not found.', 'login')
+        return await flash('error', 'User not found.', 'hinaDir/login')
         
     pw_bcrypt = user_row['pw_bcrypt'].encode()
     pw_md5 = hashlib.md5(old_password.encode()).hexdigest().encode()
@@ -575,7 +627,7 @@ async def settings_password_post():
 
     session.pop('authenticated', None)
     session.pop('user_data', None)
-    return await flash('success', 'Your password has been changed! Please log in again.', 'login')
+    return await flash('success', 'Your password has been changed! Please log in again.', 'hinaDir/login')
 
 @frontend.route('/u/<id>')
 @error_catcher
@@ -615,7 +667,7 @@ async def profile_select(id):
                                    flash=f"This Website is the Dev Environment. Please play on <a href='https://{glob.config.official_domain}'>our Official Server</a>", status="success")
     if g.maintenance:
         return await render_template('profile.html', user=user_data, mode=mode, mods=mods, globalNotice=g.globalNotice, 
-                                   flash="Website is currently under maintenence", status="success")
+                                   flash="Website is currently under maintenance", status="success")
                                    
     return await render_template('profile.html', user=user_data, mode=mode, mods=mods, globalNotice=g.globalNotice)
 
@@ -633,8 +685,8 @@ async def leaderboard(mode='std', sort='pp', mods='vn', view='alltime', season='
         return await render_template('leaderboard.html', mode=mode, sort=sort, mods=mods, view=view, season=season, globalNotice=g.globalNotice, 
                                    flash=f"This Website is the Dev Environment. Please play on <a href='https://{glob.config.official_domain}'>our Official Server</a>", status="success")
     if g.maintenance:
-        return await render_template('leaderboard.html', mode=mode, sort=sort, mods=mods, view=view, season=season, globalNotice=g.globalNotice, 
-                                   flash="Website is currently under maintenence", status="success")
+        return await render_template('leaderboard.html', mode=mode, sort=sort, mods=mods, view=view, season=season, globalNotice=g.globalNotice,
+                                   flash="Website is currently under maintenance", status="success")
     return await render_template('leaderboard.html', mode=mode, sort=sort, mods=mods, view=view, season=season, globalNotice=g.globalNotice)
 
 @frontend.route('/clans')
@@ -643,7 +695,7 @@ async def clans():
     if g.isDevEnv:
         return await render_template('clans.html', globalNotice=g.globalNotice, flash=f"This Website is the Dev Environment. Please play on <a href='https://{glob.config.official_domain}'>our Official Server</a>", status="success")
     if g.maintenance:
-        return await render_template('clans.html', globalNotice=g.globalNotice, flash="Website is currently under maintenence", status="success")
+        return await render_template('clans.html', globalNotice=g.globalNotice, flash="Website is currently under maintenance", status="success")
     return await render_template('clans.html', globalNotice=g.globalNotice)
 
 @frontend.route('/login')
@@ -653,11 +705,11 @@ async def login():
         return await flash('error', "You're already logged in!", 'home')
     
     if g.isDevEnv:
-        return await render_template('login.html', globalNotice=g.globalNotice, flash=f"This Website is the Dev Environment. Please play on <a href='https://{glob.config.official_domain}'>our Official Server</a>", status="success")
+        return await render_template('hinaDir/login.html', globalNotice=g.globalNotice, flash=f"This Website is the Dev Environment. Please play on <a href='https://{glob.config.official_domain}'>our Official Server</a>", status="success")
     if g.maintenance:
-        return await render_template('login.html', globalNotice=g.globalNotice, flash="Website is currently under maintenence", status="success")
+        return await render_template('hinaDir/login.html', globalNotice=g.globalNotice, flash="Website is currently under maintenance", status="success")
         
-    return await render_template('login.html', globalNotice=g.globalNotice)
+    return await render_template('hinaDir/login.html', globalNotice=g.globalNotice)
 
 @frontend.route('/login', methods=['POST'])
 @error_catcher
@@ -701,7 +753,7 @@ async def login_post():
     if not user_info or user_info['id'] == 1:
         if glob.config.debug:
             klogging.log(f"{username}'s login failed - account doesn't exist.", klogging.Ansi.LYELLOW)
-        return await flash('error', 'Account does not exist.', 'login')
+        return await flash('error', 'Account does not exist.', 'hinaDir/login')
 
     bcrypt_cache = glob.cache['bcrypt']
     pw_bcrypt = user_info['pw_bcrypt'].encode()
@@ -711,12 +763,12 @@ async def login_post():
         if pw_md5 != bcrypt_cache[pw_bcrypt]:
             if glob.config.debug:
                 klogging.log(f"{username}'s login failed - pw incorrect.", klogging.Ansi.LYELLOW)
-            return await flash('error', 'Password is incorrect.', 'login')
+            return await flash('error', 'Password is incorrect.', 'hinaDir/login')
     else:
         if not bcrypt.checkpw(pw_md5, pw_bcrypt):
             if glob.config.debug:
                 klogging.log(f"{username}'s login failed - pw incorrect.", klogging.Ansi.LYELLOW)
-            return await flash('error', 'Password is incorrect.', 'login')
+            return await flash('error', 'Password is incorrect.', 'hinaDir/login')
         bcrypt_cache[pw_bcrypt] = pw_md5
 
     if not user_info['priv'] & Privileges.Verified:
@@ -727,7 +779,7 @@ async def login_post():
     if not user_info['priv'] & Privileges.Normal:
         if glob.config.debug:
             klogging.log(f"{username}'s login failed - banned.", klogging.Ansi.RED)
-        return await flash('error', 'Your account is restricted. You are not allowed to log in.', 'login')
+        return await flash('error', 'Your account is restricted. You are not allowed to log in.', 'hinaDir/login')
 
     if glob.config.debug:
         klogging.log(f"{username}'s login succeeded.", klogging.Ansi.LGREEN)
@@ -744,7 +796,7 @@ async def login_post():
         'is_staff': user_info['priv'] & Privileges.Staff != 0,
         'is_dev': user_info['priv'] & Privileges.Dangerous != 0,
         'is_donator': user_info['priv'] & Privileges.Donator != 0,
-        'hue': user_info['hue'] or None,
+        'hue': user_info['hue'],
         'clan_id': user_info['clan_id'] or 0,
         'clan_name': user_info.get('clan_name') or None,
         'clan_tag': user_info.get('clan_tag') or None,
@@ -775,11 +827,11 @@ async def register():
         return await flash('error', 'Registrations are currently disabled.', 'home')
 
     if g.isDevEnv:
-        return await render_template('register.html', globalNotice=g.globalNotice, flash=f"This Website is the Dev Environment. Please play on <a href='https://{glob.config.official_domain}'>our Official Server</a>", status="success")
+        return await render_template('hinaDir/register.html', globalNotice=g.globalNotice, flash=f"This Website is the Dev Environment. Please play on <a href='https://{glob.config.official_domain}'>our Official Server</a>", status="success")
     if g.maintenance:
-        return await render_template('register.html', globalNotice=g.globalNotice, flash="Website is currently under maintenence", status="success")
+        return await render_template('hinaDir/register.html', globalNotice=g.globalNotice, flash="Website is currently under maintenance", status="success")
         
-    return await render_template('register.html', globalNotice=g.globalNotice)
+    return await render_template('hinaDir/register.html', globalNotice=g.globalNotice)
 
 @frontend.route('/register', methods=['POST'])
 @error_catcher
@@ -801,34 +853,34 @@ async def register_post():
     if glob.config.hCaptcha_sitekey != 'changeme':
         captcha_data = form.get('h-captcha-response', type=str)
         if not captcha_data or not await utils.validate_captcha(captcha_data):
-            return await flash('error', 'Captcha failed.', 'register')
+            return await flash('error', 'Captcha failed.', 'hinaDir/register')
 
     if not regexes.username.match(username):
-        return await flash('error', 'Invalid username syntax.', 'register')
+        return await flash('error', 'Invalid username syntax.', 'hinaDir/register')
 
     if '_' in username and ' ' in username:
-        return await flash('error', 'Username may contain "_" or " ", but not both.', 'register')
+        return await flash('error', 'Username may contain "_" or " ", but not both.', 'hinaDir/register')
 
     if username in glob.config.disallowed_names:
-        return await flash('error', 'Disallowed username; pick another.', 'register')
+        return await flash('error', 'Disallowed username; pick another.', 'hinaDir/register')
 
     if await glob.db.fetch('SELECT 1 FROM users WHERE name = %s', username):
-        return await flash('error', 'Username already taken by another user.', 'register')
+        return await flash('error', 'Username already taken by another user.', 'hinaDir/register')
 
     if not regexes.email.match(email):
-        return await flash('error', 'Invalid email syntax.', 'register')
+        return await flash('error', 'Invalid email syntax.', 'hinaDir/register')
 
     if await glob.db.fetch('SELECT 1 FROM users WHERE email = %s', email):
-        return await flash('error', 'Email already taken by another user.', 'register')
+        return await flash('error', 'Email already taken by another user.', 'hinaDir/register')
 
     if not 8 <= len(passwd_txt) <= 32:
-        return await flash('error', 'Password must be 8-32 characters in length.', 'register')
+        return await flash('error', 'Password must be 8-32 characters in length.', 'hinaDir/register')
 
     if len(set(passwd_txt)) <= 3:
-        return await flash('error', 'Password must have more than 3 unique characters.', 'register')
+        return await flash('error', 'Password must have more than 3 unique characters.', 'hinaDir/register')
 
     if passwd_txt.lower() in glob.config.disallowed_passwords:
-        return await flash('error', 'That password was deemed too simple.', 'register')
+        return await flash('error', 'That password was deemed too simple.', 'hinaDir/register')
 
     # Hashing
     pw_md5 = hashlib.md5(passwd_txt.encode()).hexdigest().encode()
@@ -869,7 +921,7 @@ async def register_post():
 @error_catcher
 async def logout():
     if 'authenticated' not in session:
-        return await flash('error', "You can't logout if you aren't logged in!", 'login')
+        return await flash('error', "You can't logout if you aren't logged in!", 'hinaDir/login')
 
     if glob.config.debug:
         klogging.log(f'{session["user_data"]["name"]} logged out.', klogging.Ansi.LGREEN)
@@ -877,7 +929,7 @@ async def logout():
     session.pop('authenticated', None)
     session.pop('user_data', None)
 
-    return await flash('success', 'Successfully logged out!', 'login')
+    return await flash('success', 'Successfully logged out!', 'hinaDir/login')
 
 @frontend.route('/changelog')
 @frontend.route('/changelog/<type>/<category>')
@@ -910,7 +962,7 @@ async def changelog(type='frontend', category='all'):
                                    flash=f"This Website is the Dev Environment. Please play on <a href='https://{glob.config.official_domain}'>our Official Server</a>", status="success")
     if g.maintenance:
         return await render_template('changelog.html', changelogs=changelogs, type=type, category=category, globalNotice=g.globalNotice, 
-                                   flash="Website is currently under maintenence", status="success")
+                                   flash="Website is currently under maintenance", status="success")
         
     return await render_template('changelog.html', changelogs=changelogs, type=type, category=category, globalNotice=g.globalNotice)
 
@@ -949,7 +1001,7 @@ async def get_profile_banner(user_id: int):
         path = BANNERS_PATH / f'{user_id}.{ext}'
         if path.exists():
             return await send_file(path)
-    return b'{"status":404}', 404
+    return jsonify({'status': 404}), 404
 
 @frontend.route('/backgrounds/<int:user_id>')
 @error_catcher
@@ -958,4 +1010,4 @@ async def get_profile_background(user_id: int):
         path = BACKGROUND_PATH / f'{user_id}.{ext}'
         if path.exists():
             return await send_file(path)
-    return b'{"status":404}', 404
+    return jsonify({'status': 404}), 404

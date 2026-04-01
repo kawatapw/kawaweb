@@ -174,7 +174,12 @@
                 event.target.style.display = 'none';
             },
             gradeUrl: function (grade) {
-                return '/static/images/icons/grades/GradeSmall-' + grade + '.svg';
+                var gradeMap = {
+                    'X': 'SS', 'XH': 'SS',
+                    'SH': 'S',
+                };
+                var mapped = gradeMap[grade] || grade;
+                return '/static/images/icons/grades/GradeSmall-' + mapped + '.svg';
             },
             cheatDisplay: function (record) {
                 if (!this.activeCheatType || !record.cheat_values)

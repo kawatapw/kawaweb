@@ -2,9 +2,6 @@
 {% block title %} Leaderboard {% endblock %}
 
 {% block header %}
-<script src="/static/js/asserts/vue.js"></script>
-<script src="/static/js/asserts/vue-axios.js"></script>
-
 <script>
     var mode = "{{ mode }}";
     var mods = "{{ mods }}";
@@ -13,9 +10,7 @@
     var season = "{{ season }}";
     var domain = "{{ domain() }}";
 </script>
-<style>
-    @import url("/static/css/pages/leaderboard.css") layer(styles);
-</style>
+<link rel="stylesheet" href="{{ bust('/static/css/pages/leaderboard.css') }}">
 {% endblock %}
 
 {% block content %}
@@ -43,7 +38,7 @@
         </div>
 
         <div class="leaderboard-banner main-banner">
-            <!-- Debug Console (Hidden by default, toggle with F12) -->
+            <!-- Debug Console (Hidden by default, toggle with Ctrl+Shift+D) -->
             <div v-if="debugMode" class="debug-console">
                 <div class="debug-header">
                     <span class="debug-title">Seasons Debug Console</span>
@@ -86,19 +81,19 @@
 
             <div class="main-selector" style="align-items: center;">
                 <a class="mode-select" v-bind:class="{ 'active': mode === 'std' }"
-                @click="LoadLeaderboard(sort, 'std', mods)">
+                @click="LoadLeaderboard(sort, 'std', mods, view, season)">
                     <i class="mode-icon mode-osu"></i><span class="modetext"> osu!</span>
                 </a>
                 <a class="mode-select" v-bind:class="{ 'active': mode === 'taiko', 'disabled': mods === 'ap' }"
-                @click="LoadLeaderboard(sort, 'taiko', mods)">
+                @click="LoadLeaderboard(sort, 'taiko', mods, view, season)">
                     <i class="mode-icon mode-taiko"></i><span class="modetext"> osu!taiko</span>
                 </a>
                 <a class="mode-select" v-bind:class="{ 'active': mode === 'catch', 'disabled': mods === 'ap' }"
-                @click="LoadLeaderboard(sort, 'catch', mods)">
+                @click="LoadLeaderboard(sort, 'catch', mods, view, season)">
                     <i class="mode-icon mode-catch"></i><span class="modetext"> osu!catch</span>
                 </a>
                 <a class="mode-select" v-bind:class="{ 'active': mode === 'mania', 'disabled': mods === 'ap' || mods === 'rx' }"
-                @click="LoadLeaderboard(sort, 'mania', mods)">
+                @click="LoadLeaderboard(sort, 'mania', mods, view, season)">
                     <i class="mode-icon mode-mania"></i><span class="modetext"> osu!mania</span>
                 </a>
             </div>
@@ -230,7 +225,7 @@
                                                 <% flags[user.country.toUpperCase()] %>
                                             </div>
                                         </a>
-                                        <user-username-hover :user-id="user.player_id" show-clan show-badges show-status></user-username-hover>
+                                        <user-username-hover :user-id="user.player_id" show-badges show-status></user-username-hover>
                                     </td>
                                     <td id="clan-tag" >
                                         <span v-if="user.clan_tag">
@@ -273,6 +268,6 @@
     </user-data-provider>
 </div>
 
-<script src="/static/js/asserts/vue-flags.js"></script>
-<script src="/static/js/pages/leaderboard.js"></script>
+<script src="{{ bust('/static/js/asserts/vue-flags.js') }}"></script>
+<script src="{{ bust('/static/js/pages/leaderboard.js') }}"></script>
 {% endblock %}

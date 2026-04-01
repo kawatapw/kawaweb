@@ -497,7 +497,7 @@ Vue.component('user-status-controller', {
         template: '<user-status-controller />'
       });
       
-      logger.info('LIFECYCLE', 'UserStatusController: Global controller instance created');
+      console.log('UserStatusController: Global controller instance created');
       return true;
     }
     
@@ -523,7 +523,7 @@ Vue.component('user-status-controller', {
               
               if (createController()) {
                 clearInterval(pollInterval);
-                logger.info('LIFECYCLE', 'UserStatusController: Controller created after', attempts, 'attempts');
+                console.log('UserStatusController: Controller created after', attempts, 'attempts');
               } else if (attempts >= maxAttempts) {
                 clearInterval(pollInterval);
                 console.error('UserStatusController: Failed to create controller after', maxAttempts, 'attempts');
@@ -534,7 +534,7 @@ Vue.component('user-status-controller', {
       });
     }
   } else {
-    logger.info('LIFECYCLE', 'UserStatusController: Global controller already exists', { controller: window.__userStatusController });
+    console.log('UserStatusController: Global controller already exists', { controller: window.__userStatusController });
   }
 })();
 

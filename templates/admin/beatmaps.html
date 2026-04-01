@@ -5,8 +5,8 @@
 <style>
   @import url("/static/css/pages/admin/beatmaps.css") layer(styles);
 </style>
-<script src="/static/js/asserts/vue.js"></script>
-<script src="/static/js/asserts/vue-axios.js"></script>
+<script src="{{ bust('/static/js/asserts/vue.js') }}"></script>
+<script src="{{ bust('/static/js/asserts/vue-axios.js') }}"></script>
 <script>
     var domain = "{{ domain() }}";
     var reqs = '{{ requests|tojson }}';
@@ -82,6 +82,6 @@
 <div id="editBeatmapWindow"></div>
 
 
-<script src="/static/js/pages/admin/beatmaps.js"></script>
+<script src="{{ bust('/static/js/pages/admin/beatmaps.js') }}"></script>
 
 {% endblock %}

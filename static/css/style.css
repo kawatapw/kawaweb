@@ -31,16 +31,15 @@
 body {
   display: flex;
   flex-direction: column;
-  height: 100%;
-  height: -webkit-fill-available;
+  min-height: 100vh;
 }
 
 html {
   position: relative;
   min-height: 100%;
-  scrollbar-color: hsl(var(--main), 40%, 40%) hsl(var(--main), 40%, 20%);
-  scrollbar-width: thin;
 }
+
+/* Scrollbar styles in main.css (unlayered) to override Bulma */
 
 .hidden {
   visibility: hidden;
@@ -707,15 +706,7 @@ a.foot-link {
   margin-left: 12px;
 }
 
-body::-webkit-scrollbar {
-  width: 12px;
-  background-color: hsl(var(--main), 10%, 25%);
-  border-bottom-right-radius: 8px;
-}
-body::-webkit-scrollbar-thumb {
-  border-radius: 10px;
-  background-color: hsl(var(--main), 15%, 40%);
-}
+/* Scrollbar styled on html element to prevent double scrollbar */
 
 [v-cloak] {
   display: none;

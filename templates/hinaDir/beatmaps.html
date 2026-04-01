@@ -2,7 +2,7 @@
 {% block title %}Beatmap Mirror{% endblock %}
 
 {% block header %}
-<link rel="stylesheet" href="/static/hinaDir/compiled/beatmaps.css">
+<link rel="stylesheet" href="{{ bust('/static/hinaDir/compiled/beatmaps.css') }}">
 {% endblock %}
 
 {% block content %}
@@ -158,12 +158,12 @@
           </button>
           <div class="bm-action-downloads">
             <a class="bm-action-btn bm-action-btn--dl"
-               :href="downloadBase + '/' + set.id"
+               :href="getDownloadUrl(set.id)"
                target="_blank" rel="noopener">
               <i class="fas fa-download"></i> Download
             </a>
             <a class="bm-action-btn bm-action-btn--novid"
-               :href="downloadBase + '/' + set.id + '?noVideo=1'"
+               :href="getDownloadUrl(set.id, true)"
                target="_blank" rel="noopener">
               <i class="fas fa-video-slash"></i> No Video
             </a>
@@ -499,12 +499,12 @@
         <!-- Modal actions -->
         <div class="bm-modal-actions">
           <a class="bm-action-btn bm-action-btn--dl"
-             :href="downloadBase + '/' + infoSet.id"
+             :href="getDownloadUrl(infoSet.id)"
              target="_blank" rel="noopener">
             <i class="fas fa-download"></i> Download
           </a>
           <a class="bm-action-btn bm-action-btn--novid"
-             :href="downloadBase + '/' + infoSet.id + '?noVideo=1'"
+             :href="getDownloadUrl(infoSet.id, true)"
              target="_blank" rel="noopener">
             <i class="fas fa-video-slash"></i> No Video
           </a>
@@ -534,5 +534,5 @@
 
 </div>
 
-<script src="/static/hinaDir/compiled/beatmaps.js"></script>
+<script src="{{ bust('/static/hinaDir/compiled/beatmaps.js') }}"></script>
 {% endblock %}
