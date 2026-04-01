@@ -237,6 +237,31 @@ async def home(doc=None, sid=None, id=None, flash=None, status=None):
             # Don't return error, just skip this log entry
             continue
 
+    # Most played beatmaps in the last 7 days
+    most_played = await glob.db.fetchall(
+        "SELECT s.map_md5, COUNT(*) as play_count, "
+        "m.id, m.set_id, m.artist, m.title, m.creator, m.diff, m.mode "
+        "FROM scores s "
+        "JOIN maps m ON s.map_md5 = m.md5 "
+        "WHERE s.play_time > NOW() - INTERVAL 7 DAY "
+        "AND m.status IN (2, 3) "
+        "GROUP BY s.map_md5 "
+        "ORDER BY play_count DESC "
+        "LIMIT 8"
+    )
+
+    # Recent registered users (for avatar stack)
+    recent_users = await glob.db.fetchall(
+        "SELECT id, name, country FROM users "
+        "WHERE priv & 1 "
+        "ORDER BY id DESC LIMIT 5"
+    )
+
+    total_scores_row = await glob.db.fetch(
+        "SELECT COUNT(*) as cnt FROM scores"
+    )
+    total_scores = total_scores_row['cnt'] if total_scores_row else 0
+
     # Determine flash messages based on global state (if not provided)
     if flash is None:
         if g.isDevEnv:
@@ -247,15 +272,18 @@ async def home(doc=None, sid=None, id=None, flash=None, status=None):
             status = "success"
 
     return await render_template(
-        'home.html', 
-        unix_timestamp=unix_timestamp, 
-        changelogs=changelogs, 
-        rankedmaps=newly_ranked, 
-        doc=doc, 
-        dash_data=dash_data, 
-        globalNotice=g.globalNotice, 
-        flash=flash, 
-        status=status
+        'home.html',
+        unix_timestamp=unix_timestamp,
+        changelogs=changelogs,
+        rankedmaps=newly_ranked,
+        doc=doc,
+        dash_data=dash_data,
+        globalNotice=g.globalNotice,
+        flash=flash,
+        status=status,
+        most_played=most_played or [],
+        recent_users=recent_users or [],
+        total_scores=total_scores
     )
 
 @frontend.route('/home/account/edit')

@@ -21,6 +21,7 @@
         @import url("/static/css/components/panels/panel-docs.css") layer(components);
         @import url("/static/css/components/panels/panel-beatmap.css") layer(components);
         @import url("/static/css/components/panels/panel-score.css") layer(components);
+        @import url("/static/hinaDir/css/carousel.css") layer(components);
 
     /* Overrides (Hinamizawa) */
         @import url("/static/hinaDir/compiled/hina_import.css") layer(styles-override);
