@@ -2137,8 +2137,8 @@
                         <div class="tab-content" :class="{ 'active': activeTab === 'Replay' }">
                             <div class="replay-container">
                                 <iframe 
-                                    v-if="josuUrl()"
-                                    :src="josuUrl()"
+                                    v-if="josuUrl"
+                                    :src="josuUrl"
                                     class="josu-iframe"
                                     frameborder="0"
                                     allowfullscreen
