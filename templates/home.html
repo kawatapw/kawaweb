@@ -83,7 +83,7 @@
           <div class="avatar-stack">
             {% for u in recent_users %}
             <a class="avatar-stack-item" href="/u/{{ u.id }}" title="{{ u.name }}">
-              <user-avatar :user-id="{{ u.id }}" class="avatar-stack-avatar"></user-avatar>
+              <img src="https://a.{{ domain() }}/{{ u.id }}" alt="{{ u.name }}" loading="lazy">
             </a>
             {% endfor %}
           </div>
@@ -99,7 +99,7 @@
           </div>
           <div class="avatar-stack" v-if="online_players.length > 0">
             <a class="avatar-stack-item" v-for="p in online_players.slice(0, 5)" :key="p.id" :href="'/u/' + p.id" :title="p.name">
-              <user-avatar :user-id="p.id" class="avatar-stack-avatar"></user-avatar>
+              <img :src="'https://a.' + domain + '/' + p.id" :alt="p.name" loading="lazy">
             </a>
           </div>
         </div>
@@ -208,7 +208,7 @@
           <div class="beatmap-card-footer">
             {% if m.mod %}
             <div class="beatmap-card-mod">
-              <user-avatar :user-id="{{ m.mod.id }}" class="beatmap-card-mod-avatar"></user-avatar>
+              <img class="beatmap-card-mod-avatar" src="https://a.{{ domain() }}/{{ m.mod.id }}" alt="{{ m.mod.name }}" loading="lazy">
               <span class="beatmap-card-mod-name">Ranked by {{ m.mod.name }}</span>
             </div>
             {% endif %}
@@ -268,7 +268,7 @@
       {% for log in changelogs %}
       <div class="changelog-entry">
         <a href="/u/{{ log.poster.id }}">
-          <user-avatar :user-id="{{ log.poster.id }}" class="changelog-avatar"></user-avatar>
+          <img class="changelog-avatar" src="https://a.{{ domain() }}/{{ log.poster.id }}" alt="{{ log.poster.name }}" loading="lazy">
         </a>
         <div class="changelog-content">
           <div class="changelog-header">
