@@ -1,4 +1,4 @@
-// Note: Needs to be refactored into a master component with multiple sub-components for displaying beatmaps in various display styles around the website.
+// Note: Needs to be refactored into composed components with multiple sub-components for displaying beatmaps in various display styles around the website.
 Vue.component('bmap-card', {
   mixins: [mixin_formatting, mixin_conversion],
   props: {

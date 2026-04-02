@@ -43,11 +43,12 @@
   <script>
     var domain = "{{ domain() }}";
   </script>
+
+  {% include 'components/vue-templates.html' %}
+  {% include 'components/user-templates.html' %}
 </head>
 
 <body>
-  {% include 'components/vue-templates.html' %}
-  {% include 'components/user-templates.html' %}
   {% include 'components/navbar.html' %}
 
   <div id="search-panel"></div>
