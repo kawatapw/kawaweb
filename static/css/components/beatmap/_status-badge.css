@@ -1,0 +1,24 @@
+/* ============================================================================
+ * Beatmap Status Badge Styles
+ * ============================================================================
+ */
+
+.beatmap-status-badge {
+  display: inline-block;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: 600;
+  color: var(--beatmap-text-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.beatmap-status-badge--small {
+  font-size: 10px;
+  padding: 2px 4px;
+}
+
+.beatmap-status-badge--medium {
+  font-size: 11px;
+  padding: 4px 8px;
+}

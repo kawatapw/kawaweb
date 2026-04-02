@@ -2,8 +2,8 @@
 
 /* Base Variables */
 :root {
-    --navbar-bg: hsl(var(--main), 10%, 15%);
-    --navbar-bg-hover: hsl(var(--main), 10%, 20%);
+    --navbar-bg: hsl(var(--main), 20%, 15%);
+    --navbar-bg-hover: hsl(var(--main), 20%, 20%);
     --navbar-text: hsl(var(--main), 50%, 90%);
     --navbar-text-muted: hsl(var(--main), 30%, 60%);
     --navbar-accent: hsl(var(--main), 50%, 60%);

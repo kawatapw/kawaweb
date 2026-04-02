@@ -22,7 +22,8 @@
 
 /* === CONTAINERS === */
     .badge-selects {
-        background: hsl(var(--main), 16%, 20%);
+        background: hsla(var(--main), 16%, 20%, 0.35);
+        backdrop-filter: blur(8px) saturate(1.5);
         height: fit-content !important;
         overflow-x: clip !important;
         overflow-y: visible !important;

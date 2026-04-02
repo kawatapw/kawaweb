@@ -1,0 +1,164 @@
+/* ============================================================================
+ * Beatmap Difficulty Icon Styles
+ * ============================================================================
+ */
+
+/* Base container */
+.beatmap-diff-icon {
+  position: relative;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  cursor: pointer;
+  transition: transform var(--beatmap-transition-fast);
+}
+
+.beatmap-diff-icon:hover {
+  transform: scale(1.05);
+}
+
+.beatmap-diff-icon--selected {
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+}
+
+/* Inner circle with icon */
+.beatmap-diff-icon__inner {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  border-radius: var(--beatmap-border-radius-circle);
+  background-color: rgba(var(--diff-color), 0.6);
+  backdrop-filter: blur(4px);
+  transition: all var(--beatmap-transition-normal);
+}
+
+.beatmap-diff-icon:hover .beatmap-diff-icon__inner {
+  box-shadow: 0 0 15px rgba(var(--diff-color), 0.4);
+}
+
+/* Size variants */
+.beatmap-diff-icon--small {
+  width: 24px;
+  height: 24px;
+}
+
+.beatmap-diff-icon--medium {
+  width: var(--beatmap-diff-icon-size);
+  height: var(--beatmap-diff-icon-size);
+}
+
+.beatmap-diff-icon--large {
+  width: 48px;
+  height: 48px;
+}
+
+/* Mode icon */
+.beatmap-diff-icon__mode {
+  font-style: normal;
+  color: var(--beatmap-text-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+/* osu-mode icons */
+.beatmap-diff-icon__mode[class*="icon-"] {
+  font-family: osu-mode;
+}
+
+/* Font Awesome icons (fallback for missing mode) */
+.beatmap-diff-icon__mode[class*="fa-"] {
+  font-family: 'Font Awesome 5 Free', 'Font Awesome 5 Brands';
+  font-weight: 900;
+}
+
+.beatmap-diff-icon--small .beatmap-diff-icon__mode {
+  font-size: 14px;
+}
+
+.beatmap-diff-icon--medium .beatmap-diff-icon__mode {
+  font-size: var(--beatmap-mini-mode-icon-size);
+}
+
+.beatmap-diff-icon--large .beatmap-diff-icon__mode {
+  font-size: 32px;
+}
+
+/* Rank change badge */
+.beatmap-diff-icon__rank-badge {
+  position: absolute;
+  bottom: -2px;
+  right: -2px;
+  width: var(--beatmap-mini-rank-badge-size);
+  height: var(--beatmap-mini-rank-badge-size);
+  border-radius: var(--beatmap-border-radius-circle);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 8px;
+  color: var(--beatmap-text-primary);
+  border: 2px solid rgba(20, 20, 30, 0.8);
+}
+
+/* Difficulty name label */
+.beatmap-diff-icon__name {
+  position: absolute;
+  bottom: -20px;
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  font-size: 10px;
+  color: var(--beatmap-text-secondary);
+  background-color: var(--beatmap-diff-name-bg);
+  padding: 2px 6px;
+  border-radius: 10px;
+  max-width: 80px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  opacity: 0;
+  transition: opacity var(--beatmap-transition-fast);
+}
+
+.beatmap-diff-icon:hover .beatmap-diff-icon__name {
+  opacity: 1;
+}
+
+/* Difficulty tier colors */
+.beatmap-diff-icon.difficulty-0 .beatmap-diff-icon__inner,
+.beatmap-diff-icon.difficulty-1 .beatmap-diff-icon__inner {
+  background-color: rgba(79, 192, 255, 0.5);
+  box-shadow: 0 0 10px rgba(79, 192, 255, 0.4);
+}
+
+.beatmap-diff-icon.difficulty-2 .beatmap-diff-icon__inner {
+  background-color: rgba(102, 255, 51, 0.5);
+  box-shadow: 0 0 10px rgba(102, 255, 51, 0.4);
+}
+
+.beatmap-diff-icon.difficulty-3 .beatmap-diff-icon__inner {
+  background-color: rgba(255, 204, 34, 0.5);
+  box-shadow: 0 0 10px rgba(255, 204, 34, 0.4);
+}
+
+.beatmap-diff-icon.difficulty-4 .beatmap-diff-icon__inner {
+  background-color: rgba(255, 102, 170, 0.5);
+  box-shadow: 0 0 10px rgba(255, 102, 170, 0.4);
+}
+
+.beatmap-diff-icon.difficulty-5 .beatmap-diff-icon__inner {
+  background-color: rgba(170, 136, 255, 0.5);
+  box-shadow: 0 0 10px rgba(170, 136, 255, 0.4);
+}
+
+.beatmap-diff-icon.difficulty-6 .beatmap-diff-icon__inner,
+.beatmap-diff-icon.difficulty-7 .beatmap-diff-icon__inner,
+.beatmap-diff-icon.difficulty-8 .beatmap-diff-icon__inner,
+.beatmap-diff-icon.difficulty-9 .beatmap-diff-icon__inner,
+.beatmap-diff-icon.difficulty-10 .beatmap-diff-icon__inner {
+  background-color: rgba(255, 102, 102, 0.5);
+  box-shadow: 0 0 10px rgba(255, 102, 102, 0.4);
+}

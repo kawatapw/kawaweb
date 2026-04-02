@@ -36,7 +36,7 @@
         </div>
     </div>
     <div v-if="data.maps.{{ id }}.out.length != 0" class="beatmaps">
-        <bmap-card v-for="(map, index) in data.maps.{{ id }}.out" :key="map.set_id + '-' + map.id" :beatmap="map" mode="mini" :is-set="false" :show-all-difficulties="true" :selected-difficulty-id="map.id" :show-plays="true"></bmap-card>
+        <beatmap-card v-for="(map, index) in data.maps.{{ id }}.out" :key="map.set_id + '-' + map.id" :beatmap="map" mode="mini" :show-all-difficulties="false" :selected-difficulty-id="map.id" :show-plays="true"></beatmap-card>
     </div>
     <div v-else-if="data.maps.{{ id }}.out.length == 0" class="stats-block">
         <div class="columns is-marginless">
@@ -383,6 +383,7 @@
             background: linear-gradient(hsl(var(--profile-hue), 25%, 25%, 20%), hsl(var(--profile-hue), 10%, 10%)), url("/backgrounds/{{ user['id'] }}");
             background-size: cover;
             background-clip: content-box;
+            background-position: center;
         }
     {% endif %}
     {% endif %}

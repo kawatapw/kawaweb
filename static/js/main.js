@@ -178,7 +178,15 @@ class KawataApp {
         const componentPromises = [
             this._loadComponent('/static/js/utils/portal.js', 'portal').catch(() => {}),
             this._loadComponent('/static/js/components/shaders.js', 'shaders').catch(() => {}),
-            this._loadComponent('/static/js/components/beatmap.js', 'beatmap').catch(() => {}),
+            // Load new beatmap components
+            this._loadComponent('/static/js/components/beatmap/beatmapDataStore.js', 'beatmap-data-store').catch(() => {}),
+            this._loadComponent('/static/js/components/beatmap/BeatmapDifficultyIcon.js', 'beatmap-difficulty-icon').catch(() => {}),
+            this._loadComponent('/static/js/components/beatmap/BeatmapStatusBadge.js', 'beatmap-status-badge').catch(() => {}),
+            this._loadComponent('/static/js/components/beatmap/BeatmapPopup.js', 'beatmap-popup').catch(() => {}),
+            this._loadComponent('/static/js/components/beatmap/BeatmapDifficultyList.js', 'beatmap-difficulty-list').catch(() => {}),
+            this._loadComponent('/static/js/components/beatmap/BeatmapMiniCard.js', 'beatmap-mini-card').catch(() => {}),
+            this._loadComponent('/static/js/components/beatmap/BeatmapCard.js', 'beatmap-card').catch(() => {}),
+            this._loadComponent('/static/js/components/beatmap/index.js', 'beatmap-index').catch(() => {}),
             this._loadComponent('/static/js/components/score.js', 'score').catch(() => {}),
             this._loadComponent('/static/js/pages/panels/panels.js', 'panels').catch(() => {}),
             this._loadComponent('/static/js/pages/panels/beatmap.js', 'beatmap-panel').catch(() => {}),

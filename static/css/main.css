@@ -13,6 +13,7 @@
 
     /* Components */
         @import url("/static/css/components.css") layer(components);
+        @import url("/static/css/components/beatmap/beatmap-old.css") layer(components);
         @import url("/static/css/components/badges.css?v=20260401") layer(components);
         @import url("/static/css/components/navbar.css") layer(components);
         @import url("/static/css/components/user/user-components.css") layer(components);

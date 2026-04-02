@@ -1,0 +1,145 @@
+/* ============================================================================
+ * Beatmap Component Variables
+ * ============================================================================
+ *
+ * CSS custom properties for beatmap components.
+ * Extracted from beatmap-old.css for reusability.
+ */
+
+:root {
+  /* =========================================================================
+   * Status Colors
+   * ========================================================================= */
+  --beatmap-status-graveyard: hsl(0, 0%, 40%);
+  --beatmap-status-wip: hsl(0, 0%, 40%);
+  --beatmap-status-pending: hsl(0, 0%, 45%);
+  --beatmap-status-ranked: hsl(199, 100%, 50%);
+  --beatmap-status-approved: hsl(120, 100%, 40%);
+  --beatmap-status-qualified: hsl(155, 100%, 50%);
+  --beatmap-status-loved: hsl(320, 100%, 50%);
+
+  /* =========================================================================
+   * Difficulty Star Colors
+   * ========================================================================= */
+  --beatmap-stars-0: #4290FB;
+  --beatmap-stars-1: #4FC0FF;
+  --beatmap-stars-2: #4FFFD5;
+  --beatmap-stars-3: #7CFF4F;
+  --beatmap-stars-4: #F6F05C;
+  --beatmap-stars-5: #FF8068;
+  --beatmap-stars-6: #FF4E6F;
+  --beatmap-stars-7: #C645B8;
+  --beatmap-stars-8: #6563DE;
+  --beatmap-stars-9: #18158E;
+  --beatmap-stars-10: #000000;
+
+  /* Default star color */
+  --beatmap-stars-default: #FFCC22;
+
+  /* =========================================================================
+   * Difficulty Icon Background Colors (RGB values for rgba())
+   * ========================================================================= */
+  --beatmap-diff-color-easy: 79, 192, 255;
+  --beatmap-diff-color-normal: 102, 255, 51;
+  --beatmap-diff-color-hard: 255, 204, 34;
+  --beatmap-diff-color-insane: 255, 102, 170;
+  --beatmap-diff-color-expert: 170, 136, 255;
+  --beatmap-diff-color-expert-plus: 255, 102, 102;
+
+  /* Default difficulty color */
+  --beatmap-diff-color-default: 200, 200, 200;
+
+  /* =========================================================================
+   * Card Colors
+   * ========================================================================= */
+  --beatmap-card-bg: #1a1a1a;
+  --beatmap-card-border: hsl(var(--main, 255), 10%, 20%);
+  --beatmap-card-shadow: rgba(0, 0, 0, 0.1);
+  --beatmap-card-shadow-hover: rgba(0, 0, 0, 0.15);
+  --beatmap-card-hover-border: hsla(var(--main, 255), 25%, 35%, 0.75);
+
+  /* =========================================================================
+   * Overlay Colors
+   * ========================================================================= */
+  --beatmap-overlay-dark: rgba(20, 20, 30, 0.85);
+  --beatmap-overlay-dark-hover: rgba(20, 20, 30, 0.65);
+  --beatmap-overlay-gradient: linear-gradient(to right, 
+    rgba(20, 20, 30, 0.85), 
+    rgba(20, 20, 30, 0.7));
+  --beatmap-overlay-gradient-hover: linear-gradient(to right, 
+    rgba(20, 20, 30, 0.65), 
+    rgba(20, 20, 30, 0.5));
+
+  /* =========================================================================
+   * Popup Colors
+   * ========================================================================= */
+  --beatmap-popup-bg: rgba(30, 30, 40, 0.95);
+  --beatmap-popup-shadow: rgba(0, 0, 0, 0.3);
+  --beatmap-popup-border: rgba(255, 255, 255, 0.1);
+  --beatmap-popup-stat-bg: rgba(255, 255, 255, 0.1);
+  --beatmap-popup-stat-bg-hover: rgba(255, 255, 255, 0.2);
+
+  /* =========================================================================
+   * Difficulty List Colors
+   * ========================================================================= */
+  --beatmap-diff-list-bg: rgba(20, 20, 30, 0.9);
+  --beatmap-diff-list-border: rgba(255, 255, 255, 0.1);
+  --beatmap-diff-item-bg: rgba(255, 255, 255, 0.05);
+  --beatmap-diff-item-bg-hover: rgba(255, 255, 255, 0.1);
+  --beatmap-diff-name-bg: rgba(0, 0, 0, 0.7);
+
+  /* =========================================================================
+   * Scroll Button Colors
+   * ========================================================================= */
+  --beatmap-scroll-btn-bg: rgba(0, 0, 0, 0.5);
+  --beatmap-scroll-btn-bg-hover: rgba(0, 0, 0, 0.7);
+
+  /* =========================================================================
+   * Loading & Error Colors
+   * ========================================================================= */
+  --beatmap-loading-bg: rgba(20, 20, 30, 0.8);
+  --beatmap-loading-spinner: rgba(255, 255, 255, 0.3);
+  --beatmap-loading-spinner-active: white;
+  --beatmap-error-color: #FF6666;
+  --beatmap-retry-bg: rgba(255, 255, 255, 0.2);
+  --beatmap-retry-bg-hover: rgba(255, 255, 255, 0.3);
+
+  /* =========================================================================
+   * Rank Change Colors
+   * ========================================================================= */
+  --beatmap-rank-improved: #66FF33;
+  --beatmap-rank-declined: #FF6666;
+  --beatmap-rank-unchanged: #AAAAAA;
+
+  /* =========================================================================
+   * Text Colors
+   * ========================================================================= */
+  --beatmap-text-primary: white;
+  --beatmap-text-secondary: rgba(255, 255, 255, 0.8);
+  --beatmap-text-muted: rgba(255, 255, 255, 0.6);
+  --beatmap-text-dim: rgba(255, 255, 255, 0.7);
+
+  /* =========================================================================
+   * Sizing
+   * ========================================================================= */
+  --beatmap-mini-height: 60px;
+  --beatmap-mini-icon-size: 36px;
+  --beatmap-mini-mode-icon-size: 24px;
+  --beatmap-mini-rank-badge-size: 16px;
+  --beatmap-popup-width: 300px;
+  --beatmap-diff-icon-size: 32px;
+
+  /* =========================================================================
+   * Border Radius
+   * ========================================================================= */
+  --beatmap-border-radius: 6px;
+  --beatmap-border-radius-lg: 12px;
+  --beatmap-border-radius-pill: 12px;
+  --beatmap-border-radius-circle: 50%;
+
+  /* =========================================================================
+   * Transitions
+   * ========================================================================= */
+  --beatmap-transition-fast: 0.2s ease;
+  --beatmap-transition-normal: 0.3s ease;
+}
