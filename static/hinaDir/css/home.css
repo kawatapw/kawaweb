@@ -164,7 +164,8 @@
     display: flex;
     align-items: center;
     gap: 10px;
-    background: hsla(var(--main), 10%, 20%, 0.8);
+    background: hsla(var(--main), 10%, 20%, 0.5);
+    backdrop-filter: blur(2px) saturate(150%);
     border-radius: 999px;
     padding: 8px 16px;
     white-space: nowrap;

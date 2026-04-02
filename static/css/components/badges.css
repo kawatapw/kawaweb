@@ -365,7 +365,8 @@
     .badge-panel {
         display: none;
         position: absolute;
-        background-color: hsl(var(--main), 12%, 22%) !important;
+        background-color: hsla(var(--main), 12%, 22%, 0.5) !important;
+        backdrop-filter: blur(16px) saturate(150%);
         color: hsl(var(--main), 0%, 92%) !important;
         padding: var(--panel-padding);
         border-radius: var(--panel-border-radius);
