@@ -184,7 +184,7 @@
 
       const protocol = window.location.protocol;
       const apiDomain = window.domain || 'kawata.pw';
-      const url = `${protocol}//api.${apiDomain}/v1/maps?id=${beatmapId}`;
+      const url = `${protocol}//api.${apiDomain}/v2/maps/${beatmapId}`;
 
       this._log('debug', 'API', `API request URL: ${url}`);
       this.logger?.perfStart(`fetchBeatmap:${beatmapId}`);
@@ -204,8 +204,8 @@
         const data = await response.json();
         this.logger?.perfEnd(`fetchBeatmap:${beatmapId}`, { beatmapId, status: data.status });
 
-        if (data.status === 'success' && data.data && data.data.length > 0) {
-          const beatmap = data.data[0];
+        if (data.status === 'success' && data.data) {
+          const beatmap = data.data;
           this._setCache(beatmapId, beatmap, this.beatmapCache);
           this._log('info', 'API', `Beatmap ${beatmapId} loaded successfully`, {
             title: beatmap.title,
@@ -217,7 +217,8 @@
           this._log('warn', 'API', `No beatmap data found for ${beatmapId}`, {
             apiStatus: data.status,
             hasData: !!data.data,
-            dataLength: data.data?.length
+            dataLength: data.data?.length,
+            data: data
           });
           return null;
         }
@@ -298,7 +299,7 @@
         const data = await response.json();
         this.logger?.perfEnd(`fetchBeatmapBySet:${setId}`, { setId, status: data.status });
 
-        if (data.status === 'success' && data.data && data.data.length > 0) {
+        if (data.apiStatus === 'success' && data.data) {
           const beatmap = data.data[0];
           const cacheKey = `set_${setId}`;
           this._setCache(cacheKey, beatmap, this.beatmapCache);

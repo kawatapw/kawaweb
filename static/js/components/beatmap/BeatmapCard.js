@@ -252,7 +252,7 @@ Vue.component('beatmap-card', {
      */
     handleClick(beatmapId, setId) {
       this._log('info', 'EVENT', 'Card clicked', { beatmapId, setId });
-      this.$emit('beatmap-click', beatmapId, setId);
+      beatmapBus.$emit('show-beatmap-panel', this.beatmap?.id, this.beatmap?.set_id)
     },
 
     /**
@@ -264,7 +264,6 @@ Vue.component('beatmap-card', {
         setId: setId,
         version: difficulty?.version
       });
-      this.$emit('difficulty-click', difficultyId, setId, difficulty);
     },
 
     /**
@@ -273,7 +272,6 @@ Vue.component('beatmap-card', {
     handleIconClick(difficultyId, setId) {
       this._log('info', 'EVENT', 'Icon clicked for popup', { difficultyId, setId });
       // Emit to parent for popup handling
-      this.$emit('icon-click', difficultyId, setId);
     }
   },
 

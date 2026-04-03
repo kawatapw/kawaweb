@@ -41,6 +41,11 @@ Vue.component('beatmap-difficulty-icon', {
       type: Object,
       default: null
     },
+    // Rank changes object (keyed by difficulty ID) - from old component
+    rankChanges: {
+      type: Object,
+      default: function() { return {}; }
+    },
     selected: {
       type: Boolean,
       default: false
@@ -55,12 +60,21 @@ Vue.component('beatmap-difficulty-icon', {
       validator: function(value) {
         return ['small', 'medium', 'large'].includes(value);
       }
+    },
+    // Status change props for split-circle design
+    oldStatus: {
+      type: [Number, String],
+      default: null
+    },
+    newStatus: {
+      type: [Number, String],
+      default: null
     }
   },
 
   data: function() {
     return {
-      fetchedMode: null
+      fullMapData: null
     };
   },
 
@@ -73,9 +87,9 @@ Vue.component('beatmap-difficulty-icon', {
       size: this.size
     });
     
-    // Fetch mode if not available in difficulty data
-    if (this.difficulty?.mode === undefined && this.difficulty?.id) {
-      this.fetchMapMode();
+    // Fetch full map data if mode or difficulty_rating is missing
+    if (this.difficulty?.id && (this.difficulty?.mode === undefined || this.difficulty?.difficulty_rating === undefined)) {
+      this.fetchFullMapData();
     }
   },
 
@@ -95,86 +109,122 @@ Vue.component('beatmap-difficulty-icon', {
     },
 
     /**
-     * Get difficulty color as RGB string
+     * Get difficulty color as RGB string using d3 interpolation
+     * Based on the old difficulty-icon component's color calculation
      */
     difficultyColor() {
-      if (!this.difficulty) {
-        this._log('trace', 'RENDER', 'No difficulty data, using default color');
+      // Use fullMapData.diff if available, otherwise use difficulty.difficulty_rating
+      const difficultyRating = this.fullMapData?.diff ?? this.difficulty?.difficulty_rating;
+      
+      if (!difficultyRating) {
+        this._log('trace', 'RENDER', 'No difficulty rating available, using default color');
         return '200, 200, 200';
       }
 
       try {
-        const stars = parseFloat(this.difficulty.difficulty_rating || 0);
-        
-        // Determine color based on star rating
-        let color;
-        if (stars < 1.5) color = '79, 192, 255';      // Easy - Blue
-        else if (stars < 2.25) color = '102, 255, 51';     // Normal - Green
-        else if (stars < 4) color = '255, 204, 34';        // Hard - Yellow
-        else if (stars < 5.25) color = '255, 102, 170';    // Insane - Pink
-        else if (stars < 6.5) color = '170, 136, 255';     // Expert - Purple
-        else color = '255, 102, 102';                       // Expert+ - Red
+        // Check if d3 is available
+        if (typeof d3 === 'undefined') {
+          this._log('warn', 'RENDER', 'd3 not available, using fallback color calculation');
+          return this._fallbackDifficultyColor();
+        }
 
-        this._log('trace', 'RENDER', `Difficulty color: ${color} (stars: ${stars})`);
-        return color;
+        const scale = d3.scaleLinear()
+          .domain([0.1, 1.25, 2, 2.5, 3.3, 4.2, 4.9, 5.8, 6.7, 7.7, 9])
+          .clamp(true)
+          .range([
+            '#4290FB', '#4FC0FF', '#4FFFD5', '#7CFF4F', '#F6F05C',
+            '#FF8068', '#FF4E6F', '#C645B8', '#6563DE', '#18158E', '#000000'
+          ])
+          .interpolate(d3.interpolateRgb.gamma(2.2));
+        
+        const stars = parseFloat(difficultyRating || 0);
+        const color = d3.color(scale(stars));
+        const rgb = color ? `${color.r}, ${color.g}, ${color.b}` : '200, 200, 200';
+        
+        this._log('trace', 'RENDER', `Difficulty color: ${rgb} (stars: ${stars})`);
+        return rgb;
       } catch (error) {
         this._log('error', 'RENDER', 'Error calculating difficulty color', { error: error.message });
-        return '200, 200, 200';
+        return this._fallbackDifficultyColor();
       }
+    },
+
+    /**
+     * Fallback color calculation when d3 is not available
+     */
+    _fallbackDifficultyColor() {
+      const difficultyRating = this.fullMapData?.diff ?? this.difficulty?.difficulty_rating;
+      const stars = parseFloat(difficultyRating || 0);
+      let color;
+      if (stars < 1.5) color = '79, 192, 255';
+      else if (stars < 2.25) color = '102, 255, 51';
+      else if (stars < 4) color = '255, 204, 34';
+      else if (stars < 5.25) color = '255, 102, 170';
+      else if (stars < 6.5) color = '170, 136, 255';
+      else color = '255, 102, 102';
+      return color;
     },
 
     /**
      * Get mode icon class
      */
     modeIcon() {
-      // Try to get mode from difficulty data first, then fetched mode
-      const modeValue = this.difficulty?.mode !== undefined && this.difficulty?.mode !== null
-        ? parseInt(this.difficulty.mode)
-        : (this.fetchedMode !== null && this.fetchedMode !== undefined
-          ? parseInt(this.fetchedMode)
+      // Use fullMapData.mode if available, otherwise use difficulty.mode
+      const modeValue = this.fullMapData?.mode !== undefined && this.fullMapData?.mode !== null
+        ? parseInt(this.fullMapData.mode)
+        : (this.difficulty?.mode !== undefined && this.difficulty?.mode !== null
+          ? parseInt(this.difficulty.mode)
           : null);
       
       if (modeValue === null) {
-        this._log('warn', 'RENDER', 'No mode data available (not in difficulty and not fetched), using music icon', {
+        this._log('warn', 'RENDER', 'No mode data available, using music icon', {
           difficultyId: this.difficulty?.id,
           difficultyMode: this.difficulty?.mode,
-          fetchedMode: this.fetchedMode,
+          fullMapDataMode: this.fullMapData?.mode,
           hasDifficulty: !!this.difficulty,
-          difficultyData: this.difficulty
+          hasFullMapData: !!this.fullMapData
         });
         return 'fas fa-music';
       }
 
       const modeIcons = {
-        0: 'osu-mode icon-osu',      // osu!standard
-        1: 'osu-mode icon-taiko',    // osu!taiko
-        2: 'osu-mode icon-catch',    // osu!catch
-        3: 'osu-mode icon-mania'     // osu!mania
+        0: 'mode-osu',      // osu!standard
+        1: 'mode-taiko',    // osu!taiko
+        2: 'mode-catch',    // osu!catch
+        3: 'mode-mania'     // osu!mania
       };
 
       const icon = modeIcons[modeValue];
       
       if (!icon) {
-        this._log('warn', 'RENDER', `Unknown mode value: ${this.difficulty?.mode || this.fetchedMode} (parsed: ${modeValue}), using music icon`, {
+        this._log('warn', 'RENDER', `Unknown mode value: ${modeValue}, using music icon`, {
           difficultyId: this.difficulty?.id,
-          originalMode: this.difficulty?.mode,
-          fetchedMode: this.fetchedMode,
+          difficultyMode: this.difficulty?.mode,
+          fullMapDataMode: this.fullMapData?.mode,
           parsedMode: modeValue
         });
         return 'fas fa-music';
       }
       
-      this._log('trace', 'RENDER', `Mode icon: ${icon} (mode: ${this.difficulty?.mode || this.fetchedMode}, parsed: ${modeValue})`);
+      this._log('trace', 'RENDER', `Mode icon: ${icon} (mode: ${modeValue})`);
       return icon;
     },
 
     /**
-     * Get rank change info (icon and color)
+     * Get rank change info - checks both direct prop and rankChanges object
      */
     rankChangeInfo() {
-      if (!this.rankChange) return null;
+      // First check direct rankChange prop
+      let change = this.rankChange;
+      
+      // If not provided directly, look up from rankChanges by difficulty ID (like old component)
+      if (!change && this.rankChanges && this.difficulty?.id) {
+        change = this.rankChanges[this.difficulty.id] || null;
+      }
 
-      const diff = this.rankChange.newRank - this.rankChange.oldRank;
+      if (!change) return null;
+
+      const diff = change.newRank - change.oldRank;
 
       let result;
       if (diff === 0) result = { icon: 'fa-equals', color: 'var(--beatmap-rank-unchanged)' };
@@ -182,8 +232,9 @@ Vue.component('beatmap-difficulty-icon', {
       else result = { icon: 'fa-arrow-down', color: 'var(--beatmap-rank-declined)' };
 
       this._log('debug', 'RENDER', 'Rank change info', {
-        oldRank: this.rankChange.oldRank,
-        newRank: this.rankChange.newRank,
+        difficultyId: this.difficulty?.id,
+        oldRank: change.oldRank,
+        newRank: change.newRank,
         diff,
         icon: result.icon
       });
@@ -204,6 +255,67 @@ Vue.component('beatmap-difficulty-icon', {
      */
     sizeClass() {
       return 'beatmap-diff-icon--' + this.size;
+    },
+
+    /**
+     * Check if status has changed
+     */
+    hasStatusChange() {
+      return this.oldStatus !== null && 
+             this.newStatus !== null && 
+             this.oldStatus !== this.newStatus;
+    },
+
+    /**
+     * Get status color based on status code
+     */
+    statusColors() {
+      const colors = {
+        '-2': 'hsl(0, 0%, 40%)',      // Graveyard
+        '-1': 'hsl(0, 0%, 40%)',      // WIP
+        '0': 'hsl(0, 0%, 45%)',       // Pending
+        '1': 'hsl(120, 100%, 40%)',   // Ranked
+        '2': 'hsl(199, 100%, 50%)',   // Ranked (same as 1)
+        '3': 'hsl(155, 100%, 50%)',   // Approved
+        '4': 'hsl(144, 100%, 50%)',   // Qualified
+        '5': 'hsl(320, 100%, 50%)'    // Loved
+      };
+      return colors;
+    },
+
+    /**
+     * Get old status color
+     */
+    oldStatusColor() {
+      if (this.oldStatus === null) return '#666';
+      return this.statusColors[String(this.oldStatus)] || '#666';
+    },
+
+    /**
+     * Get new status color
+     */
+    newStatusColor() {
+      if (this.newStatus === null) return '#4CAF50';
+      return this.statusColors[String(this.newStatus)] || '#4CAF50';
+    },
+
+    /**
+     * Get status change text for tooltip
+     */
+    statusChangeText() {
+      const statusNames = {
+        '-2': 'Graveyard',
+        '-1': 'WIP',
+        '0': 'Pending',
+        '1': 'Ranked',
+        '2': 'Ranked',
+        '3': 'Approved',
+        '4': 'Qualified',
+        '5': 'Loved'
+      };
+      const oldName = statusNames[String(this.oldStatus)] || 'Unknown';
+      const newName = statusNames[String(this.newStatus)] || 'Unknown';
+      return `${oldName} → ${newName}`;
     }
   },
 
@@ -215,49 +327,38 @@ Vue.component('beatmap-difficulty-icon', {
     },
 
     /**
-     * Fetch map mode from API when not available in difficulty data
+     * Fetch full map data from beatmapDataStore
      */
-    async fetchMapMode() {
+    async fetchFullMapData() {
       if (!this.difficulty?.id) {
-        this._log('warn', 'API', 'Cannot fetch mode: no difficulty ID');
+        this._log('warn', 'DATA', 'Cannot fetch full map data: no difficulty ID');
         return;
       }
 
-      this._log('info', 'API', `Fetching mode for map ${this.difficulty.id}`);
+      this._log('info', 'DATA', `Fetching full map data for ${this.difficulty.id}`);
 
       try {
-        const protocol = window.location.protocol;
-        const apiDomain = window.domain || 'kawata.pw';
-        const url = `${protocol}//api.${apiDomain}/v2/maps/${this.difficulty.id}`;
-
-        this._log('debug', 'API', `API request URL: ${url}`);
-
-        const response = await fetch(url);
-        if (!response.ok) {
-          throw new Error(`API request failed with status ${response.status}`);
+        const store = window.__beatmapDataStore;
+        if (!store) {
+          this._log('error', 'DATA', 'BeatmapDataStore not available');
+          return;
         }
 
-        const data = await response.json();
+        const mapData = await store.getBeatmap(this.difficulty.id);
         
-        this._log('debug', 'API', `API response for map ${this.difficulty.id}`, {
-          status: data.status,
-          hasData: !!data.data,
-          modeInData: data.data?.mode,
-          fullData: data
-        });
-        
-        if (data.status === 'success' && data.data && data.data.mode !== undefined) {
-          this.$set(this, 'fetchedMode', data.data.mode);
-          this._log('info', 'API', `Fetched mode for map ${this.difficulty.id}: ${this.fetchedMode}`, {
-            title: data.data.title,
-            version: data.data.version,
-            mode: this.fetchedMode
+        if (mapData) {
+          this.$set(this, 'fullMapData', mapData);
+          this._log('info', 'DATA', `Full map data loaded for ${this.difficulty.id}`, {
+            title: mapData.title,
+            mode: mapData.mode,
+            diff: mapData.diff,
+            difficulty_rating: mapData.difficulty_rating
           });
         } else {
-          this._log('warn', 'API', `No map data found for ID ${this.difficulty.id}`, { data });
+          this._log('warn', 'DATA', `No map data found for ID ${this.difficulty.id}`);
         }
       } catch (error) {
-        this._log('error', 'API', `Error fetching mode for map ${this.difficulty.id}`, { 
+        this._log('error', 'DATA', `Error fetching full map data for ${this.difficulty.id}`, { 
           error: error.message 
         });
       }
@@ -279,8 +380,15 @@ Vue.component('beatmap-difficulty-icon', {
 
   template: `
     <div 
-      :class="['beatmap-diff-icon', sizeClass, difficultyTier, { 'beatmap-diff-icon--selected': selected }]"
-      :style="{ '--diff-color': difficultyColor }"
+      :class="['beatmap-diff-icon', sizeClass, difficultyTier, { 
+        'beatmap-diff-icon--selected': selected,
+        'beatmap-diff-icon--status-changed': hasStatusChange
+      }]"
+      :style="{ 
+        '--diff-color': difficultyColor,
+        '--old-status-color': oldStatusColor,
+        '--new-status-color': newStatusColor
+      }"
       @click="handleClick">
       
       <!-- Mode icon -->
@@ -293,6 +401,13 @@ Vue.component('beatmap-difficulty-icon', {
           :style="{ backgroundColor: rankChangeInfo.color }">
           <i :class="['fas', rankChangeInfo.icon]"></i>
         </div>
+      </div>
+      
+      <!-- Status change indicator (shown on hover when status changed) -->
+      <div v-if="hasStatusChange" 
+        class="beatmap-diff-icon__status-change"
+        :title="statusChangeText">
+        {{ statusChangeText }}
       </div>
       
       <!-- Difficulty name (optional) -->

@@ -224,7 +224,7 @@ Vue.component('beatmap-mini-card', {
         beatmapId: this.beatmap.id,
         setId: this.beatmap.set_id
       });
-      this.$emit('click', this.beatmap.id, this.beatmap.set_id);
+      beatmapBus.$emit('show-beatmap-panel', this.beatmap.id, this.beatmap.set_id);
     },
 
     /**
@@ -236,7 +236,6 @@ Vue.component('beatmap-mini-card', {
         setId: setId,
         version: difficulty?.version
       });
-      this.$emit('difficulty-click', difficultyId, setId, difficulty);
     },
 
     /**
@@ -248,7 +247,6 @@ Vue.component('beatmap-mini-card', {
         setId: setId
       });
       // Emit to parent for popup handling
-      this.$emit('icon-click', difficultyId, setId);
     }
   },
 
