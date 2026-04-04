@@ -435,32 +435,32 @@ button.profile-friend-btn--desktop {
                             </div>
                         </div>
                     </div>
-                    <div class="profile-stats-summary" v-if="data.stats.out[modegulag]">
+                    <div class="profile-stats-summary" v-if="currentStats">
                         <div class="pss-pill">
                             <span class="pss-label">PP</span>
-                            <span class="pss-value"><% addCommas(data.stats.out[modegulag].pp) %></span>
+                            <span class="pss-value"><% addCommas(currentStats.pp) %></span>
                         </div>
                         <div class="pss-pill">
                             <span class="pss-label">Rank</span>
-                            <span class="pss-value" v-if="data.stats.out[modegulag].rank != 0"><% '#' + data.stats.out[modegulag].rank %></span>
+                            <span class="pss-value" v-if="currentStats.rank != 0"><% '#' + currentStats.rank %></span>
                             <span class="pss-value" v-else>-</span>
                         </div>
                         <div class="pss-pill">
                             <span class="pss-label">Acc</span>
-                            <span class="pss-value"><% data.stats.out[modegulag].acc %>%</span>
+                            <span class="pss-value"><% currentStats.acc %>%</span>
                         </div>
                         <div class="pss-grades" v-if="data.grades">
                             <div class="pss-grade">
                                 <div class="map-rank rank-X">SS</div>
-                                <span class="pss-grade-count"><% data.stats.out[modegulag].x_count %></span>
+                                <span class="pss-grade-count"><% currentStats.x_count %></span>
                             </div>
                             <div class="pss-grade">
                                 <div class="map-rank rank-S">S</div>
-                                <span class="pss-grade-count"><% data.stats.out[modegulag].s_count %></span>
+                                <span class="pss-grade-count"><% currentStats.s_count %></span>
                             </div>
                             <div class="pss-grade">
                                 <div class="map-rank rank-A">A</div>
-                                <span class="pss-grade-count"><% data.stats.out[modegulag].a_count %></span>
+                                <span class="pss-grade-count"><% currentStats.a_count %></span>
                             </div>
                         </div>
                     </div>
@@ -485,19 +485,19 @@ button.profile-friend-btn--desktop {
                             <span class="active-dot"></span> Active Season
                         </div>
                     </div>
-                    <div class="header" v-if='(data.stats.out[modegulag].rank) != 0'>
+                    <div class="header" v-if='(currentStats.rank) != 0'>
                         <div class="title">
                             <i class="fas fa-user-friends"></i> Rank
                         </div>
                     </div>
-                    <div class="stats-block rank-block" id="hina-stats-block"v-if='(data.stats.out[modegulag].rank) != 0'>
+                    <div class="stats-block rank-block" id="hina-stats-block"v-if='(currentStats.rank) != 0'>
                         <table class="is-striped">
                             <tbody>
                                 <tr>
                                     <td>Global rank</td>
                                     <td class="right-aligned">
                                         <span id="global-rank">
-                                            <% '#' + (data.stats.out[modegulag].rank) %>
+                                            <% '#' + (currentStats.rank) %>
                                         </span>
                                     </td>
                                 </tr>
@@ -505,7 +505,7 @@ button.profile-friend-btn--desktop {
                                     <td>Country rank</td>
                                     <td class="right-aligned">
                                         <span id="country-rank">
-                                            <% '#' + (data.stats.out[modegulag].country_rank) %>
+                                            <% '#' + (currentStats.country_rank) %>
                                         </span>
                                     </td>
                                 </tr>
@@ -523,43 +523,43 @@ button.profile-friend-btn--desktop {
                                 <tr>
                                     <td><b>PP</b></td>
                                     <td class="right-aligned">
-                                        <% addCommas(data.stats.out[modegulag].pp) %>
+                                        <% addCommas(currentStats.pp) %>
                                     </td>
                                 </tr>
                                 <tr>
                                     <td><b>Ranked score</b></td>
                                     <td class="right-aligned">
-                                        <% addCommas(data.stats.out[modegulag].rscore) %>
+                                        <% addCommas(currentStats.rscore) %>
                                     </td>
                                 </tr>
                                 <tr>
                                     <td><b>Total score</b></td>
                                     <td class="right-aligned">
-                                        <% addCommas(data.stats.out[modegulag].tscore) %>
+                                        <% addCommas(currentStats.tscore) %>
                                     </td>
                                 </tr>
                                 <tr>
                                     <td><b>Max combo</b></td>
                                     <td class="right-aligned">
-                                        <% addCommas(data.stats.out[modegulag].max_combo) %>
+                                        <% addCommas(currentStats.max_combo) %>
                                     </td>
                                 </tr>
                                 <tr>
                                     <td><b>Playcount</b></td>
                                     <td class="right-aligned">
-                                        <% addCommas(data.stats.out[modegulag].plays) %>
+                                        <% addCommas(currentStats.plays) %>
                                     </td>
                                 </tr>
                                 <tr>
                                     <td><b>Playtime</b></td>
                                     <td class="right-aligned">
-                                        <% secondsToDhm(data.stats.out[modegulag].playtime) %>
+                                        <% secondsToDhm(currentStats.playtime) %>
                                     </td>
                                 </tr>
                                 <tr>
                                     <td><b>Accuracy</b></td>
                                     <td class="right-aligned">
-                                        <% data.stats.out[modegulag].acc %>%
+                                        <% currentStats.acc %>%
                                     </td>
                                 </tr>
                             </tbody>
@@ -571,13 +571,13 @@ button.profile-friend-btn--desktop {
                                         <div class="rank-single">
                                             <div class="map-rank rank-X">SS</div>
                                             <div class="rank-amount">
-                                                <% data.stats.out[modegulag].x_count %>
+                                                <% currentStats.x_count %>
                                             </div>
                                         </div>
                                         <div class="rank-single">
                                             <div class="map-rank rank-XH">SS</div>
                                             <div class="rank-amount">
-                                                <% data.stats.out[modegulag].xh_count %>
+                                                <% currentStats.xh_count %>
                                             </div>
                                         </div>
                                     </div>
@@ -585,19 +585,19 @@ button.profile-friend-btn--desktop {
                                         <div class="rank-single">
                                             <div class="map-rank rank-S">S</div>
                                             <div class="rank-amount">
-                                                <% data.stats.out[modegulag].s_count %>
+                                                <% currentStats.s_count %>
                                             </div>
                                         </div>
                                         <div class="rank-single">
                                             <div class="map-rank rank-SH">S</div>
                                             <div class="rank-amount">
-                                                <% data.stats.out[modegulag].sh_count %>
+                                                <% currentStats.sh_count %>
                                             </div>
                                         </div>
                                         <div class="rank-single">
                                             <div class="map-rank rank-A">A</div>
                                             <div class="rank-amount">
-                                                <% data.stats.out[modegulag].a_count %>
+                                                <% currentStats.a_count %>
                                             </div>
                                         </div>
                                     </div>
