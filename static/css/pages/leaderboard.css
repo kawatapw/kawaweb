@@ -367,6 +367,10 @@ table th {
     .seasonal-filters-container {
         width: 100%;
         margin-top: 6px;
+        /* Kill fadeIn animation on mobile — its transform shifts the native
+           <select> popup to the top-left corner on mobile browsers */
+        animation: none !important;
+        transform: none !important;
     }
 
     .seasonal-dropdown-container {
