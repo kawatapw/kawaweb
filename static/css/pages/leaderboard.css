@@ -363,30 +363,33 @@ table th {
         order: 3;
     }
 
-    /* ── Seasonal filters — horizontal row under view toggle ── */
+    /* ── Seasonal filters — full-width stacked with readable backgrounds ── */
     .seasonal-filters-container {
         width: 100%;
         margin-top: 6px;
     }
 
     .seasonal-dropdown-container {
-        flex-direction: row !important;
-        flex-wrap: wrap;
-        justify-content: center;
+        flex-direction: column !important;
         gap: 6px !important;
         margin-top: 4px !important;
     }
 
     .seasonal-dropdown {
         margin: 0 !important;
+        width: 100% !important;
+        background: hsla(var(--main), 20%, 18%, 0.7);
+        border-radius: 6px;
+        padding: 2px 4px;
     }
 
     .seasonal-dropdown select {
-        width: auto !important;
-        min-width: 80px;
-        font-size: 13px !important;
-        height: 36px !important;
-        padding: 6px 24px 6px 8px !important;
+        width: 100% !important;
+        font-size: 14px !important;
+        height: 40px !important;
+        padding: 8px 28px 8px 10px !important;
+        min-height: 44px;
+        border-bottom-color: hsla(var(--main), 45%, 60%, 0.5) !important;
     }
 
     /* Pagination */
