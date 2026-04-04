@@ -443,7 +443,8 @@ table th {
   transform: translateY(-32px);
 }
 
-/* Fade-in animation for seasonal filters */
+/* Fade-in animation for seasonal filters — desktop only.
+   On mobile, transforms shift the native <select> popup position. */
 @keyframes fadeIn {
   0% {
     opacity: 0;
@@ -456,6 +457,13 @@ table th {
   100% {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+/* Apply fadeIn only on desktop (moved from inline style on the element) */
+@media (min-width: 769px) {
+  .seasonal-filters-container {
+    animation: fadeIn 0.3s ease 0.3s both;
   }
 }
 
