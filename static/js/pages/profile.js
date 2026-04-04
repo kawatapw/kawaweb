@@ -177,6 +177,13 @@ new Vue({
                     self.activeSeason = self.seasons.find(function(s) { return s.is_active; }) || null;
                     if (self.yearOptions.length > 0) {
                         self.selectedYear = self.yearOptions[0];
+                        // Auto-select the active season (or first available) so the dropdown isn't empty
+                        var filtered = self.filteredSeasons;
+                        if (self.activeSeason && filtered.some(function(s) { return s.id === self.activeSeason.id; })) {
+                            self.selectedSeason = self.activeSeason.id;
+                        } else if (filtered.length > 0) {
+                            self.selectedSeason = filtered[filtered.length - 1].id;
+                        }
                     }
                 }
             }).catch(function() {
