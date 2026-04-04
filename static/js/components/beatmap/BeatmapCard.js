@@ -105,6 +105,10 @@ Vue.component('beatmap-card', {
       showAllDifficulties: this.showAllDifficulties,
       autoLoad: this.autoLoad
     });
+    // Auto-load data if needed
+    if (this.autoLoad && !this.hasCompleteData) {
+      this.loadMapData();
+    }
   },
 
   computed: {
@@ -252,7 +256,7 @@ Vue.component('beatmap-card', {
      */
     handleClick(beatmapId, setId) {
       this._log('info', 'EVENT', 'Card clicked', { beatmapId, setId });
-      beatmapBus.$emit('show-beatmap-panel', this.beatmap?.id, this.beatmap?.set_id)
+      beatmapBus.$emit('show-beatmap-panel', beatmapId, setId);
     },
 
     /**
@@ -264,6 +268,7 @@ Vue.component('beatmap-card', {
         setId: setId,
         version: difficulty?.version
       });
+      beatmapBus.$emit('show-beatmap-panel', difficultyId, setId);
     },
 
     /**
@@ -271,16 +276,11 @@ Vue.component('beatmap-card', {
      */
     handleIconClick(difficultyId, setId) {
       this._log('info', 'EVENT', 'Icon clicked for popup', { difficultyId, setId });
-      // Emit to parent for popup handling
+      beatmapBus.$emit('show-beatmap-panel', difficultyId, setId);
     }
   },
 
-  created: function() {
-    // Auto-load data if needed
-    if (this.autoLoad && !this.hasCompleteData) {
-      this.loadMapData();
-    }
-  },
+  /* created() merged above */
 
   mounted: function() {
     // Load difficulties if showing all

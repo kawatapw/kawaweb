@@ -179,14 +179,14 @@
   <!-- Season switcher -->
   <div class="flb-season-switcher" v-if="seasons.length > 0">
     <div class="flb-season-controls">
-      <a class="flb-season-pill" :class="{ active: selectedSeason === 0 }" @click="selectSeason(0)">
+      <button type="button" class="flb-season-pill" :class="{ active: selectedSeason === 0 }" @click="selectSeason(0)">
         <i class="fas fa-infinity"></i> All Time
-      </a>
+      </button>
       <div class="flb-season-dropdowns" v-if="yearOptions.length > 0">
-        <select class="flb-season-select" v-model.number="selectedYear" @change="onYearChange">
+        <select class="flb-season-select" aria-label="Year" v-model.number="selectedYear" @change="onYearChange">
           <option v-for="y in yearOptions" :key="'sy'+y" :value="y" v-text="y"></option>
         </select>
-        <select class="flb-season-select" v-model.number="selectedSeason" @change="onSeasonChange">
+        <select class="flb-season-select" aria-label="Season" v-model.number="selectedSeason" @change="onSeasonChange">
           <option v-for="s in filteredSeasons" :key="'ss'+s.id" :value="s.id" v-text="s.label"></option>
         </select>
       </div>

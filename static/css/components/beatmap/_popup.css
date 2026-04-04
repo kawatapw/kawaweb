@@ -36,21 +36,21 @@
   font-size: 16px;
   color: var(--beatmap-text-primary);
   margin-bottom: 4px;
-  word-break: break-word;
+  overflow-wrap: break-word;
 }
 
 .beatmap-popup__artist {
   font-size: 14px;
   color: var(--beatmap-text-secondary);
   margin-bottom: 4px;
-  word-break: break-word;
+  overflow-wrap: break-word;
 }
 
 .beatmap-popup__version {
   font-size: 14px;
   color: var(--beatmap-text-dim);
   font-style: italic;
-  word-break: break-word;
+  overflow-wrap: break-word;
 }
 
 /* Details section */

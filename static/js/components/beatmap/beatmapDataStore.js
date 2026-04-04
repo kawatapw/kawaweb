@@ -38,6 +38,8 @@
     }
 
     _initLogger() {
+      const MAX_RETRIES = 50;
+      let attempts = 0;
       const waitForLogger = () => {
         if (window.ColorfulLogger) {
           this.logger = window.ColorfulLogger.child('BeatmapDataStore');
@@ -45,7 +47,7 @@
             cacheTTL: `${CACHE_TTL / 1000}s`,
             setCacheTTL: `${SET_CACHE_TTL / 1000}s`
           });
-        } else {
+        } else if (++attempts < MAX_RETRIES) {
           setTimeout(waitForLogger, 100);
         }
       };
@@ -183,7 +185,7 @@
       this._log('info', 'API', `Fetching beatmap ${beatmapId} from API`);
 
       const protocol = window.location.protocol;
-      const apiDomain = window.domain || 'kawata.pw';
+      const apiDomain = (typeof domain !== 'undefined' ? domain : null) || window.location.hostname || 'kawata.pw';
       const url = `${protocol}//api.${apiDomain}/v2/maps/${beatmapId}`;
 
       this._log('debug', 'API', `API request URL: ${url}`);
@@ -279,7 +281,7 @@
       this._log('info', 'API', `Fetching beatmap by set ${setId} from API`);
 
       const protocol = window.location.protocol;
-      const apiDomain = window.domain || 'kawata.pw';
+      const apiDomain = (typeof domain !== 'undefined' ? domain : null) || window.location.hostname || 'kawata.pw';
       const url = `${protocol}//api.${apiDomain}/v1/maps?set_id=${setId}`;
 
       this._log('debug', 'API', `API request URL: ${url}`);
@@ -299,7 +301,7 @@
         const data = await response.json();
         this.logger?.perfEnd(`fetchBeatmapBySet:${setId}`, { setId, status: data.status });
 
-        if (data.apiStatus === 'success' && data.data) {
+        if (data.status === 'success' && Array.isArray(data.data) && data.data.length > 0) {
           const beatmap = data.data[0];
           const cacheKey = `set_${setId}`;
           this._setCache(cacheKey, beatmap, this.beatmapCache);
@@ -372,7 +374,7 @@
       this._log('info', 'API', `Fetching difficulties for set ${setId} from API`);
 
       const protocol = window.location.protocol;
-      const apiDomain = window.domain || 'kawata.pw';
+      const apiDomain = (typeof domain !== 'undefined' ? domain : null) || window.location.hostname || 'kawata.pw';
       const url = `${protocol}//api.${apiDomain}/v2/maps?set_id=${setId}&page_size=100`;
 
       this._log('debug', 'API', `API request URL: ${url}`);
@@ -392,7 +394,7 @@
         const data = await response.json();
         this.logger?.perfEnd(`fetchDifficulties:${setId}`, { setId, status: data.status });
 
-        if (data.status === 'success' && data.data) {
+        if (data.status === 'success' && Array.isArray(data.data) && data.data.length > 0) {
           // Sort by difficulty rating ascending
           const sorted = data.data.sort((a, b) => {
             return (parseFloat(a.difficulty_rating) || 0) - (parseFloat(b.difficulty_rating) || 0);
@@ -447,8 +449,10 @@
      */
     clearSetCache(setId) {
       const key = String(setId);
-      const hadCache = !!this.setCache[key];
+      const setKey = `set_${key}`;
+      const hadCache = !!this.setCache[key] || !!this.beatmapCache[setKey];
       delete this.setCache[key];
+      delete this.beatmapCache[setKey];
       this._log('info', 'DATA', `Cache cleared for set ${key}`, { hadCache });
     }
 

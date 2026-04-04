@@ -112,7 +112,7 @@
                         <a class="simple-banner-switch" v-bind:class="{ 'active': view === 'seasonal' }"
                             @click="LoadLeaderboard(sort, mode, mods, 'seasonal', season)">Seasonal</a>
                     </div>
-                    <div v-show="view === 'seasonal'" class="seasonal-filters-container" style="animation: fadeIn 0.3s ease 0.3s both;">
+                    <div v-show="view === 'seasonal'" class="seasonal-filters-container">
                         <div class="seasonal-dropdown-container">
                             <!-- Schedule Dropdown -->
                             <div class="seasonal-dropdown" :class="{ 'select-focused': scheduleFocused }">

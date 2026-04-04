@@ -91,6 +91,10 @@ Vue.component('beatmap-mini-card', {
       showAllDifficulties: this.showAllDifficulties,
       interactive: this.interactive
     });
+    // Load difficulties if showing all
+    if (this.showAllDifficulties && this.beatmap.set_id) {
+      this.loadDifficulties();
+    }
   },
 
   computed: {
@@ -246,16 +250,11 @@ Vue.component('beatmap-mini-card', {
         difficultyId: difficultyId,
         setId: setId
       });
-      // Emit to parent for popup handling
+      beatmapBus.$emit('show-beatmap-panel', difficultyId, setId);
     }
   },
 
-  created: function() {
-    // Load difficulties if showing all
-    if (this.showAllDifficulties && this.beatmap.set_id) {
-      this.loadDifficulties();
-    }
-  },
+  /* created() merged above */
 
   watch: {
     /**

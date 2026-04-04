@@ -329,7 +329,7 @@ button.profile-friend-btn--desktop {
                             <a class='circle green'>●</a> Online
                         </div>
                     </transition>
-                    <button v-if="isLoggedIn && !isOwnProfile"
+                    <button type="button" v-if="isLoggedIn && !isOwnProfile"
                             class="profile-friend-btn profile-friend-btn--desktop"
                             :class="{ 'is-friend': isFriend, 'is-loading': friendLoading }"
                             @click="toggleFriend"
@@ -368,7 +368,7 @@ button.profile-friend-btn--desktop {
                             <span class='circle green'>●</span> Online
                         </div>
                     </transition>
-                    <button v-if="isLoggedIn && !isOwnProfile"
+                    <button type="button" v-if="isLoggedIn && !isOwnProfile"
                             class="profile-friend-btn"
                             :class="{ 'is-friend': isFriend, 'is-loading': friendLoading }"
                             @click="toggleFriend"
@@ -424,12 +424,12 @@ button.profile-friend-btn--desktop {
                 <div class="column is-one-third" id =""v-cloak> <!--Bookmark-->
                     <div class="season-switcher season-switcher-mobile" v-if="seasons.length > 0">
                         <div class="season-controls">
-                            <a class="season-pill" :class="{ 'active': selectedSeason === 0 }" @click="selectSeason(0)">All Time</a>
+                            <button type="button" class="season-pill" :class="{ 'active': selectedSeason === 0 }" @click="selectSeason(0)">All Time</button>
                             <div class="season-dropdowns" v-if="yearOptions.length > 0">
-                                <select class="season-select" v-model.number="selectedYear" @change="onYearChange">
+                                <select class="season-select" aria-label="Year" v-model.number="selectedYear" @change="onYearChange">
                                     <option v-for="y in yearOptions" :key="'m'+y" :value="y"><% y %></option>
                                 </select>
-                                <select class="season-select" v-model.number="selectedSeason" @change="onSeasonChange">
+                                <select class="season-select" aria-label="Season" v-model.number="selectedSeason" @change="onSeasonChange">
                                     <option v-for="s in filteredSeasons" :key="'m'+s.id" :value="s.id"><% s.label %></option>
                                 </select>
                             </div>
@@ -471,12 +471,12 @@ button.profile-friend-btn--desktop {
                             <i class="fas fa-calendar-alt"></i> Season
                         </div>
                         <div class="season-controls">
-                            <a class="season-pill" :class="{ 'active': selectedSeason === 0 }" @click="selectSeason(0)">All Time</a>
+                            <button type="button" class="season-pill" :class="{ 'active': selectedSeason === 0 }" @click="selectSeason(0)">All Time</button>
                             <div class="season-dropdowns" v-if="yearOptions.length > 0">
-                                <select class="season-select" v-model.number="selectedYear" @change="onYearChange">
+                                <select class="season-select" aria-label="Year" v-model.number="selectedYear" @change="onYearChange">
                                     <option v-for="y in yearOptions" :key="y" :value="y"><% y %></option>
                                 </select>
-                                <select class="season-select" v-model.number="selectedSeason" @change="onSeasonChange">
+                                <select class="season-select" aria-label="Season" v-model.number="selectedSeason" @change="onSeasonChange">
                                     <option v-for="s in filteredSeasons" :key="s.id" :value="s.id"><% s.label %></option>
                                 </select>
                             </div>

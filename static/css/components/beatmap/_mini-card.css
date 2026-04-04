@@ -128,7 +128,7 @@
   align-items: flex-end;
   flex-direction: column;
   justify-content: flex-end;
-  flex: 1;
+  flex: none;
 }
 
 /* Status indicator */
