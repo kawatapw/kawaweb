@@ -227,14 +227,9 @@ new Vue({
                     self.activeSeason = self.seasons.find(function(s) { return s.is_active; }) || null;
                     if (self.yearOptions.length > 0) {
                         self.selectedYear = self.yearOptions[0];
-                        // Auto-select the active season (or first available) so the dropdown isn't empty
-                        var filtered = self.filteredSeasons;
-                        if (self.activeSeason && filtered.some(function(s) { return s.id === self.activeSeason.id; })) {
-                            self.selectedSeason = self.activeSeason.id;
-                        } else if (filtered.length > 0) {
-                            self.selectedSeason = filtered[filtered.length - 1].id;
-                        }
                     }
+                    // Don't auto-select a season — always load all-time first.
+                    // User picks a season manually via the switcher.
                 }
             }).catch(function() {
                 // Seasons not available — switcher stays hidden
@@ -540,6 +535,11 @@ new Vue({
         },
     },
     computed: {
+        currentStats() {
+            var s = this.data.stats.out[this.modegulag];
+            if (s && typeof s.rank !== 'undefined') return s;
+            return { rank: 0, country_rank: 0, pp: 0, rscore: 0, tscore: 0, max_combo: 0, plays: 0, playtime: 0, acc: 0, xh_count: 0, x_count: 0, sh_count: 0, s_count: 0, a_count: 0 };
+        },
         yearOptions() {
             var years = [];
             for (var i = 0; i < this.seasons.length; i++) {
