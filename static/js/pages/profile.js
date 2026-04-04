@@ -53,7 +53,12 @@ new Vue({
             seasons: [],
             selectedSeason: 0,     // 0 = all-time
             selectedYear: null,
-            activeSeason: null
+            activeSeason: null,
+            // Friend state
+            isLoggedIn: typeof isLoggedIn !== 'undefined' ? isLoggedIn : false,
+            isOwnProfile: typeof isOwnProfile !== 'undefined' ? isOwnProfile : false,
+            isFriend: false,
+            friendLoading: false
         };
     },
     async created() {
@@ -63,6 +68,9 @@ new Vue({
         this.LoadProfileData();
         this.LoadAllofdata();
         this.LoadUserStatus();
+        if (this.isLoggedIn && !this.isOwnProfile) {
+            this.checkFriendStatus();
+        }
         this.$log.debug('Data', "Profile Data Loaded:", this.data);
 
         // Pause status polling when tab is hidden
@@ -82,6 +90,43 @@ new Vue({
         }
     },
     methods: {
+        checkFriendStatus() {
+            var self = this;
+            // Check if we added this user: fetch their followers — if we appear, we added them
+            this.$axios.get(`${window.location.protocol}//api.${domain}/v1/get_friends_detailed`, {
+                params: { id: this.userid, scope: 'followers' }
+            }).then(function(res) {
+                if (res.data.status === 'success' && res.data.followers) {
+                    self.isFriend = res.data.followers.some(function(u) { return u.id === selfId; });
+                }
+            }).catch(function() {});
+            // Also check mutuals from our side
+            this.$axios.get(`${window.location.protocol}//api.${domain}/v1/get_friends_detailed`, {
+                params: { id: selfId, scope: 'mutuals' }
+            }).then(function(res) {
+                if (res.data.status === 'success' && res.data.mutuals) {
+                    if (res.data.mutuals.some(function(u) { return u.id === self.userid; })) {
+                        self.isFriend = true;
+                    }
+                }
+            }).catch(function() {});
+        },
+        toggleFriend() {
+            var self = this;
+            this.friendLoading = true;
+            var action = this.isFriend ? 'remove' : 'add';
+            var fd = new FormData();
+            fd.append('target_id', String(this.userid));
+            fetch('/friends/' + action, { method: 'POST', body: fd })
+                .then(function(res) { return res.json(); })
+                .then(function(data) {
+                    if (data.status === 'success') {
+                        self.isFriend = !self.isFriend;
+                    }
+                })
+                .catch(function() {})
+                .then(function() { self.friendLoading = false; });
+        },
         LoadAllofdata() {
             this.LoadMostBeatmaps();
             this.LoadScores('best');

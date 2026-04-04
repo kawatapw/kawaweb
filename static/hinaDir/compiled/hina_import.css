@@ -1204,6 +1204,16 @@ html, body {
   .pim-online {
     opacity: 1;
   }
+  .profile-friend-btn {
+    margin-top: 6px;
+    padding: 5px 14px;
+    font-size: 12px;
+    min-height: 32px;
+    align-self: flex-start;
+  }
+  .profile-friend-btn--desktop {
+    display: none !important;
+  }
   .bar-selection.mode-selects {
     grid-column: 1/-1;
     grid-row: 2;
@@ -1473,5 +1483,3 @@ html, body {
   }
 }
 /* Admin V2 is now standalone — compiled separately as admin_v2.css */
-
-/*# sourceMappingURL=hina_import.css.map */

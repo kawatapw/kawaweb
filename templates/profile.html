@@ -243,6 +243,13 @@
     {% else %}
     var isOwnProfile = false;
     {% endif %}
+    {% if 'user_data' in session %}
+    var selfId = {{ session['user_data']['id'] }};
+    var isLoggedIn = true;
+    {% else %}
+    var selfId = null;
+    var isLoggedIn = false;
+    {% endif %}
 </script>
 {% endblock %}
 
@@ -267,6 +274,14 @@
                             <a class='circle green'>●</a> Online
                         </div>
                     </transition>
+                    <button v-if="isLoggedIn && !isOwnProfile"
+                            class="profile-friend-btn profile-friend-btn--desktop"
+                            :class="{ 'is-friend': isFriend, 'is-loading': friendLoading }"
+                            @click="toggleFriend"
+                            :disabled="friendLoading">
+                        <i class="fas" :class="isFriend ? 'fa-user-minus' : 'fa-user-plus'"></i>
+                        <span v-text="friendLoading ? '...' : (isFriend ? 'Remove Friend' : 'Add Friend')"></span>
+                    </button>
                 </div>
                 <div class="anime-girl">
                     <!-- (if you want to add it)
@@ -298,6 +313,14 @@
                             <span class='circle green'>●</span> Online
                         </div>
                     </transition>
+                    <button v-if="isLoggedIn && !isOwnProfile"
+                            class="profile-friend-btn"
+                            :class="{ 'is-friend': isFriend, 'is-loading': friendLoading }"
+                            @click="toggleFriend"
+                            :disabled="friendLoading">
+                        <i class="fas" :class="isFriend ? 'fa-user-minus' : 'fa-user-plus'"></i>
+                        <span v-text="friendLoading ? '...' : (isFriend ? 'Remove' : 'Add')"></span>
+                    </button>
                 </div>
                 <div class="bar-selection mode-selects">
                     <div class="select-left">

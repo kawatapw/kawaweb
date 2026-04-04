@@ -104,6 +104,54 @@
   text-decoration: none;
 }
 
+/* Friend button — shared base styles */
+.profile-friend-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 16px;
+  border-radius: 6px;
+  border: 1.5px solid hsl(174, 60%, 45%);
+  background: transparent;
+  color: hsl(174, 60%, 55%);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  line-height: 1;
+}
+
+.profile-friend-btn:hover {
+  background: hsla(174, 60%, 45%, 0.15);
+  border-color: hsl(174, 60%, 55%);
+}
+
+.profile-friend-btn.is-friend {
+  background: hsl(174, 60%, 45%);
+  color: #fff;
+  border-color: hsl(174, 60%, 45%);
+}
+
+.profile-friend-btn.is-friend:hover {
+  background: hsl(0, 55%, 50%);
+  border-color: hsl(0, 55%, 50%);
+}
+
+.profile-friend-btn.is-loading {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+.profile-friend-btn:disabled {
+  cursor: not-allowed;
+}
+
+/* Desktop: button inside info-block, positioned after status */
+.profile-friend-btn--desktop {
+  margin-top: 8px;
+}
+
 .mode-selects {
   background: hsla(var(--main), 25%, 22%, 0.5);
   backdrop-filter: blur(8px) saturate(1.5);

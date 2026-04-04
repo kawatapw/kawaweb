@@ -549,6 +549,20 @@
     opacity: 1;
   }
 
+  // --- Friend button: compact, inline with identity ---
+  .profile-friend-btn {
+    margin-top: 6px;
+    padding: 5px 14px;
+    font-size: 12px;
+    min-height: 32px;
+    align-self: flex-start;
+  }
+
+  // Desktop version hidden on mobile (info-block is hidden)
+  .profile-friend-btn--desktop {
+    display: none !important;
+  }
+
   // --- Mode & badge bars span full width ---
   .bar-selection.mode-selects {
     grid-column: 1 / -1;
