@@ -104,58 +104,7 @@
   text-decoration: none;
 }
 
-/* Friend button — override Bulma button resets */
-button.profile-friend-btn {
-  display: inline-flex !important;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 16px !important;
-  border-radius: 6px !important;
-  border: 1.5px solid hsl(174, 60%, 45%) !important;
-  background: transparent !important;
-  color: hsl(174, 60%, 55%) !important;
-  font-size: 13px !important;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  white-space: nowrap;
-  line-height: 1;
-  height: auto !important;
-  box-shadow: none !important;
-  align-self: flex-start;
-}
-
-button.profile-friend-btn:hover {
-  background: hsla(174, 60%, 45%, 0.15) !important;
-  border-color: hsl(174, 60%, 55%) !important;
-  color: hsl(174, 60%, 65%) !important;
-}
-
-button.profile-friend-btn.is-friend {
-  background: hsl(174, 60%, 45%) !important;
-  color: #fff !important;
-  border-color: hsl(174, 60%, 45%) !important;
-}
-
-button.profile-friend-btn.is-friend:hover {
-  background: hsl(0, 55%, 50%) !important;
-  border-color: hsl(0, 55%, 50%) !important;
-  color: #fff !important;
-}
-
-button.profile-friend-btn.is-loading {
-  opacity: 0.6;
-  pointer-events: none;
-}
-
-button.profile-friend-btn:disabled {
-  cursor: not-allowed;
-}
-
-/* Desktop: button inside info-block, positioned after status */
-button.profile-friend-btn--desktop {
-  margin-top: 8px;
-}
+/* Friend button styles are in profile.html <style> block (unlayered, beats Bulma) */
 
 .mode-selects {
   background: hsla(var(--main), 25%, 22%, 0.5);

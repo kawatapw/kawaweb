@@ -64,9 +64,12 @@ new Vue({
     async created() {
         // starting a page
         this.modegulag = this.StrtoGulagInt();
-        this.fetchSeasons();
-        this.LoadProfileData();
-        this.LoadAllofdata();
+        // Load seasons first, then data (fetchSeasons may set selectedSeason)
+        var self = this;
+        this.fetchSeasons().then(function() {
+            self.LoadProfileData();
+            self.LoadAllofdata();
+        });
         this.LoadUserStatus();
         if (this.isLoggedIn && !this.isOwnProfile) {
             this.checkFriendStatus();
@@ -216,7 +219,7 @@ new Vue({
         },
         fetchSeasons() {
             var self = this;
-            this.$axios.get(`${window.location.protocol}//api.${domain}/v2/seasons`, {
+            return this.$axios.get(`${window.location.protocol}//api.${domain}/v2/seasons`, {
                 params: { page: 1, page_size: 100 }
             }).then(function(res) {
                 if (res.data.status === 'success' && res.data.data) {
