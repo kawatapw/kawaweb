@@ -176,7 +176,7 @@
   background: hsl(var(--main), 25%, 20%);
 }
 .footer .footer-bottom {
-  padding: 1rem 0;
+  padding: 1rem 0 calc(1rem + env(safe-area-inset-bottom, 0px));
   background: transparent;
   width: 100%;
 }
@@ -370,7 +370,7 @@
     font-size: 0.875rem;
   }
   .footer .footer-bottom {
-    padding: 0.75rem 0 1rem;
+    padding: 0.75rem 0 calc(1rem + env(safe-area-inset-bottom, 0px));
   }
   .footer .footer-bottom .footer-bottom-content {
     padding: 0 0.75rem;
