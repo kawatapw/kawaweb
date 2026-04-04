@@ -17,6 +17,8 @@
                 { value: 3, name: 'osu!mania', short: 'mania' },
             ],
             // Season state
+            schedules: [],
+            selectedSchedule: null,
             seasons: [],
             selectedSeason: 0,
             selectedYear: null,
@@ -38,10 +40,19 @@
             tipLeft: 0,
         },
         computed: {
+            scheduledSeasons() {
+                var self = this;
+                if (!this.selectedSchedule)
+                    return this.seasons;
+                return this.seasons.filter(function (s) {
+                    return s.schedule_id === self.selectedSchedule;
+                });
+            },
             yearOptions() {
                 var years = [];
-                for (var i = 0; i < this.seasons.length; i++) {
-                    var y = new Date(this.seasons[i].start_date).getFullYear();
+                var ss = this.scheduledSeasons;
+                for (var i = 0; i < ss.length; i++) {
+                    var y = new Date(ss[i].start_date).getFullYear();
                     if (years.indexOf(y) === -1)
                         years.push(y);
                 }
@@ -49,7 +60,7 @@
             },
             filteredSeasons() {
                 var self = this;
-                return this.seasons
+                return this.scheduledSeasons
                     .filter(function (s) {
                     return new Date(s.start_date).getFullYear() === self.selectedYear;
                 })
@@ -341,19 +352,34 @@
             },
             fetchSeasons() {
                 var self = this;
-                return fetch(location.protocol + '//api.' + domain + '/v2/seasons?page=1&page_size=100')
-                    .then(function (res) {
-                    if (!res.ok)
-                        throw new Error('HTTP ' + res.status);
-                    return res.json();
+                var proto = location.protocol;
+                return Promise.all([
+                    fetch(proto + '//api.' + domain + '/v2/schedules'),
+                    fetch(proto + '//api.' + domain + '/v2/seasons?page=1&page_size=100')
+                ])
+                    .then(function (responses) {
+                    return Promise.all(responses.map(function (r) {
+                        if (!r.ok)
+                            throw new Error('HTTP ' + r.status);
+                        return r.json();
+                    }));
                 })
-                    .then(function (data) {
-                    if (data.status === 'success' && data.data) {
-                        self.seasons = data.data;
+                    .then(function (results) {
+                    var schedData = results[0], seasData = results[1];
+                    if (schedData.status === 'success' && schedData.data) {
+                        self.schedules = schedData.data;
+                        if (self.schedules.length > 0) {
+                            self.selectedSchedule = self.schedules[0].id;
+                        }
+                    }
+                    if (seasData.status === 'success' && seasData.data) {
+                        self.seasons = seasData.data;
                         self.activeSeason = self.seasons.find(function (s) { return s.is_active; }) || null;
+                        if (self.activeSeason && self.schedules.some(function (sc) { return sc.id === self.activeSeason.schedule_id; })) {
+                            self.selectedSchedule = self.activeSeason.schedule_id;
+                        }
                         if (self.yearOptions.length > 0) {
                             self.selectedYear = self.yearOptions[0];
-                            // Auto-select active season or latest in year
                             var filtered = self.filteredSeasons;
                             if (self.activeSeason && filtered.some(function (s) { return s.id === self.activeSeason.id; })) {
                                 self.selectedSeason = self.activeSeason.id;
@@ -361,7 +387,6 @@
                             else if (filtered.length > 0) {
                                 self.selectedSeason = filtered[filtered.length - 1].id;
                             }
-                            // Reload leaderboard with the selected season
                             if (self.selectedSeason) {
                                 self.reloadForSeason();
                             }
@@ -376,6 +401,17 @@
                 this.selectedSeason = seasonId;
                 this.tipCache = {};
                 this.reloadForSeason();
+            },
+            onScheduleChange() {
+                if (this.yearOptions.length > 0) {
+                    this.selectedYear = this.yearOptions[0];
+                }
+                var seasons = this.filteredSeasons;
+                if (seasons.length > 0) {
+                    this.selectedSeason = seasons[seasons.length - 1].id;
+                    this.tipCache = {};
+                    this.reloadForSeason();
+                }
             },
             onYearChange() {
                 var seasons = this.filteredSeasons;

@@ -426,6 +426,9 @@ button.profile-friend-btn--desktop {
                         <div class="season-controls">
                             <button type="button" class="season-pill" :class="{ 'active': selectedSeason === 0 }" @click="selectSeason(0)">All Time</button>
                             <div class="season-dropdowns" v-if="yearOptions.length > 0">
+                                <select class="season-select" aria-label="Schedule" v-model.number="selectedSchedule" @change="onScheduleChange" v-if="schedules.length > 1">
+                                    <option v-for="sc in schedules" :key="'msc'+sc.id" :value="sc.id"><% sc.name %></option>
+                                </select>
                                 <select class="season-select" aria-label="Year" v-model.number="selectedYear" @change="onYearChange">
                                     <option v-for="y in yearOptions" :key="'m'+y" :value="y"><% y %></option>
                                 </select>
@@ -473,6 +476,9 @@ button.profile-friend-btn--desktop {
                         <div class="season-controls">
                             <button type="button" class="season-pill" :class="{ 'active': selectedSeason === 0 }" @click="selectSeason(0)">All Time</button>
                             <div class="season-dropdowns" v-if="yearOptions.length > 0">
+                                <select class="season-select" aria-label="Schedule" v-model.number="selectedSchedule" @change="onScheduleChange" v-if="schedules.length > 1">
+                                    <option v-for="sc in schedules" :key="'sc'+sc.id" :value="sc.id"><% sc.name %></option>
+                                </select>
                                 <select class="season-select" aria-label="Year" v-model.number="selectedYear" @change="onYearChange">
                                     <option v-for="y in yearOptions" :key="y" :value="y"><% y %></option>
                                 </select>

@@ -33,7 +33,7 @@ app = Quart(f'{glob.config.app_name}')
 if os.environ.get('QUART_ENV') == 'development':
     app.config['TEMPLATES_AUTO_RELOAD'] = True
 
-version = Version(1, 3, 0)
+version = Version(2, 0, 0)
 
 # used to secure session data.
 # we recommend using a long randomly generated ascii string.

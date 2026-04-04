@@ -183,6 +183,9 @@
         <i class="fas fa-infinity"></i> All Time
       </button>
       <div class="flb-season-dropdowns" v-if="yearOptions.length > 0">
+        <select class="flb-season-select" aria-label="Schedule" v-model.number="selectedSchedule" @change="onScheduleChange" v-if="schedules.length > 1">
+          <option v-for="sc in schedules" :key="'sch'+sc.id" :value="sc.id" v-text="sc.name"></option>
+        </select>
         <select class="flb-season-select" aria-label="Year" v-model.number="selectedYear" @change="onYearChange">
           <option v-for="y in yearOptions" :key="'sy'+y" :value="y" v-text="y"></option>
         </select>
