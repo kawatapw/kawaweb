@@ -48,12 +48,18 @@ new Vue({
             mods: mods,
             modegulag: 0,
             load: 0,
-            userid: userid
+            userid: userid,
+            // Season state
+            seasons: [],
+            selectedSeason: 0,     // 0 = all-time
+            selectedYear: null,
+            activeSeason: null
         };
     },
     async created() {
         // starting a page
         this.modegulag = this.StrtoGulagInt();
+        this.fetchSeasons();
         this.LoadProfileData();
         this.LoadAllofdata();
         this.LoadUserStatus();
@@ -83,11 +89,10 @@ new Vue({
         },
         LoadProfileData() {
             this.$set(this.data.stats, 'load', true);
+            var params = { id: this.userid, scope: 'all' };
+            if (this.selectedSeason) params.season_id = this.selectedSeason;
             this.$axios.get(`${window.location.protocol}//api.${domain}/v1/get_player_info`, {
-                    params: {
-                        id: this.userid,
-                        scope: 'all'
-                    }
+                    params: params
                 })
                 .then(res => {
                     this.$set(this.data.stats, 'out', res.data.player.stats);
@@ -101,13 +106,15 @@ new Vue({
         },
         LoadScores(sort) {
             this.$set(this.data.scores[`${sort}`], 'load', true);
+            var params = {
+                id: this.userid,
+                mode: this.StrtoGulagInt(),
+                scope: sort,
+                limit: this.data.scores[`${sort}`].more.limit
+            };
+            if (this.selectedSeason) params.season_id = this.selectedSeason;
             this.$axios.get(`${window.location.protocol}//api.${domain}/v1/get_player_scores`, {
-                    params: {
-                        id: this.userid,
-                        mode: this.StrtoGulagInt(),
-                        scope: sort,
-                        limit: this.data.scores[`${sort}`].more.limit
-                    }
+                    params: params
                 })
                 .then(res => {
                     this.data.scores[`${sort}`].out = res.data.scores;
@@ -117,12 +124,14 @@ new Vue({
         },
         LoadMostBeatmaps() {
             this.$set(this.data.maps.most, 'load', true);
+            var params = {
+                id: this.userid,
+                mode: this.StrtoGulagInt(),
+                limit: this.data.maps.most.more.limit
+            };
+            if (this.selectedSeason) params.season_id = this.selectedSeason;
             this.$axios.get(`${window.location.protocol}//api.${domain}/v1/get_player_most_played`, {
-                    params: {
-                        id: this.userid,
-                        mode: this.StrtoGulagInt(),
-                        limit: this.data.maps.most.more.limit
-                    }
+                    params: params
                 })
                 .then(res => {
                     this.data.maps.most.out = res.data.maps;
@@ -156,6 +165,48 @@ new Vue({
             this.data.scores.recent.more.limit = 5
             this.data.scores.best.more.limit = 5
             this.data.maps.most.more.limit = 6
+            this.LoadAllofdata();
+        },
+        fetchSeasons() {
+            var self = this;
+            this.$axios.get(`${window.location.protocol}//api.${domain}/v2/seasons`, {
+                params: { page: 1, page_size: 100 }
+            }).then(function(res) {
+                if (res.data.status === 'success' && res.data.data) {
+                    self.seasons = res.data.data;
+                    self.activeSeason = self.seasons.find(function(s) { return s.is_active; }) || null;
+                    if (self.yearOptions.length > 0) {
+                        self.selectedYear = self.yearOptions[0];
+                    }
+                }
+            }).catch(function() {
+                // Seasons not available — switcher stays hidden
+            });
+        },
+        selectSeason(seasonId) {
+            this.selectedSeason = seasonId;
+            this.data.scores.recent.more.limit = 5;
+            this.data.scores.best.more.limit = 5;
+            this.data.maps.most.more.limit = 6;
+            this.LoadProfileData();
+            this.LoadAllofdata();
+        },
+        onYearChange() {
+            var seasons = this.filteredSeasons;
+            if (seasons.length > 0) {
+                this.selectedSeason = seasons[seasons.length - 1].id;
+                this.data.scores.recent.more.limit = 5;
+                this.data.scores.best.more.limit = 5;
+                this.data.maps.most.more.limit = 6;
+                this.LoadProfileData();
+                this.LoadAllofdata();
+            }
+        },
+        onSeasonChange() {
+            this.data.scores.recent.more.limit = 5;
+            this.data.scores.best.more.limit = 5;
+            this.data.maps.most.more.limit = 6;
+            this.LoadProfileData();
             this.LoadAllofdata();
         },
         AddLimit(which) {
@@ -436,7 +487,30 @@ new Vue({
             return htmlString;
         },
     },
-    computed: {},
+    computed: {
+        yearOptions() {
+            var years = [];
+            for (var i = 0; i < this.seasons.length; i++) {
+                var y = new Date(this.seasons[i].start_date).getFullYear();
+                if (years.indexOf(y) === -1) years.push(y);
+            }
+            return years.sort(function(a, b) { return b - a; });
+        },
+        filteredSeasons() {
+            var self = this;
+            return this.seasons
+                .filter(function(s) {
+                    return new Date(s.start_date).getFullYear() === self.selectedYear;
+                })
+                .map(function(s) {
+                    var parts = s.name.split('-');
+                    return Object.assign({}, s, { label: parts[parts.length - 1] });
+                })
+                .sort(function(a, b) {
+                    return new Date(a.start_date) - new Date(b.start_date);
+                });
+        }
+    },
 });
 window.showMaplePopup = (event, element) => {
     const popup = element.querySelector('.maple-popup');
