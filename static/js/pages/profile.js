@@ -50,6 +50,8 @@ new Vue({
             load: 0,
             userid: userid,
             // Season state
+            schedules: [],
+            selectedSchedule: null,
             seasons: [],
             selectedSeason: 0,     // 0 = all-time
             selectedYear: null,
@@ -219,17 +221,29 @@ new Vue({
         },
         fetchSeasons() {
             var self = this;
-            return this.$axios.get(`${window.location.protocol}//api.${domain}/v2/seasons`, {
-                params: { page: 1, page_size: 100 }
-            }).then(function(res) {
-                if (res.data.status === 'success' && res.data.data) {
-                    self.seasons = res.data.data;
+            var proto = window.location.protocol;
+            // Fetch schedules and seasons in parallel
+            return Promise.all([
+                self.$axios.get(`${proto}//api.${domain}/v2/schedules`),
+                self.$axios.get(`${proto}//api.${domain}/v2/seasons`, { params: { page: 1, page_size: 100 } })
+            ]).then(function(results) {
+                var schedRes = results[0], seasRes = results[1];
+                if (schedRes.data.status === 'success' && schedRes.data.data) {
+                    self.schedules = schedRes.data.data;
+                    if (self.schedules.length > 0) {
+                        self.selectedSchedule = self.schedules[0].id;
+                    }
+                }
+                if (seasRes.data.status === 'success' && seasRes.data.data) {
+                    self.seasons = seasRes.data.data;
                     self.activeSeason = self.seasons.find(function(s) { return s.is_active; }) || null;
+                    // Auto-select schedule of active season if available
+                    if (self.activeSeason && self.schedules.some(function(sc) { return sc.id === self.activeSeason.schedule_id; })) {
+                        self.selectedSchedule = self.activeSeason.schedule_id;
+                    }
                     if (self.yearOptions.length > 0) {
                         self.selectedYear = self.yearOptions[0];
                     }
-                    // Don't auto-select a season — always load all-time first.
-                    // User picks a season manually via the switcher.
                 }
             }).catch(function() {
                 // Seasons not available — switcher stays hidden
@@ -245,6 +259,16 @@ new Vue({
         selectSeason(seasonId) {
             this.selectedSeason = seasonId;
             this._resetAndReload();
+        },
+        onScheduleChange() {
+            if (this.yearOptions.length > 0) {
+                this.selectedYear = this.yearOptions[0];
+            }
+            var seasons = this.filteredSeasons;
+            if (seasons.length > 0) {
+                this.selectedSeason = seasons[seasons.length - 1].id;
+                this._resetAndReload();
+            }
         },
         onYearChange() {
             var seasons = this.filteredSeasons;
@@ -540,17 +564,25 @@ new Vue({
             if (s && typeof s.rank !== 'undefined') return s;
             return { rank: 0, country_rank: 0, pp: 0, rscore: 0, tscore: 0, max_combo: 0, plays: 0, playtime: 0, acc: 0, xh_count: 0, x_count: 0, sh_count: 0, s_count: 0, a_count: 0 };
         },
+        scheduledSeasons() {
+            var self = this;
+            if (!this.selectedSchedule) return this.seasons;
+            return this.seasons.filter(function(s) {
+                return s.schedule_id === self.selectedSchedule;
+            });
+        },
         yearOptions() {
             var years = [];
-            for (var i = 0; i < this.seasons.length; i++) {
-                var y = new Date(this.seasons[i].start_date).getFullYear();
+            var ss = this.scheduledSeasons;
+            for (var i = 0; i < ss.length; i++) {
+                var y = new Date(ss[i].start_date).getFullYear();
                 if (years.indexOf(y) === -1) years.push(y);
             }
             return years.sort(function(a, b) { return b - a; });
         },
         filteredSeasons() {
             var self = this;
-            return this.seasons
+            return this.scheduledSeasons
                 .filter(function(s) {
                     return new Date(s.start_date).getFullYear() === self.selectedYear;
                 })
