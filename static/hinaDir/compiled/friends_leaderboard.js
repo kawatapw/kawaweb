@@ -404,9 +404,11 @@
                     if (data.status !== 'success')
                         throw new Error(data.status || 'Unknown error');
                     self.leaderboard = data.leaderboard || [];
+                    self.loading = false;
                 })
                     .catch(function (e) {
                     self.error = 'Failed to load leaderboard.';
+                    self.loading = false;
                     console.error('[FriendsLeaderboard]', e);
                 });
             },
