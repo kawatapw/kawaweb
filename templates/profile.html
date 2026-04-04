@@ -64,6 +64,61 @@
     @import url("/static/css/pages/profile.css") layer(styles);
 </style>
 <style>
+/* Friend button — unlayered to beat Bulma button resets */
+button.profile-friend-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 16px;
+    border-radius: 6px;
+    border: 1.5px solid hsl(174, 60%, 45%);
+    background: transparent;
+    color: hsl(174, 60%, 55%);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+    line-height: 1;
+    height: auto;
+    box-shadow: none;
+    align-self: flex-start;
+}
+button.profile-friend-btn:hover {
+    background: hsla(174, 60%, 45%, 0.15);
+    border-color: hsl(174, 60%, 55%);
+    color: hsl(174, 60%, 65%);
+}
+button.profile-friend-btn.is-friend {
+    background: hsl(174, 60%, 45%);
+    color: #fff;
+    border-color: hsl(174, 60%, 45%);
+}
+button.profile-friend-btn.is-friend:hover {
+    background: hsl(0, 55%, 50%);
+    border-color: hsl(0, 55%, 50%);
+    color: #fff;
+}
+button.profile-friend-btn.is-loading {
+    opacity: 0.6;
+    pointer-events: none;
+}
+button.profile-friend-btn--desktop {
+    margin-top: 8px;
+}
+@media (max-width: 768px) {
+    button.profile-friend-btn {
+        margin-top: 6px;
+        padding: 5px 14px;
+        font-size: 12px;
+        min-height: 32px;
+    }
+    button.profile-friend-btn--desktop {
+        display: none;
+    }
+}
+</style>
+<style>
 /* Season Switcher — unlayered to beat Bulma */
 .season-switcher {
     background: hsla(var(--main), 20%, 22%, 0.7);
@@ -243,6 +298,13 @@
     {% else %}
     var isOwnProfile = false;
     {% endif %}
+    {% if 'user_data' in session %}
+    var selfId = {{ session['user_data']['id'] }};
+    var isLoggedIn = true;
+    {% else %}
+    var selfId = null;
+    var isLoggedIn = false;
+    {% endif %}
 </script>
 {% endblock %}
 
@@ -267,6 +329,14 @@
                             <a class='circle green'>●</a> Online
                         </div>
                     </transition>
+                    <button v-if="isLoggedIn && !isOwnProfile"
+                            class="profile-friend-btn profile-friend-btn--desktop"
+                            :class="{ 'is-friend': isFriend, 'is-loading': friendLoading }"
+                            @click="toggleFriend"
+                            :disabled="friendLoading">
+                        <i class="fas" :class="isFriend ? 'fa-user-minus' : 'fa-user-plus'"></i>
+                        <span v-text="friendLoading ? '...' : (isFriend ? 'Remove Friend' : 'Add Friend')"></span>
+                    </button>
                 </div>
                 <div class="anime-girl">
                     <!-- (if you want to add it)
@@ -298,6 +368,14 @@
                             <span class='circle green'>●</span> Online
                         </div>
                     </transition>
+                    <button v-if="isLoggedIn && !isOwnProfile"
+                            class="profile-friend-btn"
+                            :class="{ 'is-friend': isFriend, 'is-loading': friendLoading }"
+                            @click="toggleFriend"
+                            :disabled="friendLoading">
+                        <i class="fas" :class="isFriend ? 'fa-user-minus' : 'fa-user-plus'"></i>
+                        <span v-text="friendLoading ? '...' : (isFriend ? 'Remove' : 'Add')"></span>
+                    </button>
                 </div>
                 <div class="bar-selection mode-selects">
                     <div class="select-left">
@@ -348,7 +426,7 @@
                         <div class="season-controls">
                             <a class="season-pill" :class="{ 'active': selectedSeason === 0 }" @click="selectSeason(0)">All Time</a>
                             <div class="season-dropdowns" v-if="yearOptions.length > 0">
-                                <select class="season-select" v-model="selectedYear" @change="onYearChange">
+                                <select class="season-select" v-model.number="selectedYear" @change="onYearChange">
                                     <option v-for="y in yearOptions" :key="'m'+y" :value="y"><% y %></option>
                                 </select>
                                 <select class="season-select" v-model.number="selectedSeason" @change="onSeasonChange">
@@ -395,7 +473,7 @@
                         <div class="season-controls">
                             <a class="season-pill" :class="{ 'active': selectedSeason === 0 }" @click="selectSeason(0)">All Time</a>
                             <div class="season-dropdowns" v-if="yearOptions.length > 0">
-                                <select class="season-select" v-model="selectedYear" @change="onYearChange">
+                                <select class="season-select" v-model.number="selectedYear" @change="onYearChange">
                                     <option v-for="y in yearOptions" :key="y" :value="y"><% y %></option>
                                 </select>
                                 <select class="season-select" v-model.number="selectedSeason" @change="onSeasonChange">

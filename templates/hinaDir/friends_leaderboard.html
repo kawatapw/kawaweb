@@ -3,6 +3,150 @@
 
 {% block header %}
 <link rel="stylesheet" href="{{ bust('/static/hinaDir/compiled/friends_leaderboard.css') }}">
+<style>
+/* Season switcher — unlayered to beat Bulma */
+.flb-season-switcher {
+    margin: 0 auto 16px;
+    max-width: 900px;
+    padding: 10px 16px;
+    background: hsla(var(--main), 18%, 20%, 0.6);
+    backdrop-filter: blur(10px) saturate(1.4);
+    border-radius: 8px;
+    border: 1px solid hsla(var(--main), 20%, 30%, 0.3);
+}
+
+.flb-season-controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.flb-season-pill {
+    padding: 6px 16px;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    background: hsla(var(--main), 15%, 28%, 0.7);
+    color: hsl(var(--main), 15%, 65%);
+    transition: all 0.2s ease;
+    user-select: none;
+    white-space: nowrap;
+    text-decoration: none;
+    border: 1px solid hsla(var(--main), 15%, 35%, 0.3);
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.flb-season-pill:hover {
+    background: hsla(var(--main), 25%, 35%, 0.8);
+    color: #fff;
+    border-color: hsla(var(--main), 30%, 45%, 0.5);
+}
+
+.flb-season-pill.active {
+    background: hsl(var(--main), 45%, 42%);
+    color: #fff;
+    pointer-events: none;
+    border-color: hsl(var(--main), 50%, 50%);
+    box-shadow: 0 0 8px hsla(var(--main), 50%, 50%, 0.25);
+}
+
+.flb-season-dropdowns {
+    display: flex;
+    gap: 6px;
+}
+
+.flb-season-switcher select.flb-season-select,
+.flb-season-switcher .flb-season-select {
+    padding: 6px 28px 6px 10px;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    font-family: inherit;
+    background-color: hsla(var(--main), 12%, 18%, 0.9);
+    color: hsl(var(--main), 15%, 80%);
+    border: 1px solid hsla(var(--main), 20%, 32%, 0.5);
+    cursor: pointer;
+    outline: none;
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23777'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 8px center;
+    background-size: 9px;
+    height: auto;
+    display: block;
+    line-height: 1.4;
+    box-shadow: none;
+    margin: 0;
+    transition: all 0.15s ease;
+    min-width: 70px;
+}
+
+.flb-season-switcher select.flb-season-select option {
+    background: hsl(var(--main), 10%, 15%);
+    color: #ddd;
+}
+
+.flb-season-switcher select.flb-season-select:hover {
+    border-color: hsla(var(--main), 30%, 45%, 0.7);
+}
+
+.flb-season-switcher select.flb-season-select:focus {
+    border-color: hsl(var(--main), 50%, 50%);
+    box-shadow: 0 0 0 2px hsla(var(--main), 50%, 50%, 0.15);
+}
+
+.flb-season-active {
+    font-size: 0.72rem;
+    color: hsl(140, 55%, 55%);
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-weight: 500;
+    margin-left: auto;
+}
+
+.flb-season-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: hsl(140, 55%, 55%);
+    display: inline-block;
+    animation: flb-pulse 2s ease-in-out infinite;
+}
+
+@keyframes flb-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.35; }
+}
+
+@media screen and (max-width: 600px) {
+    .flb-season-controls {
+        flex-direction: column;
+        gap: 6px;
+    }
+    .flb-season-pill {
+        width: 100%;
+        justify-content: center;
+        padding: 8px;
+    }
+    .flb-season-dropdowns {
+        width: 100%;
+    }
+    .flb-season-switcher select.flb-season-select {
+        flex: 1;
+        padding: 8px 28px 8px 10px;
+    }
+    .flb-season-active {
+        margin-left: 0;
+    }
+}
+</style>
 {% endblock %}
 
 {% block content %}
@@ -30,6 +174,26 @@
             @click="switchMode(m.value)">
       <span v-text="m.short"></span>
     </button>
+  </div>
+
+  <!-- Season switcher -->
+  <div class="flb-season-switcher" v-if="seasons.length > 0">
+    <div class="flb-season-controls">
+      <a class="flb-season-pill" :class="{ active: selectedSeason === 0 }" @click="selectSeason(0)">
+        <i class="fas fa-infinity"></i> All Time
+      </a>
+      <div class="flb-season-dropdowns" v-if="yearOptions.length > 0">
+        <select class="flb-season-select" v-model.number="selectedYear" @change="onYearChange">
+          <option v-for="y in yearOptions" :key="'sy'+y" :value="y" v-text="y"></option>
+        </select>
+        <select class="flb-season-select" v-model.number="selectedSeason" @change="onSeasonChange">
+          <option v-for="s in filteredSeasons" :key="'ss'+s.id" :value="s.id" v-text="s.label"></option>
+        </select>
+      </div>
+      <span class="flb-season-active" v-if="activeSeason && selectedSeason === activeSeason.id">
+        <span class="flb-season-dot"></span> Active
+      </span>
+    </div>
   </div>
 
   <!-- No stats banner -->
