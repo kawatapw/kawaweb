@@ -184,11 +184,13 @@
   bottom: -20px;
   left: 50%;
   transform: translateX(-50%);
-  white-space: nowrap;
+  word-wrap: normal;
   font-size: 10px;
-  color: rgba(255, 255, 255, 0.8);
-  background-color: rgba(0, 0, 0, 0.7);
+  color: hsla(var(--main), 80%, 80%, 0.8);
+  background-color: hsla(var(--main), 10%, 15%, 0.8);
+  backdrop-filter: blur(4px) saturation(150%);
   padding: 2px 6px;
+  border: 1px solid hsla(var(--main), 20%, 40%, 0.8);
   border-radius: 10px;
   max-width: 80px;
   overflow: hidden;

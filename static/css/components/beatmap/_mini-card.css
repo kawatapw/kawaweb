@@ -63,7 +63,7 @@
 
 .beatmap-mini-card--interactive:hover .beatmap-mini-card__overlay {
   background: var(--beatmap-overlay-gradient-hover);
-  backdrop-filter: blur(2px);
+  backdrop-filter: blur(1px);
 }
 
 /* Content container */

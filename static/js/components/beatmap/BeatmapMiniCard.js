@@ -288,7 +288,8 @@ Vue.component('beatmap-mini-card', {
             :set-id="beatmap.set_id"
             :rank-change="rankChanges[selectedDifficulty.id]"
             size="medium"
-            @click="handleIconClick">
+            @click="handleIconClick"
+            showName="true">
           </beatmap-difficulty-icon>
         </div>
 

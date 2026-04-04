@@ -269,6 +269,7 @@
                 }
                 
                 /* Beatmap difficulty tooltip styling */
+                .mod-tooltip,
                 .beatmap-diff-tooltip {
                     background: hsl(var(--main), 15%, 20%);
                     color: white;
@@ -281,32 +282,12 @@
                     pointer-events: none;
                 }
                 
+                .mod-tooltip span,
                 .beatmap-diff-tooltip span {
                     display: block !important;
                     color: white !important;
                     font-size: 11px !important;
                     font-weight: 600 !important;
-                }
-                
-                /* Mod tooltip styling */
-                .mod-tooltip {
-                    background: hsl(var(--main), 15%, 20%);
-                    color: white;
-                    padding: 6px 10px;
-                    border-radius: 6px;
-                    font-size: 11px;
-                    white-space: nowrap;
-                    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
-                    border: 1px solid hsl(var(--main), 25%, 30%);
-                    pointer-events: none;
-                }
-                
-                .mod-tooltip span {
-                    display: block !important;
-                    color: white !important;
-                    font-size: 11px !important;
-                    font-weight: 600 !important;
-                    text-transform: none !important;
                 }
 
         [data-panel="Beatmap"] .second-block {

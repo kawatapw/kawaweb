@@ -392,7 +392,7 @@ Vue.component('beatmap-difficulty-icon', {
       @click="handleClick">
       
       <!-- Mode icon -->
-      <div class="beatmap-diff-icon__inner">
+      <div class="beatmap-diff-icon__inner" data-popup-trigger>
         <i :class="modeIcon" class="beatmap-diff-icon__mode"></i>
         
         <!-- Rank change badge -->
@@ -401,6 +401,14 @@ Vue.component('beatmap-difficulty-icon', {
           :style="{ backgroundColor: rankChangeInfo.color }">
           <i :class="['fas', rankChangeInfo.icon]"></i>
         </div>
+
+        <!-- Difficulty name (optional) -->
+        <div v-if="showName && difficulty.version" 
+          class="beatmap-diff-icon__name"
+          :title="difficulty.version"
+          data-popup>
+          {{ difficulty.version }}
+        </div>
       </div>
       
       <!-- Status change indicator (shown on hover when status changed) -->
@@ -408,13 +416,6 @@ Vue.component('beatmap-difficulty-icon', {
         class="beatmap-diff-icon__status-change"
         :title="statusChangeText">
         {{ statusChangeText }}
-      </div>
-      
-      <!-- Difficulty name (optional) -->
-      <div v-if="showName && difficulty.version" 
-        class="beatmap-diff-icon__name"
-        :title="difficulty.version">
-        {{ difficulty.version }}
       </div>
     </div>
   `
