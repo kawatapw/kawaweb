@@ -348,7 +348,7 @@
                         <div class="season-controls">
                             <a class="season-pill" :class="{ 'active': selectedSeason === 0 }" @click="selectSeason(0)">All Time</a>
                             <div class="season-dropdowns" v-if="yearOptions.length > 0">
-                                <select class="season-select" v-model="selectedYear" @change="onYearChange">
+                                <select class="season-select" v-model.number="selectedYear" @change="onYearChange">
                                     <option v-for="y in yearOptions" :key="'m'+y" :value="y"><% y %></option>
                                 </select>
                                 <select class="season-select" v-model.number="selectedSeason" @change="onSeasonChange">
@@ -395,7 +395,7 @@
                         <div class="season-controls">
                             <a class="season-pill" :class="{ 'active': selectedSeason === 0 }" @click="selectSeason(0)">All Time</a>
                             <div class="season-dropdowns" v-if="yearOptions.length > 0">
-                                <select class="season-select" v-model="selectedYear" @change="onYearChange">
+                                <select class="season-select" v-model.number="selectedYear" @change="onYearChange">
                                     <option v-for="y in yearOptions" :key="y" :value="y"><% y %></option>
                                 </select>
                                 <select class="season-select" v-model.number="selectedSeason" @change="onSeasonChange">

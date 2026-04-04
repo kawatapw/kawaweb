@@ -31,6 +31,11 @@ new Vue({
             { value: 2, name: 'osu!catch', short: 'catch' },
             { value: 3, name: 'osu!mania', short: 'mania' },
         ],
+        // Season state
+        seasons: [] as any[],
+        selectedSeason: 0,
+        selectedYear: null as number | null,
+        activeSeason: null as any,
         // Compare state
         selectedPlayers: [] as number[],
         compareVisible: false,
@@ -48,6 +53,28 @@ new Vue({
         tipLeft: 0,
     },
     computed: {
+        yearOptions(): number[] {
+            var years: number[] = [];
+            for (var i = 0; i < this.seasons.length; i++) {
+                var y = new Date(this.seasons[i].start_date).getFullYear();
+                if (years.indexOf(y) === -1) years.push(y);
+            }
+            return years.sort(function(a: number, b: number) { return b - a; });
+        },
+        filteredSeasons(): any[] {
+            var self = this;
+            return this.seasons
+                .filter(function(s: any) {
+                    return new Date(s.start_date).getFullYear() === self.selectedYear;
+                })
+                .map(function(s: any) {
+                    var parts = s.name.split('-');
+                    return Object.assign({}, s, { label: parts[parts.length - 1] });
+                })
+                .sort(function(a: any, b: any) {
+                    return new Date(a.start_date).getTime() - new Date(b.start_date).getTime();
+                });
+        },
         userHasStats(): boolean {
             var self = this;
             for (var i = 0; i < this.leaderboard.length; i++) {
@@ -139,6 +166,7 @@ new Vue({
         },
     },
     created() {
+        this.fetchSeasons();
         this.loadLeaderboard(0);
 
         var self = this;
@@ -155,7 +183,8 @@ new Vue({
             this.error = null;
             var self = this;
 
-            fetch(location.protocol + '//api.' + domain + '/v1/get_friends_leaderboard?id=' + userId + '&mode=' + m)
+            var seasonParam = this.selectedSeason ? '&season_id=' + this.selectedSeason : '';
+            fetch(location.protocol + '//api.' + domain + '/v1/get_friends_leaderboard?id=' + userId + '&mode=' + m + seasonParam)
                 .then(function(res: Response) {
                     if (!res.ok) throw new Error('HTTP ' + res.status);
                     return res.json();
@@ -244,7 +273,8 @@ new Vue({
             var self = this;
 
             var ids = [this.selfId].concat(this.selectedPlayers);
-            var url = location.protocol + '//api.' + domain + '/v1/compare_stats?users=' + ids.join(',') + '&mode=' + m;
+            var cmpSeasonParam = this.selectedSeason ? '&season_id=' + this.selectedSeason : '';
+            var url = location.protocol + '//api.' + domain + '/v1/compare_stats?users=' + ids.join(',') + '&mode=' + m + cmpSeasonParam;
 
             fetch(url)
                 .then(function(res: Response) {
@@ -310,8 +340,9 @@ new Vue({
         fetchTooltip(id: number) {
             var self = this;
             var mode = this.mode;
-            var cacheKey = id + '-' + mode;
-            var url = location.protocol + '//api.' + domain + '/v1/get_player_quick_stats?id=' + id + '&mode=' + mode;
+            var tipSeasonParam = this.selectedSeason ? '&season_id=' + this.selectedSeason : '';
+            var cacheKey = id + '-' + mode + '-' + (this.selectedSeason || 0);
+            var url = location.protocol + '//api.' + domain + '/v1/get_player_quick_stats?id=' + id + '&mode=' + mode + tipSeasonParam;
 
             fetch(url)
                 .then(function(res: Response) {
@@ -332,6 +363,67 @@ new Vue({
                     if (self.tooltipId === id) {
                         self.tooltipLoading = false;
                     }
+                });
+        },
+
+        fetchSeasons() {
+            var self = this;
+            fetch(location.protocol + '//api.' + domain + '/v2/seasons?page=1&page_size=100')
+                .then(function(res: Response) {
+                    if (!res.ok) throw new Error('HTTP ' + res.status);
+                    return res.json();
+                })
+                .then(function(data: any) {
+                    if (data.status === 'success' && data.data) {
+                        self.seasons = data.data;
+                        self.activeSeason = self.seasons.find(function(s: any) { return s.is_active; }) || null;
+                        if (self.yearOptions.length > 0) {
+                            self.selectedYear = self.yearOptions[0];
+                        }
+                    }
+                })
+                .catch(function() {
+                    // Seasons not available — switcher stays hidden
+                });
+        },
+
+        selectSeason(seasonId: number) {
+            this.selectedSeason = seasonId;
+            this.tipCache = {};
+            this.reloadForSeason();
+        },
+
+        onYearChange() {
+            var seasons = this.filteredSeasons;
+            if (seasons.length > 0) {
+                this.selectedSeason = seasons[seasons.length - 1].id;
+                this.tipCache = {};
+                this.reloadForSeason();
+            }
+        },
+
+        onSeasonChange() {
+            this.tipCache = {};
+            this.reloadForSeason();
+        },
+
+        reloadForSeason() {
+            // Soft reload — don't set loading=true so the table stays visible (no layout shift)
+            var self = this;
+            this.error = null;
+            var seasonParam = this.selectedSeason ? '&season_id=' + this.selectedSeason : '';
+            fetch(location.protocol + '//api.' + domain + '/v1/get_friends_leaderboard?id=' + userId + '&mode=' + this.mode + seasonParam)
+                .then(function(res: Response) {
+                    if (!res.ok) throw new Error('HTTP ' + res.status);
+                    return res.json();
+                })
+                .then(function(data: any) {
+                    if (data.status !== 'success') throw new Error(data.status || 'Unknown error');
+                    self.leaderboard = data.leaderboard || [];
+                })
+                .catch(function(e: any) {
+                    self.error = 'Failed to load leaderboard.';
+                    console.error('[FriendsLeaderboard]', e);
                 });
         },
 
