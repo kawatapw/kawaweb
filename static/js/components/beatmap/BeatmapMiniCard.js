@@ -91,6 +91,10 @@ Vue.component('beatmap-mini-card', {
       showAllDifficulties: this.showAllDifficulties,
       interactive: this.interactive
     });
+    // Load difficulties if showing all
+    if (this.showAllDifficulties && this.beatmap.set_id) {
+      this.loadDifficulties();
+    }
   },
 
   computed: {
@@ -250,12 +254,7 @@ Vue.component('beatmap-mini-card', {
     }
   },
 
-  created: function() {
-    // Load difficulties if showing all
-    if (this.showAllDifficulties && this.beatmap.set_id) {
-      this.loadDifficulties();
-    }
-  },
+  /* created() merged above */
 
   watch: {
     /**

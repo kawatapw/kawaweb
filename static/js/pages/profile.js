@@ -193,9 +193,9 @@ new Vue({
                 .then(res => {
                     this.$set(this.data, 'status', res.data.player_status)
                 })
-                .catch(function (error) {
+                .catch((error) => {
                     clearTimeout(loop);
-                    this.$log.error(error);
+                    console.error('[Profile] LoadUserStatus error:', error);
                 });
             loop = setTimeout(this.LoadUserStatus, 5000);
         },
@@ -235,31 +235,26 @@ new Vue({
                 // Seasons not available — switcher stays hidden
             });
         },
-        selectSeason(seasonId) {
-            this.selectedSeason = seasonId;
+        _resetAndReload() {
             this.data.scores.recent.more.limit = 5;
             this.data.scores.best.more.limit = 5;
             this.data.maps.most.more.limit = 6;
             this.LoadProfileData();
             this.LoadAllofdata();
+        },
+        selectSeason(seasonId) {
+            this.selectedSeason = seasonId;
+            this._resetAndReload();
         },
         onYearChange() {
             var seasons = this.filteredSeasons;
             if (seasons.length > 0) {
                 this.selectedSeason = seasons[seasons.length - 1].id;
-                this.data.scores.recent.more.limit = 5;
-                this.data.scores.best.more.limit = 5;
-                this.data.maps.most.more.limit = 6;
-                this.LoadProfileData();
-                this.LoadAllofdata();
+                this._resetAndReload();
             }
         },
         onSeasonChange() {
-            this.data.scores.recent.more.limit = 5;
-            this.data.scores.best.more.limit = 5;
-            this.data.maps.most.more.limit = 6;
-            this.LoadProfileData();
-            this.LoadAllofdata();
+            this._resetAndReload();
         },
         AddLimit(which) {
             if (window.event)

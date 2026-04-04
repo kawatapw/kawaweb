@@ -309,7 +309,7 @@ new Vue({
             this.tipTop = rect.bottom + 8;
             this.tipLeft = rect.left;
 
-            var cacheKey = id + '-' + this.mode;
+            var cacheKey = id + '-' + this.mode + '-' + (this.selectedSeason || 0);
             if (this.tipCache[cacheKey]) {
                 // Cached — show immediately
                 this.tooltipId = id;
@@ -379,11 +379,22 @@ new Vue({
                         self.activeSeason = self.seasons.find(function(s: any) { return s.is_active; }) || null;
                         if (self.yearOptions.length > 0) {
                             self.selectedYear = self.yearOptions[0];
+                            // Auto-select active season or latest in year
+                            var filtered = self.filteredSeasons;
+                            if (self.activeSeason && filtered.some(function(s: any) { return s.id === self.activeSeason.id; })) {
+                                self.selectedSeason = self.activeSeason.id;
+                            } else if (filtered.length > 0) {
+                                self.selectedSeason = filtered[filtered.length - 1].id;
+                            }
+                            // Reload leaderboard with the selected season
+                            if (self.selectedSeason) {
+                                self.reloadForSeason();
+                            }
                         }
                     }
                 })
-                .catch(function() {
-                    // Seasons not available — switcher stays hidden
+                .catch(function(err: any) {
+                    console.error('[FriendsLeaderboard] Failed to fetch seasons:', err);
                 });
         },
 

@@ -299,7 +299,7 @@
         const data = await response.json();
         this.logger?.perfEnd(`fetchBeatmapBySet:${setId}`, { setId, status: data.status });
 
-        if (data.apiStatus === 'success' && data.data) {
+        if (data.status === 'success' && data.data) {
           const beatmap = data.data[0];
           const cacheKey = `set_${setId}`;
           this._setCache(cacheKey, beatmap, this.beatmapCache);
