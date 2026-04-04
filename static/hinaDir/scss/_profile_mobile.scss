@@ -550,16 +550,16 @@
   }
 
   // --- Friend button: compact, inline with identity ---
-  .profile-friend-btn {
+  button.profile-friend-btn {
     margin-top: 6px;
-    padding: 5px 14px;
-    font-size: 12px;
+    padding: 5px 14px !important;
+    font-size: 12px !important;
     min-height: 32px;
     align-self: flex-start;
   }
 
   // Desktop version hidden on mobile (info-block is hidden)
-  .profile-friend-btn--desktop {
+  button.profile-friend-btn--desktop {
     display: none !important;
   }
 
