@@ -630,6 +630,8 @@ async def settings_password_post():
     return await flash('success', 'Your password has been changed! Please log in again.', 'hinaDir/login')
 
 @frontend.route('/u/<id>')
+@frontend.route('/user/<id>')
+@frontend.route('/users/<id>')
 @error_catcher
 async def profile_select(id):
     mode = request.args.get('mode', 'std', type=str)
