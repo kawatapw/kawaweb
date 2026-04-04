@@ -496,3 +496,5 @@ html {
   background: hsla(var(--main), 20%, 20%, 0.25);
   backdrop-filter: blur(8px) saturate(1.5);
 }
+
+/* Season Switcher styles are in profile.html <style> block (unlayered, beats Bulma) */

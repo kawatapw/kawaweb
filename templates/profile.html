@@ -63,6 +63,175 @@
 <style>
     @import url("/static/css/pages/profile.css") layer(styles);
 </style>
+<style>
+/* Season Switcher — unlayered to beat Bulma */
+.season-switcher {
+    background: hsla(var(--main), 20%, 22%, 0.7);
+    backdrop-filter: blur(10px) saturate(1.5);
+    padding: 12px;
+    margin-bottom: 10px;
+    border-radius: 8px;
+    border: 1px solid hsla(var(--main), 25%, 35%, 0.3);
+}
+
+.season-switcher .season-header {
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: hsl(var(--main), 50%, 70%);
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.season-switcher .season-controls {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.season-switcher .season-pill {
+    padding: 6px 16px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    background: hsla(var(--main), 15%, 28%, 0.7);
+    color: hsl(var(--main), 15%, 65%);
+    transition: all 0.2s ease;
+    user-select: none;
+    white-space: nowrap;
+    text-decoration: none;
+    border: 1px solid hsla(var(--main), 15%, 35%, 0.3);
+}
+
+.season-switcher .season-pill:hover {
+    background: hsla(var(--main), 25%, 35%, 0.8);
+    color: #fff;
+    border-color: hsla(var(--main), 30%, 45%, 0.5);
+}
+
+.season-switcher .season-pill.active {
+    background: hsl(var(--main), 45%, 42%);
+    color: #fff;
+    pointer-events: none;
+    border-color: hsl(var(--main), 50%, 50%);
+    box-shadow: 0 0 8px hsla(var(--main), 50%, 50%, 0.25);
+}
+
+.season-switcher .season-dropdowns {
+    display: flex;
+    gap: 5px;
+    flex: 1;
+    min-width: 0;
+}
+
+.season-switcher select.season-select,
+.season-switcher .season-select {
+    padding: 6px 28px 6px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    font-family: inherit;
+    background-color: hsla(var(--main), 12%, 18%, 0.9);
+    color: hsl(var(--main), 15%, 80%);
+    border: 1px solid hsla(var(--main), 20%, 32%, 0.5);
+    cursor: pointer;
+    outline: none;
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23777'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 8px center;
+    background-size: 9px;
+    flex: 1;
+    min-width: 0;
+    height: auto;
+    display: block;
+    line-height: 1.4;
+    box-shadow: none;
+    width: 100%;
+    transition: all 0.15s ease;
+    margin: 0;
+}
+
+.season-switcher select.season-select option,
+.season-switcher .season-select option {
+    background: hsl(var(--main), 10%, 15%);
+    color: #ddd;
+    padding: 4px 8px;
+}
+
+.season-switcher select.season-select:hover,
+.season-switcher .season-select:hover {
+    border-color: hsla(var(--main), 30%, 45%, 0.7);
+    background-color: hsla(var(--main), 14%, 22%, 0.95);
+}
+
+.season-switcher select.season-select:focus,
+.season-switcher .season-select:focus {
+    border-color: hsl(var(--main), 50%, 50%);
+    box-shadow: 0 0 0 2px hsla(var(--main), 50%, 50%, 0.15);
+}
+
+.season-switcher .season-active-tag {
+    margin-top: 8px;
+    font-size: 11px;
+    color: hsl(140, 55%, 55%);
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-weight: 500;
+}
+
+.season-switcher .active-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: hsl(140, 55%, 55%);
+    display: inline-block;
+    animation: season-pulse 2s ease-in-out infinite;
+}
+
+@keyframes season-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.35; }
+}
+
+/* Desktop: hide mobile switcher */
+.season-switcher-mobile {
+    display: none;
+}
+
+/* Mobile: show mobile switcher, desktop one is inside profile-stats-full which collapses */
+@media screen and (max-width: 1255px) {
+    .season-switcher-mobile {
+        display: block;
+        margin-bottom: 10px;
+    }
+    .season-switcher-mobile .season-controls {
+        flex-direction: column;
+        gap: 8px;
+    }
+    .season-switcher-mobile .season-pill {
+        width: 100%;
+        text-align: center;
+        padding: 10px;
+        font-size: 13px;
+    }
+    .season-switcher-mobile .season-dropdowns {
+        width: 100%;
+    }
+    .season-switcher-mobile select.season-select,
+    .season-switcher-mobile .season-select {
+        padding: 10px 28px 10px 12px;
+        font-size: 13px;
+    }
+}
+</style>
 <script src="https://cdn.socket.io/4.2.0/socket.io.min.js"></script>
 <script>
     var userid = Number("{{ user['id'] }}"); //For text editor doesn't dizzy lmao
@@ -175,6 +344,19 @@
         <div class="second-block" style="overflow: hidden;">
             <div class="columns is-marginless two-sides">
                 <div class="column is-one-third" id =""v-cloak> <!--Bookmark-->
+                    <div class="season-switcher season-switcher-mobile" v-if="seasons.length > 0">
+                        <div class="season-controls">
+                            <a class="season-pill" :class="{ 'active': selectedSeason === 0 }" @click="selectSeason(0)">All Time</a>
+                            <div class="season-dropdowns" v-if="yearOptions.length > 0">
+                                <select class="season-select" v-model="selectedYear" @change="onYearChange">
+                                    <option v-for="y in yearOptions" :key="'m'+y" :value="y"><% y %></option>
+                                </select>
+                                <select class="season-select" v-model.number="selectedSeason" @change="onSeasonChange">
+                                    <option v-for="s in filteredSeasons" :key="'m'+s.id" :value="s.id"><% s.label %></option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
                     <div class="profile-stats-summary" v-if="data.stats.out[modegulag]">
                         <div class="pss-pill">
                             <span class="pss-label">PP</span>
@@ -206,6 +388,25 @@
                     </div>
                     <input type="checkbox" id="profile-stats-expand">
                     <div class="profile-stats-full">
+                    <div class="season-switcher" v-if="seasons.length > 0">
+                        <div class="season-header">
+                            <i class="fas fa-calendar-alt"></i> Season
+                        </div>
+                        <div class="season-controls">
+                            <a class="season-pill" :class="{ 'active': selectedSeason === 0 }" @click="selectSeason(0)">All Time</a>
+                            <div class="season-dropdowns" v-if="yearOptions.length > 0">
+                                <select class="season-select" v-model="selectedYear" @change="onYearChange">
+                                    <option v-for="y in yearOptions" :key="y" :value="y"><% y %></option>
+                                </select>
+                                <select class="season-select" v-model.number="selectedSeason" @change="onSeasonChange">
+                                    <option v-for="s in filteredSeasons" :key="s.id" :value="s.id"><% s.label %></option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="season-active-tag" v-if="activeSeason && selectedSeason === activeSeason.id">
+                            <span class="active-dot"></span> Active Season
+                        </div>
+                    </div>
                     <div class="header" v-if='(data.stats.out[modegulag].rank) != 0'>
                         <div class="title">
                             <i class="fas fa-user-friends"></i> Rank
