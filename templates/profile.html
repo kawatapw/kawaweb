@@ -64,6 +64,61 @@
     @import url("/static/css/pages/profile.css") layer(styles);
 </style>
 <style>
+/* Friend button — unlayered to beat Bulma button resets */
+button.profile-friend-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 16px;
+    border-radius: 6px;
+    border: 1.5px solid hsl(174, 60%, 45%);
+    background: transparent;
+    color: hsl(174, 60%, 55%);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+    line-height: 1;
+    height: auto;
+    box-shadow: none;
+    align-self: flex-start;
+}
+button.profile-friend-btn:hover {
+    background: hsla(174, 60%, 45%, 0.15);
+    border-color: hsl(174, 60%, 55%);
+    color: hsl(174, 60%, 65%);
+}
+button.profile-friend-btn.is-friend {
+    background: hsl(174, 60%, 45%);
+    color: #fff;
+    border-color: hsl(174, 60%, 45%);
+}
+button.profile-friend-btn.is-friend:hover {
+    background: hsl(0, 55%, 50%);
+    border-color: hsl(0, 55%, 50%);
+    color: #fff;
+}
+button.profile-friend-btn.is-loading {
+    opacity: 0.6;
+    pointer-events: none;
+}
+button.profile-friend-btn--desktop {
+    margin-top: 8px;
+}
+@media (max-width: 768px) {
+    button.profile-friend-btn {
+        margin-top: 6px;
+        padding: 5px 14px;
+        font-size: 12px;
+        min-height: 32px;
+    }
+    button.profile-friend-btn--desktop {
+        display: none;
+    }
+}
+</style>
+<style>
 /* Season Switcher — unlayered to beat Bulma */
 .season-switcher {
     background: hsla(var(--main), 20%, 22%, 0.7);
