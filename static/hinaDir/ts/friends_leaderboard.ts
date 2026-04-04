@@ -166,10 +166,15 @@ new Vue({
         },
     },
     created() {
-        this.fetchSeasons();
-        this.loadLeaderboard(0);
-
+        // Load seasons first, then leaderboard (fetchSeasons calls reloadForSeason after selecting)
         var self = this;
+        this.fetchSeasons().then(function() {
+            // If no season was auto-selected, load all-time
+            if (!self.selectedSeason) {
+                self.loadLeaderboard(0);
+            }
+        });
+
         document.addEventListener('keydown', function(e: KeyboardEvent) {
             if (e.key === 'Escape' && self.compareVisible) {
                 self.closeCompare();
@@ -368,7 +373,7 @@ new Vue({
 
         fetchSeasons() {
             var self = this;
-            fetch(location.protocol + '//api.' + domain + '/v2/seasons?page=1&page_size=100')
+            return fetch(location.protocol + '//api.' + domain + '/v2/seasons?page=1&page_size=100')
                 .then(function(res: Response) {
                     if (!res.ok) throw new Error('HTTP ' + res.status);
                     return res.json();

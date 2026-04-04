@@ -256,7 +256,7 @@ Vue.component('beatmap-card', {
      */
     handleClick(beatmapId, setId) {
       this._log('info', 'EVENT', 'Card clicked', { beatmapId, setId });
-      beatmapBus.$emit('show-beatmap-panel', this.beatmap?.id, this.beatmap?.set_id)
+      beatmapBus.$emit('show-beatmap-panel', beatmapId, setId);
     },
 
     /**
@@ -268,6 +268,7 @@ Vue.component('beatmap-card', {
         setId: setId,
         version: difficulty?.version
       });
+      beatmapBus.$emit('show-beatmap-panel', difficultyId, setId);
     },
 
     /**

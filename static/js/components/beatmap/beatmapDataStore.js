@@ -38,6 +38,8 @@
     }
 
     _initLogger() {
+      const MAX_RETRIES = 50;
+      let attempts = 0;
       const waitForLogger = () => {
         if (window.ColorfulLogger) {
           this.logger = window.ColorfulLogger.child('BeatmapDataStore');
@@ -45,7 +47,7 @@
             cacheTTL: `${CACHE_TTL / 1000}s`,
             setCacheTTL: `${SET_CACHE_TTL / 1000}s`
           });
-        } else {
+        } else if (++attempts < MAX_RETRIES) {
           setTimeout(waitForLogger, 100);
         }
       };

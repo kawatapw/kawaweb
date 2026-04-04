@@ -124,7 +124,9 @@ new Vue({
                         self.isFriend = !self.isFriend;
                     }
                 })
-                .catch(function() {})
+                .catch(function(err) {
+                    console.error('[Profile] toggleFriend error:', err);
+                })
                 .then(function() { self.friendLoading = false; });
         },
         LoadAllofdata() {

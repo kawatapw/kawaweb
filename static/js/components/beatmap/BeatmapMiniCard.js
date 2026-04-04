@@ -250,7 +250,7 @@ Vue.component('beatmap-mini-card', {
         difficultyId: difficultyId,
         setId: setId
       });
-      // Emit to parent for popup handling
+      beatmapBus.$emit('show-beatmap-panel', difficultyId, setId);
     }
   },
 

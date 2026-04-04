@@ -184,7 +184,8 @@
   bottom: -20px;
   left: 50%;
   transform: translateX(-50%);
-  word-wrap: normal;
+  white-space: nowrap;
+  overflow-wrap: normal;
   font-size: 10px;
   color: hsla(var(--main), 80%, 80%, 0.8);
   background-color: hsla(var(--main), 10%, 15%, 0.8);

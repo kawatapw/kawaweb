@@ -426,10 +426,10 @@ button.profile-friend-btn--desktop {
                         <div class="season-controls">
                             <button type="button" class="season-pill" :class="{ 'active': selectedSeason === 0 }" @click="selectSeason(0)">All Time</button>
                             <div class="season-dropdowns" v-if="yearOptions.length > 0">
-                                <select class="season-select" v-model.number="selectedYear" @change="onYearChange">
+                                <select class="season-select" aria-label="Year" v-model.number="selectedYear" @change="onYearChange">
                                     <option v-for="y in yearOptions" :key="'m'+y" :value="y"><% y %></option>
                                 </select>
-                                <select class="season-select" v-model.number="selectedSeason" @change="onSeasonChange">
+                                <select class="season-select" aria-label="Season" v-model.number="selectedSeason" @change="onSeasonChange">
                                     <option v-for="s in filteredSeasons" :key="'m'+s.id" :value="s.id"><% s.label %></option>
                                 </select>
                             </div>
@@ -473,10 +473,10 @@ button.profile-friend-btn--desktop {
                         <div class="season-controls">
                             <button type="button" class="season-pill" :class="{ 'active': selectedSeason === 0 }" @click="selectSeason(0)">All Time</button>
                             <div class="season-dropdowns" v-if="yearOptions.length > 0">
-                                <select class="season-select" v-model.number="selectedYear" @change="onYearChange">
+                                <select class="season-select" aria-label="Year" v-model.number="selectedYear" @change="onYearChange">
                                     <option v-for="y in yearOptions" :key="y" :value="y"><% y %></option>
                                 </select>
-                                <select class="season-select" v-model.number="selectedSeason" @change="onSeasonChange">
+                                <select class="season-select" aria-label="Season" v-model.number="selectedSeason" @change="onSeasonChange">
                                     <option v-for="s in filteredSeasons" :key="s.id" :value="s.id"><% s.label %></option>
                                 </select>
                             </div>
