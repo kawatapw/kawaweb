@@ -284,7 +284,6 @@ async def api_dashboard():
         'GROUP BY country ORDER BY count DESC LIMIT 5'
     )
 
-    # ── Recent staff actions (merged: admin_v2_logs + legacy logs) ──
     action_placeholders = ', '.join(['%s'] * len(_STAFF_ACTION_WHITELIST))
     whitelist = list(_STAFF_ACTION_WHITELIST)
     raw_actions = await glob.db.fetchall(
@@ -293,7 +292,7 @@ async def api_dashboard():
         '    CONVERT(l.action USING utf8mb4) AS action, '
         '    CONVERT(l.msg USING utf8mb4) AS msg, '
         '    l.created_at AS time, l.from_id AS mod_id, l.to_id AS target_id '
-        f'  FROM admin_v2_logs l WHERE l.action IN ({action_placeholders}) '
+        f'  FROM logs l WHERE l.action IN ({action_placeholders}) '
         '  UNION ALL '
         '  SELECT CAST(l.id AS CHAR) AS id, '
         '    CONVERT(l.action USING utf8mb4) AS action, '
