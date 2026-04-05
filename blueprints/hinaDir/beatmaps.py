@@ -14,10 +14,12 @@ import config
 hina_beatmaps = Blueprint('hina_beatmaps', __name__)
 
 HINAI_MIRROR = 'https://mirror.hinamizawa.ai'
-# /api/v1/hinai/ path bypasses Cloudflare WAF (rule #8)
+# /api/v1/hinai/ path bypasses Cloudflare WAF (rule #8) — always works
 HINAI_SEARCH_V1 = f'{HINAI_MIRROR}/api/v1/hinai/search'
+HINAI_DETAIL_V1 = f'{HINAI_MIRROR}/api/v1/hinai/s'
+# /v3/ paths — richer data but may be blocked by Cloudflare on some servers
 HINAI_SEARCH_V2 = f'{HINAI_MIRROR}/v3/osu/beatmaps/search/v2/'
-HINAI_DETAIL = f'{HINAI_MIRROR}/v3/osu/beatmaps/s'
+HINAI_DETAIL_V3 = f'{HINAI_MIRROR}/v3/osu/beatmaps/s'
 HINAI_PP_CALC = f'{HINAI_MIRROR}/v3/osu/pp-calc'
 HINAI_AUDIO = f'{HINAI_MIRROR}/v3/osu/music/audio'
 OSUDIRECT_SEARCH = 'https://osu.direct/api/v2/search'
@@ -126,35 +128,51 @@ async def beatmaps_hero():
     """Return 9 most recently ranked beatmapsets for the hero banner."""
     params = {'status': 'ranked', 'sort': 'ranked_desc', 'limit': 9, 'page': 0}
 
+    def _build_hero_sets(raw_sets):
+        hero_sets = []
+        for s in raw_sets[:9]:
+            covers = s.get('covers', {})
+            set_id = s.get('id', s.get('SetID', 0))
+            hero_sets.append({
+                'id': set_id,
+                'title': s.get('title', s.get('Title', '')),
+                'artist': s.get('artist', s.get('Artist', '')),
+                'creator': s.get('creator', s.get('Creator', '')),
+                'cover': covers.get('cover', f"https://assets.ppy.sh/beatmaps/{set_id}/covers/cover.jpg"),
+            })
+        return hero_sets
+
+    # Try v2 search first (rich data)
     try:
         async with glob.http.get(HINAI_SEARCH_V2, params=params, headers=_MIRROR_HEADERS, timeout=10) as resp:
-            if resp.status != 200:
-                return jsonify({'status': 'error', 'sets': []})
-
-            data = await resp.json()
-            raw_sets = data.get('beatmapsets', [])[:9]
-
-            hero_sets = []
-            for s in raw_sets:
-                covers = s.get('covers', {})
-                hero_sets.append({
-                    'id': s.get('id', 0),
-                    'title': s.get('title', ''),
-                    'artist': s.get('artist', ''),
-                    'creator': s.get('creator', ''),
-                    'cover': covers.get('cover', f"https://assets.ppy.sh/beatmaps/{s.get('id', 0)}/covers/cover.jpg"),
-                })
-
-            resp_obj = jsonify({
-                'status': 'success',
-                'sets': hero_sets,
-                'total_count': data.get('total_count', 0),
-            })
-            resp_obj.headers['Cache-Control'] = 'public, max-age=300, s-maxage=600'
-            return resp_obj
+            if resp.status == 200:
+                data = await resp.json()
+                hero_sets = _build_hero_sets(data.get('beatmapsets', []))
+                if hero_sets:
+                    resp_obj = jsonify({'status': 'success', 'sets': hero_sets, 'total_count': data.get('total_count', 0)})
+                    resp_obj.headers['Cache-Control'] = 'public, max-age=300, s-maxage=600'
+                    return resp_obj
+            klogging.log(f"Hero v2 returned {resp.status}, trying v1", klogging.Ansi.LYELLOW)
     except Exception as e:
-        klogging.log(f"Hero banner error ({type(e).__name__}): {e}", klogging.Ansi.LYELLOW)
-        return jsonify({'status': 'error', 'sets': []})
+        klogging.log(f"Hero v2 error ({type(e).__name__}): {e}, trying v1", klogging.Ansi.LYELLOW)
+
+    # Fallback to v1 CheeseGull search (less data but bypasses Cloudflare)
+    v1_params = {'amount': 9, 'offset': 0, 'status': 1}
+    try:
+        async with glob.http.get(HINAI_SEARCH_V1, params=v1_params, headers=_MIRROR_HEADERS, timeout=10) as resp:
+            if resp.status == 200:
+                data = await resp.json()
+                if data:
+                    cg_sets = [_cheesegull_to_v2(s) for s in data[:9]]
+                    hero_sets = _build_hero_sets(cg_sets)
+                    if hero_sets:
+                        resp_obj = jsonify({'status': 'success', 'sets': hero_sets, 'total_count': 0})
+                        resp_obj.headers['Cache-Control'] = 'public, max-age=300, s-maxage=600'
+                        return resp_obj
+    except Exception as e:
+        klogging.log(f"Hero v1 error ({type(e).__name__}): {e}", klogging.Ansi.LYELLOW)
+
+    return jsonify({'status': 'error', 'sets': []})
 
 
 # ── Search endpoint (supports pagination via v2) ──
@@ -311,29 +329,55 @@ async def _search_osudirect(query, mode, status, amount, offset):
         raise
 
 
-# ── Detail proxy (beatmapset + pp enrichment) ──
+# ── Detail proxy (v3 rich → v1 fallback) ──
 
 @hina_beatmaps.route('/beatmaps/api/details/<int:set_id>')
 async def beatmaps_detail(set_id):
-    """Proxy /v3/osu/beatmaps/s/{id}/details?pp_enrichment=true from mirror."""
-    url = f'{HINAI_DETAIL}/{set_id}/details'
-    params = {'pp_enrichment': 'true'}
-
+    """Proxy beatmapset details. Tries v3 (rich) first, falls back to v1 on 403."""
+    # Try v3 first (full data + pp enrichment)
+    url_v3 = f'{HINAI_DETAIL_V3}/{set_id}/details'
     try:
-        async with glob.http.get(url, params=params, headers=_MIRROR_HEADERS, timeout=15) as resp:
-            if resp.status != 200:
-                return jsonify({
-                    'status': 'error',
-                    'message': f'Mirror returned {resp.status}.',
-                }), resp.status if 400 <= resp.status < 600 else 502
-
-            data = await resp.json()
-            return jsonify(data)
+        async with glob.http.get(url_v3, params={'pp_enrichment': 'true'},
+                                 headers=_MIRROR_HEADERS, timeout=15) as resp:
+            if resp.status == 200:
+                data = await resp.json()
+                return jsonify(data)
+            if resp.status != 403:
+                return jsonify({'status': 'error', 'message': f'Mirror returned {resp.status}.'}), 502
+            # 403 = Cloudflare blocked, fall through to v1
+            klogging.log("Detail v3 blocked (403), falling back to v1", klogging.Ansi.LYELLOW)
     except Exception as e:
-        err_name = type(e).__name__
-        klogging.log(f"Detail proxy error ({err_name}): {e}", klogging.Ansi.LRED)
-        if 'Timeout' in err_name:
-            return jsonify({'status': 'error', 'message': 'Detail request timed out.'}), 504
+        klogging.log(f"Detail v3 error ({type(e).__name__}): {e}, trying v1", klogging.Ansi.LYELLOW)
+
+    # Fallback to v1 (/api/v1/hinai/s/{id} — bypasses Cloudflare via WAF rule #8)
+    url_v1 = f'{HINAI_DETAIL_V1}/{set_id}'
+    try:
+        async with glob.http.get(url_v1, params={'pp_enrichment': 'true'},
+                                 headers=_MIRROR_HEADERS, timeout=15) as resp:
+            if resp.status != 200:
+                return jsonify({'status': 'error', 'message': f'Mirror v1 returned {resp.status}.'}), 502
+
+            raw = await resp.json()
+            # v1 wraps data in {beatmapset_id, data:{...}, success}
+            # Normalize to match v3 format the component expects
+            inner = raw.get('data', raw)
+            inner['id'] = raw.get('beatmapset_id', set_id)
+            # v1 beatmaps lack some fields — fill defaults
+            for b in (inner.get('beatmaps') or []):
+                b.setdefault('beatmapset_id', set_id)
+                b.setdefault('count_circles', 0)
+                b.setdefault('count_sliders', 0)
+                b.setdefault('count_spinners', 0)
+                b.setdefault('accuracy', b.get('od', 0))
+                b.setdefault('drain', b.get('hp', 0))
+                b.setdefault('checksum', '')
+                b.setdefault('convert', False)
+                b.setdefault('playcount', 0)
+                b.setdefault('passcount', 0)
+                b.setdefault('hit_length', b.get('total_length', 0))
+            return jsonify({'beatmapset': inner})
+    except Exception as e:
+        klogging.log(f"Detail v1 error ({type(e).__name__}): {e}", klogging.Ansi.LRED)
         return jsonify({'status': 'error', 'message': 'Failed to fetch details.'}), 502
 
 
@@ -341,71 +385,53 @@ async def beatmaps_detail(set_id):
 
 @hina_beatmaps.route('/beatmaps/api/pp-calc/<int:beatmap_id>')
 async def beatmaps_pp_calc(beatmap_id):
-    """Proxy /v3/osu/pp-calc/{id} from mirror with accuracy/mods params."""
-    url = f'{HINAI_PP_CALC}/{beatmap_id}'
+    """Proxy /v3/osu/pp-calc/{id} with v1 fallback on 403."""
     params: dict = {}
-
     accuracy = request.args.get('accuracy', type=float)
     if accuracy is not None:
         params['accuracy'] = accuracy
-
     mods = request.args.get('mods', type=str)
     if mods is not None:
         params['mods'] = mods
 
+    url = f'{HINAI_PP_CALC}/{beatmap_id}'
     try:
         async with glob.http.get(url, params=params, headers=_MIRROR_HEADERS, timeout=10) as resp:
-            if resp.status != 200:
-                return jsonify({
-                    'status': 'error',
-                    'message': f'PP calc returned {resp.status}.',
-                }), resp.status if 400 <= resp.status < 600 else 502
-
-            data = await resp.json()
-            return jsonify(data)
+            if resp.status == 200:
+                return jsonify(await resp.json())
+            # No v1 fallback for PP calc — component shows "—" gracefully
+            return jsonify({'success': False, 'message': f'PP calc returned {resp.status}.'}), 200
     except Exception as e:
-        err_name = type(e).__name__
-        klogging.log(f"PP calc proxy error ({err_name}): {e}", klogging.Ansi.LRED)
-        if 'Timeout' in err_name:
-            return jsonify({'status': 'error', 'message': 'PP calc timed out.'}), 504
-        return jsonify({'status': 'error', 'message': 'PP calc failed.'}), 502
+        klogging.log(f"PP calc error ({type(e).__name__}): {e}", klogging.Ansi.LRED)
+        return jsonify({'success': False, 'message': 'PP calc failed.'}), 200
 
 
-# ── Audio stream proxy ──
+# ── Audio stream proxy (v3 → v1 fallback) ──
 
 @hina_beatmaps.route('/beatmaps/api/audio/<int:set_id>')
 async def beatmaps_audio(set_id):
-    """Proxy /v3/osu/music/audio/{id} from mirror, forwarding Range headers."""
-    url = f'{HINAI_AUDIO}/{set_id}'
-
-    # Forward Range header for seeking support + mirror auth
+    """Proxy audio from mirror, forwarding Range headers. Falls back to v1 on 403."""
     headers: dict = dict(_MIRROR_HEADERS)
     range_header = request.headers.get('Range')
     if range_header:
         headers['Range'] = range_header
 
+    url = f'{HINAI_AUDIO}/{set_id}'
     try:
         async with glob.http.get(url, headers=headers, timeout=30) as resp:
-            if resp.status not in (200, 206):
-                return Response(
-                    'Audio not available',
-                    status=resp.status if 400 <= resp.status < 600 else 502,
-                )
-
-            body = await resp.read()
-
-            # Build response with same status (200 or 206)
-            proxy_headers = {}
-            for h in ('Content-Type', 'Content-Length', 'Content-Range',
-                      'Accept-Ranges', 'Cache-Control'):
-                val = resp.headers.get(h)
-                if val:
-                    proxy_headers[h] = val
-
-            return Response(body, status=resp.status, headers=proxy_headers)
+            if resp.status in (200, 206):
+                body = await resp.read()
+                proxy_headers = {}
+                for h in ('Content-Type', 'Content-Length', 'Content-Range',
+                          'Accept-Ranges', 'Cache-Control'):
+                    val = resp.headers.get(h)
+                    if val:
+                        proxy_headers[h] = val
+                return Response(body, status=resp.status, headers=proxy_headers)
+            # No v1 fallback for audio — player just won't play
+            return Response('Audio not available', status=resp.status if 400 <= resp.status < 600 else 502)
     except Exception as e:
-        err_name = type(e).__name__
-        klogging.log(f"Audio proxy error ({err_name}): {e}", klogging.Ansi.LRED)
+        klogging.log(f"Audio error ({type(e).__name__}): {e}", klogging.Ansi.LRED)
         return Response('Audio stream failed', status=502)
 
 
