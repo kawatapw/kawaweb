@@ -154,20 +154,16 @@
         <!-- Actions -->
         <div class="bm-card-actions">
           <button class="bm-action-btn bm-action-btn--info" @click="openInfo(set)">
-            <i class="fas fa-info-circle"></i> More Info
+            <i class="fas fa-flask"></i> Hinai Info
           </button>
-          <div class="bm-action-downloads">
-            <a class="bm-action-btn bm-action-btn--dl"
-               :href="getDownloadUrl(set.id)"
-               target="_blank" rel="noopener">
-              <i class="fas fa-download"></i> Download
-            </a>
-            <a class="bm-action-btn bm-action-btn--novid"
-               :href="getDownloadUrl(set.id, true)"
-               target="_blank" rel="noopener">
-              <i class="fas fa-video-slash"></i> No Video
-            </a>
-          </div>
+          <button class="bm-action-btn bm-action-btn--details" @click="showBeatmapPanel(set)">
+            <i class="fas fa-list-ul"></i> Map Details
+          </button>
+          <a class="bm-action-btn bm-action-btn--dl"
+             :href="getDownloadUrl(set.id)"
+             target="_blank" rel="noopener">
+            <i class="fas fa-download"></i> Download
+          </a>
         </div>
       </div>
     </div>
@@ -188,11 +184,11 @@
     <span>Loading more...</span>
   </div>
 
-  <!-- Info Modal -->
+  <!-- Info now handled by shared beatmap panel (panels/beatmap.js) -->
+  <!-- Map Details modal (inline, full osu.direct metadata) -->
   <div v-if="infoSet" class="bm-modal-overlay" @click.self="closeInfo">
     <div class="bm-modal">
       <button class="bm-modal-close" @click="closeInfo"><i class="fas fa-times"></i></button>
-
       <!-- Modal header with cover -->
       <div class="bm-modal-banner">
         <img class="bm-modal-cover" :src="getCoverUrl(infoSet)"
@@ -531,6 +527,7 @@
       </div>
     </div>
   </div>
+  <!-- End Map Details modal -->
 
 </div>
 

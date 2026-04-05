@@ -287,6 +287,10 @@
                 }
                 return 'https://assets.ppy.sh/beatmaps/' + set.id + '/covers/cover.jpg';
             },
+            showBeatmapPanel: function (set) {
+                var firstDiff = (set.beatmaps && set.beatmaps.length > 0) ? set.beatmaps[0].id : null;
+                window.beatmapBus.$emit('show-beatmap-panel', firstDiff, set.id, set);
+            },
             openInfo: function (set) {
                 var self = this;
                 self.infoSet = set;
@@ -326,7 +330,6 @@
                 }
                 return names.join(', ');
             },
-            // ─── PP Table ────────────────────────────────────────────
             togglePPTable: function () {
                 var self = this;
                 self.ppTableShow = !self.ppTableShow;
@@ -336,14 +339,12 @@
             },
             togglePPMod: function (bit) {
                 var self = this;
-                // EZ(2) / HR(16) conflict
                 if (bit === 2 && (self.ppTableMods & 16)) {
                     self.ppTableMods &= ~16;
                 }
                 if (bit === 16 && (self.ppTableMods & 2)) {
                     self.ppTableMods &= ~2;
                 }
-                // DT(64) / HT(256) conflict
                 if (bit === 64 && (self.ppTableMods & 256)) {
                     self.ppTableMods &= ~256;
                 }
@@ -377,50 +378,23 @@
                 for (var i = 0; i < self.infoSet.beatmaps.length; i++) {
                     ids.push(self.infoSet.beatmaps[i].id);
                 }
-                var xhr = new XMLHttpRequest();
-                xhr.open('GET', '/beatmaps/api/pp-table?ids=' + ids.join(',') + '&mods=' + self.ppTableMods, true);
-                xhr.onreadystatechange = function () {
-                    if (xhr.readyState !== 4)
-                        return;
+                fetch('/beatmaps/api/pp-table?ids=' + ids.join(',') + '&mods=' + self.ppTableMods)
+                    .then(function (res) { return res.json(); })
+                    .then(function (data) {
                     self.ppTableLoading = false;
-                    if (xhr.status !== 200) {
-                        self.ppTableError = 'Failed to fetch PP data (status ' + xhr.status + ').';
-                        return;
+                    if (data.status === 'success') {
+                        self.ppTableCache[cacheKey] = data.results;
+                        self.ppTableData = data.results;
+                        self.ppTableError = '';
                     }
-                    try {
-                        var data = JSON.parse(xhr.responseText);
-                        if (data.status === 'success') {
-                            self.ppTableCache[cacheKey] = data.results;
-                            self.ppTableData = data.results;
-                            self.ppTableError = '';
-                        }
-                        else {
-                            self.ppTableError = data.message || 'Failed to fetch PP data.';
-                        }
+                    else {
+                        self.ppTableError = data.message || 'Failed to fetch PP data.';
                     }
-                    catch (e) {
-                        self.ppTableError = 'Invalid response.';
-                    }
-                };
-                xhr.send();
-            },
-            formatPPMods: function (mods) {
-                if (!mods)
-                    return 'None';
-                var MOD_BITS = {
-                    1: 'NF', 2: 'EZ', 4: 'TD', 8: 'HD', 16: 'HR', 32: 'SD',
-                    64: 'DT', 128: 'RX', 256: 'HT', 512: 'NC', 1024: 'FL'
-                };
-                var names = [];
-                for (var bit in MOD_BITS) {
-                    if (MOD_BITS.hasOwnProperty(bit)) {
-                        var bitNum = parseInt(bit, 10);
-                        if (mods & bitNum) {
-                            names.push(MOD_BITS[bitNum]);
-                        }
-                    }
-                }
-                return names.length ? '+' + names.join('') : 'None';
+                })
+                    .catch(function () {
+                    self.ppTableLoading = false;
+                    self.ppTableError = 'Network error.';
+                });
             },
             getPPValue: function (diffId, accIdx) {
                 var self = this;
