@@ -17,7 +17,7 @@
   position: relative;
   width: 100vw;
   margin-left: calc(-50vw + 50%);
-  height: 230px;
+  height: 280px;
   overflow: hidden;
 }
 .bm-hero::before {
@@ -27,22 +27,99 @@
   left: 0;
   right: 0;
   height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(89, 225, 255, 0.3) 30%, rgba(124, 92, 255, 0.5) 50%, rgba(89, 225, 255, 0.3) 70%, transparent);
+  background: linear-gradient(90deg, transparent, rgba(89, 225, 255, 0.25) 30%, rgba(124, 92, 255, 0.4) 50%, rgba(89, 225, 255, 0.25) 70%, transparent);
   z-index: 3;
+}
+.bm-hero::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 40px;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.6), transparent);
+  z-index: 2;
+  pointer-events: none;
+}
+.bm-hero:hover .bm-hero-track {
+  animation-play-state: paused;
 }
 
 .bm-hero-track {
   display: flex;
+  align-items: center;
   height: 100%;
-  animation: bm-hero-scroll 40s linear infinite;
+  padding: 0 6px;
+  gap: 12px;
+  animation: bm-hero-scroll 45s linear infinite;
   will-change: transform;
+}
+
+.bm-hero-frame {
+  position: relative;
+  height: calc(100% - 32px);
+  flex-shrink: 0;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.04);
+  transition: border-color 0.3s, box-shadow 0.3s, transform 0.3s;
+}
+.bm-hero-frame:hover {
+  border-color: rgba(124, 92, 255, 0.35);
+  box-shadow: 0 6px 28px rgba(0, 0, 0, 0.5), 0 0 20px rgba(124, 92, 255, 0.12);
+  transform: scale(1.02);
+}
+.bm-hero-frame:hover .bm-hero-img {
+  filter: brightness(1.1);
+}
+.bm-hero-frame:hover .bm-hero-label {
+  opacity: 1;
+  transform: translateY(0);
 }
 
 .bm-hero-img {
   height: 100%;
   width: auto;
-  flex-shrink: 0;
+  min-width: 340px;
   object-fit: cover;
+  display: block;
+  transition: filter 0.3s;
+}
+
+.bm-hero-label {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 20px 12px 10px;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.75), transparent);
+  opacity: 0;
+  transform: translateY(4px);
+  transition: opacity 0.3s, transform 0.3s;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.bm-hero-label-title {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.6);
+}
+
+.bm-hero-label-artist {
+  font-size: 0.7rem;
+  color: rgba(255, 255, 255, 0.6);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.6);
 }
 
 @keyframes bm-hero-scroll {
@@ -57,54 +134,17 @@
   position: absolute;
   top: 0;
   bottom: 0;
-  width: 120px;
+  width: 100px;
   z-index: 2;
   pointer-events: none;
 }
 .bm-hero-fade--left {
   left: 0;
-  background: linear-gradient(to right, rgba(0, 0, 0, 0.85), transparent);
+  background: linear-gradient(to right, rgba(0, 0, 0, 0.7), transparent);
 }
 .bm-hero-fade--right {
   right: 0;
-  background: linear-gradient(to left, rgba(0, 0, 0, 0.85), transparent);
-}
-
-.bm-hero-bottom {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 100px;
-  background: linear-gradient(to top, rgba(0, 0, 0, 0.9), transparent);
-  z-index: 2;
-  pointer-events: none;
-}
-
-.bm-hero-overlay {
-  position: absolute;
-  bottom: 20px;
-  left: 0;
-  right: 0;
-  z-index: 3;
-  text-align: center;
-  pointer-events: none;
-}
-
-.bm-hero-title {
-  font-size: 2rem;
-  font-weight: 700;
-  color: #fff;
-  margin: 0;
-  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.7);
-  letter-spacing: -0.01em;
-}
-
-.bm-hero-subtitle {
-  font-size: 0.9rem;
-  color: rgba(255, 255, 255, 0.7);
-  margin: 6px 0 0;
-  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.6);
+  background: linear-gradient(to left, rgba(0, 0, 0, 0.7), transparent);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -1128,19 +1168,24 @@
 
 @media (max-width: 768px) {
   .bm-hero {
-    height: 160px;
+    height: 180px;
   }
-  .bm-hero-title {
-    font-size: 1.5rem;
+  .bm-hero-track {
+    gap: 8px;
   }
-  .bm-hero-subtitle {
-    font-size: 0.8rem;
+  .bm-hero-frame {
+    height: calc(100% - 20px);
+    border-radius: 8px;
+  }
+  .bm-hero-img {
+    min-width: 240px;
   }
   .bm-hero-fade {
-    width: 60px;
+    width: 50px;
   }
-  .bm-hero-bottom {
-    height: 70px;
+  .bm-hero-label {
+    opacity: 1;
+    transform: translateY(0);
   }
   .bm-header {
     padding: 20px 0 12px;
