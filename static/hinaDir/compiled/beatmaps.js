@@ -69,6 +69,11 @@
                 var self = this;
                 return self.mirror !== 'hinai' && self.sets.length > 0 && self.hasMore && !self.loading;
             },
+            // Hero track: original + clone for seamless CSS marquee loop
+            heroTrack: function () {
+                var self = this;
+                return self.heroSets.concat(self.heroSets);
+            },
             // Sliding window of page numbers (up to 10 visible)
             pageNumbers: function () {
                 var self = this;

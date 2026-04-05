@@ -147,6 +147,11 @@ new Vue({
             var self = this as any;
             return self.mirror !== 'hinai' && self.sets.length > 0 && self.hasMore && !self.loading;
         },
+        // Hero track: original + clone for seamless CSS marquee loop
+        heroTrack: function(): any[] {
+            var self = this as any;
+            return self.heroSets.concat(self.heroSets);
+        },
         // Sliding window of page numbers (up to 10 visible)
         pageNumbers: function(): number[] {
             var self = this as any;

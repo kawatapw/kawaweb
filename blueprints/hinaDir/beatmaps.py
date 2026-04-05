@@ -123,8 +123,8 @@ async def beatmaps_page():
 
 @hina_beatmaps.route('/beatmaps/api/hero')
 async def beatmaps_hero():
-    """Return 6 most recently ranked beatmapsets for the hero banner."""
-    params = {'status': 'ranked', 'sort': 'ranked_desc', 'limit': 6, 'page': 0}
+    """Return 9 most recently ranked beatmapsets for the hero banner."""
+    params = {'status': 'ranked', 'sort': 'ranked_desc', 'limit': 9, 'page': 0}
 
     try:
         async with glob.http.get(HINAI_SEARCH_V2, params=params, headers=_MIRROR_HEADERS, timeout=10) as resp:
@@ -132,7 +132,7 @@ async def beatmaps_hero():
                 return jsonify({'status': 'error', 'sets': []})
 
             data = await resp.json()
-            raw_sets = data.get('beatmapsets', [])[:6]
+            raw_sets = data.get('beatmapsets', [])[:9]
 
             hero_sets = []
             for s in raw_sets:

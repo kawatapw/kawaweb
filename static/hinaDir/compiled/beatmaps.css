@@ -19,6 +19,9 @@
   margin-left: calc(-50vw + 50%);
   height: 280px;
   overflow: hidden;
+  background: linear-gradient(135deg, #0a0a14, #0d0b1e, #0a1018, #0a0a14);
+  background-size: 400% 400%;
+  animation: bm-hero-bg 20s ease infinite;
 }
 .bm-hero::before {
   content: "";
@@ -28,7 +31,7 @@
   right: 0;
   height: 1px;
   background: linear-gradient(90deg, transparent, rgba(89, 225, 255, 0.25) 30%, rgba(124, 92, 255, 0.4) 50%, rgba(89, 225, 255, 0.25) 70%, transparent);
-  z-index: 3;
+  z-index: 4;
 }
 .bm-hero::after {
   content: "";
@@ -38,11 +41,56 @@
   right: 0;
   height: 40px;
   background: linear-gradient(to top, rgba(0, 0, 0, 0.6), transparent);
-  z-index: 2;
+  z-index: 3;
   pointer-events: none;
 }
 .bm-hero:hover .bm-hero-track {
   animation-play-state: paused;
+}
+
+@keyframes bm-hero-bg {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+.bm-hero-sweep {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+  overflow: hidden;
+}
+.bm-hero-sweep::after {
+  content: "";
+  position: absolute;
+  top: -20%;
+  left: -100%;
+  width: 60%;
+  height: 140%;
+  background: linear-gradient(105deg, transparent 30%, rgba(255, 255, 255, 0.03) 45%, rgba(255, 255, 255, 0.06) 50%, rgba(255, 255, 255, 0.03) 55%, transparent 70%);
+  animation: bm-hero-light-sweep 8s ease-in-out infinite;
+}
+
+@keyframes bm-hero-light-sweep {
+  0%, 100% {
+    left: -100%;
+  }
+  50% {
+    left: 150%;
+  }
+}
+.bm-hero-vignette {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  background: radial-gradient(ellipse at center, transparent 30%, rgba(0, 0, 0, 0.5) 100%);
 }
 
 .bm-hero-track {
@@ -50,28 +98,45 @@
   align-items: center;
   height: 100%;
   padding: 0 6px;
-  gap: 12px;
-  animation: bm-hero-scroll 45s linear infinite;
+  animation: bm-hero-scroll 60s linear infinite;
   will-change: transform;
+  position: relative;
+  z-index: 1;
 }
 
 .bm-hero-frame {
   position: relative;
-  height: calc(100% - 32px);
   flex-shrink: 0;
   border-radius: 12px;
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.04);
-  transition: border-color 0.3s, box-shadow 0.3s, transform 0.3s;
+  margin-right: 14px;
+  transition: box-shadow 0.3s, transform 0.3s;
+}
+.bm-hero-frame::before {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  border-radius: 13px;
+  background: linear-gradient(135deg, rgba(89, 225, 255, 0.2), rgba(124, 92, 255, 0.3), rgba(89, 225, 255, 0.2));
+  z-index: -1;
+  opacity: 0.6;
+  transition: opacity 0.3s;
+}
+.bm-hero-frame {
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+  height: calc(100% - 32px);
+  width: 380px;
 }
 .bm-hero-frame:hover {
-  border-color: rgba(124, 92, 255, 0.35);
-  box-shadow: 0 6px 28px rgba(0, 0, 0, 0.5), 0 0 20px rgba(124, 92, 255, 0.12);
-  transform: scale(1.02);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6), 0 0 24px rgba(124, 92, 255, 0.2);
+  transform: scale(1.03);
+}
+.bm-hero-frame:hover::before {
+  opacity: 1;
 }
 .bm-hero-frame:hover .bm-hero-img {
-  filter: brightness(1.1);
+  transform: scale(1.08);
+  filter: brightness(1.12);
 }
 .bm-hero-frame:hover .bm-hero-label {
   opacity: 1;
@@ -79,12 +144,11 @@
 }
 
 .bm-hero-img {
+  width: 100%;
   height: 100%;
-  width: auto;
-  min-width: 340px;
   object-fit: cover;
   display: block;
-  transition: filter 0.3s;
+  transition: transform 0.4s ease, filter 0.3s;
 }
 
 .bm-hero-label {
@@ -92,10 +156,10 @@
   bottom: 0;
   left: 0;
   right: 0;
-  padding: 20px 12px 10px;
-  background: linear-gradient(to top, rgba(0, 0, 0, 0.75), transparent);
+  padding: 22px 12px 10px;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.8), transparent);
   opacity: 0;
-  transform: translateY(4px);
+  transform: translateY(6px);
   transition: opacity 0.3s, transform 0.3s;
   pointer-events: none;
   display: flex;
@@ -149,6 +213,12 @@
 
 @media (prefers-reduced-motion: reduce) {
   .bm-hero-track {
+    animation: none;
+  }
+  .bm-hero-sweep::after {
+    animation: none;
+  }
+  .bm-hero {
     animation: none;
   }
 }
@@ -1170,15 +1240,11 @@
   .bm-hero {
     height: 180px;
   }
-  .bm-hero-track {
-    gap: 8px;
-  }
   .bm-hero-frame {
     height: calc(100% - 20px);
+    width: 260px;
     border-radius: 8px;
-  }
-  .bm-hero-img {
-    min-width: 240px;
+    margin-right: 8px;
   }
   .bm-hero-fade {
     width: 50px;
@@ -1186,6 +1252,9 @@
   .bm-hero-label {
     opacity: 1;
     transform: translateY(0);
+  }
+  .bm-hero-sweep {
+    display: none;
   }
   .bm-header {
     padding: 20px 0 12px;

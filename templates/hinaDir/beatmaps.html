@@ -11,8 +11,8 @@
   <!-- Hero Art Gallery -->
   <div v-if="heroLoaded && hinaiOnline && heroSets.length > 0" class="bm-hero">
     <div class="bm-hero-track">
-      <!-- Real frames -->
-      <div v-for="h in heroSets" :key="'hero-' + h.id" class="bm-hero-frame">
+      <!-- 9 real + 9 clones in single loop for seamless marquee -->
+      <div v-for="(h, idx) in heroTrack" :key="'hf-' + idx" class="bm-hero-frame">
         <img class="bm-hero-img" :src="h.cover"
              :alt="h.artist + ' - ' + h.title"
              loading="eager"
@@ -22,17 +22,9 @@
           <span class="bm-hero-label-artist" v-text="h.artist"></span>
         </div>
       </div>
-      <!-- Clone frames for seamless loop -->
-      <div v-for="h in heroSets" :key="'hero-c-' + h.id" class="bm-hero-frame" aria-hidden="true">
-        <img class="bm-hero-img" :src="h.cover"
-             loading="eager"
-             @error="$event.target.style.display='none'">
-        <div class="bm-hero-label">
-          <span class="bm-hero-label-title" v-text="h.title"></span>
-          <span class="bm-hero-label-artist" v-text="h.artist"></span>
-        </div>
-      </div>
     </div>
+    <div class="bm-hero-vignette"></div>
+    <div class="bm-hero-sweep"></div>
     <div class="bm-hero-fade bm-hero-fade--left"></div>
     <div class="bm-hero-fade bm-hero-fade--right"></div>
   </div>
