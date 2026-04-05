@@ -83,3 +83,7 @@ instagram = os.getenv("INSTAGRAM", "https://instagram.com/")
 
 RANKED_WEBHOOK_URL = os.environ["RANKED_WEBHOOK_URL"]
 ADMIN_WEBHOOK_URL  = os.environ["ADMIN_WEBHOOK_URL"]
+
+# Hinai mirror partner key — bypasses Cloudflare WAF on mirror.hinamizawa.ai
+# Set via .env or Doppler. Without it, v3 endpoints fall back to v1 (no pagination).
+HINAI_MIRROR_KEY = os.getenv("HINAI_MIRROR_KEY", "")
