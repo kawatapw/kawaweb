@@ -1083,6 +1083,518 @@ $status-graveyard: #999;
   }
 }
 
+// ── Banner Source subtitle ──
+.bm-modal-source {
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.45);
+  margin: 2px 0 0;
+  font-style: italic;
+}
+
+// ── Stat Pills (banner) ──
+.bm-modal-stat-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.bm-modal-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(4px);
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.82);
+  white-space: nowrap;
+
+  i { font-size: 0.65rem; opacity: 0.7; }
+}
+
+// ── Custom Audio Player (spectral palette) ──
+
+$hp-bg: #12172A;
+$hp-surface: #1A2038;
+$hp-cyan: #59E1FF;
+$hp-violet: #7C5CFF;
+$hp-magenta: #FF4FCB;
+$hp-text: #F3F7FF;
+$hp-muted: #9BA7C2;
+$hp-divider: rgba(140, 160, 210, 0.16);
+
+.hinai-player {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  background: $hp-bg;
+  border-bottom: 1px solid $hp-divider;
+
+  audio { display: none; }
+}
+
+.hinai-player-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, $hp-violet, darken($hp-violet, 12%));
+  border: none;
+  color: #fff;
+  font-size: 0.82rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all 0.2s;
+  box-shadow: 0 0 0 0 rgba($hp-violet, 0);
+
+  &:hover {
+    transform: scale(1.08);
+    box-shadow: 0 0 16px rgba($hp-violet, 0.4);
+  }
+
+  &--playing {
+    animation: hinai-player-pulse 1.8s ease-in-out infinite;
+  }
+
+  i { margin-left: 1px; }
+}
+
+@keyframes hinai-player-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba($hp-violet, 0.3); }
+  50% { box-shadow: 0 0 18px 4px rgba($hp-cyan, 0.2); }
+}
+
+.hinai-player-time {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: $hp-muted;
+  min-width: 32px;
+  text-align: center;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.hinai-player-track {
+  flex: 1;
+  height: 6px;
+  background: $hp-surface;
+  border-radius: 3px;
+  cursor: pointer;
+  position: relative;
+  overflow: visible;
+
+  &:hover {
+    height: 8px;
+
+    .hinai-player-thumb {
+      opacity: 1;
+      transform: translate(-50%, -50%) scale(1);
+    }
+  }
+}
+
+.hinai-player-progress {
+  height: 100%;
+  border-radius: 3px;
+  background: linear-gradient(90deg, $hp-violet, $hp-cyan);
+  transition: width 0.1s linear;
+  position: relative;
+
+  &::after {
+    content: '';
+    position: absolute;
+    right: 0;
+    top: -2px;
+    bottom: -2px;
+    width: 16px;
+    background: linear-gradient(90deg, transparent, rgba($hp-cyan, 0.3));
+    border-radius: 0 3px 3px 0;
+    pointer-events: none;
+  }
+}
+
+.hinai-player-thumb {
+  position: absolute;
+  top: 50%;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: $hp-cyan;
+  box-shadow: 0 0 8px rgba($hp-cyan, 0.5);
+  transform: translate(-50%, -50%) scale(0);
+  opacity: 0;
+  transition: opacity 0.15s, transform 0.15s;
+  pointer-events: none;
+}
+
+// ── Difficulty Selector ──
+.bm-modal-diffs-selector {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  padding: 12px 0;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,255,255,0.15) transparent;
+
+  &::-webkit-scrollbar { height: 4px; }
+  &::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 2px; }
+}
+
+.bm-modal-diff-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 20px;
+  background: $card-bg;
+  border: 1px solid $border;
+  color: $text-secondary;
+  font-size: 0.76rem;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: all 0.15s;
+
+  &:hover { border-color: rgba(255,255,255,0.25); color: $text-primary; }
+
+  &--active {
+    background: rgba(138, 100, 255, 0.15);
+    border-color: rgba(138, 100, 255, 0.4);
+    color: $text-primary;
+    box-shadow: 0 0 8px rgba(138, 100, 255, 0.15);
+  }
+}
+
+.bm-modal-diff-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.bm-modal-diff-btn-name {
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.bm-modal-diff-btn-stars {
+  font-size: 0.7rem;
+  opacity: 0.6;
+}
+
+// ── Josu Viewer ──
+.bm-modal-josu-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #2d1b69, #1a3a5c);
+  border: 1px solid rgba(138, 100, 255, 0.3);
+  color: #c4b5ff;
+  font-size: 0.84rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+
+  &:hover {
+    box-shadow: 0 0 12px rgba(138, 100, 255, 0.25);
+    border-color: rgba(138, 100, 255, 0.5);
+  }
+
+  i { margin-right: 6px; }
+}
+
+.bm-modal-josu-label {
+  display: flex;
+  align-items: center;
+}
+
+.bm-modal-josu-badge {
+  font-size: 0.6rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 8px;
+  background: rgba(138, 100, 255, 0.25);
+  color: #b8a0ff;
+  letter-spacing: 0.5px;
+}
+
+.bm-modal-josu-frame {
+  margin-top: 10px;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid $border;
+  background: #000;
+}
+
+.bm-modal-josu-iframe {
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  border: none;
+  display: block;
+}
+
+.bm-modal-josu-footer {
+  padding: 6px 12px;
+  background: rgba(0, 0, 0, 0.5);
+  font-size: 0.68rem;
+  color: rgba(255, 255, 255, 0.4);
+  text-align: center;
+}
+
+// ── Creator Info ──
+.bm-modal-creator-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.bm-modal-creator-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid $border;
+  flex-shrink: 0;
+}
+
+.bm-modal-creator-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.bm-modal-creator-label {
+  font-size: 0.72rem;
+  color: $text-muted;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.bm-modal-creator-name {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #c4b5ff;
+  text-decoration: none;
+
+  &:hover { text-decoration: underline; color: #ddd0ff; }
+}
+
+// ── Skeleton Loading ──
+.bm-modal-skeleton {
+  .bm-modal-skeleton-circle {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.08);
+    animation: skeleton-pulse 1.5s ease-in-out infinite;
+    flex-shrink: 0;
+  }
+
+  .bm-modal-skeleton-lines {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex: 1;
+
+    div {
+      height: 12px;
+      border-radius: 4px;
+      background: rgba(255, 255, 255, 0.08);
+      animation: skeleton-pulse 1.5s ease-in-out infinite;
+
+      &:first-child { width: 60px; }
+      &:last-child { width: 120px; }
+    }
+  }
+}
+
+@keyframes skeleton-pulse {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.8; }
+}
+
+// ── Metadata Tags ──
+.bm-modal-meta-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.bm-modal-meta-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 12px;
+  border-radius: 14px;
+  background: $card-bg;
+  border: 1px solid $border;
+  font-size: 0.76rem;
+  color: $text-secondary;
+
+  i { font-size: 0.68rem; opacity: 0.6; }
+}
+
+// ── Detail Error ──
+.bm-modal-detail-error {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: 8px;
+  background: rgba(255, 60, 60, 0.1);
+  border: 1px solid rgba(255, 60, 60, 0.25);
+  color: #ff8888;
+  font-size: 0.82rem;
+  margin-bottom: 16px;
+
+  .bm-retry-btn {
+    margin-left: auto;
+    padding: 4px 12px;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: $text-secondary;
+    font-size: 0.76rem;
+    cursor: pointer;
+
+    &:hover { background: rgba(255, 255, 255, 0.12); }
+  }
+}
+
+// ── PP Quick Reference ──
+.bm-modal-pp-quick {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+
+  @media (max-width: 480px) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.bm-modal-pp-quick-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 10px 8px;
+  border-radius: 8px;
+  background: $card-bg;
+  border: 1px solid $border;
+  gap: 2px;
+}
+
+.bm-modal-pp-quick-mod {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: $text-muted;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.bm-modal-pp-quick-val {
+  font-size: 1rem;
+  font-weight: 700;
+  color: $text-primary;
+}
+
+.bm-modal-pp-quick-stars {
+  font-size: 0.68rem;
+  color: $text-muted;
+}
+
+// ── Advanced Mapping Stats ──
+.bm-modal-advanced-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: $card-bg;
+  border: 1px solid $border;
+  color: $text-secondary;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+
+  &:hover { border-color: rgba(255, 255, 255, 0.2); color: $text-primary; }
+}
+
+.bm-modal-advanced-body {
+  padding-top: 16px;
+}
+
+.bm-modal-adv-block {
+  margin-bottom: 18px;
+  &:last-child { margin-bottom: 0; }
+}
+
+.bm-modal-adv-title {
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: $text-muted;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 8px;
+}
+
+// Advanced difficulty table
+.bm-modal-adv-table-wrap {
+  overflow-x: auto;
+}
+
+.bm-modal-adv-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.76rem;
+
+  th {
+    text-align: left;
+    padding: 6px 8px;
+    color: $text-muted;
+    font-weight: 600;
+    border-bottom: 1px solid $border;
+    white-space: nowrap;
+  }
+
+  td {
+    padding: 6px 8px;
+    color: $text-secondary;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    white-space: nowrap;
+  }
+
+  tr:hover td { background: rgba(255, 255, 255, 0.03); }
+
+  &--active td {
+    background: rgba(138, 100, 255, 0.08);
+    color: $text-primary;
+    font-weight: 600;
+  }
+}
+
+// ── Josu Action Button ──
+.bm-action-btn--josu {
+  background: linear-gradient(135deg, #2d1b69, #1a3a5c);
+  border-color: rgba(138, 100, 255, 0.3);
+  color: #c4b5ff;
+
+  &:hover {
+    box-shadow: 0 0 10px rgba(138, 100, 255, 0.3);
+    border-color: rgba(138, 100, 255, 0.5);
+  }
+}
+
 // Mobile-only close button at bottom of modal
 .bm-modal-close-bottom {
   display: none; // hidden on desktop

@@ -2,7 +2,8 @@
 <div v-if="infoSet" class="bm-modal-overlay" @click.self="closeInfo">
   <div class="bm-modal">
     <button class="bm-modal-close" @click="closeInfo"><i class="fas fa-times"></i></button>
-    <!-- Modal header with cover -->
+
+    <!-- ═══ 1. Banner ═══ -->
     <div class="bm-modal-banner">
       <img class="bm-modal-cover" :src="getCoverUrl(infoSet)"
            @error="$event.target.src='/static/images/default-bg.png'">
@@ -14,179 +15,200 @@
         <p class="bm-modal-artist" v-text="infoSet.artist"></p>
         <p class="bm-modal-artist" v-if="infoSet.artist_unicode && infoSet.artist_unicode !== infoSet.artist"
            v-text="infoSet.artist_unicode"></p>
+        <p class="bm-modal-source" v-if="infoSet.source" v-text="infoSet.source"></p>
+        <div class="bm-modal-stat-pills">
+          <span class="bm-modal-pill"><i class="fas fa-heartbeat"></i> <span v-text="getStatPill('bpm')"></span> BPM</span>
+          <span class="bm-modal-pill"><i class="fas fa-clock"></i> <span v-text="getStatPill('length')"></span></span>
+          <span class="bm-modal-pill"><i class="fas fa-shapes"></i> <span v-text="getStatPill('objects')"></span> obj</span>
+          <span class="bm-modal-pill"><i class="fas fa-play"></i> <span v-text="getStatPill('plays')"></span></span>
+          <span class="bm-modal-pill"><i class="fas fa-heart"></i> <span v-text="getStatPill('favourites')"></span></span>
+        </div>
       </div>
     </div>
 
-    <!-- Modal body -->
+    <!-- ═══ 2. Audio Player (custom, no native controls) ═══ -->
+    <div class="hinai-player" v-if="infoSet.id">
+      <audio ref="hinaiAudio" preload="auto" :src="getAudioUrl(infoSet.id)"
+             @timeupdate="onAudioTime" @loadedmetadata="onAudioMeta"
+             @ended="audioPlaying = false" @play="audioPlaying = true" @pause="audioPlaying = false"></audio>
+      <button class="hinai-player-btn" @click="togglePlay" :class="{ 'hinai-player-btn--playing': audioPlaying }">
+        <i class="fas" :class="audioPlaying ? 'fa-pause' : 'fa-play'"></i>
+      </button>
+      <span class="hinai-player-time" v-text="audioCurrentTime"></span>
+      <div class="hinai-player-track" @click="seekAudio($event)" ref="hinaiTrack">
+        <div class="hinai-player-progress" :style="{ width: audioProgress + '%' }"></div>
+        <div class="hinai-player-thumb" :style="{ left: audioProgress + '%' }"></div>
+      </div>
+      <span class="hinai-player-time" v-text="audioDuration"></span>
+    </div>
+
     <div class="bm-modal-body">
 
-      <!-- Detailed Analytics -->
-      <div class="bm-modal-section">
-        <h3 class="bm-modal-section-title"><i class="fas fa-chart-bar"></i> Detailed Analytics</h3>
-        <div class="bm-modal-stats-grid">
-          <div class="bm-modal-stat">
-            <span class="bm-modal-stat-val" v-text="infoSet.creator"></span>
-            <span class="bm-modal-stat-key">Mapper</span>
-          </div>
-          <div class="bm-modal-stat">
-            <span class="bm-modal-stat-val" v-text="getBPM(infoSet) + ' BPM'"></span>
-            <span class="bm-modal-stat-key">BPM</span>
-          </div>
-          <div class="bm-modal-stat">
-            <span class="bm-modal-stat-val" v-text="getDiffCount(infoSet)"></span>
-            <span class="bm-modal-stat-key">Difficulties</span>
-          </div>
-          <div class="bm-modal-stat">
-            <span class="bm-modal-stat-val" v-text="addCommas(infoSet.play_count || 0)"></span>
-            <span class="bm-modal-stat-key">Plays</span>
-          </div>
-          <div class="bm-modal-stat">
-            <span class="bm-modal-stat-val" v-text="addCommas(infoSet.favourite_count || 0)"></span>
-            <span class="bm-modal-stat-key">Favourites</span>
-          </div>
-          <div class="bm-modal-stat">
-            <span class="bm-modal-stat-val" v-text="getDiffModesText(infoSet)"></span>
-            <span class="bm-modal-stat-key">Modes</span>
+      <!-- ═══ 3. Difficulty Selector ═══ -->
+      <div class="bm-modal-diffs-selector">
+        <button v-for="d in getSortedDiffs(infoSet)"
+                :key="'sel-' + (d.id || d.beatmap_id)"
+                class="bm-modal-diff-btn"
+                :class="{ 'bm-modal-diff-btn--active': selectedDiffId === (d.id || d.beatmap_id) }"
+                @click="selectDiff(d.id || d.beatmap_id)">
+          <span class="bm-modal-diff-dot" :style="{ backgroundColor: starColor(d.difficulty_rating) }"></span>
+          <span class="bm-modal-diff-btn-name" v-text="d.version"></span>
+          <span class="bm-modal-diff-btn-stars" v-text="d.difficulty_rating.toFixed(2)"></span>
+        </button>
+      </div>
+
+      <!-- ═══ 4. Josu Viewer ═══ -->
+      <div class="bm-modal-section bm-modal-josu" v-if="selectedDiffId">
+        <button class="bm-modal-josu-toggle" @click="toggleJosu">
+          <span class="bm-modal-josu-label">
+            <i class="fas fa-gamepad"></i>
+            <span v-text="josuLoaded ? 'Hide Viewer' : 'Preview in Josu! (Custom + Self Hosted)'"></span>
+          </span>
+          <span class="bm-modal-josu-badge">BETA</span>
+        </button>
+        <div class="bm-modal-josu-frame" v-if="josuLoaded">
+          <iframe :src="getJosuUrl()"
+                  class="bm-modal-josu-iframe"
+                  frameborder="0"
+                  allow="autoplay; screen-wake-lock"
+                  allowfullscreen></iframe>
+          <div class="bm-modal-josu-footer">
+            P: Play/Pause &nbsp; A D: Seek &nbsp; &#8592; &#8594;: Switch Difficulty
           </div>
         </div>
       </div>
 
-      <!-- Flags -->
-      <div class="bm-modal-section">
-        <h3 class="bm-modal-section-title"><i class="fas fa-flag"></i> Properties</h3>
-        <div class="bm-modal-flags">
-          <span class="bm-modal-flag" :class="{ 'bm-modal-flag--on': infoSet.video }">
-            <i class="fas" :class="infoSet.video ? 'fa-check' : 'fa-times'"></i> Video
-          </span>
-          <span class="bm-modal-flag" :class="{ 'bm-modal-flag--on': infoSet.storyboard }">
-            <i class="fas" :class="infoSet.storyboard ? 'fa-check' : 'fa-times'"></i> Storyboard
-          </span>
-          <span class="bm-modal-flag" :class="{ 'bm-modal-flag--on': infoSet.nsfw }">
-            <i class="fas" :class="infoSet.nsfw ? 'fa-check' : 'fa-times'"></i> NSFW
-          </span>
-          <span class="bm-modal-flag" :class="{ 'bm-modal-flag--on': infoSet.is_scoreable }">
-            <i class="fas" :class="infoSet.is_scoreable ? 'fa-check' : 'fa-times'"></i> Scoreable
-          </span>
-          <span class="bm-modal-flag" :class="{ 'bm-modal-flag--on': infoSet.discussion_enabled }">
-            <i class="fas" :class="infoSet.discussion_enabled ? 'fa-check' : 'fa-times'"></i> Discussion
-          </span>
+      <!-- ═══ 5. Creator Info ═══ -->
+      <div class="bm-modal-section bm-modal-creator">
+        <div class="bm-modal-creator-row" v-if="detailState === 'ready' && infoSet.user">
+          <img class="bm-modal-creator-avatar" :src="getMapperAvatar()"
+               @error="$event.target.style.display='none'">
+          <div class="bm-modal-creator-info">
+            <span class="bm-modal-creator-label">Mapped by</span>
+            <a class="bm-modal-creator-name" :href="getMapperUrl()"
+               target="_blank" rel="noopener" v-text="getMapperName()"></a>
+          </div>
+        </div>
+        <div class="bm-modal-creator-row bm-modal-skeleton" v-else-if="detailState === 'loading'">
+          <div class="bm-modal-skeleton-circle"></div>
+          <div class="bm-modal-skeleton-lines"><div></div><div></div></div>
+        </div>
+        <div class="bm-modal-creator-row" v-else>
+          <i class="fas fa-user" style="font-size:1.2rem;opacity:0.4;margin-right:8px"></i>
+          <span v-text="infoSet.creator || 'Unknown'"></span>
         </div>
       </div>
 
-      <!-- Full Audio -->
-      <div class="bm-modal-section" v-if="infoSet.id">
-        <h3 class="bm-modal-section-title"><i class="fas fa-music"></i> Full Audio</h3>
-        <audio controls preload="auto" class="bm-modal-audio"
-               :src="getAudioUrl(infoSet.id)">
-        </audio>
-        <a class="bm-modal-audio-badge" href="https://hinamizawa.ai/osu/beatmaps" target="_blank" rel="noopener">Powered by Hinai Mirror</a>
+      <!-- ═══ 6. Metadata Tags ═══ -->
+      <div class="bm-modal-section bm-modal-meta-tags" v-if="detailState === 'ready'">
+        <span class="bm-modal-meta-pill" v-if="infoSet.genre && infoSet.genre.name">
+          <i class="fas fa-music"></i> <span v-text="infoSet.genre.name"></span>
+        </span>
+        <span class="bm-modal-meta-pill" v-if="infoSet.language && infoSet.language.name">
+          <i class="fas fa-globe"></i> <span v-text="infoSet.language.name"></span>
+        </span>
+        <span class="bm-modal-meta-pill" v-if="infoSet.ranked_date">
+          <i class="fas fa-calendar-check"></i> <span v-text="formatDateShort(infoSet.ranked_date)"></span>
+        </span>
       </div>
 
-      <!-- Source -->
-      <div class="bm-modal-section" v-if="infoSet.source">
-        <h3 class="bm-modal-section-title"><i class="fas fa-compact-disc"></i> Source</h3>
-        <p class="bm-modal-text" v-text="infoSet.source"></p>
+      <!-- ═══ Detail Error ═══ -->
+      <div class="bm-modal-detail-error" v-if="detailState === 'error'">
+        <i class="fas fa-exclamation-triangle"></i>
+        <span v-text="detailError"></span>
+        <button class="bm-retry-btn" @click="fetchDetail"><i class="fas fa-redo"></i> Retry</button>
       </div>
 
-      <!-- Tags -->
-      <div class="bm-modal-section" v-if="infoSet.tags">
-        <h3 class="bm-modal-section-title"><i class="fas fa-tags"></i> Tags</h3>
-        <p class="bm-modal-tags" v-text="infoSet.tags"></p>
-      </div>
-
-      <!-- Dates -->
-      <div class="bm-modal-section">
-        <h3 class="bm-modal-section-title"><i class="fas fa-calendar-alt"></i> Timeline</h3>
-        <div class="bm-modal-dates">
-          <div class="bm-modal-date-row" v-if="infoSet.submitted_date">
-            <span class="bm-modal-date-label">Submitted</span>
-            <span class="bm-modal-date-val" v-text="formatDateFull(infoSet.submitted_date)"></span>
+      <!-- ═══ 7. Per-Diff Stats (selected diff only) ═══ -->
+      <div class="bm-modal-section" v-if="getSelectedDiff()">
+        <h3 class="bm-modal-section-title"><i class="fas fa-sliders-h"></i> Difficulty Stats</h3>
+        <div class="bm-modal-tech-grid">
+          <div class="bm-modal-tech-item">
+            <span class="bm-modal-tech-label">AR</span>
+            <span class="bm-modal-tech-val" v-text="getDiffVal('ar')"></span>
+            <div class="bm-modal-tech-bar"><div class="bm-modal-tech-fill" :style="{ width: (getDiffValNum('ar') / 11 * 100) + '%' }"></div></div>
           </div>
-          <div class="bm-modal-date-row" v-if="infoSet.last_updated">
-            <span class="bm-modal-date-label">Updated</span>
-            <span class="bm-modal-date-val" v-text="formatDateFull(infoSet.last_updated)"></span>
+          <div class="bm-modal-tech-item">
+            <span class="bm-modal-tech-label">CS</span>
+            <span class="bm-modal-tech-val" v-text="getDiffVal('cs')"></span>
+            <div class="bm-modal-tech-bar"><div class="bm-modal-tech-fill" :style="{ width: (getDiffValNum('cs') / 11 * 100) + '%' }"></div></div>
           </div>
-          <div class="bm-modal-date-row" v-if="infoSet.ranked_date">
-            <span class="bm-modal-date-label" v-text="statusLabel(infoSet.status)"></span>
-            <span class="bm-modal-date-val" v-text="formatDateFull(infoSet.ranked_date)"></span>
+          <div class="bm-modal-tech-item">
+            <span class="bm-modal-tech-label">HP</span>
+            <span class="bm-modal-tech-val" v-text="getDiffVal('hp')"></span>
+            <div class="bm-modal-tech-bar"><div class="bm-modal-tech-fill" :style="{ width: (getDiffValNum('hp') / 11 * 100) + '%' }"></div></div>
+          </div>
+          <div class="bm-modal-tech-item">
+            <span class="bm-modal-tech-label">OD</span>
+            <span class="bm-modal-tech-val" v-text="getDiffVal('od')"></span>
+            <div class="bm-modal-tech-bar"><div class="bm-modal-tech-fill" :style="{ width: (getDiffValNum('od') / 11 * 100) + '%' }"></div></div>
+          </div>
+          <div class="bm-modal-tech-item">
+            <span class="bm-modal-tech-label">Combo</span>
+            <span class="bm-modal-tech-val" v-text="addCommas(getSelectedDiff().max_combo)"></span>
+          </div>
+          <div class="bm-modal-tech-item">
+            <span class="bm-modal-tech-label">BPM</span>
+            <span class="bm-modal-tech-val" v-text="Math.round(getSelectedDiff().bpm || infoSet.bpm || 0)"></span>
           </div>
         </div>
       </div>
 
-      <!-- Availability -->
-      <div class="bm-modal-section" v-if="infoSet.availability && infoSet.availability.download_disabled">
-        <h3 class="bm-modal-section-title"><i class="fas fa-exclamation-triangle"></i> Availability</h3>
-        <p class="bm-modal-text bm-modal-text--warn">Download disabled by mapper</p>
-        <p class="bm-modal-text" v-if="infoSet.availability.more_information"
-           v-text="infoSet.availability.more_information"></p>
+      <!-- ═══ 8. PP Section ═══ -->
+
+      <!-- 8a. Quick Reference (from pp_enrichment, instant) -->
+      <div class="bm-modal-section" v-if="detailState === 'ready' && getSelectedDiff() && getSelectedDiff().pp_data">
+        <h3 class="bm-modal-section-title"><i class="fas fa-chart-line"></i> PP Quick Reference</h3>
+        <div class="bm-modal-pp-quick">
+          <div class="bm-modal-pp-quick-cell" v-for="mod in ['NM','HD','HR','DT','HDHR','HDDT']" :key="'qpp-' + mod">
+            <span class="bm-modal-pp-quick-mod" v-text="mod"></span>
+            <span class="bm-modal-pp-quick-val" v-text="getQuickPPValue(selectedDiffId, mod)"></span>
+            <span class="bm-modal-pp-quick-stars" v-text="getQuickPPStars(selectedDiffId, mod)"></span>
+          </div>
+        </div>
       </div>
 
-      <!-- PP Table (powered by Hinai Mirror) -->
+      <!-- 8b. Custom PP Calculator (collapsible) -->
       <div class="bm-modal-section bpp-section">
-        <button class="bpp-toggle" @click="togglePPTable">
+        <button class="bpp-toggle" @click="toggleCustomPP">
           <span class="bpp-toggle-label">
             <i class="fas fa-calculator"></i>
-            <span v-text="ppTableShow ? 'PP Values' : 'Show PP Values'"></span>
+            <span v-text="ppCustomShow ? 'Custom PP Calculator' : 'Custom PP Calculator'"></span>
           </span>
           <span class="bpp-toggle-hint">
-            <i class="bpp-chevron fas" :class="ppTableShow ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
+            <i class="bpp-chevron fas" :class="ppCustomShow ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
           </span>
         </button>
 
-        <div class="bpp-body" v-show="ppTableShow">
-          <!-- Mod buttons -->
+        <div class="bpp-body" v-show="ppCustomShow">
           <div class="bpp-mods">
-            <button class="bpp-mod-btn" :class="{ 'bpp-mod-btn--active': ppTableMods === 0 }"
-                    @click="setPPModCombo(0)">NM</button>
-            <button class="bpp-mod-btn" :class="{ 'bpp-mod-btn--active': isPPModActive(8) }"
-                    @click="togglePPMod(8)">HD</button>
-            <button class="bpp-mod-btn" :class="{ 'bpp-mod-btn--active': isPPModActive(16) }"
-                    @click="togglePPMod(16)">HR</button>
-            <button class="bpp-mod-btn" :class="{ 'bpp-mod-btn--active': isPPModActive(64) }"
-                    @click="togglePPMod(64)">DT</button>
-            <button class="bpp-mod-btn" :class="{ 'bpp-mod-btn--active': isPPModActive(1024) }"
-                    @click="togglePPMod(1024)">FL</button>
-            <button class="bpp-mod-btn" :class="{ 'bpp-mod-btn--active': isPPModActive(2) }"
-                    @click="togglePPMod(2)">EZ</button>
-            <button class="bpp-mod-btn" :class="{ 'bpp-mod-btn--active': isPPModActive(256) }"
-                    @click="togglePPMod(256)">HT</button>
+            <button class="bpp-mod-btn" :class="{ 'bpp-mod-btn--active': ppTableMods === 0 }" @click="setPPModCombo(0)">NM</button>
+            <button class="bpp-mod-btn" :class="{ 'bpp-mod-btn--active': isPPModActive(8) }" @click="togglePPMod(8)">HD</button>
+            <button class="bpp-mod-btn" :class="{ 'bpp-mod-btn--active': isPPModActive(16) }" @click="togglePPMod(16)">HR</button>
+            <button class="bpp-mod-btn" :class="{ 'bpp-mod-btn--active': isPPModActive(64) }" @click="togglePPMod(64)">DT</button>
+            <button class="bpp-mod-btn" :class="{ 'bpp-mod-btn--active': isPPModActive(1024) }" @click="togglePPMod(1024)">FL</button>
+            <button class="bpp-mod-btn" :class="{ 'bpp-mod-btn--active': isPPModActive(2) }" @click="togglePPMod(2)">EZ</button>
+            <button class="bpp-mod-btn" :class="{ 'bpp-mod-btn--active': isPPModActive(256) }" @click="togglePPMod(256)">HT</button>
             <span class="bpp-mods-sep"></span>
-            <button class="bpp-combo-btn" :class="{ 'bpp-mod-btn--active': ppTableMods === 24 }"
-                    @click="setPPModCombo(24)">HDHR</button>
-            <button class="bpp-combo-btn" :class="{ 'bpp-mod-btn--active': ppTableMods === 72 }"
-                    @click="setPPModCombo(72)">HDDT</button>
-            <button class="bpp-combo-btn" :class="{ 'bpp-mod-btn--active': ppTableMods === 88 }"
-                    @click="setPPModCombo(88)">HDDTHR</button>
-            <button class="bpp-combo-btn" :class="{ 'bpp-mod-btn--active': ppTableMods === 1032 }"
-                    @click="setPPModCombo(1032)">HDFL</button>
+            <button class="bpp-combo-btn" :class="{ 'bpp-mod-btn--active': ppTableMods === 24 }" @click="setPPModCombo(24)">HDHR</button>
+            <button class="bpp-combo-btn" :class="{ 'bpp-mod-btn--active': ppTableMods === 72 }" @click="setPPModCombo(72)">HDDT</button>
+            <button class="bpp-combo-btn" :class="{ 'bpp-mod-btn--active': ppTableMods === 88 }" @click="setPPModCombo(88)">HDDTHR</button>
           </div>
-
-          <!-- Active mods label -->
           <div class="bpp-active-label" v-if="ppTableMods > 0">
             Active: <span v-text="formatPPMods(ppTableMods)"></span>
           </div>
-
-          <!-- Loading -->
-          <div class="bpp-loading" v-if="ppTableLoading">
-            <i class="fas fa-spinner fa-spin"></i> Calculating...
-          </div>
-
-          <!-- Error -->
+          <div class="bpp-loading" v-if="ppTableLoading"><i class="fas fa-spinner fa-spin"></i> Calculating...</div>
           <div class="bpp-error" v-if="ppTableError" v-text="ppTableError"></div>
-
-          <!-- Table -->
           <div class="bpp-table-wrap" v-if="ppTableData && !ppTableLoading">
             <table class="bpp-table">
-              <thead>
-                <tr>
-                  <th class="bpp-col-diff">Difficulty</th>
-                  <th class="bpp-col-stars">Stars</th>
-                  <th class="bpp-col-val">100%</th>
-                  <th class="bpp-col-val">99%</th>
-                  <th class="bpp-col-val">98%</th>
-                  <th class="bpp-col-val">95%</th>
-                </tr>
-              </thead>
+              <thead><tr>
+                <th class="bpp-col-diff">Difficulty</th>
+                <th class="bpp-col-stars">Stars</th>
+                <th class="bpp-col-val">100%</th>
+                <th class="bpp-col-val">99%</th>
+                <th class="bpp-col-val">98%</th>
+                <th class="bpp-col-val">95%</th>
+              </tr></thead>
               <tbody>
                 <tr v-for="d in getSortedDiffs(infoSet)" :key="'pp-' + (d.id || d.beatmap_id)">
                   <td class="bpp-col-diff" v-text="d.version"></td>
@@ -202,143 +224,110 @@
         </div>
       </div>
 
-      <!-- Difficulties -->
+      <!-- ═══ 9. Advanced Mapping Stats (collapsible) ═══ -->
       <div class="bm-modal-section">
-        <h3 class="bm-modal-section-title"><i class="fas fa-star"></i> Difficulties</h3>
-        <div class="bm-modal-diff" v-for="diff in getSortedDiffs(infoSet)" :key="'info-diff-' + (diff.id || diff.beatmap_id)">
-          <div class="bm-modal-diff-header">
-            <span class="bm-diff-pill bm-diff-pill--modal"
-                  :style="{ backgroundColor: starColor(diff.difficulty_rating) }">
-              <span v-text="diff.difficulty_rating.toFixed(2)"></span>&#9733;
-            </span>
-            <span class="bm-modal-diff-name" v-text="diff.version"></span>
-            <span class="bm-modal-diff-mode">
-              <i :class="modeIcon(diff.mode_int != null ? diff.mode_int : diff.mode)"></i>
-            </span>
+        <button class="bm-modal-advanced-toggle" @click="toggleAdvanced">
+          <i class="fas fa-microscope"></i>
+          <span v-text="showAdvanced ? 'Advanced Mapping Stats' : 'Show Advanced Stats'"></span>
+          <i class="fas" :class="showAdvanced ? 'fa-chevron-up' : 'fa-chevron-down'" style="margin-left:auto"></i>
+        </button>
+
+        <div class="bm-modal-advanced-body" v-show="showAdvanced">
+
+          <!-- Object counts (selected diff) -->
+          <div class="bm-modal-adv-block" v-if="getSelectedDiff()">
+            <h4 class="bm-modal-adv-title">Object Counts</h4>
+            <div class="bm-modal-obj-grid">
+              <div class="bm-modal-obj"><span class="bm-modal-obj-val" v-text="addCommas(getSelectedDiff().count_circles)"></span><span class="bm-modal-obj-key">Circles</span></div>
+              <div class="bm-modal-obj"><span class="bm-modal-obj-val" v-text="addCommas(getSelectedDiff().count_sliders)"></span><span class="bm-modal-obj-key">Sliders</span></div>
+              <div class="bm-modal-obj"><span class="bm-modal-obj-val" v-text="addCommas(getSelectedDiff().count_spinners)"></span><span class="bm-modal-obj-key">Spinners</span></div>
+              <div class="bm-modal-obj"><span class="bm-modal-obj-val" v-text="addCommas(getSelectedDiff().playcount)"></span><span class="bm-modal-obj-key">Plays</span></div>
+              <div class="bm-modal-obj"><span class="bm-modal-obj-val" v-text="addCommas(getSelectedDiff().passcount)"></span><span class="bm-modal-obj-key">Passes</span></div>
+            </div>
           </div>
+
+          <!-- Flags -->
+          <div class="bm-modal-adv-block" v-if="detailState === 'ready'">
+            <h4 class="bm-modal-adv-title">Properties</h4>
+            <div class="bm-modal-flags">
+              <span class="bm-modal-flag" :class="{ 'bm-modal-flag--on': infoSet.video }"><i class="fas" :class="infoSet.video ? 'fa-check' : 'fa-times'"></i> Video</span>
+              <span class="bm-modal-flag" :class="{ 'bm-modal-flag--on': infoSet.storyboard }"><i class="fas" :class="infoSet.storyboard ? 'fa-check' : 'fa-times'"></i> Storyboard</span>
+              <span class="bm-modal-flag" :class="{ 'bm-modal-flag--on': infoSet.nsfw }"><i class="fas" :class="infoSet.nsfw ? 'fa-check' : 'fa-times'"></i> NSFW</span>
+            </div>
+          </div>
+
+          <!-- Full difficulty table -->
+          <div class="bm-modal-adv-block">
+            <h4 class="bm-modal-adv-title">All Difficulties</h4>
+            <div class="bm-modal-adv-table-wrap">
+              <table class="bm-modal-adv-table">
+                <thead><tr>
+                  <th>Difficulty</th><th>Stars</th><th>AR</th><th>CS</th><th>OD</th><th>HP</th><th>Combo</th><th>Length</th>
+                </tr></thead>
+                <tbody>
+                  <tr v-for="d in getSortedDiffs(infoSet)" :key="'adv-' + (d.id || d.beatmap_id)"
+                      :class="{ 'bm-modal-adv-table--active': selectedDiffId === (d.id || d.beatmap_id) }"
+                      @click="selectDiff(d.id || d.beatmap_id)" style="cursor:pointer">
+                    <td v-text="d.version"></td>
+                    <td :style="{ color: starColor(d.difficulty_rating) }" v-text="d.difficulty_rating.toFixed(2)"></td>
+                    <td v-text="d.ar"></td>
+                    <td v-text="d.cs"></td>
+                    <td v-text="d.accuracy != null ? d.accuracy : d.od"></td>
+                    <td v-text="d.drain != null ? d.drain : d.hp"></td>
+                    <td v-text="addCommas(d.max_combo)"></td>
+                    <td v-text="formatLength(d.total_length)"></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Tags -->
+          <div class="bm-modal-adv-block" v-if="infoSet.tags">
+            <h4 class="bm-modal-adv-title">Tags</h4>
+            <p class="bm-modal-tags" v-text="infoSet.tags"></p>
+          </div>
+
+          <!-- Dates -->
+          <div class="bm-modal-adv-block" v-if="detailState === 'ready'">
+            <h4 class="bm-modal-adv-title">Timeline</h4>
+            <div class="bm-modal-dates">
+              <div class="bm-modal-date-row" v-if="infoSet.submitted_date">
+                <span class="bm-modal-date-label">Submitted</span>
+                <span class="bm-modal-date-val" v-text="formatDateFull(infoSet.submitted_date)"></span>
+              </div>
+              <div class="bm-modal-date-row" v-if="infoSet.last_updated">
+                <span class="bm-modal-date-label">Updated</span>
+                <span class="bm-modal-date-val" v-text="formatDateFull(infoSet.last_updated)"></span>
+              </div>
+              <div class="bm-modal-date-row" v-if="infoSet.ranked_date">
+                <span class="bm-modal-date-label" v-text="statusLabel(infoSet.status)"></span>
+                <span class="bm-modal-date-val" v-text="formatDateFull(infoSet.ranked_date)"></span>
+              </div>
+            </div>
+          </div>
+
         </div>
       </div>
 
-      <!-- Technical Statistics per diff -->
-      <div class="bm-modal-section">
-        <h3 class="bm-modal-section-title"><i class="fas fa-sliders-h"></i> Technical Statistics</h3>
-        <div class="bm-modal-tech" v-for="diff in getSortedDiffs(infoSet)" :key="'tech-' + (diff.id || diff.beatmap_id)">
-          <div class="bm-modal-tech-name" v-text="diff.version"></div>
-          <div class="bm-modal-tech-grid">
-            <div class="bm-modal-tech-item">
-              <span class="bm-modal-tech-label">AR</span>
-              <span class="bm-modal-tech-val" v-text="diff.ar"></span>
-              <div class="bm-modal-tech-bar">
-                <div class="bm-modal-tech-fill" :style="{ width: (diff.ar / 11 * 100) + '%' }"></div>
-              </div>
-            </div>
-            <div class="bm-modal-tech-item">
-              <span class="bm-modal-tech-label">CS</span>
-              <span class="bm-modal-tech-val" v-text="diff.cs"></span>
-              <div class="bm-modal-tech-bar">
-                <div class="bm-modal-tech-fill" :style="{ width: (diff.cs / 11 * 100) + '%' }"></div>
-              </div>
-            </div>
-            <div class="bm-modal-tech-item">
-              <span class="bm-modal-tech-label">HP</span>
-              <span class="bm-modal-tech-val" v-text="diff.drain != null ? diff.drain : diff.hp"></span>
-              <div class="bm-modal-tech-bar">
-                <div class="bm-modal-tech-fill" :style="{ width: ((diff.drain != null ? diff.drain : diff.hp) / 11 * 100) + '%' }"></div>
-              </div>
-            </div>
-            <div class="bm-modal-tech-item">
-              <span class="bm-modal-tech-label">OD</span>
-              <span class="bm-modal-tech-val" v-text="diff.accuracy != null ? diff.accuracy : diff.od"></span>
-              <div class="bm-modal-tech-bar">
-                <div class="bm-modal-tech-fill" :style="{ width: ((diff.accuracy != null ? diff.accuracy : diff.od) / 11 * 100) + '%' }"></div>
-              </div>
-            </div>
-            <div class="bm-modal-tech-item">
-              <span class="bm-modal-tech-label">Combo</span>
-              <span class="bm-modal-tech-val" v-text="addCommas(diff.max_combo)"></span>
-            </div>
-            <div class="bm-modal-tech-item">
-              <span class="bm-modal-tech-label">BPM</span>
-              <span class="bm-modal-tech-val" v-text="Math.round(diff.bpm || 0)"></span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Length Information per diff -->
-      <div class="bm-modal-section">
-        <h3 class="bm-modal-section-title"><i class="fas fa-clock"></i> Length Information</h3>
-        <div class="bm-modal-tech" v-for="diff in getSortedDiffs(infoSet)" :key="'len-' + (diff.id || diff.beatmap_id)">
-          <div class="bm-modal-tech-name" v-text="diff.version"></div>
-          <div class="bm-modal-len-row">
-            <span v-text="formatLength(diff.total_length) + ' total'"></span>
-            <span class="bm-modal-len-sep">/</span>
-            <span v-text="formatLength(diff.hit_length) + ' drain'"></span>
-          </div>
-        </div>
-      </div>
-
-      <!-- Object Counts per diff -->
-      <div class="bm-modal-section">
-        <h3 class="bm-modal-section-title"><i class="fas fa-shapes"></i> Object Counts</h3>
-        <div class="bm-modal-tech" v-for="diff in getSortedDiffs(infoSet)" :key="'obj-' + (diff.id || diff.beatmap_id)">
-          <div class="bm-modal-tech-name" v-text="diff.version"></div>
-          <div class="bm-modal-obj-grid">
-            <div class="bm-modal-obj">
-              <span class="bm-modal-obj-val" v-text="addCommas(diff.count_circles)"></span>
-              <span class="bm-modal-obj-key">Circles</span>
-            </div>
-            <div class="bm-modal-obj">
-              <span class="bm-modal-obj-val" v-text="addCommas(diff.count_sliders)"></span>
-              <span class="bm-modal-obj-key">Sliders</span>
-            </div>
-            <div class="bm-modal-obj">
-              <span class="bm-modal-obj-val" v-text="addCommas(diff.count_spinners)"></span>
-              <span class="bm-modal-obj-key">Spinners</span>
-            </div>
-            <div class="bm-modal-obj">
-              <span class="bm-modal-obj-val" v-text="addCommas(diff.playcount)"></span>
-              <span class="bm-modal-obj-key">Plays</span>
-            </div>
-            <div class="bm-modal-obj">
-              <span class="bm-modal-obj-val" v-text="addCommas(diff.passcount)"></span>
-              <span class="bm-modal-obj-key">Passes</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Modal actions -->
+      <!-- ═══ 10. Action Buttons ═══ -->
       <div class="bm-modal-actions">
-        <a class="bm-action-btn bm-action-btn--dl"
-           :href="getDownloadUrl(infoSet.id)"
-           target="_blank" rel="noopener">
+        <a class="bm-action-btn bm-action-btn--dl" :href="getDownloadUrl(infoSet.id)" target="_blank" rel="noopener">
           <i class="fas fa-download"></i> Download
         </a>
-        <a class="bm-action-btn bm-action-btn--novid"
-           :href="getDownloadUrl(infoSet.id, true)"
-           target="_blank" rel="noopener">
+        <a class="bm-action-btn bm-action-btn--novid" :href="getDownloadUrl(infoSet.id, true)" target="_blank" rel="noopener">
           <i class="fas fa-video-slash"></i> No Video
         </a>
-        <a v-if="infoSet.legacy_thread_url" class="bm-action-btn bm-action-btn--ext"
-           :href="infoSet.legacy_thread_url"
-           target="_blank" rel="noopener">
-          <i class="fas fa-external-link-alt"></i> Forum Thread
+        <a class="bm-action-btn bm-action-btn--ext" :href="'https://osu.ppy.sh/beatmapsets/' + infoSet.id" target="_blank" rel="noopener">
+          <i class="fas fa-globe"></i> osu!
         </a>
-        <a class="bm-action-btn bm-action-btn--ext"
-           :href="'https://osu.ppy.sh/beatmapsets/' + infoSet.id"
-           target="_blank" rel="noopener">
-          <i class="fas fa-globe"></i> osu! Page
-        </a>
-        <button class="bm-action-btn bm-action-btn--info" disabled>
+        <a v-if="selectedDiffId" class="bm-action-btn bm-action-btn--josu"
+           :href="'https://josu.hinamizawa.ai/?b=' + selectedDiffId" target="_blank" rel="noopener">
           <i class="fas fa-gamepad"></i> Josu
-        </button>
+        </a>
       </div>
 
-      <!-- Mobile close button -->
-      <button class="bm-modal-close-bottom" @click="closeInfo">
-        <i class="fas fa-times"></i> Close
-      </button>
+      <button class="bm-modal-close-bottom" @click="closeInfo"><i class="fas fa-times"></i> Close</button>
 
     </div>
   </div>
