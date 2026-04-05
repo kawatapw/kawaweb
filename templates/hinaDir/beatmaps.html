@@ -260,10 +260,13 @@
           </div>
         </div>
 
-        <!-- Audio Preview -->
-        <div class="bm-modal-section" v-if="infoSet.preview_url">
-          <h3 class="bm-modal-section-title"><i class="fas fa-play-circle"></i> Play Preview</h3>
-          <audio controls class="bm-modal-audio" :src="'https:' + infoSet.preview_url"></audio>
+        <!-- Full Audio (Hinai mirror, resolves redirect for seekable playback) -->
+        <div class="bm-modal-section" v-if="infoSet.id">
+          <h3 class="bm-modal-section-title"><i class="fas fa-music"></i> Full Audio</h3>
+          <audio controls preload="auto" class="bm-modal-audio" :ref="'audio-' + infoSet.id"
+                 :src="'https://mirror.hinamizawa.ai/v3/osu/music/audio/' + infoSet.id">
+          </audio>
+          <a class="bm-modal-audio-badge" href="https://hinamizawa.ai/osu/beatmaps" target="_blank" rel="noopener">Powered by Hinai Mirror</a>
         </div>
 
         <!-- Source -->

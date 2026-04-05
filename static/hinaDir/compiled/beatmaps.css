@@ -654,6 +654,19 @@
   outline: none;
 }
 
+.bm-modal-audio-badge {
+  display: inline-block;
+  margin-top: 4px;
+  font-size: 10px;
+  font-weight: 600;
+  color: hsl(var(--main), 40%, 55%);
+  letter-spacing: 0.3px;
+  text-decoration: none;
+}
+.bm-modal-audio-badge:hover {
+  color: hsl(var(--main), 50%, 70%);
+}
+
 .bm-modal-text {
   font-size: 0.84rem;
   color: hsla(0, 0%, 100%, 0.55);
