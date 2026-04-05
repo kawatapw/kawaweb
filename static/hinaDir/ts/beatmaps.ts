@@ -101,6 +101,9 @@ new Vue({
         downloadBase: '',
         mirror: 'hinai',
         hinaiOnline: true,
+        // Hero banner
+        heroSets: [] as {id: number; title: string; artist: string; creator: string; cover: string}[],
+        heroLoaded: false,
         // Pagination state
         currentPage: 0,
         totalPages: 1,
@@ -178,6 +181,7 @@ new Vue({
     },
     mounted: function() {
         this.search();
+        this.fetchHero();
         // One-time mirror health check on page load (stays client-side)
         var self = this as any;
         fetch('https://mirror.hinamizawa.ai/health', { mode: 'cors' })
@@ -185,6 +189,24 @@ new Vue({
             .catch(function() { self.hinaiOnline = false; });
     },
     methods: {
+        fetchHero: function() {
+            var self = this as any;
+            var xhr = new XMLHttpRequest();
+            xhr.open('GET', '/beatmaps/api/hero', true);
+            xhr.onreadystatechange = function() {
+                if (xhr.readyState !== 4) return;
+                if (xhr.status !== 200) return;
+                try {
+                    var data = JSON.parse(xhr.responseText);
+                    if (data.status === 'success' && data.sets && data.sets.length > 0) {
+                        self.heroSets = data.sets;
+                        self.heroLoaded = true;
+                    }
+                } catch (e) { /* graceful fail */ }
+            };
+            xhr.send();
+        },
+
         getDownloadUrl: function(setId: number, noVideo?: boolean): string {
             var self = this as any;
             var base: string;

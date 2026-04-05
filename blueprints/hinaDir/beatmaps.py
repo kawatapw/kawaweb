@@ -119,6 +119,44 @@ async def beatmaps_page():
     return await render_template('hinaDir/beatmaps.html', globalNotice=g.globalNotice)
 
 
+# ── Hero banner endpoint ──
+
+@hina_beatmaps.route('/beatmaps/api/hero')
+async def beatmaps_hero():
+    """Return 6 most recently ranked beatmapsets for the hero banner."""
+    params = {'status': 'ranked', 'sort': 'ranked_desc', 'limit': 6, 'page': 0}
+
+    try:
+        async with glob.http.get(HINAI_SEARCH_V2, params=params, headers=_MIRROR_HEADERS, timeout=10) as resp:
+            if resp.status != 200:
+                return jsonify({'status': 'error', 'sets': []})
+
+            data = await resp.json()
+            raw_sets = data.get('beatmapsets', [])[:6]
+
+            hero_sets = []
+            for s in raw_sets:
+                covers = s.get('covers', {})
+                hero_sets.append({
+                    'id': s.get('id', 0),
+                    'title': s.get('title', ''),
+                    'artist': s.get('artist', ''),
+                    'creator': s.get('creator', ''),
+                    'cover': covers.get('cover', f"https://assets.ppy.sh/beatmaps/{s.get('id', 0)}/covers/cover.jpg"),
+                })
+
+            resp_obj = jsonify({
+                'status': 'success',
+                'sets': hero_sets,
+                'total_count': data.get('total_count', 0),
+            })
+            resp_obj.headers['Cache-Control'] = 'public, max-age=300, s-maxage=600'
+            return resp_obj
+    except Exception as e:
+        klogging.log(f"Hero banner error ({type(e).__name__}): {e}", klogging.Ansi.LYELLOW)
+        return jsonify({'status': 'error', 'sets': []})
+
+
 # ── Search endpoint (supports pagination via v2) ──
 
 @hina_beatmaps.route('/beatmaps/api/search')

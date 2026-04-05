@@ -8,8 +8,31 @@
 {% block content %}
 <div id="beatmaps-app" v-cloak>
 
+  <!-- Hero Gallery Banner -->
+  <div v-if="heroLoaded && hinaiOnline && heroSets.length > 0" class="bm-hero">
+    <div class="bm-hero-track">
+      <img v-for="h in heroSets" :key="'hero-' + h.id"
+           class="bm-hero-img" :src="h.cover"
+           :alt="h.artist + ' - ' + h.title"
+           loading="eager"
+           @error="$event.target.style.display='none'">
+      <img v-for="h in heroSets" :key="'hero-c-' + h.id"
+           class="bm-hero-img" :src="h.cover"
+           :alt="h.artist + ' - ' + h.title"
+           loading="eager" aria-hidden="true"
+           @error="$event.target.style.display='none'">
+    </div>
+    <div class="bm-hero-fade bm-hero-fade--left"></div>
+    <div class="bm-hero-fade bm-hero-fade--right"></div>
+    <div class="bm-hero-bottom"></div>
+    <div class="bm-hero-overlay">
+      <h1 class="bm-hero-title">Beatmap Mirror</h1>
+      <p class="bm-hero-subtitle">Browse and download osu! beatmaps</p>
+    </div>
+  </div>
+
   <!-- Header -->
-  <div class="bm-header">
+  <div class="bm-header" :class="{ 'bm-header--compact': heroLoaded && hinaiOnline && heroSets.length > 0 }">
     <h1 class="bm-title">Beatmap Mirror</h1>
     <p class="bm-subtitle" v-if="loading">Searching...</p>
     <p class="bm-subtitle" v-else-if="error" v-text="'Error loading results'"></p>

@@ -13,8 +13,112 @@
   padding: 0 16px 60px;
 }
 
+.bm-hero {
+  position: relative;
+  width: 100vw;
+  margin-left: calc(-50vw + 50%);
+  height: 230px;
+  overflow: hidden;
+}
+.bm-hero::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(89, 225, 255, 0.3) 30%, rgba(124, 92, 255, 0.5) 50%, rgba(89, 225, 255, 0.3) 70%, transparent);
+  z-index: 3;
+}
+
+.bm-hero-track {
+  display: flex;
+  height: 100%;
+  animation: bm-hero-scroll 40s linear infinite;
+  will-change: transform;
+}
+
+.bm-hero-img {
+  height: 100%;
+  width: auto;
+  flex-shrink: 0;
+  object-fit: cover;
+}
+
+@keyframes bm-hero-scroll {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+.bm-hero-fade {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 120px;
+  z-index: 2;
+  pointer-events: none;
+}
+.bm-hero-fade--left {
+  left: 0;
+  background: linear-gradient(to right, rgba(0, 0, 0, 0.85), transparent);
+}
+.bm-hero-fade--right {
+  right: 0;
+  background: linear-gradient(to left, rgba(0, 0, 0, 0.85), transparent);
+}
+
+.bm-hero-bottom {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 100px;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.9), transparent);
+  z-index: 2;
+  pointer-events: none;
+}
+
+.bm-hero-overlay {
+  position: absolute;
+  bottom: 20px;
+  left: 0;
+  right: 0;
+  z-index: 3;
+  text-align: center;
+  pointer-events: none;
+}
+
+.bm-hero-title {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #fff;
+  margin: 0;
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.7);
+  letter-spacing: -0.01em;
+}
+
+.bm-hero-subtitle {
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.7);
+  margin: 6px 0 0;
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.6);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bm-hero-track {
+    animation: none;
+  }
+}
 .bm-header {
   padding: 32px 0 16px;
+  text-align: center;
+}
+
+.bm-header--compact {
+  padding: 16px 0 12px;
   text-align: center;
 }
 
@@ -1023,6 +1127,21 @@
 }
 
 @media (max-width: 768px) {
+  .bm-hero {
+    height: 160px;
+  }
+  .bm-hero-title {
+    font-size: 1.5rem;
+  }
+  .bm-hero-subtitle {
+    font-size: 0.8rem;
+  }
+  .bm-hero-fade {
+    width: 60px;
+  }
+  .bm-hero-bottom {
+    height: 70px;
+  }
   .bm-header {
     padding: 20px 0 12px;
   }
