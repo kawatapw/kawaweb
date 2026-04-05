@@ -59,6 +59,7 @@ new Vue({
             // Friend state
             isLoggedIn: typeof isLoggedIn !== 'undefined' ? isLoggedIn : false,
             isOwnProfile: typeof isOwnProfile !== 'undefined' ? isOwnProfile : false,
+            isStaff: typeof isStaff !== 'undefined' ? isStaff : false,
             isFriend: false,
             isMutual: false,
             friendHover: false,

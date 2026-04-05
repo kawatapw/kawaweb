@@ -354,6 +354,7 @@ table th {
         margin-right: 0 !important;
         padding-right: 0 !important;
         order: 2;
+        width: 100%;
     }
 
     /* Row 3: Vanilla / Relax / Autopilot (centered) */
@@ -361,6 +362,7 @@ table th {
         display: flex !important;
         justify-content: center !important;
         order: 3;
+        width: 100%;
     }
 
     /* ── Seasonal filters — full-width stacked with readable backgrounds ── */

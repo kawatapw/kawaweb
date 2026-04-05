@@ -126,12 +126,36 @@ button.profile-friend-btn.is-loading {
     opacity: 0.6;
     pointer-events: none;
 }
+/* Staff admin shortcut — icon-only pill */
+.profile-admin-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: 1.5px solid hsla(var(--main), 30%, 50%, 0.5);
+    background: hsla(var(--main), 20%, 20%, 0.4);
+    color: hsl(var(--main), 30%, 60%);
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-decoration: none;
+}
+.profile-admin-btn:hover {
+    background: hsla(var(--main), 40%, 35%, 0.5);
+    border-color: hsl(var(--main), 50%, 55%);
+    color: #fff;
+}
 @media (max-width: 768px) {
     button.profile-friend-btn {
         padding: 4px 10px;
         font-size: 11px;
     }
     button.profile-friend-btn--desktop {
+        display: none;
+    }
+    .profile-admin-btn.profile-friend-btn--desktop {
         display: none;
     }
 }
@@ -322,9 +346,11 @@ button.profile-friend-btn.is-loading {
     {% if 'user_data' in session %}
     var selfId = {{ session['user_data']['id'] }};
     var isLoggedIn = true;
+    var isStaff = {{ 'true' if session['user_data']['is_staff'] else 'false' }};
     {% else %}
     var selfId = null;
     var isLoggedIn = false;
+    var isStaff = false;
     {% endif %}
 </script>
 {% endblock %}
@@ -377,6 +403,12 @@ button.profile-friend-btn.is-loading {
                                 <i class="fas fa-user-plus"></i> <span>Add Friend</span>
                             </template>
                         </button>
+                        <a v-if="isStaff"
+                           :href="'/admin-v2/user/' + userid"
+                           class="profile-admin-btn profile-friend-btn--desktop"
+                           title="Open in Admin V2">
+                            <i class="fas fa-shield-alt"></i>
+                        </a>
                     </div>
                 </div>
                 <div class="anime-girl">
@@ -428,6 +460,12 @@ button.profile-friend-btn.is-loading {
                                 <i class="fas fa-user-plus"></i> <span>Add</span>
                             </template>
                         </button>
+                        <a v-if="isStaff"
+                           :href="'/admin-v2/user/' + userid"
+                           class="profile-admin-btn"
+                           title="Open in Admin V2">
+                            <i class="fas fa-shield-alt"></i>
+                        </a>
                     </div>
                 </div>
                 <div class="bar-selection mode-selects">
