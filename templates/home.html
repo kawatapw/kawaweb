@@ -6,6 +6,9 @@
 <link rel="stylesheet" href="{{ bust('/static/css/pages/changelog.css') }}">
 {% endblock %}
 
+{# Star rating → color (matches osu! difficulty spectrum) #}
+{% macro diff_color(stars) %}{% if stars < 2 %}#4FC0FF{% elif stars < 2.7 %}#4FFFD5{% elif stars < 4 %}#73FF4F{% elif stars < 5.3 %}#FFFF4F{% elif stars < 6.5 %}#FF884F{% elif stars < 8 %}#FF4F6F{% else %}#8847FF{% endif %}{% endmacro %}
+
 {% block content %}
 {# ═══════════════════════════════════════════════════════════════════════════
    The Vue 2 app mounts on #home-app, wrapping all content that uses
@@ -204,8 +207,8 @@
             {% if m.diffs %}
             <div class="beatmap-card-diffs">
               {% for d in m.diffs %}
-              <div class="beatmap-card-diff" title="{{ d.version }}&#10;Stars: {{ d.diff }}">
-                <img src="/static/images/icons/mode-osu.png" alt="diff" width="16" height="16">
+              <div class="beatmap-diff-dot" title="{{ d.version }} — {{ '%.2f'|format(d.diff) }}★"
+                   style="background: {{ diff_color(d.diff) }}; box-shadow: 0 0 6px {{ diff_color(d.diff) }}40;">
               </div>
               {% endfor %}
             </div>
@@ -248,7 +251,11 @@
             <div class="beatmap-card-title">{{ m.title }}</div>
             <div class="beatmap-card-artist">{{ m.artist }} // {{ m.creator }}</div>
             <div class="beatmap-card-footer">
-              <span class="beatmap-card-mod-name">{{ m.diff }}</span>
+              <span class="beatmap-card-stars">
+                <span class="beatmap-diff-dot beatmap-diff-dot--sm"
+                      style="background: {{ diff_color(m.diff) }}; box-shadow: 0 0 4px {{ diff_color(m.diff) }}40;"></span>
+                {{ '%.2f'|format(m.diff) }}★
+              </span>
               <span class="beatmap-card-plays"><i class="fas fa-play"></i> {{ "{:,}".format(m.play_count) }}</span>
             </div>
           </div>

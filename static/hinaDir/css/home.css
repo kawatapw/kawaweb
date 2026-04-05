@@ -537,6 +537,31 @@
     justify-content: center;
 }
 
+.beatmap-diff-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    cursor: default;
+    transition: transform 0.15s ease;
+}
+.beatmap-diff-dot:hover {
+    transform: scale(1.4);
+}
+.beatmap-diff-dot--sm {
+    width: 8px;
+    height: 8px;
+}
+
+.beatmap-card-stars {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 12px;
+    font-weight: 600;
+    color: hsl(var(--main), 10%, 70%);
+}
+
 /* === CHANGELOG SECTION === */
 .changelog-list {
     display: flex;
