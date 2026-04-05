@@ -26,7 +26,7 @@ MIRROR_DOWNLOAD = f'{HINAI_MIRROR}/api/v1/hinai/d'
 # Shared secret header — Cloudflare WAF rule #9 skips bot detection when present.
 # Set HINAI_MIRROR_KEY in .env / Doppler. Without it, v3 falls back to v1.
 # Browser UA needed — Cloudflare Bot Fight Mode rejects non-browser UAs before WAF rules run.
-_MIRROR_UA = 'Mozilla/5.0 (compatible; KawataWeb/1.0; +https://kawata.pw)'
+_MIRROR_UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36'
 _MIRROR_HEADERS = {
     'User-Agent': _MIRROR_UA,
     **({'X-Kawata-Key': config.HINAI_MIRROR_KEY} if config.HINAI_MIRROR_KEY else {}),
