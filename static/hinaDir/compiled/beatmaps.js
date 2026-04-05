@@ -26,13 +26,7 @@
             searchTimer: null,
             downloadBase: '',
             mirror: 'hinai',
-            infoSet: null,
-            ppTableShow: false,
-            ppTableLoading: false,
-            ppTableMods: 0,
-            ppTableData: null,
-            ppTableCache: {},
-            ppTableError: '',
+            hinaiOnline: true,
             modes: [
                 { value: -1, name: 'All' },
                 { value: 0, name: 'osu!' },
@@ -49,7 +43,7 @@
                 { value: -2, name: 'Graveyard' },
             ],
             mirrors: [
-                { key: 'hinai', name: 'hinai', enabled: true },
+                { key: 'hinai', name: 'Hinai', enabled: true },
                 { key: 'osu_direct', name: 'osu!direct', enabled: true },
                 { key: 'osu_api_v1', name: 'osu! API v1', enabled: false },
                 { key: 'osu_api_v2', name: 'osu! API v2', enabled: false },
@@ -58,6 +52,11 @@
         },
         mounted: function () {
             this.search();
+            // One-time mirror health check on page load
+            var self = this;
+            fetch('https://mirror.hinamizawa.ai/health', { mode: 'cors' })
+                .then(function (r) { self.hinaiOnline = r.ok; })
+                .catch(function () { self.hinaiOnline = false; });
         },
         methods: {
             getDownloadUrl: function (setId, noVideo) {
@@ -96,11 +95,13 @@
                 if (statusParam === -99) {
                     statusParam = -1;
                 }
+                var source = self.mirror === 'osu_direct' ? 'osu_direct' : 'hinai';
                 var url = '/beatmaps/api/search?query=' + encodeURIComponent(self.query)
                     + '&mode=' + self.mode
                     + '&status=' + statusParam
                     + '&amount=' + self.amount
-                    + '&offset=' + self.offset;
+                    + '&offset=' + self.offset
+                    + '&source=' + source;
                 var xhr = new XMLHttpRequest();
                 xhr.open('GET', url, true);
                 xhr.onreadystatechange = function () {
@@ -292,131 +293,7 @@
                 window.beatmapBus.$emit('show-beatmap-panel', firstDiff, set.id, set);
             },
             openInfo: function (set) {
-                var self = this;
-                self.infoSet = set;
-                document.body.style.overflow = 'hidden';
-            },
-            closeInfo: function () {
-                var self = this;
-                self.infoSet = null;
-                self.ppTableShow = false;
-                self.ppTableData = null;
-                self.ppTableCache = {};
-                self.ppTableError = '';
-                self.ppTableMods = 0;
-                document.body.style.overflow = '';
-            },
-            addCommas: function (n) {
-                if (n == null)
-                    return '0';
-                return n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-            },
-            formatDateFull: function (isoStr) {
-                if (!isoStr)
-                    return '';
-                var d = new Date(isoStr);
-                var months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-                var h = d.getHours();
-                var min = d.getMinutes();
-                return months[d.getMonth()] + ' ' + d.getDate() + ', ' + d.getFullYear()
-                    + ' at ' + (h < 10 ? '0' : '') + h + ':' + (min < 10 ? '0' : '') + min;
-            },
-            getDiffModesText: function (set) {
-                var MODE_NAMES = { 0: 'osu!', 1: 'Taiko', 2: 'Catch', 3: 'Mania' };
-                var modeNums = this.getDiffModes(set);
-                var names = [];
-                for (var i = 0; i < modeNums.length; i++) {
-                    names.push(MODE_NAMES[modeNums[i]] || 'Unknown');
-                }
-                return names.join(', ');
-            },
-            togglePPTable: function () {
-                var self = this;
-                self.ppTableShow = !self.ppTableShow;
-                if (self.ppTableShow && !self.ppTableData) {
-                    self.fetchPPData();
-                }
-            },
-            togglePPMod: function (bit) {
-                var self = this;
-                if (bit === 2 && (self.ppTableMods & 16)) {
-                    self.ppTableMods &= ~16;
-                }
-                if (bit === 16 && (self.ppTableMods & 2)) {
-                    self.ppTableMods &= ~2;
-                }
-                if (bit === 64 && (self.ppTableMods & 256)) {
-                    self.ppTableMods &= ~256;
-                }
-                if (bit === 256 && (self.ppTableMods & 64)) {
-                    self.ppTableMods &= ~64;
-                }
-                self.ppTableMods ^= bit;
-                self.fetchPPData();
-            },
-            setPPModCombo: function (mods) {
-                var self = this;
-                self.ppTableMods = mods;
-                self.fetchPPData();
-            },
-            isPPModActive: function (bit) {
-                return (this.ppTableMods & bit) !== 0;
-            },
-            fetchPPData: function () {
-                var self = this;
-                if (!self.infoSet || !self.infoSet.beatmaps || self.infoSet.beatmaps.length === 0)
-                    return;
-                var cacheKey = '' + self.ppTableMods;
-                if (self.ppTableCache[cacheKey]) {
-                    self.ppTableData = self.ppTableCache[cacheKey];
-                    self.ppTableError = '';
-                    return;
-                }
-                self.ppTableLoading = true;
-                self.ppTableError = '';
-                var ids = [];
-                for (var i = 0; i < self.infoSet.beatmaps.length; i++) {
-                    ids.push(self.infoSet.beatmaps[i].id);
-                }
-                fetch('/beatmaps/api/pp-table?ids=' + ids.join(',') + '&mods=' + self.ppTableMods)
-                    .then(function (res) { return res.json(); })
-                    .then(function (data) {
-                    self.ppTableLoading = false;
-                    if (data.status === 'success') {
-                        self.ppTableCache[cacheKey] = data.results;
-                        self.ppTableData = data.results;
-                        self.ppTableError = '';
-                    }
-                    else {
-                        self.ppTableError = data.message || 'Failed to fetch PP data.';
-                    }
-                })
-                    .catch(function () {
-                    self.ppTableLoading = false;
-                    self.ppTableError = 'Network error.';
-                });
-            },
-            getPPValue: function (diffId, accIdx) {
-                var self = this;
-                if (!self.ppTableData || !self.ppTableData[diffId])
-                    return '\u2014';
-                var entry = self.ppTableData[diffId];
-                if (entry.error)
-                    return 'err';
-                if (entry.pp_values && entry.pp_values[accIdx]) {
-                    return Math.round(entry.pp_values[accIdx].pp) + 'pp';
-                }
-                return '\u2014';
-            },
-            getPPStars: function (diffId, fallback) {
-                var self = this;
-                if (!self.ppTableData || !self.ppTableData[diffId])
-                    return (fallback || 0).toFixed(2);
-                var entry = self.ppTableData[diffId];
-                if (entry.difficulty && entry.difficulty.stars != null) {
-                    return entry.difficulty.stars.toFixed(2);
-                }
-                return (fallback || 0).toFixed(2);
+                window.hinaiInfoBus.$emit('open', set);
             },
         },
     });

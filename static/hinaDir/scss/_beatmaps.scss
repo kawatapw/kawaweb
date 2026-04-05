@@ -170,6 +170,70 @@ $status-graveyard: #999;
 
 // ── Mirror dropdown ──
 
+.bm-mirror-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.bm-mirror-ping {
+  position: relative;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+
+  &--on {
+    background: linear-gradient(135deg, #2d1b69, #1a3a5c);
+    border: 1.5px solid rgba(138, 100, 255, 0.4);
+    box-shadow: 0 0 10px rgba(138, 100, 255, 0.25);
+
+    .bm-mirror-ping-pulse {
+      position: absolute;
+      inset: -4px;
+      border-radius: 50%;
+      border: 2px solid rgba(138, 100, 255, 0.5);
+      animation: hinai-pulse 2s ease-out infinite;
+    }
+  }
+
+  &--off {
+    background: linear-gradient(135deg, #3a0a0a, #5c1a1a);
+    border: 1.5px solid rgba(200, 30, 30, 0.4);
+    box-shadow: 0 0 10px rgba(200, 30, 30, 0.25);
+
+    .bm-mirror-ping-pulse {
+      display: none;
+    }
+  }
+}
+
+.bm-mirror-ping-logo {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
+  filter: brightness(0) invert(1);
+  opacity: 0.9;
+}
+
+@keyframes hinai-pulse {
+  0% {
+    transform: scale(1);
+    opacity: 0.7;
+  }
+  70% {
+    transform: scale(1.5);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1.5);
+    opacity: 0;
+  }
+}
+
 .bm-mirror-select-wrap {
   position: relative;
   display: inline-block;
@@ -284,13 +348,14 @@ $status-graveyard: #999;
 .bm-status {
   position: absolute;
   top: 8px;
-  right: 8px;
+  left: 8px;
   padding: 3px 10px;
   border-radius: 12px;
   font-size: 0.72rem;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.03em;
+  z-index: 2;
 
   &--ranked   { background: rgba($status-ranked, 0.2); color: $status-ranked; }
   &--approved { background: rgba($status-approved, 0.2); color: $status-approved; }
@@ -299,6 +364,37 @@ $status-graveyard: #999;
   &--pending  { background: rgba($status-pending, 0.2); color: $status-pending; }
   &--wip      { background: rgba($status-pending, 0.15); color: $status-pending; }
   &--graveyard { background: rgba($status-graveyard, 0.2); color: $status-graveyard; }
+}
+
+// Hinai logo button on card cover (top-right)
+.bm-card-hinai {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #2d1b69, #1a3a5c);
+  border: 1.5px solid rgba(138, 100, 255, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 2;
+  transition: transform 0.15s, box-shadow 0.15s;
+
+  &:hover {
+    transform: scale(1.12);
+    box-shadow: 0 0 14px rgba(138, 100, 255, 0.4);
+  }
+
+  img {
+    width: 20px;
+    height: 20px;
+    object-fit: contain;
+    filter: brightness(0) invert(1);
+    opacity: 0.9;
+  }
 }
 
 .bm-card-body {
@@ -396,6 +492,14 @@ $status-graveyard: #999;
   white-space: nowrap;
   flex-shrink: 0;
   text-shadow: 0 1px 2px rgba(0,0,0,0.4);
+
+  &--more {
+    background: linear-gradient(135deg, #2d1b69, #1a3a5c);
+    border: 1px solid rgba(138, 100, 255, 0.3);
+    color: #c4b5ff;
+    text-shadow: none;
+    gap: 2px;
+  }
 }
 
 // ── Actions ──
@@ -405,6 +509,10 @@ $status-graveyard: #999;
   align-items: stretch;
   gap: 8px;
   margin-top: 12px;
+
+  .bm-action-btn {
+    flex: 1;
+  }
 }
 
 .bm-action-btn {
@@ -435,6 +543,16 @@ $status-graveyard: #999;
     &:disabled {
       opacity: 0.4;
       cursor: not-allowed;
+    }
+  }
+
+  &--details {
+    background: $card-bg;
+    color: $text-secondary;
+
+    &:hover {
+      background: $card-bg-hover;
+      color: $text-primary;
     }
   }
 
