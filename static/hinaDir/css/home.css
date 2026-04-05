@@ -8,6 +8,21 @@
     margin: 53px 0 0 0;
     width: 100%;
     max-width: inherit;
+    background: linear-gradient(180deg,
+        hsl(var(--main), 20%, 10%) 0%,
+        hsl(var(--main), 12%, 7%) 30%,
+        hsl(var(--main), 8%, 5%) 100%);
+}
+
+/* Fixed starfield covering the whole page */
+.home-stars-fixed {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+    pointer-events: none;
 }
 
 .footer { margin: 0; }
@@ -15,6 +30,7 @@
 /* === HERO SECTION — Full-height space splash with stars === */
 .hero.splash {
     position: relative;
+    z-index: 1;
     min-height: calc(100vh - 53px);
     display: flex;
     align-items: center;
@@ -22,9 +38,9 @@
     padding: 0 24px;
     overflow: hidden;
     background: radial-gradient(ellipse at bottom,
-        hsl(var(--main), 50%, 40%) 0%,
-        hsl(var(--main), 40%, 30%) 40%,
-        hsl(var(--main), 20%, 10%) 100%);
+        hsla(var(--main), 50%, 40%, 0.85) 0%,
+        hsla(var(--main), 40%, 30%, 0.7) 40%,
+        transparent 100%);
 }
 
 .hero-content {
@@ -236,9 +252,15 @@
 
 /* === SECTION HEADERS === */
 .home-section {
+    position: relative;
+    z-index: 1;
     padding: 48px 24px;
     max-width: 1200px;
-    margin: 0 auto;
+    margin: 0 auto 16px;
+    background: hsla(var(--main), 10%, 12%, 0.5);
+    backdrop-filter: blur(12px) saturate(1.5);
+    border-radius: 12px;
+    border: 1px solid hsla(var(--main), 15%, 25%, 0.2);
 }
 
 .home-section-header {
@@ -513,6 +535,31 @@
     display: flex;
     align-items: center;
     justify-content: center;
+}
+
+.beatmap-diff-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    cursor: default;
+    transition: transform 0.15s ease;
+}
+.beatmap-diff-dot:hover {
+    transform: scale(1.4);
+}
+.beatmap-diff-dot--sm {
+    width: 8px;
+    height: 8px;
+}
+
+.beatmap-card-stars {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 12px;
+    font-weight: 600;
+    color: hsl(var(--main), 10%, 70%);
 }
 
 /* === CHANGELOG SECTION === */

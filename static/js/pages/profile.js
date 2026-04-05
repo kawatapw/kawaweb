@@ -59,7 +59,10 @@ new Vue({
             // Friend state
             isLoggedIn: typeof isLoggedIn !== 'undefined' ? isLoggedIn : false,
             isOwnProfile: typeof isOwnProfile !== 'undefined' ? isOwnProfile : false,
+            isStaff: typeof isStaff !== 'undefined' ? isStaff : false,
             isFriend: false,
+            isMutual: false,
+            friendHover: false,
             friendLoading: false
         };
     },
@@ -105,13 +108,15 @@ new Vue({
                     self.isFriend = res.data.followers.some(function(u) { return u.id === selfId; });
                 }
             }).catch(function() {});
-            // Also check mutuals from our side
+            // Check mutuals from our side
             this.$axios.get(`${window.location.protocol}//api.${domain}/v1/get_friends_detailed`, {
                 params: { id: selfId, scope: 'mutuals' }
             }).then(function(res) {
                 if (res.data.status === 'success' && res.data.mutuals) {
-                    if (res.data.mutuals.some(function(u) { return u.id === self.userid; })) {
+                    var mutual = res.data.mutuals.some(function(u) { return u.id === self.userid; });
+                    if (mutual) {
                         self.isFriend = true;
+                        self.isMutual = true;
                     }
                 }
             }).catch(function() {});
@@ -127,6 +132,7 @@ new Vue({
                 .then(function(data) {
                     if (data.status === 'success') {
                         self.isFriend = !self.isFriend;
+                        if (!self.isFriend) self.isMutual = false;
                     }
                 })
                 .catch(function(err) {

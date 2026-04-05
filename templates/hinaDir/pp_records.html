@@ -3,6 +3,120 @@
 
 {% block header %}
 <link rel="stylesheet" href="{{ bust('/static/hinaDir/compiled/pp_records.css') }}">
+<style>
+/* Season switcher — unlayered to beat Bulma */
+.ppr-season-switcher {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    background: hsla(var(--main), 15%, 18%, 0.6);
+    backdrop-filter: blur(8px) saturate(1.5);
+    border-radius: 8px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+}
+.ppr-season-pill {
+    padding: 6px 16px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    background: hsla(var(--main), 15%, 28%, 0.7);
+    color: hsl(var(--main), 15%, 65%);
+    border: 1px solid hsla(var(--main), 15%, 35%, 0.3);
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+.ppr-season-pill:hover {
+    background: hsla(var(--main), 25%, 35%, 0.8);
+    color: #fff;
+    border-color: hsla(var(--main), 30%, 45%, 0.5);
+}
+.ppr-season-pill.active {
+    background: hsl(var(--main), 45%, 42%);
+    color: #fff;
+    pointer-events: none;
+    border-color: hsl(var(--main), 50%, 50%);
+}
+.ppr-season-dropdowns {
+    display: flex;
+    gap: 6px;
+}
+.ppr-season-switcher select.ppr-season-select,
+.ppr-season-switcher .ppr-season-select {
+    padding: 6px 28px 6px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    font-family: inherit;
+    background-color: hsla(var(--main), 12%, 18%, 0.9);
+    color: hsl(var(--main), 15%, 80%);
+    border: 1px solid hsla(var(--main), 20%, 32%, 0.5);
+    cursor: pointer;
+    outline: none;
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23777'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 8px center;
+    background-size: 9px;
+    height: auto;
+    box-shadow: none;
+    line-height: 1.4;
+    margin: 0;
+}
+.ppr-season-switcher select.ppr-season-select option {
+    background: hsl(var(--main), 10%, 15%);
+    color: #ddd;
+}
+.ppr-season-switcher select.ppr-season-select:hover {
+    border-color: hsla(var(--main), 30%, 45%, 0.7);
+}
+.ppr-season-switcher select.ppr-season-select:focus {
+    border-color: hsl(var(--main), 50%, 50%);
+    box-shadow: 0 0 0 2px hsla(var(--main), 50%, 50%, 0.15);
+}
+.ppr-season-active {
+    font-size: 11px;
+    color: hsl(140, 55%, 55%);
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-weight: 500;
+}
+.ppr-season-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: hsl(140, 55%, 55%);
+    display: inline-block;
+    animation: ppr-pulse 2s ease-in-out infinite;
+}
+@keyframes ppr-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.35; }
+}
+@media screen and (max-width: 600px) {
+    .ppr-season-switcher {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    .ppr-season-pill {
+        text-align: center;
+        padding: 10px;
+    }
+    .ppr-season-dropdowns {
+        width: 100%;
+    }
+    .ppr-season-switcher select.ppr-season-select {
+        flex: 1;
+        padding: 10px 28px 10px 12px;
+        font-size: 13px;
+    }
+}
+</style>
 {% endblock %}
 
 {% block content %}
@@ -24,6 +138,27 @@
             @click="switchMode(m.value)">
       <span v-text="m.short"></span>
     </button>
+  </div>
+
+  <!-- Season switcher -->
+  <div class="ppr-season-switcher" v-if="seasons.length > 0">
+    <button type="button" class="ppr-season-pill" :class="{ active: selectedSeason === 0 }" @click="selectSeason(0)">
+      <i class="fas fa-infinity"></i> All Time
+    </button>
+    <div class="ppr-season-dropdowns" v-if="yearOptions.length > 0">
+      <select class="ppr-season-select" v-model.number="selectedSchedule" @change="onScheduleChange" v-if="schedules.length > 1">
+        <option v-for="sc in schedules" :key="'psc'+sc.id" :value="sc.id" v-text="sc.name"></option>
+      </select>
+      <select class="ppr-season-select" v-model.number="selectedYear" @change="onYearChange">
+        <option v-for="y in yearOptions" :key="'py'+y" :value="y" v-text="y"></option>
+      </select>
+      <select class="ppr-season-select" v-model.number="selectedSeason" @change="onSeasonChange">
+        <option v-for="s in filteredSeasons" :key="'ps'+s.id" :value="s.id" v-text="s.label"></option>
+      </select>
+    </div>
+    <span class="ppr-season-active" v-if="activeSeason && selectedSeason === activeSeason.id">
+      <span class="ppr-season-dot"></span> Active
+    </span>
   </div>
 
   <!-- Filter toggle -->
