@@ -96,15 +96,20 @@ new Vue({
         status: 1,
         sets: [] as BeatmapSet[],
         loading: false,
-        loadingMore: false,
         error: null as string | null,
-        offset: 0,
-        amount: 30,
-        hasMore: true,
         searchTimer: null as number | null,
         downloadBase: '',
         mirror: 'hinai',
         hinaiOnline: true,
+        // Pagination state
+        currentPage: 0,
+        totalPages: 1,
+        totalCount: 0,
+        perPage: 50,
+        // Legacy load-more for osu.direct fallback
+        offset: 0,
+        hasMore: true,
+        loadingMore: false,
         modes: [
             { value: -1, name: 'All' },
             { value: 0, name: 'osu!' },
@@ -128,9 +133,52 @@ new Vue({
             { key: 'catboy', name: 'catboy.best', enabled: false },
         ] as MirrorOption[],
     },
+    computed: {
+        // Whether to show pagination controls (Hinai mirror + online + multiple pages)
+        showPagination: function(): boolean {
+            var self = this as any;
+            return self.mirror === 'hinai' && self.hinaiOnline && self.totalPages > 1;
+        },
+        // Whether to show legacy load-more (osu.direct fallback)
+        showLoadMore: function(): boolean {
+            var self = this as any;
+            return self.mirror !== 'hinai' && self.sets.length > 0 && self.hasMore && !self.loading;
+        },
+        // Sliding window of page numbers (up to 10 visible)
+        pageNumbers: function(): number[] {
+            var self = this as any;
+            var total: number = self.totalPages;
+            var current: number = self.currentPage;
+            var windowSize = 10;
+
+            if (total <= windowSize) {
+                var pages: number[] = [];
+                for (var i = 0; i < total; i++) pages.push(i);
+                return pages;
+            }
+
+            // Center window around current page
+            var half = Math.floor(windowSize / 2);
+            var start = current - half;
+            var end = current + half;
+
+            if (start < 0) {
+                start = 0;
+                end = windowSize - 1;
+            }
+            if (end >= total) {
+                end = total - 1;
+                start = total - windowSize;
+            }
+
+            var result: number[] = [];
+            for (var j = start; j <= end; j++) result.push(j);
+            return result;
+        },
+    },
     mounted: function() {
         this.search();
-        // One-time mirror health check on page load
+        // One-time mirror health check on page load (stays client-side)
         var self = this as any;
         fetch('https://mirror.hinamizawa.ai/health', { mode: 'cors' })
             .then(function(r: Response) { self.hinaiOnline = r.ok; })
@@ -150,19 +198,121 @@ new Vue({
 
         search: function() {
             var self = this as any;
+            self.currentPage = 0;
+            self.totalPages = 1;
+            self.totalCount = 0;
             self.offset = 0;
             self.sets = [];
             self.hasMore = true;
-            self.fetchResults(false);
+            self.fetchPage(0);
         },
+
+        // ── Pagination (Hinai mirror) ──
+
+        goToPage: function(page: number) {
+            var self = this as any;
+            if (page < 0 || page >= self.totalPages || page === self.currentPage) return;
+            self.currentPage = page;
+            self.fetchPage(page);
+            // Smooth scroll to results area
+            var el = document.querySelector('.bm-grid') || document.querySelector('.bm-header');
+            if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        },
+
+        prevPage: function() {
+            var self = this as any;
+            self.goToPage(self.currentPage - 1);
+        },
+
+        nextPage: function() {
+            var self = this as any;
+            self.goToPage(self.currentPage + 1);
+        },
+
+        // ── Legacy load-more (osu.direct fallback) ──
 
         loadMore: function() {
             var self = this as any;
-            self.offset += self.amount;
-            self.fetchResults(true);
+            self.offset += 30;
+            self.fetchLegacy(true);
         },
 
-        fetchResults: function(append: boolean) {
+        // ── Fetch (routes to pagination or legacy based on mirror) ──
+
+        fetchPage: function(page: number) {
+            var self = this as any;
+
+            if (self.mirror !== 'hinai') {
+                // osu.direct: use legacy offset-based fetch
+                self.fetchLegacy(false);
+                return;
+            }
+
+            self.loading = true;
+            self.error = null;
+
+            var statusParam = self.status;
+            if (statusParam === -99) {
+                statusParam = -1;
+            }
+
+            var url = '/beatmaps/api/search?query=' + encodeURIComponent(self.query)
+                + '&mode=' + self.mode
+                + '&status=' + statusParam
+                + '&page=' + page
+                + '&limit=' + self.perPage
+                + '&source=hinai';
+
+            var xhr = new XMLHttpRequest();
+            xhr.open('GET', url, true);
+            xhr.onreadystatechange = function() {
+                if (xhr.readyState !== 4) return;
+
+                self.loading = false;
+
+                if (xhr.status !== 200) {
+                    try {
+                        var errData = JSON.parse(xhr.responseText);
+                        self.error = errData.message || 'Failed to load results.';
+                    } catch (e) {
+                        self.error = 'Failed to load results (status ' + xhr.status + ').';
+                    }
+                    return;
+                }
+
+                try {
+                    var data = JSON.parse(xhr.responseText);
+                } catch (e) {
+                    self.error = 'Invalid response from server.';
+                    return;
+                }
+
+                if (data.status !== 'success') {
+                    self.error = data.message || 'Unknown error.';
+                    return;
+                }
+
+                self.downloadBase = data.download_base || '';
+                self.sets = data.sets || [];
+                self.totalCount = data.total_count || 0;
+                self.totalPages = data.total_pages || 1;
+                self.currentPage = data.page != null ? data.page : page;
+
+                // Prefetch next page in background
+                if (self.currentPage + 1 < self.totalPages) {
+                    var nextUrl = '/beatmaps/api/search?query=' + encodeURIComponent(self.query)
+                        + '&mode=' + self.mode
+                        + '&status=' + statusParam
+                        + '&page=' + (self.currentPage + 1)
+                        + '&limit=' + self.perPage
+                        + '&source=hinai';
+                    fetch(nextUrl).catch(function() {}); // fire-and-forget prefetch
+                }
+            };
+            xhr.send();
+        },
+
+        fetchLegacy: function(append: boolean) {
             var self = this as any;
 
             if (append) {
@@ -177,13 +327,12 @@ new Vue({
                 statusParam = -1;
             }
 
-            var source = self.mirror === 'osu_direct' ? 'osu_direct' : 'hinai';
             var url = '/beatmaps/api/search?query=' + encodeURIComponent(self.query)
                 + '&mode=' + self.mode
                 + '&status=' + statusParam
-                + '&amount=' + self.amount
+                + '&amount=30'
                 + '&offset=' + self.offset
-                + '&source=' + source;
+                + '&source=osu_direct';
 
             var xhr = new XMLHttpRequest();
             xhr.open('GET', url, true);
@@ -216,7 +365,6 @@ new Vue({
                 }
 
                 self.downloadBase = data.download_base || '';
-
                 var newSets: BeatmapSet[] = data.sets || [];
 
                 if (append) {
@@ -227,7 +375,11 @@ new Vue({
                     self.sets = newSets;
                 }
 
-                if (newSets.length < self.amount) {
+                // No pagination for osu.direct
+                self.totalPages = 1;
+                self.totalCount = 0;
+
+                if (newSets.length < 30) {
                     self.hasMore = false;
                 }
             };

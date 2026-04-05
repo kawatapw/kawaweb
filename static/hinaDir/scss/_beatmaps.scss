@@ -583,7 +583,70 @@ $status-graveyard: #999;
   gap: 6px;
 }
 
-// ── Load more ──
+// ── Grid loading state (dims during page change) ──
+
+.bm-grid--loading {
+  opacity: 0.5;
+  pointer-events: none;
+  transition: opacity 0.2s;
+}
+
+// ── Pagination ──
+
+.bm-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 12px 0;
+}
+
+.bm-pagination-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+  background: $card-bg;
+  border: 1px solid $border;
+  border-radius: 8px;
+  color: $text-secondary;
+  font-size: 0.82rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+
+  i { font-size: 0.7rem; }
+
+  &:hover:not(:disabled):not(.bm-pagination-btn--active) {
+    background: $card-bg-hover;
+    border-color: rgba(124, 92, 255, 0.4);
+    color: $text-primary;
+  }
+
+  &:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+  }
+
+  &--active {
+    background: rgba(89, 225, 255, 0.15);
+    border-color: rgba(89, 225, 255, 0.45);
+    color: #59E1FF;
+    font-weight: 700;
+    box-shadow: 0 0 8px rgba(89, 225, 255, 0.15);
+  }
+}
+
+.bm-pagination-info {
+  margin-left: 8px;
+  font-size: 0.78rem;
+  color: $text-muted;
+  white-space: nowrap;
+}
+
+// ── Load more (osu.direct fallback) ──
 
 .bm-load-more {
   text-align: center;
@@ -1045,6 +1108,23 @@ $status-graveyard: #999;
 
   .bm-diffs {
     max-height: 140px; // ~5 rows of pills on mobile
+  }
+
+  .bm-pagination {
+    gap: 3px;
+    padding: 10px 0;
+  }
+
+  .bm-pagination-btn {
+    padding: 5px 8px;
+    font-size: 0.76rem;
+  }
+
+  .bm-pagination-info {
+    width: 100%;
+    text-align: center;
+    margin-left: 0;
+    margin-top: 4px;
   }
 
   .bm-modal-overlay {

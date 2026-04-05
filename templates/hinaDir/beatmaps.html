@@ -14,6 +14,10 @@
     <p class="bm-subtitle" v-if="loading">Searching...</p>
     <p class="bm-subtitle" v-else-if="error" v-text="'Error loading results'"></p>
     <p class="bm-subtitle" v-else-if="sets.length === 0">No results found</p>
+    <p class="bm-subtitle" v-else-if="showPagination">
+      Showing page <strong v-text="currentPage + 1"></strong> of <strong v-text="totalPages"></strong>
+      (<span v-text="totalCount"></span> results)
+    </p>
     <p class="bm-subtitle" v-else>
       Showing <strong v-text="sets.length"></strong> results
     </p>
@@ -76,6 +80,25 @@
     </div>
   </div>
 
+  <!-- Pagination (top) — Hinai mirror only -->
+  <div v-if="showPagination" class="bm-pagination">
+    <button class="bm-pagination-btn" :disabled="currentPage === 0 || loading" @click="prevPage">
+      <i class="fas fa-chevron-left"></i> Prev
+    </button>
+    <button v-for="p in pageNumbers" :key="'pt-' + p"
+            class="bm-pagination-btn"
+            :class="{ 'bm-pagination-btn--active': p === currentPage }"
+            :disabled="loading"
+            @click="goToPage(p)"
+            v-text="p + 1"></button>
+    <button class="bm-pagination-btn" :disabled="currentPage >= totalPages - 1 || loading" @click="nextPage">
+      Next <i class="fas fa-chevron-right"></i>
+    </button>
+    <span class="bm-pagination-info">
+      Page <span v-text="currentPage + 1"></span> of <span v-text="totalPages"></span>
+    </span>
+  </div>
+
   <!-- Loading state -->
   <div v-if="loading && sets.length === 0" class="bm-loading">
     <i class="fas fa-spinner fa-spin fa-2x"></i>
@@ -98,8 +121,8 @@
     <p>Try a different search or change your filters</p>
   </div>
 
-  <!-- Results grid -->
-  <div v-if="sets.length > 0" class="bm-grid">
+  <!-- Results grid (dims during page change) -->
+  <div v-if="sets.length > 0" class="bm-grid" :class="{ 'bm-grid--loading': loading }">
     <div v-for="set in sets" :key="set.id" class="bm-card">
       <!-- Cover -->
       <div class="bm-cover-wrap">
@@ -181,8 +204,27 @@
     </div>
   </div>
 
-  <!-- Load more -->
-  <div v-if="sets.length > 0 && hasMore && !loading" class="bm-load-more">
+  <!-- Pagination (bottom) — Hinai mirror only -->
+  <div v-if="showPagination" class="bm-pagination">
+    <button class="bm-pagination-btn" :disabled="currentPage === 0 || loading" @click="prevPage">
+      <i class="fas fa-chevron-left"></i> Prev
+    </button>
+    <button v-for="p in pageNumbers" :key="'pb-' + p"
+            class="bm-pagination-btn"
+            :class="{ 'bm-pagination-btn--active': p === currentPage }"
+            :disabled="loading"
+            @click="goToPage(p)"
+            v-text="p + 1"></button>
+    <button class="bm-pagination-btn" :disabled="currentPage >= totalPages - 1 || loading" @click="nextPage">
+      Next <i class="fas fa-chevron-right"></i>
+    </button>
+    <span class="bm-pagination-info">
+      Page <span v-text="currentPage + 1"></span> of <span v-text="totalPages"></span>
+    </span>
+  </div>
+
+  <!-- Load more (osu.direct fallback only) -->
+  <div v-if="showLoadMore" class="bm-load-more">
     <button class="bm-load-more-btn" @click="loadMore" :disabled="loadingMore">
       <i v-if="loadingMore" class="fas fa-spinner fa-spin"></i>
       <span v-if="loadingMore">Loading...</span>
@@ -190,13 +232,13 @@
     </button>
   </div>
 
-  <!-- Loading more indicator -->
+  <!-- Loading more indicator (osu.direct) -->
   <div v-if="loadingMore" class="bm-loading-more">
     <i class="fas fa-spinner fa-spin"></i>
     <span>Loading more...</span>
   </div>
 
-  <!-- Hinai Info panel (reusable component, powered by mirror.hinamizawa.ai) -->
+  <!-- Hinai Info panel (reusable component, proxied through kawata backend) -->
   <hinai-info-panel></hinai-info-panel>
 
 </div>

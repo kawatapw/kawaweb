@@ -9,19 +9,20 @@
  *
  * Two-phase data loading:
  *   Phase 1 (instant): CheeseGull data for title/artist/cover (from search)
- *   Phase 2 (~200ms):  Full detail fetch from /v3/osu/beatmaps/s/{id}/details
+ *   Phase 2 (~200ms):  Full detail fetch from backend proxy
  *
- * All data comes from mirror.hinamizawa.ai — zero kawata backend dependency.
+ * All data flows through the kawata Python backend — no direct mirror calls
+ * from the browser (except the health check for the status indicator).
  */
 (function () {
     var Vue = window.Vue;
     if (!Vue) return;
 
-    var MIRROR = 'https://mirror.hinamizawa.ai';
-    var DETAIL = MIRROR + '/v3/osu/beatmaps/s/';
-    var PP_CALC = MIRROR + '/v3/osu/pp-calc/';
-    var AUDIO = MIRROR + '/v3/osu/music/audio/';
-    var DOWNLOAD = MIRROR + '/api/v1/hinai/d/';
+    // All endpoints go through kawata backend proxy
+    var DETAIL = '/beatmaps/api/details/';
+    var PP_CALC = '/beatmaps/api/pp-calc/';
+    var AUDIO = '/beatmaps/api/audio/';
+    var DOWNLOAD = '/beatmaps/api/download/';
     var JOSU = 'https://josu.hinamizawa.ai/';
     var AVATAR = 'https://a.ppy.sh/';
     var ACCURACIES = [100, 99, 98, 95];
@@ -133,7 +134,7 @@
                 document.body.style.overflow = '';
             },
 
-            // ── Detail Fetch (Phase 2) ──
+            // ── Detail Fetch (Phase 2) — via kawata backend proxy ──
 
             fetchDetail: function () {
                 var self = this;
@@ -142,7 +143,7 @@
                     self.detailError = 'No beatmapset ID.';
                     return;
                 }
-                var url = DETAIL + self.infoSet.id + '/details?pp_enrichment=true';
+                var url = DETAIL + self.infoSet.id;
                 fetch(url).then(function (r) {
                     if (!r.ok) throw new Error('HTTP ' + r.status);
                     return r.json();
@@ -249,7 +250,7 @@
                 return '\u2014';
             },
 
-            // ── PP Custom Calculator (existing, kept) ──
+            // ── PP Custom Calculator — via kawata backend proxy ──
 
             toggleCustomPP: function () {
                 this.ppCustomShow = !this.ppCustomShow;
@@ -361,7 +362,7 @@
                 return names.length > 0 ? names.join('') : 'NM';
             },
 
-            // ── Audio Player ──
+            // ── Audio Player — via kawata backend proxy ──
 
             togglePlay: function () {
                 var audio = this.$refs.hinaiAudio;
@@ -518,7 +519,9 @@
             },
 
             getDownloadUrl: function (setId, noVideo) {
-                var url = DOWNLOAD + setId;
+                // Download still goes through the mirror's /api/v1/hinai/d/ path
+                // (not a rich endpoint, just serves .osz files)
+                var url = 'https://mirror.hinamizawa.ai/api/v1/hinai/d/' + setId;
                 return noVideo ? url + '?noVideo=1' : url;
             },
 
