@@ -464,7 +464,7 @@ async def api_users():
         "u.silence_end, u.preferred_mode, "
         "COALESCE(s.pp, 0) as pp, COALESCE(s.plays, 0) as plays "
         "FROM users u "
-        "LEFT JOIN stats s ON s.id = u.id AND s.mode = u.preferred_mode"
+        "LEFT JOIN stats s ON s.id = u.id AND s.mode = u.preferred_mode AND s.season_id = 0"
     )
     count_query = "SELECT COUNT(*) as total FROM users u"
     conditions = []

@@ -64,54 +64,72 @@
     @import url("/static/css/pages/profile.css") layer(styles);
 </style>
 <style>
+/* Status + friend button row — inline next to each other */
+.profile-status-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.profile-status-row .subtitle {
+    margin-bottom: 0 !important;
+}
+.pim-status-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
 /* Friend button — unlayered to beat Bulma button resets */
 button.profile-friend-btn {
     display: inline-flex;
     align-items: center;
-    gap: 6px;
-    padding: 6px 16px;
-    border-radius: 6px;
-    border: 1.5px solid hsl(174, 60%, 45%);
+    gap: 5px;
+    padding: 4px 12px;
+    border-radius: 16px;
+    border: 1.5px solid hsl(var(--main), 50%, 45%);
     background: transparent;
-    color: hsl(174, 60%, 55%);
-    font-size: 13px;
+    color: hsl(var(--main), 50%, 60%);
+    font-size: 12px;
     font-weight: 600;
     cursor: pointer;
     transition: all 0.2s ease;
     white-space: nowrap;
-    line-height: 1;
+    line-height: 1.4;
     height: auto;
     box-shadow: none;
-    align-self: flex-start;
 }
 button.profile-friend-btn:hover {
-    background: hsla(174, 60%, 45%, 0.15);
-    border-color: hsl(174, 60%, 55%);
-    color: hsl(174, 60%, 65%);
+    background: hsla(var(--main), 50%, 45%, 0.15);
+    border-color: hsl(var(--main), 50%, 55%);
+    color: hsl(var(--main), 50%, 70%);
 }
+/* Added (not mutual) — subtle filled */
 button.profile-friend-btn.is-friend {
-    background: hsl(174, 60%, 45%);
-    color: #fff;
-    border-color: hsl(174, 60%, 45%);
+    background: hsla(var(--main), 40%, 40%, 0.3);
+    color: hsl(var(--main), 40%, 70%);
+    border-color: hsla(var(--main), 40%, 50%, 0.5);
 }
-button.profile-friend-btn.is-friend:hover {
-    background: hsl(0, 55%, 50%);
-    border-color: hsl(0, 55%, 50%);
+/* Mutual — solid accent */
+button.profile-friend-btn.is-mutual {
+    background: hsl(var(--main), 50%, 42%);
+    color: #fff;
+    border-color: hsl(var(--main), 50%, 42%);
+}
+/* Hover on friend/mutual — red remove state */
+button.profile-friend-btn.is-friend.is-hover,
+button.profile-friend-btn.is-mutual.is-hover {
+    background: hsl(0, 55%, 48%);
+    border-color: hsl(0, 55%, 48%);
     color: #fff;
 }
 button.profile-friend-btn.is-loading {
     opacity: 0.6;
     pointer-events: none;
 }
-button.profile-friend-btn--desktop {
-    margin-top: 8px;
-}
 @media (max-width: 768px) {
     button.profile-friend-btn {
-        margin-top: 6px;
-        padding: 5px 14px;
-        font-size: 12px;
-        min-height: 32px;
+        padding: 4px 10px;
+        font-size: 11px;
     }
     button.profile-friend-btn--desktop {
         display: none;
@@ -263,6 +281,9 @@ button.profile-friend-btn--desktop {
 
 /* Mobile: show mobile switcher, desktop one is inside profile-stats-full which collapses */
 @media screen and (max-width: 1255px) {
+    .profile-stats-full .season-switcher {
+        display: none;
+    }
     .season-switcher-mobile {
         display: block;
         margin-bottom: 10px;
@@ -321,22 +342,42 @@ button.profile-friend-btn--desktop {
                             <span class="bgf">{{ user['name'] }}</span>
                         </p>
                     </h1>
-                    <transition name="fade">
-                        <div class="subtitle" style="margin-top: 0;" v-if='data.status.online == false'>
-                            <a class='circle'>●</a> Offline
-                        </div>
-                        <div class="subtitle" style="margin-top: 0;" v-else-if='data.status.online == true'>
-                            <a class='circle green'>●</a> Online
-                        </div>
-                    </transition>
-                    <button type="button" v-if="isLoggedIn && !isOwnProfile"
-                            class="profile-friend-btn profile-friend-btn--desktop"
-                            :class="{ 'is-friend': isFriend, 'is-loading': friendLoading }"
-                            @click="toggleFriend"
-                            :disabled="friendLoading">
-                        <i class="fas" :class="isFriend ? 'fa-user-minus' : 'fa-user-plus'"></i>
-                        <span v-text="friendLoading ? '...' : (isFriend ? 'Remove Friend' : 'Add Friend')"></span>
-                    </button>
+                    <div class="profile-status-row">
+                        <transition name="fade">
+                            <div class="subtitle" style="margin-top: 0;" v-if='data.status.online == false'>
+                                <a class='circle'>●</a> Offline
+                            </div>
+                            <div class="subtitle" style="margin-top: 0;" v-else-if='data.status.online == true'>
+                                <a class='circle green'>●</a> Online
+                            </div>
+                        </transition>
+                        <button type="button" v-if="isLoggedIn && !isOwnProfile"
+                                class="profile-friend-btn profile-friend-btn--desktop"
+                                :class="{ 'is-friend': isFriend, 'is-mutual': isMutual, 'is-loading': friendLoading, 'is-hover': friendHover }"
+                                @click="toggleFriend"
+                                @mouseenter="friendHover = true"
+                                @mouseleave="friendHover = false"
+                                :disabled="friendLoading">
+                            <template v-if="friendLoading">
+                                <i class="fas fa-spinner fa-spin"></i> <span>...</span>
+                            </template>
+                            <template v-else-if="isMutual && !friendHover">
+                                <i class="fas fa-user-group"></i> <span>Mutual</span>
+                            </template>
+                            <template v-else-if="isMutual && friendHover">
+                                <i class="fas fa-user-minus"></i> <span>Remove</span>
+                            </template>
+                            <template v-else-if="isFriend && !friendHover">
+                                <i class="fas fa-user-check"></i> <span>Added</span>
+                            </template>
+                            <template v-else-if="isFriend && friendHover">
+                                <i class="fas fa-user-minus"></i> <span>Remove</span>
+                            </template>
+                            <template v-else>
+                                <i class="fas fa-user-plus"></i> <span>Add Friend</span>
+                            </template>
+                        </button>
+                    </div>
                 </div>
                 <div class="anime-girl">
                     <!-- (if you want to add it)
@@ -360,22 +401,34 @@ button.profile-friend-btn--desktop {
                         <img src="/static/images/flags/{{ user['country']|upper }}.png" class="pim-flag">
                         <span class="pim-username">{{ user['name'] }}</span>
                     </div>
-                    <transition name="fade">
-                        <div class="pim-status" v-if='data.status.online == false'>
-                            <span class='circle'>●</span> Offline
-                        </div>
-                        <div class="pim-status pim-online" v-else-if='data.status.online == true'>
-                            <span class='circle green'>●</span> Online
-                        </div>
-                    </transition>
-                    <button type="button" v-if="isLoggedIn && !isOwnProfile"
-                            class="profile-friend-btn"
-                            :class="{ 'is-friend': isFriend, 'is-loading': friendLoading }"
-                            @click="toggleFriend"
-                            :disabled="friendLoading">
-                        <i class="fas" :class="isFriend ? 'fa-user-minus' : 'fa-user-plus'"></i>
-                        <span v-text="friendLoading ? '...' : (isFriend ? 'Remove' : 'Add')"></span>
-                    </button>
+                    <div class="pim-status-row">
+                        <transition name="fade">
+                            <div class="pim-status" v-if='data.status.online == false'>
+                                <span class='circle'>●</span> Offline
+                            </div>
+                            <div class="pim-status pim-online" v-else-if='data.status.online == true'>
+                                <span class='circle green'>●</span> Online
+                            </div>
+                        </transition>
+                        <button type="button" v-if="isLoggedIn && !isOwnProfile"
+                                class="profile-friend-btn"
+                                :class="{ 'is-friend': isFriend, 'is-mutual': isMutual, 'is-loading': friendLoading }"
+                                @click="toggleFriend"
+                                :disabled="friendLoading">
+                            <template v-if="friendLoading">
+                                <i class="fas fa-spinner fa-spin"></i>
+                            </template>
+                            <template v-else-if="isMutual">
+                                <i class="fas fa-user-group"></i> <span>Mutual</span>
+                            </template>
+                            <template v-else-if="isFriend">
+                                <i class="fas fa-user-check"></i> <span>Added</span>
+                            </template>
+                            <template v-else>
+                                <i class="fas fa-user-plus"></i> <span>Add</span>
+                            </template>
+                        </button>
+                    </div>
                 </div>
                 <div class="bar-selection mode-selects">
                     <div class="select-left">

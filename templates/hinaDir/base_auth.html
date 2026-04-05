@@ -35,7 +35,7 @@
       {% if 'user_data' in session and 'hue' in session['user_data'] and session['user_data']['hue'] is not none %}
         --main: {{ session['user_data']['hue'] }};
       {% else %}
-        --main: 330;
+        --main: 180;
       {% endif %}
     }
   </style>
