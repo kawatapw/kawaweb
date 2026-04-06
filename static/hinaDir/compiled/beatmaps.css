@@ -320,6 +320,7 @@
   margin-bottom: 28px;
   padding: 16px 20px;
   background: rgba(255, 255, 255, 0.02);
+  backdrop-filter: blur(2px);
   border: 1px solid rgba(255, 255, 255, 0.05);
   border-radius: 12px;
 }
@@ -513,6 +514,7 @@
 
 .bm-card {
   background: hsla(0, 0%, 100%, 0.04);
+  backdrop-filter: blur(2px);
   border: 1px solid hsla(0, 0%, 100%, 0.08);
   border-radius: 12px;
   overflow: hidden;
