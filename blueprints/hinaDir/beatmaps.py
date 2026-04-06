@@ -9,7 +9,6 @@ from quart import Blueprint, render_template, request, jsonify, g, session, Resp
 
 from objects import glob
 from objects.utils import klogging, flash
-import config
 
 hina_beatmaps = Blueprint('hina_beatmaps', __name__)
 
@@ -23,14 +22,8 @@ HINAI_AUDIO = f'{HINAI_MIRROR}/v3/osu/music/audio'
 OSUDIRECT_SEARCH = 'https://osu.direct/api/v2/search'
 MIRROR_DOWNLOAD = f'{HINAI_MIRROR}/api/v1/hinai/d'
 
-# Shared secret header — Cloudflare WAF rule #9 skips bot detection when present.
-# Set HINAI_MIRROR_KEY in .env / Doppler. Without it, v3 falls back to v1.
-# Browser UA needed — Cloudflare Bot Fight Mode rejects non-browser UAs before WAF rules run.
-_MIRROR_UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36'
-_MIRROR_HEADERS = {
-    'User-Agent': _MIRROR_UA,
-    **({'X-Kawata-Key': config.HINAI_MIRROR_KEY} if config.HINAI_MIRROR_KEY else {}),
-}
+# Mirror is fully public — no auth headers needed.
+_MIRROR_HEADERS = {}
 
 # Status int → osu.direct v2 string (for v2 search endpoint)
 _STATUS_INT_TO_STR = {-2: 'graveyard', -1: 'wip', 0: 'pending', 1: 'ranked',
