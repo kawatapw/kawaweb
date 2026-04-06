@@ -88,7 +88,7 @@ bootstrapVue('score-panel', {
         josuUrl() {
             if (!this.scoreId) return null;
             const replayUrl = `${window.location.protocol}//api.${domain}/v1/get_replay?id=${this.scoreId}`;
-            return `https://beatmap.try-z.net/?r=${encodeURIComponent(replayUrl)}`;
+            return `https://josu.hinamizawa.ai/?r=${encodeURIComponent(replayUrl)}`;
         }
     },
     
