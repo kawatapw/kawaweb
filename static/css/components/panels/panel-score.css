@@ -1027,29 +1027,45 @@
     
     /* ================= REPLAY / JOSU IFRAME STYLES ================= */
 
+        /* Stepped breakpoints with fixed pixel widths — PixiJS canvas inside
+           Josu doesn't resize well at arbitrary sizes so we define static
+           sizes rather than fluid 100% widths. zoom removed (non-standard,
+           Firefox ignores it). */
+
         [data-panel="Score"] .replay-container {
-            width: 100%;
-            aspect-ratio: 9 / 10;
+            width: 720px;
+            aspect-ratio: 16 / 10;
             border-radius: 8px;
             overflow: hidden;
             background: #000;
             border: 1px solid hsla(var(--main), 25%, 20%, 0.3);
-            box-shadow: 
+            box-shadow:
                 0 2px 8px rgba(0, 0, 0, 0.25),
                 inset 0 1px 0 hsla(var(--main), 25%, 25%, 0.1);
+            margin: 0 auto;
+            max-width: 100%;
         }
 
         [data-panel="Score"] .josu-iframe {
             width: 100%;
             height: 100%;
-            zoom: 0.7;
             border: none;
         }
 
-        /* Mobile adjustments for replay container */
+        /* Tablet: step down to a smaller fixed width */
         @media (max-width: 768px) {
             [data-panel="Score"] .replay-container {
-                aspect-ratio: 9 / 10;
+                width: 480px;
+                aspect-ratio: 16 / 10;
+                border-radius: 6px;
+            }
+        }
+
+        /* Mobile: full container width, taller ratio for portrait viewing */
+        @media (max-width: 480px) {
+            [data-panel="Score"] .replay-container {
+                width: 100%;
+                aspect-ratio: 3 / 4;
                 border-radius: 6px;
             }
         }

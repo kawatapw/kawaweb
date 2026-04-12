@@ -53,7 +53,9 @@ bootstrapVue('beatmap-panel', {
         // Mobile leaderboard expansion state
         expandedScoreId: null,
         // Set-level metadata (from osu.direct, passed by /beatmaps page)
-        setMeta: null
+        setMeta: null,
+        // Josu preview toggle
+        showJosuPreview: false
     },
     created() {
         this.$log = ColorfulLogger.child('Beatmap Panel');
@@ -94,12 +96,16 @@ bootstrapVue('beatmap-panel', {
             }
             return score;
         },
-        selectedStats() { 
+        josuPreviewUrl() {
+            if (!this.selected || !this.selected.id) return null;
+            return 'https://josu.hinamizawa.ai/?b=' + this.selected.id;
+        },
+        selectedStats() {
             const stats = this.selected || {};
-            this.$log.debug('DATA', 'selectedStats accessed', { 
-                hasSelected: !!this.selected, 
+            this.$log.debug('DATA', 'selectedStats accessed', {
+                hasSelected: !!this.selected,
                 title: stats.title,
-                artist: stats.artist 
+                artist: stats.artist
             });
             return stats;
         },
@@ -269,6 +275,11 @@ bootstrapVue('beatmap-panel', {
             this.$log.info('LIFECYCLE', 'Closing beatmap panel');
             this.show = false;
             this.expandedScoreId = null;
+            this.showJosuPreview = false;
+        },
+        toggleJosuPreview() {
+            this.showJosuPreview = !this.showJosuPreview;
+            this.$log.info('LIFECYCLE', 'Josu preview toggled', { showJosuPreview: this.showJosuPreview });
         },
         // Toggle expanded state for mobile score cards (accordion pattern)
         toggleScoreExpand(scoreId) {

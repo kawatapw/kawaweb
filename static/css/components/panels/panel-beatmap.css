@@ -1807,6 +1807,88 @@
 .bp-pp-hcol { text-align: center; }
 .bp-pp-hcol:first-child { text-align: left; }
 
+/* ================= JOSU PREVIEW STYLES ================= */
+/* Stepped breakpoints — PixiJS canvas needs stable pixel widths */
+
+    [data-panel="Beatmap"] .josu-preview-section {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 12px 8px;
+        gap: 10px;
+    }
+
+    [data-panel="Beatmap"] .josu-preview-toggle {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 20px;
+        background: hsla(var(--main), 25%, 18%, 0.8);
+        border: 1px solid hsla(var(--main), 30%, 30%, 0.5);
+        border-radius: 8px;
+        color: hsl(var(--main), 10%, 75%);
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        font-family: inherit;
+    }
+
+    [data-panel="Beatmap"] .josu-preview-toggle:hover {
+        background: hsla(var(--main), 30%, 25%, 0.9);
+        border-color: hsla(var(--main), 40%, 40%, 0.6);
+        color: hsl(var(--main), 10%, 90%);
+        transform: translateY(-1px);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    }
+
+    [data-panel="Beatmap"] .josu-preview-toggle:active {
+        transform: translateY(0);
+    }
+
+    [data-panel="Beatmap"] .replay-container {
+        width: 720px;
+        aspect-ratio: 16 / 10;
+        border-radius: 8px;
+        overflow: hidden;
+        background: #000;
+        border: 1px solid hsla(var(--main), 25%, 20%, 0.3);
+        box-shadow:
+            0 2px 8px rgba(0, 0, 0, 0.25),
+            inset 0 1px 0 hsla(var(--main), 25%, 25%, 0.1);
+        margin: 0 auto;
+        max-width: 100%;
+    }
+
+    [data-panel="Beatmap"] .josu-iframe {
+        width: 100%;
+        height: 100%;
+        border: none;
+    }
+
+    /* Tablet: step down */
+    @media (max-width: 768px) {
+        [data-panel="Beatmap"] .replay-container {
+            width: 480px;
+            aspect-ratio: 16 / 10;
+            border-radius: 6px;
+        }
+    }
+
+    /* Mobile: full width, portrait ratio */
+    @media (max-width: 480px) {
+        [data-panel="Beatmap"] .replay-container {
+            width: 100%;
+            aspect-ratio: 3 / 4;
+            border-radius: 6px;
+        }
+
+        [data-panel="Beatmap"] .josu-preview-toggle {
+            width: 100%;
+            justify-content: center;
+        }
+    }
+
 @media (max-width: 480px) {
     .bp-pp-header, .bp-pp-row { grid-template-columns: 1.5fr 0.7fr 1fr 1fr 1fr 1fr; font-size: 10px; }
     .bp-extended { padding: 0 12px; }

@@ -1632,8 +1632,24 @@
                                 </div>
                             </div>
                         </div>
+
+                        <!-- ================= JOSU PREVIEW ================= -->
+                        <div class="josu-preview-section">
+                            <button class="josu-preview-toggle" @click="toggleJosuPreview">
+                                <i class="fas" :class="showJosuPreview ? 'fa-chevron-up' : 'fa-play-circle'"></i>
+                                <span v-text="showJosuPreview ? 'Hide Preview' : 'Preview in JoSu!'"></span>
+                            </button>
+                            <div v-if="showJosuPreview && josuPreviewUrl" class="replay-container">
+                                <iframe
+                                    :src="josuPreviewUrl"
+                                    class="josu-iframe"
+                                    frameborder="0"
+                                    allowfullscreen
+                                ></iframe>
+                            </div>
+                        </div>
                     </div>
-                    
+
                     <!-- ================= LOADING/ERROR STATE ================= -->
                     <div class="content" v-else>
                         <div style="text-align: center; padding: 40px;">
