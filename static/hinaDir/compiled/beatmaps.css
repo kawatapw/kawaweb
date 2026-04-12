@@ -323,6 +323,12 @@
   backdrop-filter: blur(2px);
   border: 1px solid rgba(255, 255, 255, 0.05);
   border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.2);
+  position: sticky;
+  top: 60px;
+  z-index: 10;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
 }
 
 .bm-filter-group {
@@ -518,11 +524,13 @@
   border: 1px solid hsla(0, 0%, 100%, 0.08);
   border-radius: 12px;
   overflow: hidden;
-  transition: transform 0.15s, border-color 0.15s;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.2);
+  transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
 }
 .bm-card:hover {
-  transform: translateY(-2px);
-  border-color: hsla(0, 0%, 100%, 0.15);
+  transform: translateY(-3px);
+  border-color: hsla(var(--main), 60%, 55%, 0.35);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35), 0 0 12px hsla(var(--main), 60%, 55%, 0.12);
 }
 
 .bm-cover-wrap {
@@ -636,24 +644,27 @@
 }
 
 .bm-card-mapper {
-  font-size: 0.78rem;
+  font-size: 0.74rem;
   color: hsla(0, 0%, 100%, 0.35);
   margin-top: 4px;
+  opacity: 0.7;
 }
 .bm-card-mapper span {
   color: hsla(0, 0%, 100%, 0.55);
+  opacity: 1;
 }
 
 .bm-card-date {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  font-size: 0.74rem;
+  font-size: 0.7rem;
   color: hsla(0, 0%, 100%, 0.35);
-  margin-top: 4px;
+  margin-top: 3px;
+  opacity: 0.6;
 }
 .bm-card-date i {
-  font-size: 0.68rem;
+  font-size: 0.62rem;
 }
 
 .bm-card-stats {
@@ -738,7 +749,7 @@
   text-decoration: none;
   cursor: pointer;
   border: 1px solid hsla(0, 0%, 100%, 0.08);
-  transition: background 0.15s, border-color 0.15s;
+  transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
   white-space: nowrap;
 }
 .bm-action-btn--info {
@@ -769,6 +780,7 @@
 }
 .bm-action-btn--dl:hover {
   background: hsla(var(--main), 70%, 55%, 1);
+  box-shadow: 0 0 10px rgba(89, 225, 255, 0.2);
 }
 .bm-action-btn--novid {
   background: hsla(0, 0%, 100%, 0.04);

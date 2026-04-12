@@ -205,8 +205,9 @@
             },
 
             getMapperUrl: function () {
-                if (this.infoSet && this.infoSet.user && this.infoSet.user.id) {
-                    return 'https://osu.ppy.sh/users/' + this.infoSet.user.id;
+                var name = this.getMapperName();
+                if (name && name !== 'Unknown') {
+                    return 'https://hinamizawa.ai/osu/mappers/' + encodeURIComponent(name) + '/';
                 }
                 return '#';
             },
