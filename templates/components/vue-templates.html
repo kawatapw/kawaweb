@@ -1322,9 +1322,11 @@
                                     <div class="info-detail">
                                         <span class="info-label">Mapped by:</span>
                                         <a
-                                            :href="'https://osu.ppy.sh/u/' + selectedStats.creator"
+                                            :href="'https://hinamizawa.ai/osu/mappers/' + encodeURIComponent(selectedStats.creator) + '/'"
                                             v-text="selectedStats.creator"
                                             class="info-value info-link"
+                                            target="_blank"
+                                            rel="noopener"
                                         ></a>
                                     </div>
                                     <div class="info-detail">
