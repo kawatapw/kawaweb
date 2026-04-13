@@ -11,6 +11,7 @@
         <div class="navbar-links">
             <a class="navbar-link is-arrowless" href="/home">Home</a>
             <a class="navbar-link is-arrowless" href="/leaderboard">Leaderboards</a>
+            <a class="navbar-link is-arrowless" href="/records">Top Plays</a>
             {% if session.authenticated %}
             <a class="navbar-link is-arrowless" href="/beatmaps">Beatmaps</a>
             {% endif %}
@@ -21,6 +22,7 @@
                 <div class="navbar-dropdown-container">
                     <button class="navbar-dropdown-trigger">Admin <i class="fas fa-chevron-down"></i></button>
                     <div class="navbar-dropdown-menu">
+                        <a class="navbar-dropdown-item" href="/admin-v2">Admin V2</a>
                         <a class="navbar-dropdown-item" href="/admin">Dash</a>
                         <a class="navbar-dropdown-item" href="/admin/users/1">Users</a>
                         <a class="navbar-dropdown-item" href="/admin/beatmaps">Beatmap Requests</a>
@@ -33,14 +35,12 @@
             {% endif %}
 
             {% if session.authenticated and session.user_data['is_staff'] %}
-                <div class="navbar-dropdown-container">
+                <!--<div class="navbar-dropdown-container">
                     <button class="navbar-dropdown-trigger">hinaWIP <i class="fas fa-flask"></i></button>
                     <div class="navbar-dropdown-menu">
                         <a class="navbar-dropdown-item" href="#">Score Hunt</a>
-                        <a class="navbar-dropdown-item" href="/records">PP Records</a>
-                        <a class="navbar-dropdown-item" href="/admin-v2">Admin V2</a>
                     </div>
-                </div>
+                </div>-->
             {% endif %}
         </div>
         
@@ -334,6 +334,10 @@
                         <i class="fas fa-trophy"></i>
                         <span>Leaderboards</span>
                     </a>
+                    <a class="navbar-mobile-link" href="/records">
+                        <i class="fas fa-trophy"></i>
+                        <span>Top Plays</span>
+                    </a>
                     {% if session.authenticated %}
                     <a class="navbar-mobile-link" href="/beatmaps">
                         <i class="fas fa-music"></i>
@@ -354,6 +358,7 @@
                                 <i class="fas fa-chevron-down"></i>
                             </button>
                             <div class="navbar-mobile-dropdown-menu">
+                                <a class="navbar-mobile-dropdown-item" href="/admin-v2">Admin V2</a>
                                 <a class="navbar-mobile-dropdown-item" href="/admin">Dash</a>
                                 <a class="navbar-mobile-dropdown-item" href="/admin/users/1">Users</a>
                                 <a class="navbar-mobile-dropdown-item" href="/admin/beatmaps">Beatmap Requests</a>
@@ -369,7 +374,7 @@
                     {% endif %}
 
                     {% if session.authenticated and session.user_data['is_staff'] %}
-                        <div class="navbar-mobile-dropdown">
+                        <!--<div class="navbar-mobile-dropdown">
                             <button class="navbar-mobile-dropdown-trigger" @click="toggleMobileDropdown">
                                 <i class="fas fa-flask"></i>
                                 <span>hinaWIP</span>
@@ -377,10 +382,8 @@
                             </button>
                             <div class="navbar-mobile-dropdown-menu">
                                 <a class="navbar-mobile-dropdown-item" href="#">Score Hunt</a>
-                                <a class="navbar-mobile-dropdown-item" href="/records">PP Records</a>
-                                <a class="navbar-mobile-dropdown-item" href="/admin-v2">Admin V2</a>
                             </div>
-                        </div>
+                        </div>-->
                     {% endif %}
                 </div>
             </div>
