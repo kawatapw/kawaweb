@@ -3,6 +3,7 @@
 
 {% block header %}
 <link rel="stylesheet" href="{{ bust('/static/hinaDir/compiled/beatmaps.css') }}">
+{% include 'components/hinai-info-template.html' %}
 {% endblock %}
 
 {% block content %}
@@ -272,7 +273,6 @@
 
 </div>
 
-{% include 'hinaDir/components/hinai-info-template.html' %}
 <script src="{{ bust('/static/hinaDir/js/hinaiInfoPanel.js') }}"></script>
 <script src="{{ bust('/static/hinaDir/compiled/beatmaps.js') }}"></script>
 {% endblock %}

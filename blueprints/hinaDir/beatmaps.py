@@ -109,7 +109,7 @@ def _cheesegull_to_v2(cg: dict) -> dict:
 async def beatmaps_page():
     if not session or 'authenticated' not in session:
         return await flash('error', 'You must be logged in to access that page.', 'hinaDir/login')
-    return await render_template('hinaDir/beatmaps.html', globalNotice=g.globalNotice)
+    return await render_template('beatmaps.html', globalNotice=g.globalNotice)
 
 
 # ── Hero banner endpoint ──

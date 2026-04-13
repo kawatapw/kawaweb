@@ -1,7 +1,7 @@
 {# hinaDir: Unified auth shell — single page with tab switching between Login / Register / Forgot.
    Each thin wrapper (login.html, register.html, forgot_password.html) sets active_tab and extends this.
    All forms live in DOM; JS toggles visibility with fade+slide transitions. #}
-{% extends 'hinaDir/base_auth.html' %}
+{% extends 'base_auth.html' %}
 {% block title %}{{ 'Login' if active_tab == 'login' else ('Register' if active_tab == 'register' else 'Forgot Password') }}{% endblock %}
 
 {% block header %}

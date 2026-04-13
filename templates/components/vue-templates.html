@@ -1157,16 +1157,16 @@
 
                             <div class="stat-block">
                                 <div style="width: 100%; display: flex; flex-direction: row; justify-content: space-between;">
-                                    <span class="level-left" style="margin-right: auto;">Circle Size</span><span class="level-right" v-text="selected.cs"></span>
+                                    <span class="level-left" style="margin-right: auto;">Circle Size</span><span class="level-right" v-text="parseFloat(selected.cs.toFixed(2))"></span>
                                 </div>
                                 <div style="width: 100%; display: flex; flex-direction: row; justify-content: space-between;">
-                                    <span class="level-left" style="margin-right: auto;">Approach Rate</span><span class="level-right" v-text="selected.ar"></span>
+                                    <span class="level-left" style="margin-right: auto;">Approach Rate</span><span class="level-right" v-text="parseFloat(selected.ar.toFixed(2))"></span>
                                 </div>
                                 <div style="width: 100%; display: flex; flex-direction: row; justify-content: space-between;">
-                                    <span class="level-left" style="margin-right: auto;">Overall Difficulty</span><span class="level-right" v-text="selected.od"></span>
+                                    <span class="level-left" style="margin-right: auto;">Overall Difficulty</span><span class="level-right" v-text="parseFloat(selected.od.toFixed(2))"></span>
                                 </div>
                                 <div style="width: 100%; display: flex; flex-direction: row; justify-content: space-between;">
-                                    <span class="level-left" style="margin-right: auto;">HP Drain</span><span class="level-right" v-text="selected.hp"></span>
+                                    <span class="level-left" style="margin-right: auto;">HP Drain</span><span class="level-right" v-text="parseFloat(selected.hp.toFixed(2))"></span>
                                 </div>
                             </div>
 
@@ -1181,7 +1181,7 @@
                                     <span class="stat-icon">
                                         <i class="fas fa-star"></i>
                                     </span>
-                                    <span class="stat-value" v-text="selected.diff"></span>
+                                    <span class="stat-value" v-text="parseFloat(selected.diff.toFixed(2))"></span>
                                 </div>
                                 <div data-stat="bpm" class="stat-item">
                                     <span class="stat-icon">
@@ -1215,23 +1215,23 @@
                             <div class="mobile-stats-row">
                                 <div class="stat-pill">
                                     <span class="stat-pill-label">CS</span>
-                                    <span class="stat-pill-value" v-text="selected.cs"></span>
+                                    <span class="stat-pill-value" v-text="selected.cs.toFixed(2)"></span>
                                 </div>
                                 <div class="stat-pill">
                                     <span class="stat-pill-label">AR</span>
-                                    <span class="stat-pill-value" v-text="selected.ar"></span>
+                                    <span class="stat-pill-value" v-text="selected.ar.toFixed(2)"></span>
                                 </div>
                                 <div class="stat-pill">
                                     <span class="stat-pill-label">OD</span>
-                                    <span class="stat-pill-value" v-text="selected.od"></span>
+                                    <span class="stat-pill-value" v-text="selected.od.toFixed(2)"></span>
                                 </div>
                                 <div class="stat-pill">
                                     <span class="stat-pill-label">HP</span>
-                                    <span class="stat-pill-value" v-text="selected.hp"></span>
+                                    <span class="stat-pill-value" v-text="selected.hp.toFixed(2)"></span>
                                 </div>
                                 <div class="stat-pill">
                                     <span class="stat-pill-label">BPM</span>
-                                    <span class="stat-pill-value" v-text="selected.bpm"></span>
+                                    <span class="stat-pill-value" v-text="selected.bpm.toFixed(2)"></span>
                                 </div>
                                 <div class="stat-pill stat-pill-stars">
                                     <span class="stat-pill-label"><i class="fas fa-star"></i></span>

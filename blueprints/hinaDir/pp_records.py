@@ -10,4 +10,4 @@ hina_pp_records = Blueprint('hina_pp_records', __name__)
 @hina_pp_records.route('/records')
 @error_catcher
 async def pp_records():
-    return await render_template('hinaDir/pp_records.html', globalNotice=g.globalNotice)
+    return await render_template('pp_records.html', globalNotice=g.globalNotice)

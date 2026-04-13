@@ -24,14 +24,14 @@ def login_required(func):
 @error_catcher
 @login_required
 async def friends():
-    return await render_template('hinaDir/friends.html', globalNotice=g.globalNotice)
+    return await render_template('friends.html', globalNotice=g.globalNotice)
 
 
 @hina_friends.route('/friends/leaderboard')
 @error_catcher
 @login_required
 async def friends_leaderboard():
-    return await render_template('hinaDir/friends_leaderboard.html', globalNotice=g.globalNotice)
+    return await render_template('friends_leaderboard.html', globalNotice=g.globalNotice)
 
 
 @hina_friends.route('/friends/<action>', methods=['POST'])

@@ -707,11 +707,11 @@ async def login():
         return await flash('error', "You're already logged in!", 'home')
     
     if g.isDevEnv:
-        return await render_template('hinaDir/login.html', globalNotice=g.globalNotice, flash=f"This Website is the Dev Environment. Please play on <a href='https://{glob.config.official_domain}'>our Official Server</a>", status="success")
+        return await render_template('login.html', globalNotice=g.globalNotice, flash=f"This Website is the Dev Environment. Please play on <a href='https://{glob.config.official_domain}'>our Official Server</a>", status="success")
     if g.maintenance:
-        return await render_template('hinaDir/login.html', globalNotice=g.globalNotice, flash="Website is currently under maintenance", status="success")
+        return await render_template('login.html', globalNotice=g.globalNotice, flash="Website is currently under maintenance", status="success")
         
-    return await render_template('hinaDir/login.html', globalNotice=g.globalNotice)
+    return await render_template('login.html', globalNotice=g.globalNotice)
 
 @frontend.route('/login', methods=['POST'])
 @error_catcher

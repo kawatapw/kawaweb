@@ -213,7 +213,7 @@ async def team_page():
     total = len(seen_ids)
 
     return await render_template(
-        'hinaDir/team.html',
+        'team.html',
         team_sections=team_sections,
         total_staff=total,
         globalNotice=g.globalNotice,

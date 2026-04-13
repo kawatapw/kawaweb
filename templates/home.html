@@ -4,6 +4,7 @@
 {% block header %}
 <link rel="stylesheet" href="{{ bust('/static/hinaDir/css/home.css') }}">
 <link rel="stylesheet" href="{{ bust('/static/css/pages/changelog.css') }}">
+{% include 'components/home-templates.html' %}
 {% endblock %}
 
 {# Star rating → color (matches osu! difficulty spectrum) #}
@@ -14,7 +15,6 @@
    The Vue 2 app mounts on #home-app, wrapping all content that uses
    Vue expressions (<% ... %>). Server-rendered sections use Jinja2 {{ }}.
    ═══════════════════════════════════════════════════════════════════════════ #}
-{% include 'hinaDir/components/home-templates.html' %}
 <div id="home-app">
   <!--<user-data-provider :auto-refresh-status="true">-->
 

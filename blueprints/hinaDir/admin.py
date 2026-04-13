@@ -216,7 +216,7 @@ async def _update_map_status(map_id=None, new_status=None, set_id=None):
 @staff_required_page
 async def admin_spa(subpath=None):
     """Render the admin V2 SPA shell."""
-    return await render_template('hinaDir/admin_v2.html', globalNotice=g.globalNotice)
+    return await render_template('admin/admin_v2.html', globalNotice=g.globalNotice)
 
 
 # ─── Dashboard API ─────────────────────────────────────────────────────
