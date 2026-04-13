@@ -1,35 +1,41 @@
-# -*- coding: utf-8 -*-
 
-from typing import Optional
+from pathlib import Path
 from typing import TYPE_CHECKING
 
-from cmyui.logging import Ansi
-from cmyui.logging import log
-from pathlib import Path
-from quart import render_template
-from quart import session, g, jsonify
+from cmyui.logging import Ansi, log
+from quart import g, jsonify, render_template, session
 
-from objects import glob
-from objects import utils
+from objects import glob, utils
 
 if TYPE_CHECKING:
     from PIL.Image import Image
 
 # Logging Imports
-import logging, os, yaml, json, logging.config, datetime, inspect, traceback, re, sys, time
-import structlog, jsons, orjson, rapidjson
-from logging import Handler
-from datetime import datetime, date
-from enum import IntEnum
-from collections.abc import Mapping
-from pythonjsonlogger import jsonlogger
-from elasticsearch import Elasticsearch
-from structlog.stdlib import NAME_TO_LEVEL
-
-import functools, asyncio
+import asyncio
 
 # Dreaded Serialization Imports
 import decimal
+import functools
+import inspect
+import json
+import logging
+import logging.config
+import os
+import re
+import sys
+import time
+import traceback
+from collections.abc import Mapping
+from datetime import datetime
+from enum import IntEnum
+
+import orjson
+import rapidjson
+import structlog
+import yaml
+from pythonjsonlogger import jsonlogger
+from structlog.stdlib import NAME_TO_LEVEL
+
 
 async def flash(status: str, msg: str, template: str) -> str:
     """Flashes a success/error message on a specified template."""
@@ -52,7 +58,7 @@ def get_safe_name(name: str) -> str:
     # - Space must be replaced with _
     return name.lower().replace(' ', '_')
 
-def convert_mode_int(mode: str) -> Optional[int]:
+def convert_mode_int(mode: str) -> int | None:
     """Converts mode (str) to mode (int)."""
     if mode not in _str_mode_dict:
         print('invalid mode passed into utils.convert_mode_int?')
@@ -66,7 +72,7 @@ _str_mode_dict = {
     'mania': 3
 }
 
-def convert_mode_str(mode: int) -> Optional[str]:
+def convert_mode_str(mode: int) -> str | None:
     """Converts mode (int) to mode (str)."""
     if mode not in _mode_str_dict:
         print('invalid mode passed into utils.convert_mode_str?')
@@ -98,7 +104,7 @@ async def fetch_geoloc(ip: str) -> str:
 
 async def validate_captcha(data: str) -> bool:
     """Verify `data` with hcaptcha's API."""
-    url = f'https://hcaptcha.com/siteverify'
+    url = 'https://hcaptcha.com/siteverify'
 
     request_data = {
         'secret': glob.config.hCaptcha_secret,
@@ -121,38 +127,38 @@ def magnitude_fmt_time(nanosec: int | float) -> str:
     Formats a time value in nanoseconds into a human-readable string representation.
     """
     suffix = None
-    for suffix in TIME_ORDER_SUFFIXES:
+    for _suffix in TIME_ORDER_SUFFIXES:
         if nanosec < 1000:
             break
         nanosec /= 1000
     return f"{nanosec:.2f} {suffix}"
 
 def get_required_score_for_level(level: int) -> float:
-	if level <= 100:
-		if level >= 2:
-			return 5000 / 3 * (4 * (level ** 3) - 3 * (level ** 2) - level) + 1.25 * (1.8 ** (level - 60))
-		else:
-			return 1.0  # Should be 0, but we get division by 0 below so set to 1
-	else:
-		return 26931190829 + 1e11 * (level - 100)
+    if level <= 100:
+        if level >= 2:
+            return 5000 / 3 * (4 * (level ** 3) - 3 * (level ** 2) - level) + 1.25 * (1.8 ** (level - 60))
+        else:
+            return 1.0  # Should be 0, but we get division by 0 below so set to 1
+    else:
+        return 26931190829 + 1e11 * (level - 100)
 
 def get_level(totalScore: int) -> int:
-	level = 1
-	while True:
-		# Avoid endless loops
-		if level > 120:
-			return level
+    level = 1
+    while True:
+        # Avoid endless loops
+        if level > 120:
+            return level
 
-		# Calculate required score
-		reqScore = get_required_score_for_level(level)
+        # Calculate required score
+        reqScore = get_required_score_for_level(level)
 
-		# Check if this is our level
-		if totalScore <= reqScore:
-			# Our level, return it and break
-			return level - 1
-		else:
-			# Not our level, calculate score for next level
-			level += 1
+        # Check if this is our level
+        if totalScore <= reqScore:
+            # Our level, return it and break
+            return level - 1
+        else:
+            # Not our level, calculate score for next level
+            level += 1
 
 BANNERS_PATH = Path.cwd() / '.data/banners'
 BACKGROUND_PATH = Path.cwd() / '.data/backgrounds'
@@ -186,9 +192,9 @@ def crop_image(image: 'Image') -> 'Image':
     offset = int(abs(height-width) / 2)
 
     if width > height:
-        image = image.crop([offset, 0, width-offset, height])
+        image = image.crop([offset, 0, width-offset, height])  # ty:ignore[invalid-argument-type]
     else:
-        image = image.crop([0, offset, width, height-offset])
+        image = image.crop([0, offset, width, height-offset])  # ty:ignore[invalid-argument-type]
 
     return image
 
@@ -198,7 +204,7 @@ class klogging:
     """
     Kawata Logging utilities for the application.
     """
-    
+
     class Ansi(IntEnum):
         """
         ANSI escape codes for terminal colors.
@@ -228,7 +234,7 @@ class klogging:
         def __repr__(self) -> str:
             return f"\x1b[{self.value}m"
 
-    def printf(msg: str, color: Optional[Ansi] = None, file_path: Optional[str] = None) -> None:
+    def printf(msg: str, color: Ansi | None = None, file_path: str | None = None) -> None:
         """
         Prints the message to console with color and saves to a file if path is specified.\n
         Used for debugging when logging is not available.
@@ -251,7 +257,7 @@ class klogging:
         if value:
             path = value
         if os.path.exists(path):
-            with open(path, 'rt') as f:
+            with open(path) as f:
                 config = yaml.safe_load(f.read())
             logging.config.dictConfig(config)
         else:
@@ -310,9 +316,9 @@ class klogging:
     def configure_logging():
         klogging.setup_logging()
         klogging.setup_structlog()
-    
-    
-    
+
+
+
     class logLevel(IntEnum):
         """
         Represents the log levels for Pythons Built in logger.
@@ -351,7 +357,7 @@ class klogging:
             NAME_TO_LEVEL['dbglv2'] = cls.DBGLV2
             NAME_TO_LEVEL['dbglv1'] = cls.DBGLV1
     logLevel.add_Log_Levels()
-    
+
     class AnsiFuncs:
         ANSI_ESCAPE_REGEX = re.compile(r"(\x9B|\x1B\[)[0-?]*[ -\/]*[@-~]")
         def escape_ansi(line: str) -> str:
@@ -359,19 +365,19 @@ class klogging:
 
     def log(
         msg: str,
-        start_color: Ansi = None,
-        extra: Optional[Mapping[str, object]] = None,
+        start_color: Ansi = None,  # ty:ignore[invalid-parameter-default]
+        extra: Mapping[str, object] | None = None,
         logger: str = '',
         level: int = logging.INFO
     ) -> None:
         """\
-        A modified wrapper around the stdlib logging module to handle 
+        A modified wrapper around the stdlib logging module to handle
         backwards-compatibility for colours and adding extra fields to log records.\n
         Original Description:
             A thin wrapper around the stdlib logging module to handle mostly
             backwards-compatibility for colours during our migration to the
             standard library logging module.
-        
+
         Args:
             msg: The message to log.
             start_color: The color to start the message with.
@@ -382,11 +388,11 @@ class klogging:
 
         Returns:
             None
-        
+
         Raises:
             None
         """
-        
+
         # Get the logger
         if logger:
             log_obj = logging.getLogger(logger)
@@ -424,19 +430,19 @@ class klogging:
             color_prefix = color_suffix = ""
 
         # Get the frame that called this function
-        frame = inspect.currentframe().f_back
-        info = inspect.getframeinfo(frame)
-        
-        
+        frame = inspect.currentframe().f_back  # ty:ignore[unresolved-attribute]
+        info = inspect.getframeinfo(frame)  # ty:ignore[invalid-argument-type]
+
+
         # Add Timestamp and Message to the 'extra' fields
         extra = extra or {}
-        
-        extra['@timestamp'] = datetime.now().isoformat()
-        extra['Message'] = klogging.AnsiFuncs.escape_ansi(msg)
-    
+
+        extra['@timestamp'] = datetime.now().isoformat()  # ty:ignore[invalid-assignment]
+        extra['Message'] = klogging.AnsiFuncs.escape_ansi(msg)  # ty:ignore[invalid-assignment]
+
         # Get the arguments of the calling function
-        arg_info = inspect.getargvalues(frame)
-        
+        arg_info = inspect.getargvalues(frame)  # ty:ignore[invalid-argument-type]
+
         msg = f"{color_prefix}{msg}{color_suffix}"
 
         # Check if 'msg' is a format string
@@ -461,21 +467,21 @@ class klogging:
         )
 
         # Add the logger and methodname to the 'extra' fields
-        extra['logger'] = log_obj
-        extra['method_name'] = logging.getLevelName(record.levelno).lower()
-        extra['service.name'] = glob.config.SERVICE_NAME
-        extra['container.name'] = glob.config.CONTAINER_NAME
-        
-        
+        extra['logger'] = log_obj  # ty:ignore[invalid-assignment]
+        extra['method_name'] = logging.getLevelName(record.levelno).lower()  # ty:ignore[invalid-assignment]
+        extra['service.name'] = glob.config.SERVICE_NAME  # ty:ignore[invalid-assignment]
+        extra['container.name'] = glob.config.CONTAINER_NAME  # ty:ignore[invalid-assignment]
+
+
         if log_level >= 21:
             # Add calling function's arguments to the 'extra' fields
-            extra['args'] = arg_info.args
-            extra['varargs'] = arg_info.varargs
-            extra['keywords'] = arg_info.keywords
-            extra['locals'] = arg_info.locals
-            extra['func'] = info.function
+            extra['args'] = arg_info.args  # ty:ignore[invalid-assignment]
+            extra['varargs'] = arg_info.varargs  # ty:ignore[invalid-assignment]
+            extra['keywords'] = arg_info.keywords  # ty:ignore[invalid-assignment]
+            extra['locals'] = arg_info.locals  # ty:ignore[invalid-assignment]
+            extra['func'] = info.function  # ty:ignore[invalid-assignment]
             # Add stack trace to the 'extra' fields
-            extra['stack_trace'] = json.dumps(traceback.format_stack())
+            extra['stack_trace'] = json.dumps(traceback.format_stack())  # ty:ignore[invalid-assignment]
 
             if log_level >= 40:
                 # Add minimal stack trace information
@@ -483,24 +489,24 @@ class klogging:
                 if stack_info:
                     # Only include the immediate caller frame
                     caller_frame = stack_info[1] if len(stack_info) > 1 else stack_info[0]
-                    extra['caller_file'] = caller_frame.filename
-                    extra['caller_line'] = caller_frame.lineno
-                    extra['caller_function'] = caller_frame.function
+                    extra['caller_file'] = caller_frame.filename  # ty:ignore[invalid-assignment]
+                    extra['caller_line'] = caller_frame.lineno  # ty:ignore[invalid-assignment]
+                    extra['caller_function'] = caller_frame.function  # ty:ignore[invalid-assignment]
 
                 # Add exception info if available
                 exc_info = sys.exc_info()
                 if exc_info[0] is not None:
-                    extra['error_type'] = exc_info[0].__name__
-                    extra['error_message'] = str(exc_info[1])
-                    extra['stack_trace'] = traceback.format_exc()
+                    extra['error_type'] = exc_info[0].__name__  # ty:ignore[invalid-assignment]
+                    extra['error_message'] = str(exc_info[1])  # ty:ignore[invalid-assignment]
+                    extra['stack_trace'] = traceback.format_exc()  # ty:ignore[invalid-assignment]
 
         # Add the 'extra' fields to the '__dict__' attribute of the 'LogRecord' object
         for key, value in extra.items():
             record.__dict__[key] = value
-        
+
         # Handle the record
         log_obj.handle(record)
-    
+
     @staticmethod
     def serialize_record(record, seen=None):
         """
@@ -538,23 +544,23 @@ class klogging:
                     if id(value) in seen:
                         return f"<Circular Reference: {type(value).__name__} id={id(value)}>"
                     else:
-                        return Utils.serialize_record(value, seen)
-            except:
+                        return klogging.serialize_record(value, seen)
+            except Exception:
                 pass
             try:
                 json_record = json.dumps(value)
                 return json_record
-            except:
+            except Exception:
                 try:
                     # Try to serialize with orjson
                     serialized_record = orjson.dumps(value).decode()
                     return serialized_record
-                except:
+                except Exception:
                     try:
                         # Try to serialize with rapidjson
                         serialized_record = rapidjson.dumps(value)
                         return serialized_record
-                    except:
+                    except Exception:
                         return str(value)
 
         serializable_record = {}
@@ -562,7 +568,7 @@ class klogging:
             serializable_record[key] = serialize(value)
 
         return serializable_record
-    
+
     @staticmethod
     async def access_log(request, response):
         """
@@ -582,7 +588,7 @@ class klogging:
         try:
             start_time = getattr(g, "start_time", None)
             time_elapsed = time.time() - start_time if start_time else None
-            
+
             # Determine color based on status code
             status_code = response.status_code
             if status_code >= 300 and status_code < 400:
@@ -633,7 +639,7 @@ class BytesJsonFormatter(jsonlogger.JsonFormatter):
     Attributes:
         datefmt (str): The format string for the timestamp in the log record.
         style (str): The style of the log record formatting.
-    
+
     Coded for sending logs to Logstash. (Use json_lines codec in logstash config)
     Please use the `jsonlogger.JsonFormatter` class for general JSON logging.
     """

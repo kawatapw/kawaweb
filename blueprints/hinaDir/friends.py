@@ -2,7 +2,7 @@
 
 from functools import wraps
 
-from quart import Blueprint, render_template, request, session, jsonify, g
+from quart import Blueprint, g, jsonify, render_template, request, session
 
 from objects import glob
 from objects.utils import error_catcher
@@ -15,7 +15,7 @@ def login_required(func):
     async def wrapper(*args, **kwargs):
         if not session or 'authenticated' not in session:
             from objects.utils import flash
-            return await flash('error', 'You must be logged in to access that page.', 'login')
+            return await flash('error', 'You must be logged in to access that page.', 'hinaDir/login')
         return await func(*args, **kwargs)
     return wrapper
 
@@ -24,14 +24,14 @@ def login_required(func):
 @error_catcher
 @login_required
 async def friends():
-    return await render_template('hinaDir/friends.html', globalNotice=g.globalNotice)
+    return await render_template('friends.html', globalNotice=g.globalNotice)
 
 
 @hina_friends.route('/friends/leaderboard')
 @error_catcher
 @login_required
 async def friends_leaderboard():
-    return await render_template('hinaDir/friends_leaderboard.html', globalNotice=g.globalNotice)
+    return await render_template('friends_leaderboard.html', globalNotice=g.globalNotice)
 
 
 @hina_friends.route('/friends/<action>', methods=['POST'])
@@ -55,7 +55,7 @@ async def friends_action(action):
     user_id = session['user_data']['id']
 
     async with glob.http.post(
-        f'http://bancho:10000/v1/set_relationship',
+        'http://bancho:10000/v1/set_relationship',
         params={
             'id': str(user_id),
             'target': str(target_id),

@@ -1,6 +1,9 @@
 FROM python:3.11-slim
 
 ENV PYTHONUNBUFFERED=1
+# Set UV environment variables for virtual environment
+ENV UV_PROJECT_ENVIRONMENT=/srv/root/.venv
+ENV PATH="/srv/root/.venv/bin:$PATH"
 
 WORKDIR /srv/root
 
@@ -9,12 +12,16 @@ RUN apt update && apt install --no-install-recommends -y \
     nginx \
     && rm -rf /var/lib/apt/lists/* 
 
-#RUN git submodule init && git submodule update
+# Install uv
+RUN pip install --no-cache-dir uv
 
-COPY ext/requirements.txt ./
-#RUN python3.9 -m pip install python-dotenv
-RUN python3.11 -m pip install -U pip setuptools
-RUN python3.11 -m pip install -r requirements.txt
+# Copy pyproject.toml and uv.lock for better layer caching
+COPY pyproject.toml ./
+COPY uv.lock ./
+
+# Create and use a virtual environment inside the container
+RUN uv venv /srv/root/.venv && \
+    uv pip install --no-cache-dir -r pyproject.toml
 
 # Copy your service files to the appropriate location
 COPY . .

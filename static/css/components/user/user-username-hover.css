@@ -1,0 +1,23 @@
+/* ============================================================================
+ * User Component - Username Hover
+ * ============================================================================
+ *
+ * Container for username display with hover panel popup.
+ */
+
+/* === Container === */
+.user-username-hover {
+    position: relative;
+    display: inline-block;
+}
+
+.user-username-hover.interactive {
+    cursor: pointer;
+}
+
+/* === Hover Panel Positioning === */
+.user-username-hover .user-hover-panel {
+    top: 100%;
+    left: 0;
+    margin-top: 4px;
+}

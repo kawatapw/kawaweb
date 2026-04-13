@@ -1,0 +1,110 @@
+/* ============================================================================
+ * User Component - Search
+ * ============================================================================
+ *
+ * Compact display for search results and lists.
+ */
+
+/* === Search Container === */
+.user-search {
+    position: relative;
+    display: inline-block;
+    width: 100%;
+}
+
+/* === Search Inner === */
+.user-search__inner {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 12px;
+    background-color: hsla(var(--main), 100, 100, 0.05);
+    border-radius: 8px;
+    transition: background-color 0.2s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.user-search__inner::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-size: cover;
+    background-position: center;
+    filter: blur(1.25px);
+    transition: max-height 0.4s ease;
+}
+
+.user-search__inner > * {
+    position: relative;
+}
+
+.user-search__inner:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.user-search__inner .user-avatar {
+    height: 40px;
+    width: 40px;
+}
+
+/* === Search Info === */
+.user-search__info {
+    flex: 1;
+    min-width: 0;
+}
+
+.user-search__name {
+    font-size: 14px;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-bottom: 4px;
+}
+
+.user-search__name .user-flag,
+.user-search__name .user-clan {
+    display: inline-flex;
+    align-items: center;
+    margin-right: 4px;
+}
+
+.user-search__name .user-flag {
+    width: 16px;
+    height: 11px;
+    border-radius: 2px;
+}
+
+.user-search__name .user-username-link {
+    color: white;
+    text-decoration: none;
+    font-weight: 600;
+    transition: color 0.2s ease;
+}
+
+.user-search__name .user-username-link:hover {
+    color: hsl(var(--user), 70%, 85%);
+}
+
+/* === Search Stats === */
+.user-search__stats {
+    display: flex;
+    gap: 12px;
+    font-size: 12px;
+    opacity: 0.9;
+}
+
+.user-search__stat {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.user-search__stat i {
+    font-size: 10px;
+    opacity: 0.7;
+}

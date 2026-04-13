@@ -2,7 +2,7 @@ version: "3.8"
 
 services:
   web:
-    image: kawaweb:latest
+    image: ${GITHUB_OWNER}/${GITHUB_REPO}:${CONTAINER_VERSION}
     container_name: ${CONTAINER_NAME}
     network_mode: bridge
     restart: always
@@ -25,6 +25,8 @@ services:
       - .:/srv/root
       - ${GULAG_PATH}/kawata.py:/srv/root/gulag
       - ${GULAG_PATH}/.data/b.py:/srv/root/.data/b.py
+      # Use a named volume to preserve container's .venv
+      - web-container-venv:/srv/root/.venv
     environment:
       - TZ=${TZ}
       - APP_HOST=${APP_HOST}
@@ -51,3 +53,6 @@ services:
       - DISALLOWED_PASSWORDS=${DISALLOWED_PASSWORDS}
       - ENABLE_REGISTRATION=${ENABLE_REGISTRATION}
       - DISCORD_LINK=${DISCORD_LINK}
+
+volumes:
+  web-container-venv:

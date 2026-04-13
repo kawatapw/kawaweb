@@ -1,0 +1,1034 @@
+/* Beatmap Card Component Styles */
+    /* Base */
+        .beatmap-card {
+            position: relative;
+            border-radius: 6px;
+            transition: all 0.2s ease;
+            margin-bottom: 15px;
+            z-index: 1;
+        }
+        .beatmap-card:hover {
+            position: relative;
+            z-index: 10;
+        }
+
+        .beatmap-card.interactive {
+            cursor: pointer;
+        }
+
+        .beatmap-card.interactive:hover {
+            transform: translateY(-2px);
+        }
+    /* Mini Mode Styles */
+        .beatmap-card.mode-mini {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            width: 96%;
+            min-width: 275px;
+            max-width: 96%;
+            height: fit-content;
+            margin: 0 auto 4px auto;
+            transition: all 0.3s ease;
+        }
+        .beatmap-card.mode-mini .beatmap-mini-difficulties,
+        .beatmap-card.mode-mini .beatmap-mini {
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .beatmap-card.mode-mini.expanded {
+            height: auto;
+        }
+
+        .beatmap-card.mode-mini.interactive:hover .beatmap-mini-difficulties,
+        .beatmap-card.mode-mini.interactive:hover .beatmap-mini {
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15), 
+                        0 0 0 2px hsla(var(--main, 255), 25%, 35%, 0.75);
+        }
+
+        
+        .beatmap-mini {
+            position: relative;
+            border-radius: inherit;
+            background-color: var(--panel-bg, #1a1a1a);
+            border: 1px solid hsl(var(--main), 10%, 20%);
+            z-index: 2;
+        }
+        /*.beatmap-card.interactive:hover .beatmap-mini {
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }*/
+        /* Background with map image */
+            .beatmap-mini-background {
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                border-radius: inherit;
+                z-index: 0;
+                overflow: hidden; /* Add this */
+            }
+
+            .beatmap-mini-background img {
+                width: 100%;
+                height: 100%;
+                border-radius: inherit;
+                object-fit: cover;
+            }
+        
+            .beatmap-mini-overlay {
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: linear-gradient(to right, 
+                            rgba(20, 20, 30, 0.85), 
+                            rgba(20, 20, 30, 0.7));
+                backdrop-filter: blur(4px);
+                z-index: 1;
+                transition: all 0.3s ease;
+            }
+            .beatmap-card.interactive:hover .beatmap-mini-overlay {
+                background: linear-gradient(to right, 
+                            rgba(20, 20, 30, 0.65), 
+                            rgba(20, 20, 30, 0.5));
+                backdrop-filter: blur(2px);
+            }
+
+        /* Content container */
+            .beatmap-mini-content {
+                position: relative;
+                display: flex;
+                align-items: center;
+                height: 60px;
+                width: 100%;
+                padding: 0 15px;
+                z-index: 2;
+            }
+                .beatmap-mini-content .content-right {
+                    display: flex;
+                    align-items: flex-end;
+                    flex-direction: column;
+                    justify-content: flex-end;
+                    flex: 1;
+                }
+
+        /* Single difficulty mode styles */
+            .beatmap-mini-single-diff {
+                display: flex;
+                align-items: center;
+                margin-right: 12px;
+            }
+
+            .beatmap-mini-diff-icon-container {
+                position: relative;
+                width: 36px;
+                height: 36px;
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                background-color: rgba(var(--diff-color), 0.5);
+                backdrop-filter: blur(4px);
+                transition: all 0.3s ease;
+                cursor: pointer;
+            }
+
+            .beatmap-mini-diff-icon-container:hover {
+                transform: scale(1.05);
+                box-shadow: 0 0 15px rgba(var(--diff-color), 0.4);
+            }
+
+            .beatmap-mini-diff-icon {
+                position: relative;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                width: 100%;
+                height: 100%;
+            }
+
+            .beatmap-mini-mode-icon {
+                --diff-icon-size: 24px;
+                font-family: osu-mode;
+                font-size: var(--diff-icon-size);
+                /*width: var(--diff-icon-size);
+                height: var(--diff-icon-size);*/
+                font-style: normal;
+                color: white;
+                display: flex; 
+                align-items: center; 
+                justify-content: center; 
+                line-height: 1;
+            }
+
+            .beatmap-mini-rank-change {
+                position: absolute;
+                bottom: -2px;
+                right: -2px;
+                width: 16px;
+                height: 16px;
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 8px;
+                color: white;
+                border: 2px solid rgba(20, 20, 30, 0.8);
+            }
+
+        /* Text information */
+            .beatmap-mini-info {
+                overflow: hidden;
+                padding-right: 15px;
+            }
+
+            .beatmap-mini-info.with-single-diff {
+                padding-left: 0;
+            }
+
+            .beatmap-mini-title {
+                font-weight: 600;
+                font-size: 14px;
+                color: white;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                margin-bottom: 2px;
+            }
+
+            .beatmap-mini-artist {
+                font-size: 12px;
+                color: rgba(255, 255, 255, 0.8);
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                margin-bottom: 2px;
+            }
+
+            .beatmap-mini-creator {
+                font-size: 11px;
+                color: rgba(255, 255, 255, 0.6);
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+
+            .beatmap-mini-plays {
+                font-size: 11px;
+                color: rgba(255, 255, 255, 0.7);
+                margin-top: 2px;
+            }
+
+        /* Status indicator */
+            .beatmap-mini-status-indicator {
+                padding: 4px 8px;
+                border-radius: 12px;
+                font-size: 11px;
+                font-weight: 600;
+                color: white;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+            }
+
+        /* Difficulty background colors */
+            .beatmap-mini-diff-icon-container.difficulty-1,
+            .beatmap-mini-difficulty-icon-container.difficulty-1 {
+                background-color: rgba(79, 192, 255, 0.3);
+                box-shadow: 0 0 10px rgba(79, 192, 255, 0.4);
+            }
+
+
+        /* Popup panel styles */
+            .beatmap-mini-popup {
+                position: absolute;
+                width: 300px;
+                background: rgba(30, 30, 40, 0.95);
+                backdrop-filter: blur(10px);
+                border-radius: 12px;
+                box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+                padding: 15px;
+                opacity: 0;
+                visibility: hidden;
+                z-index: 1000;
+                transition: all 0.3s ease;
+                pointer-events: none;
+            }
+            #popup-container .beatmap-mini-popup {
+                /* Reset any problematic styles */
+                position: fixed;
+                /* Keep other styles from the original */
+            }
+            .beatmap-mini-popup.visible {
+                opacity: 1;
+                visibility: visible;
+                pointer-events: auto;
+            }
+
+            /* Popup positions */
+                .beatmap-mini-popup.position-top {
+                    bottom: 45px;
+                    left: 50%;
+                    transform: translateX(-50%) translateY(10px);
+                }
+
+                .beatmap-mini-popup.position-left {
+                    top: 0;
+                    right: 45px;
+                    transform: translateY(0) translateX(10px);
+                }
+
+                .beatmap-mini-popup.position-right {
+                    top: 0;
+                    left: 45px;
+                    transform: translateY(0) translateX(-10px);
+                }
+
+                .beatmap-mini-diff-icon-container:hover .beatmap-mini-popup,
+                .beatmap-mini-difficulty-icon-container:hover .beatmap-mini-popup {
+                    opacity: 1;
+                    visibility: visible;
+                    transform: translateX(-50%) translateY(0);
+                    pointer-events: auto;
+                }
+
+                .beatmap-mini-popup.position-left:hover,
+                .beatmap-mini-diff-icon-container:hover .beatmap-mini-popup.position-left {
+                    transform: translateY(0) translateX(0);
+                }
+
+                .beatmap-mini-popup.position-right:hover,
+                .beatmap-mini-diff-icon-container:hover .beatmap-mini-popup.position-right {
+                    transform: translateY(0) translateX(0);
+                }
+
+            /* Popup content styles */
+                .beatmap-mini-popup-header {
+                    margin-bottom: 12px;
+                    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+                    padding-bottom: 10px;
+                }
+
+                .beatmap-mini-popup-title {
+                    font-weight: 600;
+                    font-size: 16px;
+                    color: white;
+                    margin-bottom: 4px;
+                    word-break: break-word;
+                }
+
+                .beatmap-mini-popup-artist {
+                    font-size: 14px;
+                    color: rgba(255, 255, 255, 0.8);
+                    margin-bottom: 4px;
+                    word-break: break-word;
+                }
+
+                .beatmap-mini-popup-version {
+                    font-size: 14px;
+                    color: rgba(255, 255, 255, 0.7);
+                    font-style: italic;
+                    word-break: break-word;
+                }
+
+                .beatmap-mini-popup-details {
+                    font-size: 13px;
+                }
+
+                .beatmap-mini-popup-creator {
+                    color: rgba(255, 255, 255, 0.7);
+                    margin-bottom: 10px;
+                }
+
+                .beatmap-mini-popup-stats {
+                    display: flex;
+                    flex-wrap: wrap;
+                    gap: 10px;
+                    margin-bottom: 15px;
+                }
+
+                .beatmap-mini-popup-stat {
+                    background-color: rgba(255, 255, 255, 0.1);
+                    padding: 4px 8px;
+                    border-radius: 4px;
+                    display: flex;
+                    align-items: center;
+                    gap: 5px;
+                }
+
+                .beatmap-mini-status {
+                    padding: 2px 6px;
+                    border-radius: 4px;
+                    font-size: 11px;
+                    font-weight: 600;
+                    color: white;
+                    text-transform: uppercase;
+                }
+
+            /* Rank change styles in popup */
+                .beatmap-mini-popup-rank-change {
+                    display: flex;
+                    align-items: center;
+                    margin-bottom: 15px;
+                    padding: 8px 12px;
+                    background-color: rgba(255, 255, 255, 0.05);
+                    border-radius: 6px;
+                }
+
+                .beatmap-mini-popup-rank-label {
+                    font-weight: 600;
+                    margin-right: 8px;
+                }
+
+                .beatmap-mini-popup-rank-value {
+                    display: flex;
+                    align-items: center;
+                    gap: 5px;
+                }
+
+            /* Other difficulties section in popup */
+                .beatmap-mini-popup-other-diffs {
+                    margin-bottom: 15px;
+                }
+
+                .beatmap-mini-popup-diffs-header {
+                    font-weight: 600;
+                    margin-bottom: 8px;
+                    color: rgba(255, 255, 255, 0.8);
+                }
+
+                .beatmap-mini-popup-diffs-list {
+                    display: flex;
+                    flex-direction: column;
+                    gap: 5px;
+                    max-height: 120px;
+                    overflow-y: auto;
+                }
+
+                .beatmap-mini-popup-diff {
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+                    padding: 5px 8px;
+                    background-color: rgba(255, 255, 255, 0.05);
+                    border-radius: 4px;
+                    cursor: pointer;
+                    transition: background-color 0.2s ease;
+                }
+
+                .beatmap-mini-popup-diff:hover {
+                    background-color: rgba(255, 255, 255, 0.1);
+                }
+
+                .beatmap-mini-popup-diff-name {
+                    flex: 1;
+                    white-space: nowrap;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                }
+
+                .beatmap-mini-popup-diff-stars {
+                    margin: 0 8px;
+                    font-size: 12px;
+                    color: #FFCC22;
+                }
+
+                .beatmap-mini-popup-diff-rank {
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    width: 16px;
+                    height: 16px;
+                    font-size: 10px;
+                }
+
+            /* Action buttons */
+                .beatmap-mini-popup-actions {
+                    display: flex;
+                    gap: 8px;
+                }
+
+                .beatmap-mini-popup-action {
+                    flex: 1;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    gap: 5px;
+                    padding: 6px 10px;
+                    background-color: rgba(255, 255, 255, 0.1);
+                    border-radius: 4px;
+                    color: white;
+                    text-decoration: none;
+                    transition: all 0.2s ease;
+                }
+
+                .beatmap-mini-popup-action:hover {
+                    background-color: rgba(255, 255, 255, 0.2);
+                    transform: translateY(-2px);
+                }
+
+        /* All difficulties section (for showAllDifficulties mode) */
+            .beatmap-mini-difficulties {
+                position: relative;
+                width: 95%;
+                margin: 0 auto;
+                padding: 4px 0;
+                background-color: rgba(20, 20, 30, 0.9);
+                border-bottom-left-radius: 12px;
+                border-bottom-right-radius: 12px;
+                z-index: 1;
+                border-top: 1px solid rgba(255, 255, 255, 0.1);
+            }
+            .beatmap-mini-difficulties-container {
+              padding: 2px 6px;
+            }
+
+            .beatmap-mini-difficulties-loading {
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              gap: 10px;
+              padding: 10px;
+              color: rgba(255, 255, 255, 0.7);
+            }
+
+            .beatmap-mini-loading-spinner {
+              width: 16px;
+              height: 16px;
+              border: 2px solid rgba(255, 255, 255, 0.3);
+              border-top-color: white;
+              border-radius: 50%;
+              animation: mini-spinner 0.8s linear infinite;
+            }
+
+            @keyframes mini-spinner {
+              to { transform: rotate(360deg); }
+            }
+
+            .beatmap-mini-no-difficulties {
+              text-align: center;
+              padding: 10px;
+              color: rgba(255, 255, 255, 0.5);
+              font-style: italic;
+            }
+
+            .beatmap-mini-difficulties-scroll-container {
+              position: relative;
+              display: flex;
+              align-items: center;
+              width: 100%;
+            }
+
+            .beatmap-mini-difficulties-scroll-btn {
+              position: absolute;
+              width: 24px;
+              height: 24px;
+              background-color: rgba(0, 0, 0, 0.5);
+              border: none;
+              border-radius: 50%;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              color: white;
+              cursor: pointer;
+              z-index: 5;
+              transition: all 0.2s ease;
+            }
+
+            .beatmap-mini-difficulties-scroll-btn:hover {
+              background-color: rgba(0, 0, 0, 0.7);
+              transform: scale(1.1);
+            }
+
+            .beatmap-mini-difficulties-scroll-btn.left {
+              left: -5px;
+            }
+
+            .beatmap-mini-difficulties-scroll-btn.right {
+              right: -5px;
+            }
+
+            .beatmap-mini-difficulties-list {
+                display: flex;
+                justify-content: center;
+                gap: 10px;
+                width: 80%;
+                margin: 0 auto;
+            }
+
+            .beatmap-mini-difficulty-icon-container {
+                position: relative;
+                width: fit-content;
+                height: fit-content;
+                border-radius: 50%;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                backdrop-filter: blur(4px);
+                background-color: rgba(var(--diff-color), 0.6);
+                transition: all 0.3s ease;
+                cursor: pointer;
+                z-index: 5;
+                isolation: isolate;
+            }
+
+            .beatmap-mini-difficulty-icon-container:hover {
+              transform: scale(1.05);
+              box-shadow: 0 0 15px rgba(var(--diff-color), 0.4);
+            }
+
+            .beatmap-mini-difficulty-icon-container.selected {
+              box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+            }
+
+            .beatmap-mini-difficulty-icon {
+              position: relative;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              width: 100%;
+              height: 100%;
+            }
+
+            .beatmap-mini-difficulty-name {
+              position: absolute;
+              bottom: -20px;
+              left: 50%;
+              transform: translateX(-50%);
+              white-space: nowrap;
+              font-size: 10px;
+              color: rgba(255, 255, 255, 0.8);
+              background-color: rgba(0, 0, 0, 0.7);
+              padding: 2px 6px;
+              border-radius: 10px;
+              max-width: 80px;
+              overflow: hidden;
+              text-overflow: ellipsis;
+            }
+
+        /* Loading overlay for the entire card */
+            .beatmap-loading-overlay {
+              position: absolute;
+              top: 0;
+              left: 0;
+              width: 100%;
+              height: 100%;
+              background-color: rgba(20, 20, 30, 0.8);
+              display: flex;
+              flex-direction: column;
+              align-items: center;
+              justify-content: center;
+              z-index: 10;
+              border-radius: 30px;
+            }
+
+            .beatmap-loading-spinner {
+              width: 30px;
+              height: 30px;
+              border: 3px solid rgba(255, 255, 255, 0.3);
+              border-top-color: white;
+              border-radius: 50%;
+              animation: spinner 1s linear infinite;
+              margin-bottom: 10px;
+            }
+
+            @keyframes spinner {
+              to { transform: rotate(360deg); }
+            }
+
+            .beatmap-loading-text {
+              color: white;
+              font-size: 14px;
+            }
+
+        /* Error state */
+            .beatmap-error {
+              position: absolute;
+              top: 0;
+              left: 0;
+              width: 100%;
+              height: 100%;
+              background-color: rgba(20, 20, 30, 0.8);
+              display: flex;
+              flex-direction: row;
+              align-items: center;
+              justify-content: center;
+              z-index: 10;
+              border-radius: inherit;
+              padding: 15px;
+              text-align: center;
+            }
+
+            .beatmap-error i {
+              color: #FF6666;
+              font-size: 24px;
+              margin-right: 10px;
+            }
+
+            .beatmap-error span {
+              color: white;
+              font-size: 14px;
+              margin-right: 10px;
+            }
+
+            .beatmap-retry-btn {
+              background-color: rgba(255, 255, 255, 0.2);
+              border: none;
+              color: white;
+              padding: 5px 15px;
+              border-radius: 15px;
+              cursor: pointer;
+              transition: all 0.2s ease;
+            }
+
+            .beatmap-retry-btn:hover {
+              background-color: rgba(255, 255, 255, 0.3);
+            }
+
+        /* Responsive adjustments */
+            @media (max-width: 480px) {
+              .beatmap-card.mode-mini {
+                width: 100%;
+              }
+
+              .beatmap-mini-popup {
+                width: 250px;
+              }
+
+              .beatmap-mini-difficulties-list {
+                width: 90%;
+                padding: 10px 20px;
+              }
+            }
+
+    /* Compact Mode */
+        .beatmap-compact {
+            display: flex;
+            align-items: center;
+            padding: 8px;
+            height: 60px;
+        }
+
+        .beatmap-compact .beatmap-thumbnail {
+            width: 50px;
+            height: 50px;
+            border-radius: 4px;
+            background-size: cover;
+            background-position: center;
+            flex-shrink: 0;
+            margin-right: 10px;
+        }
+
+        .beatmap-compact .beatmap-info {
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .beatmap-compact .beatmap-title {
+            font-weight: 600;
+            font-size: 14px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .beatmap-compact .beatmap-artist {
+            font-size: 12px;
+            color: var(--text-muted, #aaa);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .beatmap-compact .beatmap-version {
+            font-size: 12px;
+            color: var(--text-secondary, #888);
+            font-style: italic;
+        }
+
+        .beatmap-compact .beatmap-plays {
+            font-size: 11px;
+            color: var(--text-muted, #aaa);
+            margin-top: 2px;
+        }
+
+    /* Standard Mode */
+        .beatmap-standard {
+            display: flex;
+            flex-direction: column;
+            border-radius: 6px;
+            overflow: hidden;
+        }
+
+        .beatmap-standard .beatmap-image {
+            height: 100px;
+            background-size: cover;
+            background-position: center;
+            position: relative;
+        }
+
+        .beatmap-standard .beatmap-content {
+            padding: 12px;
+        }
+
+        .beatmap-standard .beatmap-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 8px;
+        }
+
+        .beatmap-standard .beatmap-title-container {
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .beatmap-standard .beatmap-title {
+            font-weight: 700;
+            font-size: 16px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .beatmap-standard .beatmap-artist {
+            font-size: 14px;
+            color: var(--text-muted, #aaa);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .beatmap-standard .beatmap-status {
+            font-size: 11px;
+            padding: 2px 6px;
+            border-radius: 3px;
+            color: white;
+            font-weight: 600;
+            margin-left: 8px;
+            flex-shrink: 0;
+        }
+
+        .beatmap-standard .beatmap-details {
+            margin-bottom: 10px;
+            font-size: 13px;
+            color: var(--text-secondary, #888);
+        }
+
+        .beatmap-standard .beatmap-version {
+            font-style: italic;
+            margin-bottom: 2px;
+        }
+
+        .beatmap-standard .beatmap-creator {
+            margin-bottom: 2px;
+        }
+
+        .beatmap-standard .beatmap-plays {
+            font-size: 12px;
+        }
+
+    /* Detailed Mode */
+        /* Base */
+            .beatmap-detailed {
+                display: flex;
+                flex-direction: column;
+                border-radius: 6px;
+                overflow: hidden;
+            }
+
+            .beatmap-detailed .beatmap-cover {
+                height: 150px;
+                background-size: cover;
+                background-position: center;
+                position: relative;
+            }
+
+            .beatmap-detailed .beatmap-content {
+                padding: 15px;
+            }
+
+            .beatmap-detailed .beatmap-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: flex-start;
+                margin-bottom: 10px;
+            }
+
+            .beatmap-detailed .beatmap-title-container {
+                flex: 1;
+                overflow: hidden;
+            }
+
+            .beatmap-detailed .beatmap-title {
+                font-weight: 700;
+                font-size: 18px;
+                margin-bottom: 2px;
+                line-height: 1.2;
+            }
+
+            .beatmap-detailed .beatmap-artist {
+                font-size: 15px;
+                color: var(--text-muted, #aaa);
+            }
+
+            .beatmap-detailed .beatmap-status {
+                font-size: 12px;
+                padding: 3px 8px;
+                border-radius: 4px;
+                color: white;
+                font-weight: 600;
+                margin-left: 10px;
+                flex-shrink: 0;
+            }
+
+            .beatmap-detailed .beatmap-details {
+                margin-bottom: 15px;
+                font-size: 14px;
+                color: var(--text-secondary, #888);
+                line-height: 1.4;
+            }
+
+            .beatmap-detailed .beatmap-version {
+                font-style: italic;
+                margin-bottom: 3px;
+            }
+
+            .beatmap-detailed .beatmap-creator {
+                margin-bottom: 3px;
+            }
+
+            .beatmap-detailed .beatmap-md5 {
+                font-family: monospace;
+                font-size: 12px;
+                color: var(--text-muted, #777);
+                margin-bottom: 3px;
+                word-break: break-all;
+            }
+
+            .beatmap-detailed .beatmap-plays {
+                font-size: 13px;
+            }
+
+        /* Expand/Collapse for Difficulties */
+            .beatmap-expand {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                padding: 6px;
+                background-color: var(--panel-secondary, #222);
+                border-radius: 4px;
+                font-size: 13px;
+                cursor: pointer;
+                margin-bottom: 10px;
+                transition: background-color 0.2s;
+            }
+
+            .beatmap-expand:hover {
+                background-color: var(--panel-hover, #333);
+            }
+
+            .beatmap-expand i {
+                margin-right: 5px;
+            }
+
+        /* Difficulties List */
+            .beatmap-difficulties {
+                margin-top: 10px;
+                margin-bottom: 10px;
+                background-color: var(--panel-secondary, #222);
+                border-radius: 4px;
+            }
+
+            .beatmap-loading {
+                padding: 10px;
+                text-align: center;
+                font-size: 13px;
+                color: var(--text-muted, #aaa);
+            }
+
+            .beatmap-difficulty {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 8px 12px;
+                border-bottom: 1px solid var(--border-color, #333);
+                transition: background-color 0.2s;
+            }
+
+            .beatmap-difficulty:last-child {
+                border-bottom: none;
+            }
+
+            .beatmap-difficulty:hover {
+                background-color: var(--panel-hover, #333);
+                cursor: pointer;
+            }
+
+            .difficulty-name {
+                font-size: 13px;
+                font-style: italic;
+            }
+
+            .difficulty-plays {
+                font-size: 12px;
+                color: var(--text-muted, #aaa);
+            }
+
+        /* Action Buttons */
+            .beatmap-actions {
+                display: flex;
+                gap: 8px;
+                margin-top: 10px;
+            }
+
+            .beatmap-action {
+                display: flex;
+                align-items: center;
+                padding: 6px 10px;
+                background-color: var(--button-bg, #333);
+                border-radius: 4px;
+                font-size: 13px;
+                color: var(--text-primary, #fff);
+                text-decoration: none;
+                transition: background-color 0.2s;
+            }
+
+            .beatmap-action:hover {
+                background-color: var(--button-hover, #444);
+                color: var(--text-primary, #fff);
+            }
+
+            .beatmap-action i {
+                margin-right: 5px;
+            }
+
+        /* Responsive adjustments */
+            @media (max-width: 768px) {
+                .beatmap-detailed .beatmap-cover {
+                    height: 120px;
+                }
+
+                .beatmap-detailed .beatmap-title {
+                    font-size: 16px;
+                }
+
+                .beatmap-detailed .beatmap-artist {
+                    font-size: 14px;
+                }
+
+                .beatmap-actions {
+                    flex-wrap: wrap;
+                }
+            }
+
+            @media (max-width: 480px) {
+                .beatmap-standard .beatmap-image {
+                    height: 80px;
+                }
+
+                .beatmap-detailed .beatmap-cover {
+                    height: 100px;
+                }
+            }

@@ -1,3 +1,4 @@
+/.venv
 /.vscode
 __pycache__/
 /.data
@@ -5,8 +6,9 @@ __pycache__/
 gulag
 _testing/
 *.lprof
-.venv/
 .mypy_cache/
 .pytest_cache/
 tools/cf_records.txt
 .env
+# Keep uv.lock but ignore local .venv
+!.uv-cache/

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Data Models and DTOs for Admin Panel
 
@@ -7,9 +6,9 @@ for the admin panel, providing type safety and clear data structures.
 """
 
 from dataclasses import dataclass, field
-from typing import Optional, List, Dict, Any
 from datetime import datetime
 from enum import Enum
+from typing import Any
 
 
 class ActionType(Enum):
@@ -53,16 +52,16 @@ class User:
     donor_end: int
     creation_time: datetime
     latest_activity: datetime
-    clan_id: Optional[int]
-    clan_priv: Optional[int]
-    preferred_mode: Optional[int]
-    play_style: Optional[int]
-    custom_badge_name: Optional[str]
-    custom_badge_icon: Optional[str]
-    userpage_content: Optional[str]
+    clan_id: int | None
+    clan_priv: int | None
+    preferred_mode: int | None
+    play_style: int | None
+    custom_badge_name: str | None
+    custom_badge_icon: str | None
+    userpage_content: str | None
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> 'User':
+    def from_dict(cls, data: dict[str, Any]) -> 'User':
         """Create User instance from database row."""
         return cls(
             id=data['id'],
@@ -111,7 +110,7 @@ class Map:
     diff: float
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> 'Map':
+    def from_dict(cls, data: dict[str, Any]) -> 'Map':
         """Create Map instance from database row."""
         return cls(
             id=data['id'],
@@ -147,7 +146,7 @@ class Badge:
     priority: int
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> 'Badge':
+    def from_dict(cls, data: dict[str, Any]) -> 'Badge':
         """Create Badge instance from database row."""
         return cls(
             id=data['id'],
@@ -167,8 +166,8 @@ class Action:
     target_id: int
     target_type: TargetType
     text: str
-    duration: Optional[int] = None
-    badge: Optional[Badge] = None
+    duration: int | None = None
+    badge: Badge | None = None
     created_at: datetime = field(default_factory=datetime.now)
 
     @property
@@ -191,20 +190,20 @@ class Action:
 class ActionRequest:
     """Request data for creating an action."""
     action: ActionType
-    reason: Optional[str]
-    user_id: Optional[int]
-    map_id: Optional[int]
-    duration: Optional[int]
-    password: Optional[str]
-    privs: Optional[int]
-    username: Optional[str]
-    email: Optional[str]
-    country: Optional[str]
-    userpage_content: Optional[str]
-    badge_id: Optional[int]
-    score_id: Optional[int]
+    reason: str | None
+    user_id: int | None
+    map_id: int | None
+    duration: int | None
+    password: str | None
+    privs: int | None
+    username: str | None
+    email: str | None
+    country: str | None
+    userpage_content: str | None
+    badge_id: int | None
+    score_id: int | None
 
-    def validate(self) -> List[str]:
+    def validate(self) -> list[str]:
         """Validate the request data."""
         errors = []
 
@@ -256,25 +255,25 @@ class ActionResponse:
     """Response data for action execution."""
     status: str
     message: str
-    action_id: Optional[str] = None
-    details: Optional[Dict[str, Any]] = None
+    action_id: str | None = None
+    details: dict[str, Any] | None = None
 
 
 @dataclass
 class ValidationResult:
     """Result of validation."""
     is_valid: bool
-    errors: List[str]
-    data: Optional[Dict[str, Any]] = None
+    errors: list[str]
+    data: dict[str, Any] | None = None
 
 
 @dataclass
 class PermissionCheck:
     """Result of permission check."""
     has_permission: bool
-    required_privilege: Optional[str] = None
-    user_privilege: Optional[int] = None
-    error_message: Optional[str] = None
+    required_privilege: str | None = None
+    user_privilege: int | None = None
+    error_message: str | None = None
     status_code: int = 403
 
 
@@ -282,14 +281,14 @@ class PermissionCheck:
 class UserListRequest:
     """Request data for user list."""
     page: int = 1
-    search: Optional[str] = None
+    search: str | None = None
     sort_by: str = "id"
     sort_order: str = "ASC"
-    filter_priv: Optional[str] = None
-    filter_country: Optional[str] = None
+    filter_priv: str | None = None
+    filter_country: str | None = None
     update: bool = False
 
-    def validate(self) -> List[str]:
+    def validate(self) -> list[str]:
         """Validate the request data."""
         errors = []
 
@@ -309,19 +308,19 @@ class UserListRequest:
 @dataclass
 class UserListResponse:
     """Response data for user list."""
-    users: List[Dict[str, Any]]
-    pagination: Dict[str, Any]
+    users: list[dict[str, Any]]
+    pagination: dict[str, Any]
 
 
 @dataclass
 class BadgeRequest:
     """Request data for badge operations."""
-    name: Optional[str] = None
-    description: Optional[str] = None
-    priority: Optional[int] = None
-    styles: Optional[List[Dict[str, str]]] = None
+    name: str | None = None
+    description: str | None = None
+    priority: int | None = None
+    styles: list[dict[str, str]] | None = None
 
-    def validate(self) -> List[str]:
+    def validate(self) -> list[str]:
         """Validate the request data."""
         errors = []
 
@@ -345,7 +344,7 @@ class MapRequest:
     """Request data for map operations."""
     page: int = 1
 
-    def validate(self) -> List[str]:
+    def validate(self) -> list[str]:
         """Validate the request data."""
         errors = []
 
@@ -361,32 +360,32 @@ class DashboardData:
     total_users: int
     latest_user: str
     banned_users: int
-    recent_users: List[Dict[str, Any]]
-    recent_scores: List[Dict[str, Any]]
+    recent_users: list[dict[str, Any]]
+    recent_scores: list[dict[str, Any]]
 
 
 @dataclass
 class UserDetail:
     """User detail response."""
-    user: Dict[str, Any]
-    badges: List[Dict[str, Any]]
-    logs: Dict[str, Any]
+    user: dict[str, Any]
+    badges: list[dict[str, Any]]
+    logs: dict[str, Any]
 
 
 @dataclass
 class BadgeDetail:
     """Badge detail response."""
-    badge: Dict[str, Any]
-    styles: List[Dict[str, Any]]
+    badge: dict[str, Any]
+    styles: list[dict[str, Any]]
 
 
 @dataclass
 class MapRequestDetail:
     """Map request detail."""
-    request: Dict[str, Any]
-    player: Dict[str, Any]
-    map_info: Dict[str, Any]
-    map_diffs: List[Dict[str, Any]]
+    request: dict[str, Any]
+    player: dict[str, Any]
+    map_info: dict[str, Any]
+    map_diffs: list[dict[str, Any]]
 
 
 __all__ = [

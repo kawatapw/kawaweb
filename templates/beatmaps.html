@@ -1,0 +1,278 @@
+{% extends 'base.html' %}
+{% block title %}Browse Beatmaps{% endblock %}
+
+{% block header %}
+<link rel="stylesheet" href="{{ bust('/static/hinaDir/compiled/beatmaps.css') }}">
+{% include 'components/hinai-info-template.html' %}
+{% endblock %}
+
+{% block content %}
+<!-- Star field background (same as home/leaderboard) -->
+<div class="stars-wrapper">
+  <div class="lb-stars" id="stars"></div>
+  <div class="lb-stars" id="stars1"></div>
+  <div class="lb-stars" id="stars2"></div>
+  <div class="lb-stars" id="stars3"></div>
+</div>
+
+<div id="beatmaps-app" v-cloak>
+
+  <!-- Hero Art Gallery -->
+  <div v-if="heroLoaded && hinaiOnline && heroSets.length > 0" class="bm-hero">
+    <div class="bm-hero-track">
+      <!-- 9 real + 9 clones in single loop for seamless marquee -->
+      <div v-for="(h, idx) in heroTrack" :key="'hf-' + idx" class="bm-hero-frame">
+        <img class="bm-hero-img" :src="h.cover"
+             :alt="h.artist + ' - ' + h.title"
+             loading="eager"
+             @error="$event.target.style.display='none'">
+        <div class="bm-hero-label">
+          <span class="bm-hero-label-title" v-text="h.title"></span>
+          <span class="bm-hero-label-artist" v-text="h.artist"></span>
+        </div>
+      </div>
+    </div>
+    <div class="bm-hero-vignette"></div>
+    <div class="bm-hero-sweep"></div>
+    <div class="bm-hero-fade bm-hero-fade--left"></div>
+    <div class="bm-hero-fade bm-hero-fade--right"></div>
+  </div>
+
+  <!-- Header -->
+  <div class="bm-header" :class="{ 'bm-header--compact': heroLoaded && hinaiOnline && heroSets.length > 0 }">
+    <h1 class="bm-title">Browse Beatmaps</h1>
+    <p class="bm-subtitle" v-if="loading">Searching...</p>
+    <p class="bm-subtitle" v-else-if="error" v-text="'Error loading results'"></p>
+    <p class="bm-subtitle" v-else-if="sets.length === 0">No results found</p>
+    <p class="bm-subtitle" v-else-if="showPagination">
+      Showing page <strong v-text="currentPage + 1"></strong> of <strong v-text="totalPages"></strong>
+      (<span v-text="totalCount"></span> results)
+    </p>
+    <p class="bm-subtitle" v-else>
+      Showing <strong v-text="sets.length"></strong> results
+    </p>
+  </div>
+
+  <!-- Search bar -->
+  <div class="bm-search-bar">
+    <i class="fas fa-search bm-search-icon"></i>
+    <input type="text" class="bm-search-input" placeholder="Search beatmaps..."
+           v-model="query" @input="onSearchInput">
+    <button v-if="query.length > 0" class="bm-search-clear" @click="clearSearch">
+      <i class="fas fa-times"></i>
+    </button>
+  </div>
+
+  <!-- Filters -->
+  <div class="bm-filters">
+    <!-- Mode -->
+    <div class="bm-filter-group">
+      <span class="bm-filter-label">Mode</span>
+      <div class="bm-filter-pills">
+        <button v-for="m in modes" :key="'mode-' + m.value"
+                class="bm-filter-btn"
+                :class="{ active: mode === m.value }"
+                @click="setMode(m.value)"
+                v-text="m.name"></button>
+      </div>
+    </div>
+
+    <!-- Status -->
+    <div class="bm-filter-group">
+      <span class="bm-filter-label">Status</span>
+      <div class="bm-filter-pills">
+        <button v-for="s in statuses" :key="'status-' + s.value"
+                class="bm-filter-btn"
+                :class="{ active: status === s.value }"
+                @click="setStatus(s.value)"
+                v-text="s.name"></button>
+      </div>
+    </div>
+
+    <!-- Mirror -->
+    <div class="bm-filter-group">
+      <span class="bm-filter-label">Mirror</span>
+      <div class="bm-mirror-row">
+        <div class="bm-mirror-select-wrap">
+          <select class="bm-mirror-select" v-model="mirror" @change="onMirrorChange">
+            <option v-for="m in mirrors" :key="'mirror-' + m.key"
+                    :value="m.key" :disabled="!m.enabled"
+                    v-text="m.name + (!m.enabled ? ' (coming soon)' : '')"></option>
+          </select>
+          <i class="fas fa-chevron-down bm-mirror-chevron"></i>
+        </div>
+        <a v-if="mirror === 'hinai'" class="bm-mirror-ping" :class="hinaiOnline ? 'bm-mirror-ping--on' : 'bm-mirror-ping--off'"
+           href="https://hinamizawa.ai/osu/beatmaps" target="_blank" rel="noopener" title="Hinai Mirror">
+          <span class="bm-mirror-ping-pulse"></span>
+          <img src="/static/hinaDir/images/hinai_logo.png" class="bm-mirror-ping-logo" alt="Hinai">
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pagination (top) — Hinai mirror only -->
+  <div v-if="showPagination" class="bm-pagination">
+    <button class="bm-pagination-btn" :disabled="currentPage === 0 || loading" @click="prevPage">
+      <i class="fas fa-chevron-left"></i> Prev
+    </button>
+    <button v-for="p in pageNumbers" :key="'pt-' + p"
+            class="bm-pagination-btn"
+            :class="{ 'bm-pagination-btn--active': p === currentPage }"
+            :disabled="loading"
+            @click="goToPage(p)"
+            v-text="p + 1"></button>
+    <button class="bm-pagination-btn" :disabled="currentPage >= totalPages - 1 || loading" @click="nextPage">
+      Next <i class="fas fa-chevron-right"></i>
+    </button>
+    <span class="bm-pagination-info">
+      Page <span v-text="currentPage + 1"></span> of <span v-text="totalPages"></span>
+    </span>
+  </div>
+
+  <!-- Loading state -->
+  <div v-if="loading && sets.length === 0" class="bm-loading">
+    <i class="fas fa-spinner fa-spin fa-2x"></i>
+    <p>Loading beatmaps...</p>
+  </div>
+
+  <!-- Error state -->
+  <div v-if="error" class="bm-error">
+    <i class="fas fa-exclamation-triangle fa-2x"></i>
+    <p v-text="error"></p>
+    <button class="bm-retry-btn" @click="search">
+      <i class="fas fa-redo"></i> Retry
+    </button>
+  </div>
+
+  <!-- Empty state -->
+  <div v-if="!loading && !error && sets.length === 0" class="bm-empty">
+    <i class="fas fa-music fa-4x"></i>
+    <h2>No beatmaps found</h2>
+    <p>Try a different search or change your filters</p>
+  </div>
+
+  <!-- Results grid (dims during page change) -->
+  <div v-if="sets.length > 0" class="bm-grid" :class="{ 'bm-grid--loading': loading }">
+    <div v-for="set in sets" :key="set.id" class="bm-card">
+      <!-- Cover -->
+      <div class="bm-cover-wrap">
+        <img class="bm-cover"
+             :src="getCoverUrl(set)"
+             loading="lazy"
+             @error="$event.target.src='/static/images/default-bg.png'">
+        <div class="bm-cover-overlay"></div>
+        <!-- Status badge top-left -->
+        <span class="bm-status" :class="'bm-status--' + statusClass(set.status)"
+              v-text="statusLabel(set.status)"></span>
+        <!-- Hinai logo top-right — hidden when mirror offline or not Hinai -->
+        <button v-if="mirror === 'hinai' && hinaiOnline" class="bm-card-hinai" @click="openInfo(set)" title="Hinai Info">
+          <img src="/static/hinaDir/images/hinai_logo.png" alt="Hinai">
+        </button>
+      </div>
+
+      <!-- Info -->
+      <div class="bm-card-body">
+        <div class="bm-card-title" v-text="set.title"></div>
+        <div class="bm-card-artist" v-text="set.artist"></div>
+        <div class="bm-card-mapper">
+          Mapped by <span v-text="set.creator"></span>
+        </div>
+        <div class="bm-card-date" v-if="set.ranked_date">
+          <i class="fas fa-calendar-check"></i>
+          <span v-text="formatDate(set.ranked_date)"></span>
+        </div>
+        <div class="bm-card-date" v-else-if="set.submitted_date">
+          <i class="fas fa-calendar-plus"></i>
+          <span v-text="formatDate(set.submitted_date)"></span>
+        </div>
+
+        <!-- Stats row -->
+        <div class="bm-card-stats">
+          <span class="bm-stat" v-if="getBPM(set)">
+            <i class="fas fa-heartbeat"></i>
+            <span v-text="getBPM(set) + ' BPM'"></span>
+          </span>
+          <span class="bm-stat" v-if="getLength(set)">
+            <i class="fas fa-clock"></i>
+            <span v-text="formatLength(getLength(set))"></span>
+          </span>
+          <span class="bm-stat">
+            <i class="fas fa-layer-group"></i>
+            <span v-text="getDiffCount(set) + ' diffs'"></span>
+          </span>
+          <span class="bm-stat" v-for="m in getDiffModes(set)" :key="set.id + '-m-' + m">
+            <i :class="modeIcon(m)"></i>
+          </span>
+        </div>
+
+        <!-- Difficulty strip (max 5 shown) -->
+        <div class="bm-diffs">
+          <span v-for="diff in getSortedDiffs(set).slice(0, 5)" :key="diff.id"
+                class="bm-diff-pill"
+                :style="{ backgroundColor: starColor(diff.difficulty_rating) }"
+                :title="diff.version + ' (' + diff.difficulty_rating.toFixed(2) + '★)'">
+            <span v-text="diff.difficulty_rating.toFixed(2)"></span>★
+          </span>
+          <span v-if="getSortedDiffs(set).length > 5" class="bm-diff-pill bm-diff-pill--more"
+                :title="(getSortedDiffs(set).length - 5) + ' more difficulties'">
+            +<span v-text="getSortedDiffs(set).length - 5"></span> More
+          </span>
+        </div>
+
+        <!-- Actions -->
+        <div class="bm-card-actions">
+          <button class="bm-action-btn bm-action-btn--details" @click="showBeatmapPanel(set)">
+            <i class="fas fa-list-ul"></i> Map Details
+          </button>
+          <a class="bm-action-btn bm-action-btn--dl"
+             :href="getDownloadUrl(set.id)"
+             target="_blank" rel="noopener">
+            <i class="fas fa-download"></i> Download
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pagination (bottom) — Hinai mirror only -->
+  <div v-if="showPagination" class="bm-pagination">
+    <button class="bm-pagination-btn" :disabled="currentPage === 0 || loading" @click="prevPage">
+      <i class="fas fa-chevron-left"></i> Prev
+    </button>
+    <button v-for="p in pageNumbers" :key="'pb-' + p"
+            class="bm-pagination-btn"
+            :class="{ 'bm-pagination-btn--active': p === currentPage }"
+            :disabled="loading"
+            @click="goToPage(p)"
+            v-text="p + 1"></button>
+    <button class="bm-pagination-btn" :disabled="currentPage >= totalPages - 1 || loading" @click="nextPage">
+      Next <i class="fas fa-chevron-right"></i>
+    </button>
+    <span class="bm-pagination-info">
+      Page <span v-text="currentPage + 1"></span> of <span v-text="totalPages"></span>
+    </span>
+  </div>
+
+  <!-- Load more (osu.direct fallback only) -->
+  <div v-if="showLoadMore" class="bm-load-more">
+    <button class="bm-load-more-btn" @click="loadMore" :disabled="loadingMore">
+      <i v-if="loadingMore" class="fas fa-spinner fa-spin"></i>
+      <span v-if="loadingMore">Loading...</span>
+      <span v-else>Load More</span>
+    </button>
+  </div>
+
+  <!-- Loading more indicator (osu.direct) -->
+  <div v-if="loadingMore" class="bm-loading-more">
+    <i class="fas fa-spinner fa-spin"></i>
+    <span>Loading more...</span>
+  </div>
+
+  <!-- Hinai Info panel (reusable component, proxied through kawata backend) -->
+  <hinai-info-panel></hinai-info-panel>
+
+</div>
+
+<script src="{{ bust('/static/hinaDir/js/hinaiInfoPanel.js') }}"></script>
+<script src="{{ bust('/static/hinaDir/compiled/beatmaps.js') }}"></script>
+{% endblock %}

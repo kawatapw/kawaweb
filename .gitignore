@@ -1,4 +1,5 @@
 #Hina
+CLAUDE.md
 hina_import.css.map
 static/css/scss/*.css
 static/css/scss/*.css.map
@@ -143,6 +144,10 @@ dmypy.json
 
 # Cython debug symbols
 cython_debug/
+
+# uv
+uv.lock
+.venv/
 
 # Project specific
 .vscode/

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Admin Blueprint - Refactored Version
 
@@ -24,6 +23,6 @@ Structure:
 """
 
 # Import the admin blueprint from the new modular structure
-from .admin import admin
+from .admin import admin  # ty:ignore[unresolved-import]
 
 __all__ = ['admin']

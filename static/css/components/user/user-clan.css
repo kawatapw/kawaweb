@@ -1,0 +1,24 @@
+/* ============================================================================
+ * User Component - Clan
+ * ============================================================================
+ *
+ * Displays user clan tag with link to clan page.
+ */
+
+/* === Clan Tag === */
+.user-clan {
+    display: inline-flex;
+    align-items: center;
+}
+
+.user-clan-link {
+    color: hsl(var(--user), 70%, 70%);
+    text-decoration: none;
+    font-weight: 600;
+    transition: color 0.2s ease;
+}
+
+.user-clan-link:hover {
+    color: hsl(var(--user), 70%, 80%);
+    text-decoration: underline;
+}

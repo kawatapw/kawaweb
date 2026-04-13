@@ -673,7 +673,7 @@ document.addEventListener('DOMContentLoaded', function () {
             rowAction: function (action: string, user: any) {
                 this.users.openMenuId = null;
                 if (action === 'profile') {
-                    window.open('/u/' + user.id, '_blank');
+                    window.open('/u/' + user.id, '_blank', 'noopener,noreferrer');
                     return;
                 }
                 if (action === 'edit') {

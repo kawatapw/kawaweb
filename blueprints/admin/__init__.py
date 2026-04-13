@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Admin Blueprint Module
 
@@ -26,6 +25,6 @@ from quart import Blueprint
 admin = Blueprint('admin', __name__)
 
 # Import routes to register them
-from . import routes
+from . import routes #noqa
 
-__all__ = ['admin']
+__all__ = ['admin', 'routes']

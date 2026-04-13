@@ -1,0 +1,152 @@
+/* ============================================================================
+ * User Component - Status
+ * ============================================================================
+ *
+ * Displays user online status with indicator and text.
+ */
+
+/* === Status Container === */
+.user-status {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+/* === Status Indicator === */
+.user-status__indicator {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: rgba(var(--user-status), 1);
+}
+
+/* === Status Text === */
+.user-status__text {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* === Status Variants === */
+.user-status.online .user-status__indicator {
+    background-color: #4fffb8;
+}
+
+.user-status.playing .user-status__indicator {
+    background-color: #4fc0ff;
+}
+
+.user-status.idle .user-status__indicator {
+    background-color: #ffb300;
+}
+
+.user-status.afk .user-status__indicator {
+    background-color: #ffd93d;
+}
+
+.user-status.offline .user-status__indicator {
+    background-color: #888;
+}
+
+/* === Panel Status Variant === */
+.user-hover-panel__status {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    background-color: rgba(0, 0, 0, 0.3);
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.user-hover-panel__status i {
+    font-size: 8px;
+}
+
+.user-hover-panel__status.online i {
+    color: #4fffb8;
+}
+
+.user-hover-panel__status.playing i {
+    color: #4fc0ff;
+}
+
+.user-hover-panel__status.afk i {
+    color: #ffd93d;
+}
+
+.user-hover-panel__status.offline i {
+    color: #888;
+}
+
+/* === Card Status Indicator === */
+.user-card__status-indicator {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: hsl(var(--main), 10%, 20%);
+    border-radius: 50%;
+    border: 2px solid rgba(var(--user-status), 0.3);
+    cursor: pointer;
+    transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+.user-card__status-indicator:hover {
+    transform: scale(1.1);
+    border-color: rgba(var(--user-status), 0.6);
+}
+
+.user-card__status-indicator i {
+    font-size: 6px;
+    color: rgba(var(--user-status)) !important;
+}
+
+.user-card__status-indicator--loading i {
+    font-size: 10px;
+    color: #4fc0ff;
+}
+
+/* === Status Tooltip === */
+.user-card__status-tooltip {
+    position: absolute;
+    bottom: 100%;
+    left: 0;
+    transform: translateY(-8px);
+    background-color: rgba(0, 0, 0, 0.9);
+    color: white;
+    padding: 6px 10px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    width: max-content;
+    max-width: 240px;
+    word-wrap: break-word !important;
+    text-wrap: wrap !important;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.2s ease, visibility 0.2s ease;
+    pointer-events: none;
+    z-index: 10;
+}
+
+.user-card__status-indicator:hover .user-card__status-tooltip {
+    opacity: 1;
+    visibility: visible;
+}
+
+.user-card__status-tooltip::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 6px;
+    border: 6px solid transparent;
+    border-top-color: rgba(0, 0, 0, 0.9);
+}

@@ -1,0 +1,47 @@
+/* ============================================================================
+ * User Component - Banner
+ * ============================================================================
+ *
+ * Displays user banner/background image.
+ */
+
+/* === Banner === */
+.user-banner {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-size: cover;
+    background-position: center;
+    filter: blur(2px);
+    border-radius: inherit;
+    z-index: 0;
+}
+
+/* === Panel Background Variant === */
+.user-hover-panel__background {
+    height: 100%;
+    width: 100%;
+    border-radius: 12px;
+    position: absolute !important;
+    z-index: -1;
+    background-position: center;
+    background-size: cover;
+    opacity: 0.7;
+}
+
+.user-hover-panel__background::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+        to bottom,
+        rgba(0, 0, 0, 0.4) 0%,
+        rgba(0, 0, 0, 0.7) 100%
+    );
+    border-radius: 12px;
+}

@@ -1,0 +1,44 @@
+{# hinaDir: Minimal base template for auth pages (login, forgot-password, register).
+   Includes CSS layers + hue system but NO navbar, footer, Vue, HTMX, Three.js, or panels. #}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>{{ appName() }} - {% block title %}{% endblock %}</title>
+
+  <!-- Favicon & Metadata -->
+  <link rel="apple-touch-icon" sizes="180x180" href="/static/favicon/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/static/favicon/favicon-16x16.png">
+  <link rel="manifest" href="/static/favicon/site.webmanifest">
+  <link rel="mask-icon" href="/static/favicon/safari-pinned-tab.svg" color="#d55b9e">
+  <link rel="shortcut icon" href="/static/favicon/favicon.ico">
+  <meta name="msapplication-TileColor" content="#000000">
+  <meta name="msapplication-config" content="/static/favicon/browserconfig.xml">
+  <meta name="theme-color" content="#000000">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <!-- Core CSS (layers, Bulma, Font Awesome, style.css variables, hina overrides) -->
+  <link rel="stylesheet" href="{{ bust('/static/css/main.css') }}">
+  <link rel="stylesheet" href="{{ bust('/static/css/stars.css') }}">
+
+  {% block header %}{% endblock %}
+
+  <script>var domain = "{{ domain() }}";</script>
+</head>
+
+<body class="auth-page-body">
+  {% block content %}{% endblock %}
+
+  {% block bottom %}
+  <style>
+    :root {
+      {% if 'user_data' in session and 'hue' in session['user_data'] and session['user_data']['hue'] is not none %}
+        --main: {{ session['user_data']['hue'] }};
+      {% else %}
+        --main: 180;
+      {% endif %}
+    }
+  </style>
+  {% endblock %}
+</body>
+</html>

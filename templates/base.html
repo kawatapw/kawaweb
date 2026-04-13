@@ -8,16 +8,16 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   
   <!-- VueJS (if needed for legacy components) -->
-  <script src="/static/js/asserts/vue.js"></script>
-  <script src="/static/js/asserts/vue-axios.js"></script>
-  <script src="/static/js/utils/vue-bootstrap.js"></script>
+  <script src="{{ bust('/static/js/asserts/vue.js') }}"></script>
+  <script src="{{ bust('/static/js/asserts/vue-axios.js') }}"></script>
+  <script src="{{ bust('/static/js/utils/vue-bootstrap.js') }}"></script>
   <script src="https://unpkg.com/portal-vue@2.1.7/dist/portal-vue.umd.min.js"></script>
 
   <!-- HTMX -->
   <script src="https://unpkg.com/htmx.org@1.9.10" integrity="sha384-D1Kt99CQMDuVetoL1lrYwg5t+9QdHe7NLX/SoJYkXDFfX37iInKRy5xLSi8nO7UC" crossorigin="anonymous"></script>
 
   <!-- Core Logger (loaded first) -->
-  <script src="/static/js/utils/logger.js" crossorigin="anonymous"></script>
+  <script src="{{ bust('/static/js/utils/logger.js') }}" crossorigin="anonymous"></script>
   {% if developerMode() %}
   <script>window.ColorfulLogger && window.ColorfulLogger.enableDebug('ALL');</script>
   {% endif %}
@@ -32,10 +32,10 @@
   <meta name="msapplication-TileColor" content="#000000">
   <meta name="msapplication-config" content="/static/favicon/browserconfig.xml">
   <meta name="theme-color" content="#000000">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 
   <!-- Custom style -->
-  <link rel="stylesheet" href="/static/css/main.css">
+  <link rel="stylesheet" href="{{ bust('/static/css/main.css') }}">
 
   {% block header %}
   {% endblock %}
@@ -43,10 +43,13 @@
   <script>
     var domain = "{{ domain() }}";
   </script>
+
+  {% include 'components/vue-templates.html' %}
+  {% include 'components/user-templates.html' %}
+  {% include 'components/beatmap-templates.html' %}
 </head>
 
 <body>
-  {% include 'components/vue-templates.html' %}
   {% include 'components/navbar.html' %}
 
   <div id="search-panel"></div>
@@ -98,7 +101,7 @@
   {% include 'components/footer.html' %}
 
   <!-- Main Application Script (handles all loading) -->
-  <script src="/static/js/main.js" crossorigin="anonymous"></script>
+  <script src="{{ bust('/static/js/main.js') }}" crossorigin="anonymous"></script>
 
   <!-- Customisation -->
   {% block bottom %}

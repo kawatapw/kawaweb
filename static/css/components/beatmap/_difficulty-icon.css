@@ -1,0 +1,259 @@
+/* ============================================================================
+ * Beatmap Difficulty Icon Styles
+ * ============================================================================
+ *
+ * Uses BEM naming: .beatmap-diff-icon
+ * Supports status change visualization with split-circle design
+ */
+
+/* Mode icon base styles */
+.mode-icon {
+  font-family: osu-mode;
+  color: #fff !important;
+  font-size: 14px;
+  width: 19px;
+  height: 19px;
+  margin-right: 4px;
+  font-weight: 400;
+  font-style: initial;
+}
+
+.mode-osu::before {
+  content: "\E800";
+  position: relative;
+}
+
+.mode-catch::before {
+  content: "\E801";
+  position: relative;
+}
+
+.mode-mania::before {
+  content: "\E802";
+  position: relative;
+}
+
+.mode-taiko::before {
+  content: "\E803";
+  position: relative;
+}
+
+/* Base container */
+.beatmap-diff-icon {
+  position: relative;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  cursor: pointer;
+  transition: transform 0.3s ease;
+}
+
+.beatmap-diff-icon:hover {
+  transform: scale(1.05);
+}
+
+.beatmap-diff-icon--selected {
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+}
+
+/* Inner circle with icon - fits content like old component */
+.beatmap-diff-icon__inner {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: fit-content;
+  height: fit-content;
+  border-radius: 50%;
+  background-color: rgba(var(--diff-color), 0.6);
+  backdrop-filter: blur(4px);
+  transition: all 0.3s ease;
+}
+
+.beatmap-diff-icon:hover .beatmap-diff-icon__inner {
+  box-shadow: 0 0 15px rgba(var(--diff-color), 0.4);
+}
+
+/* Mode icon - defines the size */
+.beatmap-diff-icon__mode {
+  font-family: osu-mode;
+  font-style: normal;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+/* Size variants - icon size determines container size */
+.beatmap-diff-icon--small .beatmap-diff-icon__mode {
+  font-size: 14px;
+}
+
+.beatmap-diff-icon--medium .beatmap-diff-icon__mode {
+  font-size: 28px;
+}
+
+.beatmap-diff-icon--large .beatmap-diff-icon__mode {
+  font-size: 36px;
+}
+
+/* Rank change badge */
+.beatmap-diff-icon__rank-badge {
+  position: absolute;
+  bottom: -2px;
+  right: -2px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 8px;
+  color: white;
+  border: 2px solid rgba(20, 20, 30, 0.8);
+}
+
+/* ============================================================================
+ * Status Change Split-Circle Design
+ * ============================================================================
+ *
+ * When status has changed, the top half of the circle is split vertically
+ * to show old status color (left) and new status color (right).
+ * The bottom half remains the normal difficulty color.
+ *
+ * Visual representation:
+ *     ┌─────────┐
+ *    / OLD  NEW  \
+ *   │  STATUS    │   <- Top half: split old/new status colors
+ *   │            │
+ *   │ DIFFICULTY │   <- Bottom half: difficulty color
+ *    \  COLOR   /
+ *     └─────────┘
+ */
+
+/* Status changed variant - using conic gradient for split effect */
+.beatmap-diff-icon--status-changed .beatmap-diff-icon__inner {
+  background: conic-gradient(
+    from 270deg,
+    var(--old-status-color, #666) 0deg 90deg,
+    var(--new-status-color, #4CAF50) 90deg 180deg,
+    rgba(var(--diff-color), 0.6) 180deg 360deg
+  );
+}
+
+/* Alternative: layered gradients approach */
+/*
+.beatmap-diff-icon--status-changed .beatmap-diff-icon__inner {
+  background:
+    linear-gradient(to right,
+      var(--old-status-color, #666) 50%,
+      var(--new-status-color, #4CAF50) 50%
+    ),
+    linear-gradient(to bottom,
+      transparent 50%,
+      rgba(var(--diff-color), 0.6) 50%
+    );
+}
+*/
+
+/* Status change indicator label (optional, shown on hover) */
+.beatmap-diff-icon__status-change {
+  position: absolute;
+  bottom: -24px;
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  font-size: 9px;
+  color: rgba(255, 255, 255, 0.9);
+  background-color: rgba(0, 0, 0, 0.8);
+  padding: 2px 6px;
+  border-radius: 8px;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  pointer-events: none;
+}
+
+.beatmap-diff-icon:hover .beatmap-diff-icon__status-change {
+  opacity: 1;
+}
+
+/* Difficulty name label */
+.beatmap-diff-icon__name {
+  position: absolute;
+  bottom: -20px;
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  overflow-wrap: normal;
+  font-size: 10px;
+  color: hsla(var(--main), 80%, 80%, 0.8);
+  background-color: hsla(var(--main), 10%, 15%, 0.8);
+  backdrop-filter: blur(4px) saturate(1.5);
+  padding: 2px 6px;
+  border: 1px solid hsla(var(--main), 20%, 40%, 0.8);
+  border-radius: 10px;
+  max-width: 80px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.beatmap-diff-icon:hover .beatmap-diff-icon__name {
+  opacity: 1;
+}
+
+/* ============================================================================
+ * Difficulty Tier Colors
+ * ============================================================================
+ */
+.beatmap-diff-icon.difficulty-0 .beatmap-diff-icon__inner,
+.beatmap-diff-icon.difficulty-1 .beatmap-diff-icon__inner {
+  background-color: rgba(79, 192, 255, 0.5);
+  box-shadow: 0 0 10px rgba(79, 192, 255, 0.4);
+}
+
+.beatmap-diff-icon.difficulty-2 .beatmap-diff-icon__inner {
+  background-color: rgba(102, 255, 51, 0.5);
+  box-shadow: 0 0 10px rgba(102, 255, 51, 0.4);
+}
+
+.beatmap-diff-icon.difficulty-3 .beatmap-diff-icon__inner {
+  background-color: rgba(255, 204, 34, 0.5);
+  box-shadow: 0 0 10px rgba(255, 204, 34, 0.4);
+}
+
+.beatmap-diff-icon.difficulty-4 .beatmap-diff-icon__inner {
+  background-color: rgba(255, 102, 170, 0.5);
+  box-shadow: 0 0 10px rgba(255, 102, 170, 0.4);
+}
+
+.beatmap-diff-icon.difficulty-5 .beatmap-diff-icon__inner {
+  background-color: rgba(170, 136, 255, 0.5);
+  box-shadow: 0 0 10px rgba(170, 136, 255, 0.4);
+}
+
+.beatmap-diff-icon.difficulty-6 .beatmap-diff-icon__inner,
+.beatmap-diff-icon.difficulty-7 .beatmap-diff-icon__inner,
+.beatmap-diff-icon.difficulty-8 .beatmap-diff-icon__inner,
+.beatmap-diff-icon.difficulty-9 .beatmap-diff-icon__inner,
+.beatmap-diff-icon.difficulty-10 .beatmap-diff-icon__inner {
+  background-color: rgba(255, 102, 102, 0.5);
+  box-shadow: 0 0 10px rgba(255, 102, 102, 0.4);
+}
+
+/* Disable tier colors when status changed (split-circle takes precedence) */
+.beatmap-diff-icon--status-changed.difficulty-0 .beatmap-diff-icon__inner,
+.beatmap-diff-icon--status-changed.difficulty-1 .beatmap-diff-icon__inner,
+.beatmap-diff-icon--status-changed.difficulty-2 .beatmap-diff-icon__inner,
+.beatmap-diff-icon--status-changed.difficulty-3 .beatmap-diff-icon__inner,
+.beatmap-diff-icon--status-changed.difficulty-4 .beatmap-diff-icon__inner,
+.beatmap-diff-icon--status-changed.difficulty-5 .beatmap-diff-icon__inner,
+.beatmap-diff-icon--status-changed.difficulty-6 .beatmap-diff-icon__inner,
+.beatmap-diff-icon--status-changed.difficulty-7 .beatmap-diff-icon__inner,
+.beatmap-diff-icon--status-changed.difficulty-8 .beatmap-diff-icon__inner,
+.beatmap-diff-icon--status-changed.difficulty-9 .beatmap-diff-icon__inner,
+.beatmap-diff-icon--status-changed.difficulty-10 .beatmap-diff-icon__inner {
+  box-shadow: none;
+}

@@ -176,7 +176,7 @@
   background: hsl(var(--main), 25%, 20%);
 }
 .footer .footer-bottom {
-  padding: 1rem 0;
+  padding: 1rem 0 calc(1rem + env(safe-area-inset-bottom, 0px));
   background: transparent;
   width: 100%;
 }
@@ -370,7 +370,7 @@
     font-size: 0.875rem;
   }
   .footer .footer-bottom {
-    padding: 0.75rem 0 1rem;
+    padding: 0.75rem 0 calc(1rem + env(safe-area-inset-bottom, 0px));
   }
   .footer .footer-bottom .footer-bottom-content {
     padding: 0 0.75rem;
@@ -442,6 +442,8 @@
   box-shadow: var(--navbar-shadow), 0 8px 32px rgba(0, 0, 0, 0.4);
   z-index: 1001;
   overflow: hidden;
+}
+.navbar-user-card.is-active {
   animation: nuc-slide-in 0.15s ease-out;
 }
 
@@ -1201,6 +1203,16 @@ html, body {
   }
   .pim-online {
     opacity: 1;
+  }
+  button.profile-friend-btn {
+    margin-top: 6px;
+    padding: 5px 14px !important;
+    font-size: 12px !important;
+    min-height: 32px;
+    align-self: flex-start;
+  }
+  button.profile-friend-btn--desktop {
+    display: none !important;
   }
   .bar-selection.mode-selects {
     grid-column: 1/-1;
