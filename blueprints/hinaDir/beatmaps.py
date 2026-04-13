@@ -5,10 +5,10 @@ JS never exposes mirror.hinamizawa.ai/v3/ URLs directly.  Only the health
 check (/health) stays client-side for the status indicator.
 """
 
-from quart import Blueprint, render_template, request, jsonify, g, session, Response
+from quart import Blueprint, Response, g, jsonify, render_template, request, session
 
 from objects import glob
-from objects.utils import klogging, flash
+from objects.utils import flash, klogging
 
 hina_beatmaps = Blueprint('hina_beatmaps', __name__)
 

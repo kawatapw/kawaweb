@@ -6,13 +6,21 @@ import json
 from functools import wraps
 
 import bcrypt
-from quart import Blueprint, jsonify, render_template, request, session, redirect, url_for, g
+from quart import (
+    Blueprint,
+    g,
+    jsonify,
+    redirect,
+    render_template,
+    request,
+    session,
+)
 
-from objects import glob
 import config as cfg
-from objects.utils import get_safe_name
-from objects.privileges import Privileges, ComparePrivs, GetPriv
 from constants import regexes
+from objects import glob
+from objects.privileges import ComparePrivs, GetPriv, Privileges
+from objects.utils import get_safe_name
 
 hina_admin = Blueprint('hina_admin', __name__)
 
@@ -84,12 +92,12 @@ async def _log_action(mod_id, mod_name, target_id, action_name, action_text,
 
     # Discord webhook (best-effort, don't fail the action)
     try:
-        from discord_webhook import DiscordWebhook, DiscordEmbed
+        from discord_webhook import DiscordEmbed, DiscordWebhook
 
         if action_type == 0:
             # User action
             target_user = await glob.db.fetch("SELECT name FROM users WHERE id = %s", [target_id])
-            target_name = target_user['name'] if target_user else str(target_id)
+            target_name = target_user['name'] if target_user else str(target_id)  # type: ignore
 
             webhook = DiscordWebhook(url=glob.config.ADMIN_WEBHOOK_URL)
             if action_name != 'changepassword':
@@ -145,7 +153,7 @@ async def _log_action(mod_id, mod_name, target_id, action_name, action_text,
         elif action_type == 2 and badge:
             # Badge action
             target_user = await glob.db.fetch("SELECT name FROM users WHERE id = %s", [target_id])
-            target_name = target_user['name'] if target_user else str(target_id)
+            target_name = target_user['name'] if target_user else str(target_id)  # type: ignore
 
             webhook = DiscordWebhook(url=glob.config.ADMIN_WEBHOOK_URL)
             embed = DiscordEmbed(
@@ -178,7 +186,7 @@ def _get_mod_info():
 
 def _check_priv(mod_priv, required):
     """Check if moderator has a required privilege."""
-    return required in GetPriv(mod_priv)
+    return required in GetPriv(mod_priv)  # ty:ignore[unsupported-operator]
 
 
 # Map status codes for reference:
@@ -267,14 +275,14 @@ async def api_dashboard():
     online_count = await _get_online_count()
 
     kpis = {
-        'total_users': kpi_data['total_users'] if kpi_data else 0,
-        'new_users_7d': kpi_data['new_users_7d'] if kpi_data else 0,
-        'new_users_prev_7d': kpi_data['new_users_prev_7d'] if kpi_data else 0,
-        'restricted': kpi_data['restricted'] if kpi_data else 0,
-        'restricted_7d_ago': kpi_data['restricted_7d_ago'] if kpi_data else 0,
+        'total_users': kpi_data['total_users'] if kpi_data else 0,  # type: ignore
+        'new_users_7d': kpi_data['new_users_7d'] if kpi_data else 0,  # type: ignore
+        'new_users_prev_7d': kpi_data['new_users_prev_7d'] if kpi_data else 0,  # type: ignore
+        'restricted': kpi_data['restricted'] if kpi_data else 0,  # type: ignore
+        'restricted_7d_ago': kpi_data['restricted_7d_ago'] if kpi_data else 0,  # type: ignore
         'online': online_count,
-        'scores_1h': kpi_data['scores_1h'] if kpi_data else 0,
-        'scores_24h': kpi_data['scores_24h'] if kpi_data else 0,
+        'scores_1h': kpi_data['scores_1h'] if kpi_data else 0,  # type: ignore
+        'scores_24h': kpi_data['scores_24h'] if kpi_data else 0,  # type: ignore
     }
 
     # ── Top countries (new users, 7d) ─────────────────────
@@ -306,18 +314,18 @@ async def api_dashboard():
     recent_actions = []
     for a in (raw_actions or []):
         mod_user = await glob.db.fetch(
-            'SELECT id, name FROM users WHERE id = %s', [a['mod_id']]
+            'SELECT id, name FROM users WHERE id = %s', [a['mod_id']]  # type: ignore
         )
         target_user = await glob.db.fetch(
-            'SELECT id, name FROM users WHERE id = %s', [a['target_id']]
+            'SELECT id, name FROM users WHERE id = %s', [a['target_id']]  # type: ignore
         )
         recent_actions.append({
-            'id': a['id'],
-            'action': a['action'],
-            'reason': a['msg'] or '',
-            'time': int(a['time'].timestamp()) if isinstance(a['time'], datetime.datetime) else a['time'],
-            'mod': {'id': mod_user['id'], 'name': mod_user['name']} if mod_user else {'id': a['mod_id'], 'name': str(a['mod_id'])},
-            'target': {'id': target_user['id'], 'name': target_user['name']} if target_user else {'id': a['target_id'], 'name': str(a['target_id'])},
+            'id': a['id'],  # ty:ignore[invalid-argument-type, not-subscriptable]
+            'action': a['action'],  # ty:ignore[invalid-argument-type, not-subscriptable]
+            'reason': a['msg'] or '',  # ty:ignore[invalid-argument-type, not-subscriptable]
+            'time': int(a['time'].timestamp()) if isinstance(a['time'], datetime.datetime) else a['time'],  # ty:ignore[invalid-argument-type, not-subscriptable]
+            'mod': {'id': mod_user['id'], 'name': mod_user['name']} if mod_user else {'id': a['mod_id'], 'name': str(a['mod_id'])},  # ty:ignore[invalid-argument-type, not-subscriptable]
+            'target': {'id': target_user['id'], 'name': target_user['name']} if target_user else {'id': a['target_id'], 'name': str(a['target_id'])},  # ty:ignore[invalid-argument-type, not-subscriptable]
         })
 
     # ── Recent users with shared hardware count ───────────
@@ -382,7 +390,7 @@ async def api_dashboard_flagged_scores():
 
     return jsonify({
         'scores': scores or [],
-        'total': total['count'] if total else 0,
+        'total': total['count'] if total else 0,  # ty:ignore[invalid-argument-type]
         'page': page,
     })
 
@@ -548,7 +556,7 @@ async def api_users():
     # For count query, we only need users table conditions (no JOIN)
     # But since risk filters reference u.id, we need the alias
     total = await glob.db.fetch(count_query + where, params)
-    total_count = total['total'] if total else 0
+    total_count = total['total'] if total else 0  # ty:ignore[invalid-argument-type]
     total_pages = max(1, (total_count + items_per_page - 1) // items_per_page)
 
     # Sort: pp and plays come from the JOIN
@@ -567,7 +575,7 @@ async def api_users():
         users = []
 
     # Batch risk indicator queries for the returned page of users
-    user_ids = [u['id'] for u in users]
+    user_ids = [u['id'] for u in users]  # ty:ignore[invalid-argument-type, not-subscriptable]
     hw_counts = {}
     flag_counts = {}
 
@@ -587,7 +595,7 @@ async def api_users():
                 user_ids
             )
             for row in (hw_rows or []):
-                hw_counts[row['userid']] = row['cnt']
+                hw_counts[row['userid']] = row['cnt']  # ty:ignore[invalid-argument-type, not-subscriptable]
         except Exception:
             pass
 
@@ -600,14 +608,14 @@ async def api_users():
                 user_ids
             )
             for row in (flag_rows or []):
-                flag_counts[row['userid']] = row['cnt']
+                flag_counts[row['userid']] = row['cnt']  # ty:ignore[invalid-argument-type, not-subscriptable]
         except Exception:
             pass
 
     # Attach risk counts to each user
     for u in users:
-        u['shared_hardware'] = hw_counts.get(u['id'], 0)
-        u['flagged_scores'] = flag_counts.get(u['id'], 0)
+        u['shared_hardware'] = hw_counts.get(u['id'], 0)  # ty:ignore[invalid-argument-type, invalid-assignment, not-subscriptable]
+        u['flagged_scores'] = flag_counts.get(u['id'], 0)  # ty:ignore[invalid-argument-type, invalid-assignment, not-subscriptable]
 
     return jsonify({
         'users': users,
@@ -633,13 +641,13 @@ async def api_user_detail(userid):
     )
     badges = []
     for ub in user_badges:
-        badge = await glob.db.fetch("SELECT * FROM badges WHERE id = %s", [ub['badge_id']])
+        badge = await glob.db.fetch("SELECT * FROM badges WHERE id = %s", [ub['badge_id']])  # ty:ignore[invalid-argument-type, not-subscriptable]
         if badge:
             styles = await glob.db.fetchall(
-                "SELECT * FROM badge_styles WHERE badge_id = %s", [ub['badge_id']]
+                "SELECT * FROM badge_styles WHERE badge_id = %s", [ub['badge_id']]  # ty:ignore[invalid-argument-type, not-subscriptable]
             )
             badge = dict(badge)
-            badge['styles'] = {s['type']: s['value'] for s in styles}
+            badge['styles'] = {s['type']: s['value'] for s in styles}  # ty:ignore[invalid-argument-type, not-subscriptable]
             badges.append(badge)
     badges.sort(key=lambda x: x.get('priority', 0), reverse=True)
 
@@ -661,11 +669,11 @@ async def api_user_detail(userid):
     for log_entry in (admin_logs or []):
         mod_user = await glob.db.fetch(
             "SELECT id, name, country, priv FROM users WHERE id = %s",
-            [log_entry['mod_id']]
+            [log_entry['mod_id']]  # ty:ignore[invalid-argument-type, not-subscriptable]
         )
-        log_entry['mod'] = mod_user
-        if isinstance(log_entry.get('time'), datetime.datetime):
-            log_entry['time'] = int(log_entry['time'].timestamp())
+        log_entry['mod'] = mod_user  # ty:ignore[invalid-assignment]
+        if isinstance(log_entry.get('time'), datetime.datetime):  # ty:ignore[unresolved-attribute]
+            log_entry['time'] = int(log_entry['time'].timestamp())  # ty:ignore[invalid-argument-type, invalid-assignment, not-subscriptable]
 
     # ── Overview data (new) ────────────────────────────────────
 
@@ -716,16 +724,16 @@ async def api_user_detail(userid):
         )
         # Convert datetime objects to timestamps for JSON
         for login in (recent_logins or []):
-            if login.get('datetime') and isinstance(login['datetime'], datetime.datetime):
-                login['datetime'] = int(login['datetime'].timestamp())
+            if login.get('datetime') and isinstance(login['datetime'], datetime.datetime):  # ty:ignore[invalid-argument-type, not-subscriptable, unresolved-attribute]
+                login['datetime'] = int(login['datetime'].timestamp())  # ty:ignore[invalid-argument-type, invalid-assignment, not-subscriptable]
     except Exception:
         pass
 
     # Clan info
     clan = None
-    if user.get('clan_id') and user['clan_id'] > 0:
+    if user.get('clan_id') and user['clan_id'] > 0:  # ty:ignore[invalid-argument-type, unresolved-attribute]
         clan = await glob.db.fetch(
-            "SELECT id, name, tag FROM clans WHERE id = %s", [user['clan_id']]
+            "SELECT id, name, tag FROM clans WHERE id = %s", [user['clan_id']]  # ty:ignore[invalid-argument-type]
         )
 
     user = dict(user)
@@ -734,7 +742,7 @@ async def api_user_detail(userid):
     user['stats'] = stats or []
     user['recent_scores'] = recent_scores or []
     user['hw_matches'] = hw_matches or []
-    user['flagged_score_count'] = flagged['cnt'] if flagged else 0
+    user['flagged_score_count'] = flagged['cnt'] if flagged else 0  # ty:ignore[invalid-argument-type]
     user['recent_logins'] = recent_logins or []
     user['clan'] = dict(clan) if clan else None
 
@@ -762,7 +770,7 @@ async def action_wipe():
     if not user:
         return jsonify({'status': 'error', 'message': 'User not found.'}), 404
 
-    if user['priv'] and not ComparePrivs(mod_priv, user['priv']):
+    if user['priv'] and not ComparePrivs(mod_priv, user['priv']):  # ty:ignore[invalid-argument-type]
         return jsonify({'status': 'error', 'message': 'Cannot modify users with privileges you do not possess.'}), 403
 
     # Backup scores → wiped_scores
@@ -792,13 +800,13 @@ async def action_wipe():
             [user_id, mode]
         )
         await glob.redis.zrem(f"bancho:leaderboard:{mode}", user_id)
-        await glob.redis.zrem(f"bancho:leaderboard:{mode}:{user['country']}", user_id)
+        await glob.redis.zrem(f"bancho:leaderboard:{mode}:{user['country']}", user_id)  # ty:ignore[invalid-argument-type]
 
     await _log_action(mod_id, mod_name, user_id, 'wipe', 'Wiped', reason, 0)
 
     return jsonify({
         'status': 'success',
-        'message': f"Successfully wiped {user['name']} ({user_id})."
+        'message': f"Successfully wiped {user['name']} ({user_id})."  # ty:ignore[invalid-argument-type]
     })
 
 
@@ -820,9 +828,9 @@ async def action_restrict():
     user = await glob.db.fetch("SELECT id, name, priv FROM users WHERE id = %s", [user_id])
     if not user:
         return jsonify({'status': 'error', 'message': 'User not found.'}), 404
-    if user['priv'] and not ComparePrivs(mod_priv, user['priv']):
+    if user['priv'] and not ComparePrivs(mod_priv, user['priv']):  # ty:ignore[invalid-argument-type]
         return jsonify({'status': 'error', 'message': 'Cannot modify users with privileges you do not possess.'}), 403
-    if user['priv'] == 0:
+    if user['priv'] == 0:  # ty:ignore[invalid-argument-type]
         return jsonify({'status': 'error', 'message': 'User is already restricted.'}), 400
 
     await glob.db.execute("UPDATE users SET priv = 0 WHERE id = %s", [user_id])
@@ -830,7 +838,7 @@ async def action_restrict():
 
     return jsonify({
         'status': 'success',
-        'message': f"Successfully restricted {user['name']} ({user_id})."
+        'message': f"Successfully restricted {user['name']} ({user_id})."  # ty:ignore[invalid-argument-type]
     })
 
 
@@ -852,9 +860,9 @@ async def action_unrestrict():
     user = await glob.db.fetch("SELECT id, name, priv FROM users WHERE id = %s", [user_id])
     if not user:
         return jsonify({'status': 'error', 'message': 'User not found.'}), 404
-    if user['priv'] and not ComparePrivs(mod_priv, user['priv']):
+    if user['priv'] and not ComparePrivs(mod_priv, user['priv']):  # ty:ignore[invalid-argument-type]
         return jsonify({'status': 'error', 'message': 'Cannot modify users with privileges you do not possess.'}), 403
-    if user['priv'] != 0:
+    if user['priv'] != 0:  # ty:ignore[invalid-argument-type]
         return jsonify({'status': 'error', 'message': 'User is not restricted.'}), 400
 
     await glob.db.execute("UPDATE users SET priv = 1 WHERE id = %s", [user_id])
@@ -862,7 +870,7 @@ async def action_unrestrict():
 
     return jsonify({
         'status': 'success',
-        'message': f"Successfully unrestricted {user['name']} ({user_id})."
+        'message': f"Successfully unrestricted {user['name']} ({user_id})."  # ty:ignore[invalid-argument-type]
     })
 
 
@@ -885,9 +893,9 @@ async def action_silence():
     user = await glob.db.fetch("SELECT id, name, priv, silence_end FROM users WHERE id = %s", [user_id])
     if not user:
         return jsonify({'status': 'error', 'message': 'User not found.'}), 404
-    if user['priv'] and not ComparePrivs(mod_priv, user['priv']):
+    if user['priv'] and not ComparePrivs(mod_priv, user['priv']):  # ty:ignore[invalid-argument-type]
         return jsonify({'status': 'error', 'message': 'Cannot modify users with privileges you do not possess.'}), 403
-    if user['silence_end'] != 0:
+    if user['silence_end'] != 0:  # ty:ignore[invalid-argument-type]
         return jsonify({'status': 'error', 'message': 'User is already silenced.'}), 400
 
     silence_end = int(datetime.datetime.now().timestamp()) + duration_hours * 3600
@@ -896,7 +904,7 @@ async def action_silence():
 
     return jsonify({
         'status': 'success',
-        'message': f"Successfully silenced {user['name']} ({user_id}) for {duration_hours}h."
+        'message': f"Successfully silenced {user['name']} ({user_id}) for {duration_hours}h."  # ty:ignore[invalid-argument-type]
     })
 
 
@@ -918,9 +926,9 @@ async def action_unsilence():
     user = await glob.db.fetch("SELECT id, name, priv, silence_end FROM users WHERE id = %s", [user_id])
     if not user:
         return jsonify({'status': 'error', 'message': 'User not found.'}), 404
-    if user['priv'] and not ComparePrivs(mod_priv, user['priv']):
+    if user['priv'] and not ComparePrivs(mod_priv, user['priv']):  # ty:ignore[invalid-argument-type]
         return jsonify({'status': 'error', 'message': 'Cannot modify users with privileges you do not possess.'}), 403
-    if user['silence_end'] == 0:
+    if user['silence_end'] == 0:  # ty:ignore[invalid-argument-type]
         return jsonify({'status': 'error', 'message': 'User is not silenced.'}), 400
 
     await glob.db.execute("UPDATE users SET silence_end = 0 WHERE id = %s", [user_id])
@@ -928,7 +936,7 @@ async def action_unsilence():
 
     return jsonify({
         'status': 'success',
-        'message': f"Successfully unsilenced {user['name']} ({user_id})."
+        'message': f"Successfully unsilenced {user['name']} ({user_id})."  # ty:ignore[invalid-argument-type]
     })
 
 
@@ -955,14 +963,14 @@ async def action_changepassword():
     if not user:
         return jsonify({'status': 'error', 'message': 'User not found.'}), 404
 
-    if user['priv'] and not ComparePrivs(mod_priv, user['priv']):
+    if user['priv'] and not ComparePrivs(mod_priv, user['priv']):  # ty:ignore[invalid-argument-type]
         return jsonify({'status': 'error', 'message': 'Cannot modify users with privileges you do not possess.'}), 403
 
     # Invalidate bcrypt cache
     bcrypt_cache = glob.cache['bcrypt']
     old_pw = await glob.db.fetch("SELECT pw_bcrypt FROM users WHERE id = %s", [user_id])
     if old_pw:
-        old_hash = old_pw['pw_bcrypt'].encode()
+        old_hash = old_pw['pw_bcrypt'].encode()  # ty:ignore[invalid-argument-type]
         if old_hash in bcrypt_cache:
             del bcrypt_cache[old_hash]
 
@@ -973,14 +981,14 @@ async def action_changepassword():
     bcrypt_cache[pw_bcrypt] = pw_md5
     await glob.db.execute(
         "UPDATE users SET pw_bcrypt = %s WHERE safe_name = %s",
-        [pw_bcrypt, user['safe_name']]
+        [pw_bcrypt, user['safe_name']]  # ty:ignore[invalid-argument-type]
     )
 
     await _log_action(mod_id, mod_name, user_id, 'changepassword', 'Changed password', reason, 0)
 
     return jsonify({
         'status': 'success',
-        'message': f"Successfully changed password for {user['name']} ({user_id})."
+        'message': f"Successfully changed password for {user['name']} ({user_id})."  # ty:ignore[invalid-argument-type]
     })
 
 
@@ -1004,7 +1012,7 @@ async def action_changeprivileges():
     if not user:
         return jsonify({'status': 'error', 'message': 'User not found.'}), 404
 
-    if user['priv'] == new_priv:
+    if user['priv'] == new_priv:  # ty:ignore[invalid-argument-type]
         return jsonify({'status': 'error', 'message': 'Privileges are already the same.'}), 400
 
     # ComparePrivs(a, b) returns True if b ⊆ a
@@ -1013,7 +1021,7 @@ async def action_changeprivileges():
         return jsonify({'status': 'error', 'message': 'Cannot grant privileges you do not possess.'}), 403
 
     # Block if target user has privs the mod doesn't have
-    if not ComparePrivs(mod_priv, user['priv']):
+    if not ComparePrivs(mod_priv, user['priv']):  # ty:ignore[invalid-argument-type]
         return jsonify({'status': 'error', 'message': 'Cannot modify users with privileges you do not possess.'}), 403
 
     await glob.db.execute("UPDATE users SET priv = %s WHERE id = %s", [new_priv, user_id])
@@ -1021,7 +1029,7 @@ async def action_changeprivileges():
 
     return jsonify({
         'status': 'success',
-        'message': f"Successfully modified privileges for {user['name']} ({user_id})."
+        'message': f"Successfully modified privileges for {user['name']} ({user_id})."  # ty:ignore[invalid-argument-type]
     })
 
 
@@ -1044,12 +1052,12 @@ async def action_editaccount():
     if not user:
         return jsonify({'status': 'error', 'message': 'User not found.'}), 404
 
-    if user['priv'] and not ComparePrivs(mod_priv, user['priv']):
+    if user['priv'] and not ComparePrivs(mod_priv, user['priv']):  # ty:ignore[invalid-argument-type]
         return jsonify({'status': 'error', 'message': 'Cannot modify users with privileges you do not possess.'}), 403
 
     # Username change
     username = data.get('username')
-    if username and username != user['name']:
+    if username and username != user['name']:  # ty:ignore[invalid-argument-type]
         safename = get_safe_name(username)
         existing = await glob.db.fetch(
             "SELECT id FROM users WHERE (safe_name = %s OR name = %s) AND id != %s",
@@ -1064,7 +1072,7 @@ async def action_editaccount():
 
     # Email change
     email = data.get('email')
-    if email and email != user['email']:
+    if email and email != user['email']:  # ty:ignore[invalid-argument-type]
         if not regexes.email.match(email):
             return jsonify({'status': 'error', 'message': 'Invalid email address.'}), 400
         existing = await glob.db.fetch(
@@ -1077,21 +1085,21 @@ async def action_editaccount():
 
     # Country change
     country = data.get('country')
-    if country and country != user['country']:
+    if country and country != user['country']:  # ty:ignore[invalid-argument-type]
         if len(country) != 2:
             return jsonify({'status': 'error', 'message': 'Invalid country code.'}), 400
         await glob.db.execute("UPDATE users SET country = %s WHERE id = %s", [country, user_id])
 
     # Userpage change
     userpage = data.get('userpage_content')
-    if userpage is not None and userpage != user['userpage_content']:
+    if userpage is not None and userpage != user['userpage_content']:  # ty:ignore[invalid-argument-type]
         await glob.db.execute("UPDATE users SET userpage_content = %s WHERE id = %s", [userpage, user_id])
 
     await _log_action(mod_id, mod_name, user_id, 'editaccount', 'Edited Account', reason, 0)
 
     return jsonify({
         'status': 'success',
-        'message': f"Successfully edited account for {user['name']} ({user_id})."
+        'message': f"Successfully edited account for {user['name']} ({user_id})."  # ty:ignore[invalid-argument-type]
     })
 
 
@@ -1124,23 +1132,23 @@ async def action_bulk():
             results.append({'id': uid, 'status': 'error', 'message': 'Not found'})
             continue
 
-        if user['priv'] and not ComparePrivs(mod_priv, user['priv']):
+        if user['priv'] and not ComparePrivs(mod_priv, user['priv']):  # ty:ignore[invalid-argument-type]
             results.append({'id': uid, 'status': 'error', 'message': 'Cannot modify users with higher privileges'})
             continue
 
         if action == 'restrict':
-            if not (user['priv'] & 1):
+            if not (user['priv'] & 1):  # ty:ignore[invalid-argument-type]
                 results.append({'id': uid, 'status': 'skipped', 'message': 'Already restricted'})
                 continue
             await glob.db.execute("UPDATE users SET priv = 0 WHERE id = %s", [uid])
             # Remove from all leaderboards
             for mode in [0, 1, 2, 3, 4, 5, 6, 7, 8]:
                 await glob.redis.zrem(f"bancho:leaderboard:{mode}", uid)
-                await glob.redis.zrem(f"bancho:leaderboard:{mode}:{user['country']}", uid)
+                await glob.redis.zrem(f"bancho:leaderboard:{mode}:{user['country']}", uid)  # ty:ignore[invalid-argument-type]
             await _log_action(mod_id, mod_name, uid, 'restrict', 'Restricted (bulk)', reason, 0)
 
         elif action == 'unrestrict':
-            if user['priv'] & 1:
+            if user['priv'] & 1:  # ty:ignore[invalid-argument-type]
                 results.append({'id': uid, 'status': 'skipped', 'message': 'Not restricted'})
                 continue
             await glob.db.execute("UPDATE users SET priv = 1 WHERE id = %s", [uid])
@@ -1189,7 +1197,7 @@ async def action_removescore():
     reason = data.get('reason', '')
 
     score_owner = await glob.db.fetch("SELECT priv FROM users WHERE id = %s", [user_id])
-    if score_owner and score_owner['priv'] and not ComparePrivs(mod_priv, score_owner['priv']):
+    if score_owner and score_owner['priv'] and not ComparePrivs(mod_priv, score_owner['priv']):  # ty:ignore[invalid-argument-type]
         return jsonify({'status': 'error', 'message': 'Cannot modify scores of users with privileges you do not possess.'}), 403
 
     score = await glob.db.fetch("SELECT * FROM scores WHERE id = %s", [score_id])
@@ -1227,9 +1235,9 @@ async def api_badges():
     badges = await glob.db.fetchall("SELECT * FROM badges ORDER BY priority DESC")
     for badge in badges:
         styles = await glob.db.fetchall(
-            "SELECT * FROM badge_styles WHERE badge_id = %s", [badge['id']]
+            "SELECT * FROM badge_styles WHERE badge_id = %s", [badge['id']]  # ty:ignore[invalid-argument-type, not-subscriptable]
         )
-        badge['styles'] = {s['type']: s['value'] for s in styles}
+        badge['styles'] = {s['type']: s['value'] for s in styles}  # ty:ignore[invalid-argument-type, invalid-assignment, not-subscriptable]
 
     return jsonify(badges)
 
@@ -1274,7 +1282,7 @@ async def api_badge_create():
     if not result:
         return jsonify({'status': 'error', 'message': 'Failed to create badge.'}), 500
 
-    new_id = result['id']
+    new_id = result['id']  # ty:ignore[invalid-argument-type]
     for style in data.get('styles', []):
         await glob.db.execute(
             "INSERT INTO badge_styles (badge_id, type, value) VALUES (%s, %s, %s)",
@@ -1457,7 +1465,7 @@ async def api_beatmaps():
         # Player info
         player = await glob.db.fetch(
             "SELECT name, id, country FROM users WHERE id = %s",
-            [req['player_id']]
+            [req['player_id']]  # ty:ignore[invalid-argument-type, not-subscriptable]
         )
 
         # Map info + diffs
@@ -1465,7 +1473,7 @@ async def api_beatmaps():
             maps_data = await glob.db.fetchall(
                 "SELECT * FROM maps WHERE id = %s OR set_id = "
                 "(SELECT set_id FROM maps WHERE id = %s)",
-                [req['map_id'], req['map_id']]
+                [req['map_id'], req['map_id']]  # ty:ignore[invalid-argument-type, not-subscriptable]
             )
         except Exception:
             maps_data = []
@@ -1473,13 +1481,13 @@ async def api_beatmaps():
         map_info = None
         map_diffs = []
         for m in maps_data:
-            if m['id'] == req['map_id']:
-                map_info = dict(m)
+            if m['id'] == req['map_id']:  # ty:ignore[invalid-argument-type, not-subscriptable]
+                map_info = dict(m)  # ty:ignore[no-matching-overload]
                 # Convert datetime
                 if map_info.get('last_update'):
                     map_info['last_update'] = str(map_info['last_update'])
             else:
-                d = dict(m)
+                d = dict(m)  # ty:ignore[no-matching-overload]
                 if d.get('last_update'):
                     d['last_update'] = str(d['last_update'])
                 map_diffs.append(d)
@@ -1487,8 +1495,8 @@ async def api_beatmaps():
         if not map_info:
             continue
 
-        req_dict = dict(req)
-        req_dict['datetime'] = str(req['datetime'])
+        req_dict = dict(req)  # ty:ignore[no-matching-overload]
+        req_dict['datetime'] = str(req['datetime'])  # ty:ignore[invalid-argument-type, not-subscriptable]
         req_dict['player'] = player
         req_dict['map_info'] = map_info
         req_dict['map_diffs'] = map_diffs
@@ -1515,7 +1523,7 @@ def _map_action_handler(action_name, action_text, target_status, status_check_va
         if not map_obj:
             return jsonify({'status': 'error', 'message': 'Map not found.'}), 404
 
-        if map_obj['status'] == status_check_value:
+        if map_obj['status'] == status_check_value:  # ty:ignore[invalid-argument-type]
             return jsonify({'status': 'error', 'message': status_check_msg}), 400
 
         # Proxy to kawata.py API
@@ -1547,7 +1555,7 @@ def _map_action_handler(action_name, action_text, target_status, status_check_va
 
         return jsonify({
             'status': 'success',
-            'message': f"Successfully {action_text.lower()} {map_obj['artist']} - {map_obj['title']} [{map_obj['version']}]."
+            'message': f"Successfully {action_text.lower()} {map_obj['artist']} - {map_obj['title']} [{map_obj['version']}]."  # ty:ignore[invalid-argument-type]
         })
 
     handler.__name__ = f'action_{action_name}'
@@ -1616,14 +1624,14 @@ async def api_bm_work_items():
     )
     seen_sets = set()
     for req in (unprocessed or []):
-        if req['set_id'] in seen_sets:
+        if req['set_id'] in seen_sets:  # ty:ignore[invalid-argument-type, not-subscriptable]
             continue
-        seen_sets.add(req['set_id'])
+        seen_sets.add(req['set_id'])  # ty:ignore[invalid-argument-type, not-subscriptable]
         await glob.db.execute(
             "INSERT INTO beatmap_work_items "
             "(set_id, request_id, review_state, checklist, created_at) "
             "VALUES (%s, %s, 'pending', %s, %s)",
-            [req['set_id'], req['id'], DEFAULT_CHECKLIST, req['datetime']]
+            [req['set_id'], req['id'], DEFAULT_CHECKLIST, req['datetime']]  # ty:ignore[invalid-argument-type, not-subscriptable]
         )
 
     # ── Parse filters ──
@@ -1722,7 +1730,7 @@ async def api_bm_work_items():
         "LEFT JOIN users ur ON ur.id = mr.player_id"
     )
     total = await glob.db.fetch(count_query + where, params)
-    total_count = total['total'] if total else 0
+    total_count = total['total'] if total else 0  # ty:ignore[invalid-argument-type]
     total_pages = max(1, (total_count + items_per_page - 1) // items_per_page)
 
     # Fetch page
@@ -1731,11 +1739,11 @@ async def api_bm_work_items():
         base_query + where + f" ORDER BY {sort_col} {sort_order} LIMIT {items_per_page} OFFSET {offset}",
         params
     )
-    items = [dict(i) for i in (items or [])]
+    items = [dict(i) for i in (items or [])]  # ty:ignore[no-matching-overload]
 
     # ── Batch-enrich with set metadata (avoid N+1) ──
     if items:
-        set_ids = list(set(item['set_id'] for item in items))
+        set_ids = list({item['set_id'] for item in items})
         placeholders = ','.join(['%s'] * len(set_ids))
 
         set_meta = await glob.db.fetchall(
@@ -1744,7 +1752,7 @@ async def api_bm_work_items():
             f"FROM maps WHERE set_id IN ({placeholders}) GROUP BY set_id",
             set_ids
         )
-        meta_map = {r['set_id']: r for r in (set_meta or [])}
+        meta_map = {r['set_id']: r for r in (set_meta or [])}  # ty:ignore[invalid-argument-type, not-subscriptable]
 
         diff_summary = await glob.db.fetchall(
             f"SELECT set_id, COUNT(*) as diff_count, "
@@ -1753,7 +1761,7 @@ async def api_bm_work_items():
             f"FROM maps WHERE set_id IN ({placeholders}) GROUP BY set_id",
             set_ids
         )
-        diff_map = {r['set_id']: r for r in (diff_summary or [])}
+        diff_map = {r['set_id']: r for r in (diff_summary or [])}  # ty:ignore[invalid-argument-type, not-subscriptable]
 
         item_ids = [item['id'] for item in items]
         ip = ','.join(['%s'] * len(item_ids))
@@ -1763,19 +1771,19 @@ async def api_bm_work_items():
             f"GROUP BY work_item_id",
             item_ids
         )
-        comment_map = {r['work_item_id']: r['cnt'] for r in (comment_rows or [])}
+        comment_map = {r['work_item_id']: r['cnt'] for r in (comment_rows or [])}  # ty:ignore[invalid-argument-type, not-subscriptable]
 
         for item in items:
             meta = meta_map.get(item['set_id'], {})
             diffs = diff_map.get(item['set_id'], {})
-            item['artist'] = meta.get('artist', '')
-            item['title'] = meta.get('title', '')
-            item['creator'] = meta.get('creator', '')
-            item['mode'] = meta.get('mode', 0)
-            item['diff_count'] = diffs.get('diff_count', 0)
-            item['min_stars'] = float(diffs.get('min_stars', 0) or 0)
-            item['max_stars'] = float(diffs.get('max_stars', 0) or 0)
-            item['total_plays'] = diffs.get('total_plays', 0)
+            item['artist'] = meta.get('artist', '')  # ty:ignore[unresolved-attribute]
+            item['title'] = meta.get('title', '')  # ty:ignore[unresolved-attribute]
+            item['creator'] = meta.get('creator', '')  # ty:ignore[unresolved-attribute]
+            item['mode'] = meta.get('mode', 0)  # ty:ignore[unresolved-attribute]
+            item['diff_count'] = diffs.get('diff_count', 0)  # ty:ignore[unresolved-attribute]
+            item['min_stars'] = float(diffs.get('min_stars', 0) or 0)  # ty:ignore[unresolved-attribute]
+            item['max_stars'] = float(diffs.get('max_stars', 0) or 0)  # ty:ignore[unresolved-attribute]
+            item['total_plays'] = diffs.get('total_plays', 0)  # ty:ignore[unresolved-attribute]
             item['comment_count'] = comment_map.get(item['id'], 0)
             if item.get('checklist') and isinstance(item['checklist'], str):
                 item['checklist'] = json.loads(item['checklist'])
@@ -1817,9 +1825,9 @@ async def api_bm_work_item_detail(item_id):
         "SELECT artist, title, creator FROM maps WHERE set_id = %s LIMIT 1",
         [item['set_id']]
     )
-    item['artist'] = meta['artist'] if meta else ''
-    item['title'] = meta['title'] if meta else ''
-    item['creator'] = meta['creator'] if meta else ''
+    item['artist'] = meta['artist'] if meta else ''  # ty:ignore[invalid-argument-type]
+    item['title'] = meta['title'] if meta else ''  # ty:ignore[invalid-argument-type]
+    item['creator'] = meta['creator'] if meta else ''  # ty:ignore[invalid-argument-type]
 
     # Requester info
     requester = None
@@ -1831,11 +1839,11 @@ async def api_bm_work_item_detail(item_id):
         )
         if req_row:
             requester = {
-                'id': req_row['player_id'],
-                'name': req_row['player_name'],
-                'datetime': int(req_row['datetime'].timestamp())
-                    if isinstance(req_row['datetime'], datetime.datetime)
-                    else req_row['datetime'],
+                'id': req_row['player_id'],  # ty:ignore[invalid-argument-type]
+                'name': req_row['player_name'],  # ty:ignore[invalid-argument-type]
+                'datetime': int(req_row['datetime'].timestamp())  # ty:ignore[invalid-argument-type]
+                    if isinstance(req_row['datetime'], datetime.datetime)  # ty:ignore[invalid-argument-type]
+                    else req_row['datetime'],  # ty:ignore[invalid-argument-type]
             }
 
     # All requests for this set
@@ -1852,8 +1860,8 @@ async def api_bm_work_item_detail(item_id):
     fav_count = await glob.db.fetch(
         "SELECT COUNT(*) as cnt FROM favourites WHERE setid = %s", [item['set_id']]
     )
-    total_plays = sum(d.get('plays', 0) for d in (diffs or []))
-    total_passes = sum(d.get('passes', 0) for d in (diffs or []))
+    total_plays = sum(d.get('plays', 0) for d in (diffs or []))  # ty:ignore[unresolved-attribute]
+    total_passes = sum(d.get('passes', 0) for d in (diffs or []))  # ty:ignore[unresolved-attribute]
 
     # Review comments
     comments = await glob.db.fetchall(
@@ -1866,7 +1874,7 @@ async def api_bm_work_item_detail(item_id):
 
     # Action history from logs
     # logs schema: id, from_id, to_id, action, msg, created_at, action_type
-    map_ids = [d['id'] for d in (diffs or [])]
+    map_ids = [d['id'] for d in (diffs or [])]  # ty:ignore[invalid-argument-type, not-subscriptable]
     history = []
     if map_ids:
         ip = ','.join(['%s'] * len(map_ids))
@@ -1886,23 +1894,23 @@ async def api_bm_work_item_detail(item_id):
     if isinstance(item.get('checklist'), str):
         item['checklist'] = json.loads(item['checklist'])
     for c in (comments or []):
-        if isinstance(c.get('created_at'), datetime.datetime):
-            c['created_at'] = int(c['created_at'].timestamp())
+        if isinstance(c.get('created_at'), datetime.datetime):  # ty:ignore[unresolved-attribute]
+            c['created_at'] = int(c['created_at'].timestamp())  # ty:ignore[invalid-argument-type, invalid-assignment, not-subscriptable]
     for r in (all_requests or []):
-        if isinstance(r.get('datetime'), datetime.datetime):
-            r['datetime'] = int(r['datetime'].timestamp())
+        if isinstance(r.get('datetime'), datetime.datetime):  # ty:ignore[unresolved-attribute]
+            r['datetime'] = int(r['datetime'].timestamp())  # ty:ignore[invalid-argument-type, invalid-assignment, not-subscriptable]
     for h in (history or []):
-        if isinstance(h.get('time'), datetime.datetime):
-            h['time'] = int(h['time'].timestamp())
+        if isinstance(h.get('time'), datetime.datetime):  # ty:ignore[unresolved-attribute]
+            h['time'] = int(h['time'].timestamp())  # ty:ignore[invalid-argument-type, invalid-assignment, not-subscriptable]
 
-    item['diffs'] = [dict(d) for d in (diffs or [])]
+    item['diffs'] = [dict(d) for d in (diffs or [])]  # ty:ignore[no-matching-overload]
     item['requester'] = requester
-    item['requests'] = [dict(r) for r in (all_requests or [])]
-    item['favourite_count'] = fav_count['cnt'] if fav_count else 0
+    item['requests'] = [dict(r) for r in (all_requests or [])]  # ty:ignore[no-matching-overload]
+    item['favourite_count'] = fav_count['cnt'] if fav_count else 0  # ty:ignore[invalid-argument-type]
     item['total_plays'] = total_plays
     item['total_passes'] = total_passes
-    item['comments'] = [dict(c) for c in (comments or [])]
-    item['history'] = [dict(h) for h in (history or [])]
+    item['comments'] = [dict(c) for c in (comments or [])]  # ty:ignore[no-matching-overload]
+    item['history'] = [dict(h) for h in (history or [])]  # ty:ignore[no-matching-overload]
 
     return jsonify(item)
 
@@ -1929,7 +1937,7 @@ async def api_bm_create_work_item():
         [set_id]
     )
     if active:
-        return jsonify({'status': 'error', 'message': 'Active work item already exists.', 'existing_id': active['id']}), 409
+        return jsonify({'status': 'error', 'message': 'Active work item already exists.', 'existing_id': active['id']}), 409  # ty:ignore[invalid-argument-type]
 
     await glob.db.execute(
         "INSERT INTO beatmap_work_items (set_id, review_state, checklist) VALUES (%s, 'pending', %s)",
@@ -1977,7 +1985,7 @@ async def api_bm_checklist(item_id):
     if not item:
         return jsonify({'status': 'error', 'message': 'Work item not found.'}), 404
 
-    current = json.loads(item['checklist']) if item.get('checklist') else {}
+    current = json.loads(item['checklist']) if item.get('checklist') else {}  # ty:ignore[invalid-argument-type, unresolved-attribute]
     VALID_KEYS = ('timing', 'hitsounds', 'difficulty_spread', 'metadata', 'background', 'no_abuse')
     for key in VALID_KEYS:
         if key in data:
@@ -2039,14 +2047,14 @@ async def api_bm_set_status(item_id):
     if not item:
         return jsonify({'status': 'error', 'message': 'Work item not found.'}), 404
 
-    set_id = item['set_id']
+    set_id = item['set_id']  # ty:ignore[invalid-argument-type]
 
     # Validate all map_ids belong to this set
     all_diffs = await glob.db.fetchall(
         "SELECT id, version, artist, title, set_id FROM maps WHERE set_id = %s",
         [set_id]
     )
-    all_diff_ids = {d['id'] for d in (all_diffs or [])}
+    all_diff_ids = {d['id'] for d in (all_diffs or [])}  # ty:ignore[invalid-argument-type, not-subscriptable]
     for mid in map_ids:
         if int(mid) not in all_diff_ids:
             return jsonify({
@@ -2063,7 +2071,7 @@ async def api_bm_set_status(item_id):
     # Efficient path: if ALL diffs selected, use set_id API call
     # Note: kawata.py always needs a valid map_id for its bmap lookup,
     # even when using set_id, so we pass the first diff's id too.
-    if set(int(m) for m in map_ids) == all_diff_ids:
+    if {int(m) for m in map_ids} == all_diff_ids:
         first_id = int(map_ids[0])
         result = await _update_map_status(map_id=first_id, set_id=set_id, new_status=new_status)
         if result.get('status') not in ('success',):
@@ -2088,7 +2096,7 @@ async def api_bm_set_status(item_id):
 
     # Log each diff action
     for mid in map_ids:
-        diff_row = next((d for d in all_diffs if d['id'] == int(mid)), None)
+        diff_row = next((d for d in all_diffs if d['id'] == int(mid)), None)  # ty:ignore[invalid-argument-type, not-subscriptable]
         if diff_row:
             await _log_action(
                 mod_id, mod_name, int(mid), action,
@@ -2098,7 +2106,7 @@ async def api_bm_set_status(item_id):
             )
 
     # Auto-transition pending → in_review on first status action
-    if item['review_state'] == 'pending':
+    if item['review_state'] == 'pending':  # ty:ignore[invalid-argument-type]
         await glob.db.execute(
             "UPDATE beatmap_work_items SET review_state = 'in_review' WHERE id = %s",
             [item_id]
@@ -2115,8 +2123,8 @@ async def api_bm_set_status(item_id):
     return jsonify({
         'status': 'success',
         'message': f'{ACTION_TEXT[action]} {len(map_ids)} difficulty(ies).',
-        'diffs': [dict(d) for d in (refreshed_diffs or [])],
-        'review_state': 'in_review' if item['review_state'] == 'pending' else item['review_state'],
+        'diffs': [dict(d) for d in (refreshed_diffs or [])],  # ty:ignore[no-matching-overload]
+        'review_state': 'in_review' if item['review_state'] == 'pending' else item['review_state'],  # ty:ignore[invalid-argument-type]
     })
 
 
@@ -2145,9 +2153,9 @@ async def api_bm_decide(item_id):
     if not item:
         return jsonify({'status': 'error', 'message': 'Work item not found.'}), 404
 
-    set_id = item['set_id']
+    set_id = item['set_id']  # ty:ignore[invalid-argument-type]
     map_row = await glob.db.fetch("SELECT * FROM maps WHERE set_id = %s LIMIT 1", [set_id])
-    map_id = map_row['id'] if map_row else 0
+    map_id = map_row['id'] if map_row else 0  # ty:ignore[invalid-argument-type]
     map_obj = dict(map_row) if map_row else {}
 
     # ── Mark Complete ──
@@ -2272,7 +2280,7 @@ async def api_staff_log():
     total_row = await glob.db.fetch(
         "SELECT COUNT(*) as total FROM logs l" + where, params
     )
-    total = total_row['total'] if total_row else 0
+    total = total_row['total'] if total_row else 0  # ty:ignore[invalid-argument-type]
 
     # Fetch page
     rows = await glob.db.fetchall(
@@ -2285,43 +2293,43 @@ async def api_staff_log():
     logs = []
     for row in (rows or []):
         # Resolve staff name
-        staff_user = await glob.db.fetch("SELECT name FROM users WHERE id = %s", [row['from_id']])
-        staff_name = staff_user['name'] if staff_user else str(row['from_id'])
+        staff_user = await glob.db.fetch("SELECT name FROM users WHERE id = %s", [row['from_id']])  # ty:ignore[invalid-argument-type, not-subscriptable]
+        staff_name = staff_user['name'] if staff_user else str(row['from_id'])  # ty:ignore[invalid-argument-type, not-subscriptable]
 
         # Resolve target summary based on action_type
-        at = row['action_type']
+        at = row['action_type']  # ty:ignore[invalid-argument-type, not-subscriptable]
         target_summary = ''
         target_set_id = None
         if at == 0:
-            target_user = await glob.db.fetch("SELECT name FROM users WHERE id = %s", [row['to_id']])
-            target_summary = target_user['name'] if target_user else str(row['to_id'])
+            target_user = await glob.db.fetch("SELECT name FROM users WHERE id = %s", [row['to_id']])  # ty:ignore[invalid-argument-type, not-subscriptable]
+            target_summary = target_user['name'] if target_user else str(row['to_id'])  # ty:ignore[invalid-argument-type, not-subscriptable]
         elif at == 1:
             target_map = await glob.db.fetch(
-                "SELECT artist, title, version, set_id FROM maps WHERE id = %s LIMIT 1", [row['to_id']]
+                "SELECT artist, title, version, set_id FROM maps WHERE id = %s LIMIT 1", [row['to_id']]  # ty:ignore[invalid-argument-type, not-subscriptable]
             )
             if target_map:
-                target_summary = f"{target_map['artist']} - {target_map['title']} [{target_map['version']}]"
-                target_set_id = target_map['set_id']
+                target_summary = f"{target_map['artist']} - {target_map['title']} [{target_map['version']}]"  # ty:ignore[invalid-argument-type]
+                target_set_id = target_map['set_id']  # ty:ignore[invalid-argument-type]
             else:
-                target_summary = f"Map #{row['to_id']}"
+                target_summary = f"Map #{row['to_id']}"  # ty:ignore[invalid-argument-type, not-subscriptable]
         elif at == 2:
-            target_badge = await glob.db.fetch("SELECT name FROM badges WHERE id = %s", [row['to_id']])
-            target_summary = target_badge['name'] if target_badge else f"Badge #{row['to_id']}"
+            target_badge = await glob.db.fetch("SELECT name FROM badges WHERE id = %s", [row['to_id']])  # ty:ignore[invalid-argument-type, not-subscriptable]
+            target_summary = target_badge['name'] if target_badge else f"Badge #{row['to_id']}"  # ty:ignore[invalid-argument-type, not-subscriptable]
 
-        created = row['created_at']
+        created = row['created_at']  # ty:ignore[invalid-argument-type, not-subscriptable]
         if isinstance(created, datetime.datetime):
             created = int(created.timestamp())
 
         entry = {
-            'id': row['id'],
-            'staff_id': row['from_id'],
+            'id': row['id'],  # ty:ignore[invalid-argument-type, not-subscriptable]
+            'staff_id': row['from_id'],  # ty:ignore[invalid-argument-type, not-subscriptable]
             'staff_name': staff_name,
-            'action': row['action'],
+            'action': row['action'],  # ty:ignore[invalid-argument-type, not-subscriptable]
             'action_type': at,
             'target_type': _ACTION_TYPE_LABELS.get(at, 'unknown'),
-            'target_id': row['to_id'],
+            'target_id': row['to_id'],  # ty:ignore[invalid-argument-type, not-subscriptable]
             'target_summary': target_summary,
-            'msg': row['msg'] or '',
+            'msg': row['msg'] or '',  # ty:ignore[invalid-argument-type, not-subscriptable]
             'created_at': created,
         }
         if target_set_id is not None:
@@ -2358,7 +2366,7 @@ async def api_manual_map_info():
     if map_id and not set_id:
         row = await glob.db.fetch("SELECT set_id FROM maps WHERE id = %s", [int(map_id)])
         if row:
-            set_id = str(row['set_id'])
+            set_id = str(row['set_id'])  # ty:ignore[invalid-argument-type]
 
     # Try local DB first
     diffs = None
@@ -2400,10 +2408,10 @@ async def api_manual_map_info():
     return jsonify({
         'status': 'success',
         'set_id': int(set_id),
-        'artist': first['artist'],
-        'title': first['title'],
-        'creator': first['creator'],
-        'diffs': [dict(d) for d in diffs],
+        'artist': first['artist'],  # ty:ignore[invalid-argument-type, not-subscriptable]
+        'title': first['title'],  # ty:ignore[invalid-argument-type, not-subscriptable]
+        'creator': first['creator'],  # ty:ignore[invalid-argument-type, not-subscriptable]
+        'diffs': [dict(d) for d in diffs],  # ty:ignore[no-matching-overload]
     })
 
 
@@ -2443,7 +2451,7 @@ async def api_manual_map_action():
     if not all_diffs:
         return jsonify({'status': 'error', 'message': 'No maps found for this set.'}), 404
 
-    all_diff_ids = {d['id'] for d in all_diffs}
+    all_diff_ids = {d['id'] for d in all_diffs}  # ty:ignore[invalid-argument-type, not-subscriptable]
 
     # If no map_ids specified, update all diffs
     if not map_ids:
@@ -2464,7 +2472,7 @@ async def api_manual_map_action():
     }
 
     # If ALL diffs selected, use set_id for efficiency
-    if set(int(m) for m in map_ids) == all_diff_ids:
+    if {int(m) for m in map_ids} == all_diff_ids:
         first_id = int(map_ids[0])
         result = await _update_map_status(map_id=first_id, set_id=int(set_id), new_status=new_status)
         if result.get('status') not in ('success',):
@@ -2500,7 +2508,7 @@ async def api_manual_map_action():
 
     # Log each diff action
     for mid in map_ids:
-        diff_row = next((d for d in all_diffs if d['id'] == int(mid)), None)
+        diff_row = next((d for d in all_diffs if d['id'] == int(mid)), None)  # ty:ignore[invalid-argument-type, not-subscriptable]
         if diff_row:
             await _log_action(
                 mod_id, mod_name, int(mid), f'manual_{action}',

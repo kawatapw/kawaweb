@@ -2,7 +2,7 @@
 
 from functools import wraps
 
-from quart import Blueprint, render_template, request, session, jsonify, g
+from quart import Blueprint, g, jsonify, render_template, request, session
 
 from objects import glob
 from objects.utils import error_catcher
@@ -55,7 +55,7 @@ async def friends_action(action):
     user_id = session['user_data']['id']
 
     async with glob.http.post(
-        f'http://bancho:10000/v1/set_relationship',
+        'http://bancho:10000/v1/set_relationship',
         params={
             'id': str(user_id),
             'target': str(target_id),

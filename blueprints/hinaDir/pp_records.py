@@ -1,6 +1,6 @@
 """hinaDir: PP Records page route."""
 
-from quart import Blueprint, render_template, g
+from quart import Blueprint, g, render_template
 
 from objects.utils import error_catcher
 

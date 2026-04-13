@@ -1,30 +1,34 @@
 #!/usr/bin/env python3.11
-# -*- coding: utf-8 -*-
 
 __all__ = ()
 
-import os
 import asyncio
-import threading
-from datetime import datetime, timezone
+import os
+import time
+from datetime import UTC, datetime
 
 import aiohttp
-from redis import asyncio as aioredis
 import orjson
-from quart import Quart, g
-from quart import render_template
-
-from objects import glob
-from objects import utils
-
 from cmyui.logging import Ansi
-from cmyui.logging import log
-from objects.utils import klogging
 from cmyui.mysql import AsyncSQLPool
 from cmyui.version import Version
-import logging, time
-import json
-from quart import Response, request
+from quart import Quart, Response, g, render_template, request
+from redis import asyncio as aioredis
+
+from blueprints.admin import admin
+
+# Blueprint imports
+from blueprints.frontend import frontend
+from blueprints.hinaDir import (
+    hina_admin,
+    hina_auth,
+    hina_beatmaps,
+    hina_friends,
+    hina_pp_records,
+    hina_team,
+)
+from objects import glob, utils
+from objects.utils import klogging
 
 app = Quart(f'{glob.config.app_name}')
 
@@ -47,18 +51,18 @@ print(f"App Name: {app.name}")
 async def mysql_conn() -> None:
     glob.db = AsyncSQLPool()
     await glob.db.connect(glob.config.mysql) # type: ignore
-    klogging.log('Connected to MySQL!', Ansi.LGREEN)
+    klogging.log('Connected to MySQL!', Ansi.LGREEN)  # ty:ignore[invalid-argument-type]
 
 @app.before_serving
 async def http_conn() -> None:
     glob.http = aiohttp.ClientSession(json_serialize=lambda x: orjson.dumps(x).decode())
-    klogging.log('Got our Client Session!', Ansi.LGREEN)
+    klogging.log('Got our Client Session!', Ansi.LGREEN)  # ty:ignore[invalid-argument-type]
 
 @app.before_serving
 async def redis_conn() -> None:
     glob.redis = aioredis
     glob.redis = await aioredis.from_url(glob.config.REDIS_DSN)
-    klogging.log('Connected to Redis!', Ansi.LGREEN)
+    klogging.log('Connected to Redis!', Ansi.LGREEN)  # ty:ignore[invalid-argument-type]
 
 
 @app.before_serving
@@ -68,16 +72,15 @@ async def run_bg_tasks() -> None:
 
 async def set_sys_data(silent=False) -> None:
     i = 0
-    l = 0
     if silent:
         sys_data = await glob.db.fetchall('SELECT * FROM server_data')
-        sys_data_dict = {item['type']: item['value'] for item in sys_data}
+        sys_data_dict = {item['type']: item['value'] for item in sys_data}  # ty:ignore[invalid-argument-type, not-subscriptable]
         glob.sys = sys_data_dict
     else:
         while i < 3:
             i += 1
             sys_data = await glob.db.fetchall('SELECT * FROM server_data')
-            sys_data_dict = {item['type']: item['value'] for item in sys_data}
+            sys_data_dict = {item['type']: item['value'] for item in sys_data}  # ty:ignore[invalid-argument-type, not-subscriptable]
             glob.sys = sys_data_dict
             if i == 1:
                 klogging.log('Set Server Data From DB', klogging.Ansi.LGREEN)
@@ -99,7 +102,7 @@ async def after_request(response: Response) -> Response:
 @app.after_serving
 async def shutdown() -> None:
     await glob.db.close()
-    await glob.http.close()    
+    await glob.http.close()
 
 # globals which can be used in template code
 
@@ -151,7 +154,7 @@ def developerMode() -> bool:
 
 @app.template_global()
 def now() -> 'datetime':
-    return datetime.now(timezone.utc)
+    return datetime.now(UTC)
 
 @app.before_request
 async def inject_globals():
@@ -171,28 +174,14 @@ async def inject_globals():
         import logging as _logging
         _logging.getLogger(__name__).warning(f"inject_globals error: {e}")
 
-from blueprints.frontend import frontend
+# Register blueprints
 app.register_blueprint(frontend)
-
-from blueprints.hinaDir import hina_friends
 app.register_blueprint(hina_friends)
-
-from blueprints.admin import admin
 app.register_blueprint(admin, url_prefix='/admin')
-
-from blueprints.hinaDir import hina_admin
 app.register_blueprint(hina_admin, url_prefix='/admin-v2')
-
-from blueprints.hinaDir import hina_beatmaps
 app.register_blueprint(hina_beatmaps)
-
-from blueprints.hinaDir import hina_team
 app.register_blueprint(hina_team)
-
-from blueprints.hinaDir import hina_pp_records
 app.register_blueprint(hina_pp_records)
-
-from blueprints.hinaDir import hina_auth
 app.register_blueprint(hina_auth)
 
 @app.errorhandler(404)

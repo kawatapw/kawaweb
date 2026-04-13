@@ -1,8 +1,6 @@
-# -*- coding: utf-8 -*-
 from __future__ import annotations
 
 import os
-from datetime import date
 
 from dotenv import load_dotenv
 

@@ -61,7 +61,7 @@ test-cov:
 
 # Run ruff linter
 lint:
-	uv run ruff check .
+	uv run ruff check . --fix
 
 # Format code with black and ruff
 format:
@@ -75,7 +75,7 @@ format-check:
 
 # Run ty type checker (primary)
 type-check:
-	uv run ty check .
+	uv run ty check . --exclude .venv
 
 # Run mypy type checker (fallback)
 type-check2:

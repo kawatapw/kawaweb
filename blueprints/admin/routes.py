@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Routes for Admin Panel
 
@@ -6,42 +5,56 @@ This module contains all route definitions for the admin panel,
 handling HTTP requests and coordinating with services.
 """
 
-from typing import Optional, Dict, Any
 import datetime
-from datetime import datetime as dt_class
 
 import timeago
-from quart import render_template, jsonify, request, session
+from quart import jsonify, render_template, request
 
 from objects import glob
-from objects.utils import flash, klogging, error_catcher
-from objects.privileges import Privileges
+from objects.utils import error_catcher, flash, klogging
 
 from . import admin
-from .models import (
-    ActionType, ActionRequest, UserListRequest, BadgeRequest, MapRequest,
-    ActionResponse, UserListResponse, DashboardData, UserDetail, BadgeDetail
-)
 from .exceptions import (
-    AdminPanelError, AuthenticationError, AuthorizationError, ValidationError,
-    ResourceNotFoundError, AlreadyExistsError, InvalidActionError,
-    StateConflictError, DatabaseError, ExternalServiceError,
-    PasswordValidationError, PrivilegeError, MapStatusError, ScoreError,
-    BadgeError, UserAccountError, FormValidationError, handle_admin_error
+    AdminPanelError,
+    InvalidActionError,
+    ValidationError,
+    handle_admin_error,
+)
+from .models import (
+    ActionRequest,
+    ActionType,
+    BadgeRequest,
+    MapRequest,
+    UserListRequest,
+    UserListResponse,
 )
 from .repositories import (
-    UserRepository, MapRepository, BadgeRepository, UserBadgeRepository,
-    ScoreRepository, StatsRepository, MapRequestRepository, LogRepository,
-    ClientHashRepository, NewlyRankedRepository, ServerDataRepository
+    BadgeRepository,
+    ClientHashRepository,
+    LogRepository,
+    MapRepository,
+    MapRequestRepository,
+    NewlyRankedRepository,
+    ScoreRepository,
+    ServerDataRepository,
+    StatsRepository,
+    UserBadgeRepository,
+    UserRepository,
 )
 from .services import (
-    PermissionService, ActionService, DashboardService, UserService,
-    BadgeService, MapRequestService, ServerDataService
+    ActionService,
+    BadgeService,
+    DashboardService,
+    MapRequestService,
+    ServerDataService,
+    UserService,
 )
 from .utils import (
-    SessionManager, RequestValidator, DiscordLogger, ResponseFormatter,
-    PasswordManager, PrivilegeChecker, MapStatusUpdater, ScoreManager,
-    StatsManager, FormValidator
+    DiscordLogger,
+    PrivilegeChecker,
+    RequestValidator,
+    ResponseFormatter,
+    SessionManager,
 )
 
 
@@ -52,8 +65,8 @@ def _parse_optional_int(form, field_name: str):
         return None
     try:
         return int(val)
-    except (ValueError, TypeError):
-        raise ValidationError(f"Invalid value for '{field_name}': must be an integer.")
+    except (ValueError, TypeError) as e:
+        raise ValidationError(f"Invalid value for '{field_name}': must be an integer.") from e
 
 
 # Initialize services
@@ -89,34 +102,34 @@ discord_logger = DiscordLogger(
 async def action(action_type: str):
     """
     Execute an admin action on users or maps.
-    
+
     This endpoint handles various admin actions including:
     - User management (wipe, restrict, unrestrict, silence, unsilence, etc.)
     - Map management (rank, approve, qualify, love, unrank, etc.)
     - Badge management (add, remove)
     - Score management (remove)
-    
+
     Args:
         action_type: The type of action to execute
-        
+
     Returns:
         JSON response with action status and details
     """
     # Validate authentication
     SessionManager.require_authentication()
-    
+
     # Validate content type
     RequestValidator.validate_content_type()
-    
+
     # Get form data
     form = await RequestValidator.get_form_data()
-    
+
     # Parse action type
     try:
         action_enum = ActionType(action_type)
-    except ValueError:
-        raise InvalidActionError(action_type)
-    
+    except ValueError as e:
+        raise InvalidActionError(action_type) from e
+
     # Build action request
     request_data = ActionRequest(
         action=action_enum,
@@ -133,47 +146,47 @@ async def action(action_type: str):
         badge_id=_parse_optional_int(form, "badge"),
         score_id=_parse_optional_int(form, "score"),
     )
-    
+
     # Get current user ID
     mod_id = SessionManager.get_user_id()
-    
+
     # Create and execute action
-    action_obj = await action_service.create_action(request_data, mod_id)
+    action_obj = await action_service.create_action(request_data, mod_id)  # ty:ignore[invalid-argument-type]
     response = await action_service.execute_action(action_obj, request_data)
-    
+
     # Log to Discord (best-effort — don't fail the request if webhook fails)
     try:
         if action_obj.is_user_action and hasattr(action_obj, 'user'):
             await discord_logger.log_user_action(
                 action_obj,
-                action_obj.mod.name,
-                action_obj.mod.id,
-                action_obj.user.name,
-                action_obj.user.id
+                action_obj.mod.name,  # ty:ignore[unresolved-attribute]
+                action_obj.mod.id,  # ty:ignore[unresolved-attribute]
+                action_obj.user.name,  # ty:ignore[unresolved-attribute]
+                action_obj.user.id  # ty:ignore[unresolved-attribute]
             )
         elif action_obj.is_map_action and hasattr(action_obj, 'map'):
             await discord_logger.log_map_action(
                 action_obj,
-                action_obj.mod.name,
-                action_obj.mod.id,
+                action_obj.mod.name,  # ty:ignore[unresolved-attribute]
+                action_obj.mod.id,  # ty:ignore[unresolved-attribute]
                 action_obj.map
             )
         elif action_obj.is_badge_action and hasattr(action_obj, 'badge'):
             await discord_logger.log_badge_action(
                 action_obj,
-                action_obj.mod.name,
-                action_obj.mod.id,
-                action_obj.user.name,
-                action_obj.user.id,
+                action_obj.mod.name,  # ty:ignore[unresolved-attribute]
+                action_obj.mod.id,  # ty:ignore[unresolved-attribute]
+                action_obj.user.name,  # ty:ignore[unresolved-attribute]
+                action_obj.user.id,  # ty:ignore[unresolved-attribute]
                 {
-                    'id': action_obj.badge.id,
-                    'name': action_obj.badge.name,
-                    'description': action_obj.badge.description
+                    'id': action_obj.badge.id,  # ty:ignore[unresolved-attribute]
+                    'name': action_obj.badge.name,  # ty:ignore[unresolved-attribute]
+                    'description': action_obj.badge.description  # ty:ignore[unresolved-attribute]
                 }
             )
     except Exception as e:
         klogging.log(f"Discord webhook failed (action still succeeded): {e}", klogging.Ansi.LYELLOW)
-    
+
     return jsonify(ResponseFormatter.success(
         response.message,
         response.action_id
@@ -189,10 +202,10 @@ async def home():
     # Validate authentication
     SessionManager.require_authentication()
     SessionManager.require_staff()
-    
+
     # Get dashboard data
     dashboard_data = await dashboard_service.get_dashboard_data()
-    
+
     return await render_template(
         'admin/home.html',
         dashdata=dashboard_data,
@@ -207,12 +220,12 @@ async def home():
 @admin.route('/users/')
 @admin.route('/users/<int:page>')
 @error_catcher
-async def users(page: Optional[int] = None):
+async def users(page: int | None = None):
     """Render the users management page."""
     # Validate authentication
     SessionManager.require_authentication()
     SessionManager.require_staff()
-    
+
     # Parse request parameters
     update = request.args.get('update') == 'true'
     search = str(request.args.get('search') or '')
@@ -220,7 +233,7 @@ async def users(page: Optional[int] = None):
     sort_order = str(request.args.get('order') or 'ASC')
     filter_priv = str(request.args.get('priv') or '')
     filter_country = str(request.args.get('country') or '')
-    
+
     # Build request
     request_data = UserListRequest(
         page=page or 1,
@@ -231,16 +244,16 @@ async def users(page: Optional[int] = None):
         filter_country=filter_country if filter_country else None,
         update=update
     )
-    
+
     # Validate request
     errors = request_data.validate()
     if errors:
         raise ValidationError(f"Invalid request: {', '.join(errors)}")
-    
+
     # Calculate pagination
     items_per_page = 50
     offset = items_per_page * (request_data.page - 1)
-    
+
     # Build filters
     filters = {}
     if request_data.search:
@@ -249,11 +262,11 @@ async def users(page: Optional[int] = None):
         filters['filter_priv'] = request_data.filter_priv
     if request_data.filter_country:
         filters['filter_country'] = request_data.filter_country
-    
+
     # Get total count
     total_count = await user_repo.get_count(filters)
     total_pages = (total_count + items_per_page - 1) // items_per_page
-    
+
     # Get users
     users = await user_repo.get_list(
         limit=items_per_page,
@@ -262,11 +275,11 @@ async def users(page: Optional[int] = None):
         sort_order=request_data.sort_order,
         filters=filters
     )
-    
+
     # Get customizations for each user
     for user in users:
         user['customisations'] = await user_repo.get_customisations(user['id'])
-    
+
     # Return JSON if update request
     if update:
         return jsonify(UserListResponse(
@@ -278,7 +291,7 @@ async def users(page: Optional[int] = None):
                 'items_per_page': items_per_page
             }
         ))
-    
+
     # Render template
     return await render_template(
         'admin/users.html',
@@ -302,13 +315,13 @@ async def user(userid: int):
     # Validate authentication
     SessionManager.require_authentication()
     SessionManager.require_staff()
-    
+
     # Get user detail
     user_detail = await user_service.get_user_detail(userid)
 
     # Strip sensitive data if caller lacks ViewSensitiveInfo
     session_priv = SessionManager.get_user_priv()
-    if not PrivilegeChecker.has_privilege(session_priv, "ViewSensitiveInfo"):
+    if not PrivilegeChecker.has_privilege(session_priv, "ViewSensitiveInfo"):  # ty:ignore[invalid-argument-type]
         user_detail.user.get("logs", {}).pop("hashes", None)
 
     return jsonify(user_detail.user)
@@ -321,17 +334,17 @@ async def badges():
     # Validate authentication
     SessionManager.require_authentication()
     SessionManager.require_staff()
-    
+
     # Check if JSON response is requested
     is_json = request.args.get('json') == 'true'
-    
+
     # Get all badges
     badges = await badge_service.get_all_badges()
-    
+
     # Return JSON if requested
     if is_json:
         return jsonify(badges)
-    
+
     # Render template
     return await render_template(
         'admin/badges.html',
@@ -347,10 +360,10 @@ async def badge(badgeid: int):
     # Validate authentication
     SessionManager.require_authentication()
     SessionManager.require_staff()
-    
+
     # Get badge detail
     badge_detail = await badge_service.get_badge_detail(badgeid)
-    
+
     return jsonify(badge_detail.badge)
 
 
@@ -360,15 +373,15 @@ async def update_badge(badgeid: int):
     # Validate authentication
     SessionManager.require_authentication()
     SessionManager.require_staff()
-    
+
     # Check permission
     user_priv = SessionManager.get_user_priv()
-    if not PrivilegeChecker.has_privilege(user_priv, "ManageBadges"):
+    if not PrivilegeChecker.has_privilege(user_priv, "ManageBadges"):  # ty:ignore[invalid-argument-type]
         return jsonify(ResponseFormatter.permission_error("update badges")), 403
-    
+
     # Get JSON data
     data = await RequestValidator.get_json_data()
-    
+
     # Build request
     request_data = BadgeRequest(
         name=data.get('name'),
@@ -376,21 +389,21 @@ async def update_badge(badgeid: int):
         priority=data.get('priority'),
         styles=data.get('styles')
     )
-    
+
     # Validate request
     errors = request_data.validate()
     if errors:
         raise ValidationError(f"Invalid request: {', '.join(errors)}")
-    
+
     # Update badge
     await badge_service.update_badge(
         badgeid,
-        request_data.name,
-        request_data.description,
-        request_data.priority,
-        request_data.styles
+        request_data.name,  # ty:ignore[invalid-argument-type]
+        request_data.description,  # ty:ignore[invalid-argument-type]
+        request_data.priority,  # ty:ignore[invalid-argument-type]
+        request_data.styles  # ty:ignore[invalid-argument-type]
     )
-    
+
     return jsonify(ResponseFormatter.success("Badge updated successfully")), 200
 
 
@@ -400,15 +413,15 @@ async def create_badge():
     # Validate authentication
     SessionManager.require_authentication()
     SessionManager.require_staff()
-    
+
     # Check permission
     user_priv = SessionManager.get_user_priv()
-    if not PrivilegeChecker.has_privilege(user_priv, "ManageBadges"):
+    if not PrivilegeChecker.has_privilege(user_priv, "ManageBadges"):  # ty:ignore[invalid-argument-type]
         return jsonify(ResponseFormatter.permission_error("create badges")), 403
-    
+
     # Get JSON data
     data = await RequestValidator.get_json_data()
-    
+
     # Build request
     request_data = BadgeRequest(
         name=data.get('name'),
@@ -416,48 +429,48 @@ async def create_badge():
         priority=data.get('priority'),
         styles=data.get('styles')
     )
-    
+
     # Validate request
     errors = request_data.validate()
     if errors:
         raise ValidationError(f"Invalid request: {', '.join(errors)}")
-    
+
     # Create badge
     await badge_service.create_badge(
-        request_data.name,
-        request_data.description,
-        request_data.priority,
-        request_data.styles
+        request_data.name,  # ty:ignore[invalid-argument-type]
+        request_data.description,  # ty:ignore[invalid-argument-type]
+        request_data.priority,  # ty:ignore[invalid-argument-type]
+        request_data.styles  # ty:ignore[invalid-argument-type]
     )
-    
+
     return jsonify(ResponseFormatter.success("Badge created successfully")), 200
 
 
 @admin.route('/beatmaps/<int:page>')
 @admin.route('/beatmaps')
 @error_catcher
-async def beatmaps(page: Optional[int] = None):
+async def beatmaps(page: int | None = None):
     """Render the beatmaps management page."""
     # Validate authentication
     SessionManager.require_authentication()
     SessionManager.require_staff()
-    
+
     # Check permission
     user_priv = SessionManager.get_user_priv()
-    if not PrivilegeChecker.has_privilege(user_priv, "ManageBeatmaps"):
+    if not PrivilegeChecker.has_privilege(user_priv, "ManageBeatmaps"):  # ty:ignore[invalid-argument-type]
         return await flash('error', 'You have insufficient privileges.', 'home')
-    
+
     # Build request
     request_data = MapRequest(page=page or 1)
-    
+
     # Validate request
     errors = request_data.validate()
     if errors:
         raise ValidationError(f"Invalid request: {', '.join(errors)}")
-    
+
     # Get active map requests
     requests = await map_request_service.get_active_requests(request_data.page)
-    
+
     # Render template
     return await render_template(
         'admin/beatmaps.html',
@@ -474,16 +487,16 @@ async def stuffbroke():
     """Trigger a break event (for testing/debugging)."""
     # Validate authentication
     SessionManager.require_authentication()
-    
+
     # Check permission
     user_priv = SessionManager.get_user_priv()
-    if not PrivilegeChecker.has_privilege(user_priv, "Dangerous"):
+    if not PrivilegeChecker.has_privilege(user_priv, "Dangerous"):  # ty:ignore[invalid-argument-type]
         return await flash('error', 'You have insufficient privileges.', 'home')
-    
+
     # Trigger break event
     await server_data_service.trigger_break_event()
-    
-    return await frontend.home(flash='Successfully broke stuff.', status='success')
+
+    return await frontend.home(flash='Successfully broke stuff.', status='success')  # ty:ignore[unresolved-attribute]
 
 
 @admin.route('/test')
@@ -492,12 +505,12 @@ async def test():
     """Test endpoint for debugging."""
     # Validate authentication
     SessionManager.require_authentication()
-    
+
     # Check permission
     user_priv = SessionManager.get_user_priv()
-    if not PrivilegeChecker.has_privilege(user_priv, "Dangerous"):
+    if not PrivilegeChecker.has_privilege(user_priv, "Dangerous"):  # ty:ignore[invalid-argument-type]
         return await flash('error', 'You have insufficient privileges.', 'home')
-    
+
     return await flash('success', 'Successfully tested. Results: ', 'home')
 
 
@@ -516,5 +529,4 @@ async def handle_unexpected_error(error):
     return jsonify({"status": "error", "message": "An unexpected error occurred."}), 500
 
 
-# Import frontend blueprint for stuffbroke endpoint
-from blueprints import frontend
+from blueprints import frontend  # noqa: E402 - Required for stuffbroke endpoint

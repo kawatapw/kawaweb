@@ -1,28 +1,33 @@
-# -*- coding: utf-8 -*-
 
 __all__ = ()
 
-import bcrypt
 import hashlib
 import io
 import json
 import os
-import time
 import re
-import orjson
+import time
 from functools import wraps
-from PIL import Image
 from pathlib import Path
-from quart import Blueprint, redirect, render_template, request, session, send_file, Response
-from quart import jsonify, g
+
+import bcrypt
+from PIL import Image
+from quart import (
+    Blueprint,
+    Response,
+    g,
+    jsonify,
+    redirect,
+    render_template,
+    request,
+    send_file,
+    session,
+)
 
 from constants import regexes
-from objects import glob
-from objects import utils
+from objects import glob, utils
 from objects.privileges import Privileges
-from objects.utils import flash
-from objects.utils import flash_with_customizations
-from objects.utils import klogging, error_catcher
+from objects.utils import error_catcher, flash, flash_with_customizations, klogging
 
 VALID_MODES = frozenset({'std', 'taiko', 'catch', 'mania'})
 VALID_MODS = frozenset({'vn', 'rx', 'ap'})
@@ -38,14 +43,14 @@ async def api_redirect(file_path):
     # SECURITY: Validate path to prevent open redirects or internal access
     if not SAFE_API_PATH_REGEX.match(file_path):
         return await flash('error', 'Invalid API path requested.', 'home')
-        
+
     redirect_url = f"https://api.{glob.config.domain}/{file_path}"
     return redirect(redirect_url, code=301)
 
 @frontend.route("/health")
 async def health_check():
     """Robust health check endpoint for Docker health checks.
-    
+
     Checks:
     - Database connectivity
     - Redis connectivity
@@ -59,13 +64,13 @@ async def health_check():
         "checks": {},
         "response_time_ms": 0
     }
-    
+
     # Check database connectivity
     try:
         db_start = time.time()
         db_healthy = await glob.db.fetch("SELECT 1") is not None
         db_time = (time.time() - db_start) * 1000
-        
+
         if db_healthy:
             health_status["checks"]["database"] = {
                 "status": "connected",
@@ -90,7 +95,7 @@ async def health_check():
         redis_start = time.time()
         redis_healthy = await glob.redis.ping()
         redis_time = (time.time() - redis_start) * 1000
-        
+
         if redis_healthy:
             health_status["checks"]["redis"] = {
                 "status": "connected",
@@ -112,10 +117,10 @@ async def health_check():
 
     # Calculate total response time
     health_status["response_time_ms"] = round((time.time() - start_time) * 1000, 2)
-    
+
     # Determine HTTP status code
     status_code = 200 if health_status["status"] == "healthy" else 503
-    
+
     # Return JSON response
     return Response(
         response=json.dumps(health_status),
@@ -162,42 +167,42 @@ def login_required(func):
 @error_catcher
 async def home(doc=None, sid=None, id=None, flash=None, status=None):
     unix_timestamp = await glob.db.fetch('SELECT * FROM server_data WHERE type = "breakevent"')
-    unix_timestamp = unix_timestamp['value']
-    
+    unix_timestamp = unix_timestamp['value']  # ty:ignore[invalid-argument-type, not-subscriptable]
+
     dash_data = await glob.db.fetch(
         'SELECT COUNT(id) count, '
         '(SELECT name FROM users ORDER BY id DESC LIMIT 1) lastest_user, '
         '(SELECT COUNT(id) FROM users WHERE NOT priv & 1) banned '
         'FROM users'
     )
-    
+
     newly_ranked = await glob.db.fetchall('SELECT * FROM newly_ranked ORDER BY time DESC LIMIT 6')
-    
+
     # Process newly ranked maps
     for map in newly_ranked:
         try:
             map_info = await glob.db.fetch(
-                'SELECT server, id, set_id, artist, title, creator FROM maps WHERE id = %s', 
-                [map['map_id']]
+                'SELECT server, id, set_id, artist, title, creator FROM maps WHERE id = %s',
+                [map['map_id']]  # ty:ignore[invalid-argument-type, not-subscriptable]
             )
-            
+
             if map_info:
-                map.update(map_info)
+                map.update(map_info)  # ty:ignore[unresolved-attribute]
                 # Fetch diffs
-                map['diffs'] = await glob.db.fetchall('SELECT * FROM maps WHERE set_id = %s', [map['set_id']])
-                
+                map['diffs'] = await glob.db.fetchall('SELECT * FROM maps WHERE set_id = %s', [map['set_id']])  # ty:ignore[invalid-argument-type, invalid-assignment, not-subscriptable]
+
                 # Fetch mod info
-                map['mod'] = await glob.db.fetch('SELECT name, id, country, priv FROM users WHERE id = %s', [map['mod_id']])
+                map['mod'] = await glob.db.fetch('SELECT name, id, country, priv FROM users WHERE id = %s', [map['mod_id']])  # ty:ignore[invalid-argument-type, invalid-assignment, not-subscriptable]
             else:
                 # Map info missing, clean up DB
-                klogging.log(f"Map info missing for newly ranked map {map['map_id']}, deleting.", klogging.Ansi.LRED)
-                await glob.db.execute('DELETE FROM newly_ranked WHERE map_id = %s', [map['map_id']])
+                klogging.log(f"Map info missing for newly ranked map {map['map_id']}, deleting.", klogging.Ansi.LRED)  # ty:ignore[invalid-argument-type, not-subscriptable]
+                await glob.db.execute('DELETE FROM newly_ranked WHERE map_id = %s', [map['map_id']])  # ty:ignore[invalid-argument-type, not-subscriptable]
                 continue
 
         except KeyError as e:
             if str(e) == "'set_id'":
-                klogging.log(f"No set_id for map {map['map_id']}, deleting entry.", klogging.Ansi.LRED)
-                await glob.db.execute('DELETE FROM newly_ranked WHERE map_id = %s', [map['map_id']])
+                klogging.log(f"No set_id for map {map['map_id']}, deleting entry.", klogging.Ansi.LRED)  # ty:ignore[invalid-argument-type, not-subscriptable]
+                await glob.db.execute('DELETE FROM newly_ranked WHERE map_id = %s', [map['map_id']])  # ty:ignore[invalid-argument-type, not-subscriptable]
             else:
                 klogging.log(f"KeyError in home route: {e}", klogging.Ansi.LRED)
             continue
@@ -209,29 +214,29 @@ async def home(doc=None, sid=None, id=None, flash=None, status=None):
     changelogs = await glob.db.fetchall('SELECT * FROM changelog ORDER BY time DESC LIMIT 5')
     for log in changelogs:
         try:
-            poster = await glob.db.fetch("SELECT name, id, country, priv FROM users WHERE id = %s", [log['poster']])
+            poster = await glob.db.fetch("SELECT name, id, country, priv FROM users WHERE id = %s", [log['poster']])  # ty:ignore[invalid-argument-type, not-subscriptable]
             if not poster:
                 continue
 
             poster_badges = await glob.db.fetchall(
                 "SELECT badge_id FROM user_badges WHERE userid = %s",
-                (log['poster'],),
+                (log['poster'],),  # ty:ignore[invalid-argument-type, not-subscriptable]
             )
             badges = []
             for user_badge in poster_badges:
-                badge_id = user_badge["badge_id"]
+                badge_id = user_badge["badge_id"]  # ty:ignore[invalid-argument-type, not-subscriptable]
                 badge = await glob.db.fetch("SELECT * FROM badges WHERE id = %s", (badge_id,))
                 if not badge:
                     continue
-                    
+
                 badge_styles = await glob.db.fetchall("SELECT * FROM badge_styles WHERE badge_id = %s", (badge_id,))
                 badge = dict(badge)
-                badge["styles"] = {style["type"]: style["value"] for style in badge_styles}
+                badge["styles"] = {style["type"]: style["value"] for style in badge_styles}  # ty:ignore[invalid-argument-type, not-subscriptable]
                 badges.append(badge)
-            
+
             badges.sort(key=lambda x: x['priority'], reverse=True)
-            poster['badges'] = badges
-            log['poster'] = poster
+            poster['badges'] = badges  # ty:ignore[invalid-assignment]
+            log['poster'] = poster  # ty:ignore[invalid-assignment]
         except Exception as e:
             klogging.log(f"Error fetching changelog author: {e}", klogging.Ansi.LRED)
             # Don't return error, just skip this log entry
@@ -267,7 +272,7 @@ async def home(doc=None, sid=None, id=None, flash=None, status=None):
         total_scores_row = await glob.db.fetch(
             "SELECT COUNT(*) as cnt FROM scores"
         )
-        total_scores = total_scores_row['cnt'] if total_scores_row else 0
+        total_scores = total_scores_row['cnt'] if total_scores_row else 0  # ty:ignore[invalid-argument-type]
     except Exception:
         total_scores = 0
 
@@ -362,7 +367,7 @@ async def settings_profile_post():
             'UPDATE users SET email = %s WHERE id = %s',
             [new_email, session['user_data']['id']]
         )
-        
+
     if new_hue is not None and 0 <= new_hue <= 360:
         await glob.db.execute(
             'INSERT INTO user_customisations (userid, hue) VALUES (%s, %s) ON DUPLICATE KEY UPDATE hue = %s',
@@ -417,7 +422,7 @@ async def settings_avatar_post():
         AVATARS_PATH = './.data/b.py/avatars'
     else:
         AVATARS_PATH = f'{glob.config.path_to_gulag}.data/avatars'
-        
+
     ALLOWED_EXTENSIONS = ['.jpeg', '.jpg', '.png']
     if session['user_data']['is_donator']:
         ALLOWED_EXTENSIONS.append('.gif')
@@ -579,24 +584,24 @@ async def settings_password_post():
     if old_password == new_password:
         return await flash('error', 'Your new password cannot be the same as your old password!', 'settings/password')
 
-    if not 8 < len(new_password) <= 32:
+    if not 8 < len(new_password) <= 32:  # ty:ignore[invalid-argument-type]
         return await flash('error', 'Your new password must be 8-32 characters in length.', 'settings/password')
 
-    if len(set(new_password)) <= 3:
+    if len(set(new_password)) <= 3:  # ty:ignore[invalid-argument-type]
         return await flash('error', 'Your new password must have more than 3 unique characters.', 'settings/password')
 
-    if new_password.lower() in glob.config.disallowed_passwords:
+    if new_password.lower() in glob.config.disallowed_passwords:  # ty:ignore[unresolved-attribute]
         return await flash('error', 'Your new password was deemed too simple.', 'settings/password')
 
     # Cache and password info
     bcrypt_cache = glob.cache['bcrypt']
-    
+
     user_row = await glob.db.fetch('SELECT pw_bcrypt FROM users WHERE id = %s', [session['user_data']['id']])
     if not user_row:
         return await flash('error', 'User not found.', 'hinaDir/login')
-        
-    pw_bcrypt = user_row['pw_bcrypt'].encode()
-    pw_md5 = hashlib.md5(old_password.encode()).hexdigest().encode()
+
+    pw_bcrypt = user_row['pw_bcrypt'].encode()  # ty:ignore[invalid-argument-type]
+    pw_md5 = hashlib.md5(old_password.encode()).hexdigest().encode()  # ty:ignore[unresolved-attribute]
 
     # Check old password
     if pw_bcrypt in bcrypt_cache:
@@ -615,7 +620,7 @@ async def settings_password_post():
         del bcrypt_cache[pw_bcrypt]
 
     # Calculate new
-    pw_md5 = hashlib.md5(new_password.encode()).hexdigest().encode()
+    pw_md5 = hashlib.md5(new_password.encode()).hexdigest().encode()  # ty:ignore[unresolved-attribute]
     pw_bcrypt = bcrypt.hashpw(pw_md5, bcrypt.gensalt())
 
     # Update cache and DB
@@ -636,7 +641,7 @@ async def settings_password_post():
 async def profile_select(id):
     mode = request.args.get('mode', 'std', type=str)
     mods = request.args.get('mods', 'vn', type=str)
-    
+
     user_data = await glob.db.fetch(
         'SELECT users.name, users.safe_name, users.id, users.priv, users.country, user_customisations.hue '
         'FROM users '
@@ -652,25 +657,25 @@ async def profile_select(id):
         return (await render_template('404.html'), 404)
 
     is_staff = 'authenticated' in session and session['user_data']['is_staff']
-    if not (user_data['priv'] & Privileges.Normal or is_staff):
+    if not (user_data['priv'] & Privileges.Normal or is_staff):  # ty:ignore[invalid-argument-type]
         return (await render_template('404.html'), 404)
 
-    user_data['customisation'] = utils.has_profile_customizations(user_data['id'])
-    
+    user_data['customisation'] = utils.has_profile_customizations(user_data['id'])  # ty:ignore[invalid-argument-type, invalid-assignment]
+
     g.Player = {
-        "id": user_data['id'],
-        "name": user_data['name'],
-        "country": user_data['country'],
+        "id": user_data['id'],  # ty:ignore[invalid-argument-type]
+        "name": user_data['name'],  # ty:ignore[invalid-argument-type]
+        "country": user_data['country'],  # ty:ignore[invalid-argument-type]
     }
 
     # Apply dev/maintenance flash if needed
     if g.isDevEnv:
-        return await render_template('profile.html', user=user_data, mode=mode, mods=mods, globalNotice=g.globalNotice, 
+        return await render_template('profile.html', user=user_data, mode=mode, mods=mods, globalNotice=g.globalNotice,
                                    flash=f"This Website is the Dev Environment. Please play on <a href='https://{glob.config.official_domain}'>our Official Server</a>", status="success")
     if g.maintenance:
-        return await render_template('profile.html', user=user_data, mode=mode, mods=mods, globalNotice=g.globalNotice, 
+        return await render_template('profile.html', user=user_data, mode=mode, mods=mods, globalNotice=g.globalNotice,
                                    flash="Website is currently under maintenance", status="success")
-                                   
+
     return await render_template('profile.html', user=user_data, mode=mode, mods=mods, globalNotice=g.globalNotice)
 
 @frontend.route('/leaderboard')
@@ -684,7 +689,7 @@ async def profile_select(id):
 @error_catcher
 async def leaderboard(mode='std', sort='pp', mods='vn', view='alltime', season='0'):
     if g.isDevEnv:
-        return await render_template('leaderboard.html', mode=mode, sort=sort, mods=mods, view=view, season=season, globalNotice=g.globalNotice, 
+        return await render_template('leaderboard.html', mode=mode, sort=sort, mods=mods, view=view, season=season, globalNotice=g.globalNotice,
                                    flash=f"This Website is the Dev Environment. Please play on <a href='https://{glob.config.official_domain}'>our Official Server</a>", status="success")
     if g.maintenance:
         return await render_template('leaderboard.html', mode=mode, sort=sort, mods=mods, view=view, season=season, globalNotice=g.globalNotice,
@@ -705,12 +710,12 @@ async def clans():
 async def login():
     if 'authenticated' in session:
         return await flash('error', "You're already logged in!", 'home')
-    
+
     if g.isDevEnv:
         return await render_template('login.html', globalNotice=g.globalNotice, flash=f"This Website is the Dev Environment. Please play on <a href='https://{glob.config.official_domain}'>our Official Server</a>", status="success")
     if g.maintenance:
         return await render_template('login.html', globalNotice=g.globalNotice, flash="Website is currently under maintenance", status="success")
-        
+
     return await render_template('login.html', globalNotice=g.globalNotice)
 
 @frontend.route('/login', methods=['POST'])
@@ -739,26 +744,26 @@ async def login_post():
         'WHERE users.safe_name = %s',
         [utils.get_safe_name(username)]
     )
-    
+
     badges = []
-    if user_info and user_info['id']:
-        user_badges = await glob.db.fetchall("SELECT badge_id FROM user_badges WHERE userid = %s", [user_info['id']])
+    if user_info and user_info['id']:  # ty:ignore[invalid-argument-type]
+        user_badges = await glob.db.fetchall("SELECT badge_id FROM user_badges WHERE userid = %s", [user_info['id']])  # ty:ignore[invalid-argument-type]
         for user_badge in user_badges:
-            badge = await glob.db.fetch("SELECT * FROM badges WHERE id = %s", [user_badge["badge_id"]])
+            badge = await glob.db.fetch("SELECT * FROM badges WHERE id = %s", [user_badge["badge_id"]])  # ty:ignore[invalid-argument-type, not-subscriptable]
             if badge:
-                badge_styles = await glob.db.fetchall("SELECT * FROM badge_styles WHERE badge_id = %s", [user_badge["badge_id"]])
+                badge_styles = await glob.db.fetchall("SELECT * FROM badge_styles WHERE badge_id = %s", [user_badge["badge_id"]])  # ty:ignore[invalid-argument-type, not-subscriptable]
                 badge = dict(badge)
-                badge["styles"] = {style["type"]: style["value"] for style in badge_styles}
+                badge["styles"] = {style["type"]: style["value"] for style in badge_styles}  # ty:ignore[invalid-argument-type, not-subscriptable]
                 badges.append(badge)
         badges.sort(key=lambda x: x['priority'], reverse=True)
 
-    if not user_info or user_info['id'] == 1:
+    if not user_info or user_info['id'] == 1:  # ty:ignore[invalid-argument-type]
         if glob.config.debug:
             klogging.log(f"{username}'s login failed - account doesn't exist.", klogging.Ansi.LYELLOW)
         return await flash('error', 'Account does not exist.', 'hinaDir/login')
 
     bcrypt_cache = glob.cache['bcrypt']
-    pw_bcrypt = user_info['pw_bcrypt'].encode()
+    pw_bcrypt = user_info['pw_bcrypt'].encode()  # ty:ignore[invalid-argument-type]
     pw_md5 = hashlib.md5(passwd_txt.encode()).hexdigest().encode()
 
     if pw_bcrypt in bcrypt_cache:
@@ -773,12 +778,12 @@ async def login_post():
             return await flash('error', 'Password is incorrect.', 'hinaDir/login')
         bcrypt_cache[pw_bcrypt] = pw_md5
 
-    if not user_info['priv'] & Privileges.Verified:
+    if not user_info['priv'] & Privileges.Verified:  # ty:ignore[invalid-argument-type]
         if glob.config.debug:
             klogging.log(f"{username}'s login failed - not verified.", klogging.Ansi.LYELLOW)
         return await render_template('verify.html')
 
-    if not user_info['priv'] & Privileges.Normal:
+    if not user_info['priv'] & Privileges.Normal:  # ty:ignore[invalid-argument-type]
         if glob.config.debug:
             klogging.log(f"{username}'s login failed - banned.", klogging.Ansi.RED)
         return await flash('error', 'Your account is restricted. You are not allowed to log in.', 'hinaDir/login')
@@ -788,34 +793,34 @@ async def login_post():
 
     session['authenticated'] = True
     session['user_data'] = {
-        'id': user_info['id'],
-        'name': user_info['name'],
-        'safe_name': user_info['safe_name'],
+        'id': user_info['id'],  # ty:ignore[invalid-argument-type]
+        'name': user_info['name'],  # ty:ignore[invalid-argument-type]
+        'safe_name': user_info['safe_name'],  # ty:ignore[invalid-argument-type]
         'badges': (badges or None),
-        'email': user_info['email'],
-        'priv': user_info['priv'],
-        'silence_end': user_info['silence_end'],
-        'is_staff': user_info['priv'] & Privileges.Staff != 0,
-        'is_dev': user_info['priv'] & Privileges.Dangerous != 0,
-        'is_donator': user_info['priv'] & Privileges.Donator != 0,
-        'hue': user_info['hue'],
-        'clan_id': user_info['clan_id'] or 0,
-        'clan_name': user_info.get('clan_name') or None,
-        'clan_tag': user_info.get('clan_tag') or None,
-        'donor_end': user_info['donor_end'] or 0,
+        'email': user_info['email'],  # ty:ignore[invalid-argument-type]
+        'priv': user_info['priv'],  # ty:ignore[invalid-argument-type]
+        'silence_end': user_info['silence_end'],  # ty:ignore[invalid-argument-type]
+        'is_staff': user_info['priv'] & Privileges.Staff != 0,  # ty:ignore[invalid-argument-type]
+        'is_dev': user_info['priv'] & Privileges.Dangerous != 0,  # ty:ignore[invalid-argument-type]
+        'is_donator': user_info['priv'] & Privileges.Donator != 0,  # ty:ignore[invalid-argument-type]
+        'hue': user_info['hue'],  # ty:ignore[invalid-argument-type]
+        'clan_id': user_info['clan_id'] or 0,  # ty:ignore[invalid-argument-type]
+        'clan_name': user_info.get('clan_name') or None,  # ty:ignore[unresolved-attribute]
+        'clan_tag': user_info.get('clan_tag') or None,  # ty:ignore[unresolved-attribute]
+        'donor_end': user_info['donor_end'] or 0,  # ty:ignore[invalid-argument-type]
     }
 
     if glob.config.debug:
         login_time = (time.time_ns() - login_time) / 1e6
         klogging.log(f'Login took {login_time:.2f}ms!', klogging.Ansi.LYELLOW)
-        
+
     g.Player = {
-        "id": user_info['id'],
-        "name": user_info['name'],
-        "is_staff": user_info['priv'] & Privileges.Staff != 0,
-        "is_dev": user_info['priv'] & Privileges.Dangerous != 0,
-        "is_donator": user_info['priv'] & Privileges.Donator != 0,
-        "priv": user_info['priv'],
+        "id": user_info['id'],  # ty:ignore[invalid-argument-type]
+        "name": user_info['name'],  # ty:ignore[invalid-argument-type]
+        "is_staff": user_info['priv'] & Privileges.Staff != 0,  # ty:ignore[invalid-argument-type]
+        "is_dev": user_info['priv'] & Privileges.Dangerous != 0,  # ty:ignore[invalid-argument-type]
+        "is_donator": user_info['priv'] & Privileges.Donator != 0,  # ty:ignore[invalid-argument-type]
+        "priv": user_info['priv'],  # ty:ignore[invalid-argument-type]
     }
     return await home(status='success', flash=f'Hey, welcome back {username}!')
 
@@ -832,7 +837,7 @@ async def register():
         return await render_template('hinaDir/register.html', globalNotice=g.globalNotice, flash=f"This Website is the Dev Environment. Please play on <a href='https://{glob.config.official_domain}'>our Official Server</a>", status="success")
     if g.maintenance:
         return await render_template('hinaDir/register.html', globalNotice=g.globalNotice, flash="Website is currently under maintenance", status="success")
-        
+
     return await render_template('hinaDir/register.html', globalNotice=g.globalNotice)
 
 @frontend.route('/register', methods=['POST'])
@@ -897,7 +902,7 @@ async def register_post():
         country = await utils.fetch_geoloc(ip)
 
     # DB Transaction
-    async with glob.db.pool.acquire() as conn:
+    async with glob.db.pool.acquire() as conn:  # ty:ignore[unresolved-attribute]
         async with conn.cursor() as db_cursor:
             await db_cursor.execute(
                 'INSERT INTO users (name, safe_name, email, pw_bcrypt, country, creation_time, latest_activity) '
@@ -939,33 +944,33 @@ async def logout():
 async def changelog(type='frontend', category='all'):
     changelogs = await glob.db.fetchall("SELECT * FROM changelog ORDER BY 'time' DESC")
     for log in changelogs:
-        poster = await glob.db.fetch("SELECT name, id, country, priv FROM users WHERE id = %s", [log['poster']])
+        poster = await glob.db.fetch("SELECT name, id, country, priv FROM users WHERE id = %s", [log['poster']])  # ty:ignore[invalid-argument-type, not-subscriptable]
         if not poster:
             continue
-            
-        poster_badges = await glob.db.fetchall("SELECT badge_id FROM user_badges WHERE userid = %s", (log['poster'],))
+
+        poster_badges = await glob.db.fetchall("SELECT badge_id FROM user_badges WHERE userid = %s", (log['poster'],))  # ty:ignore[invalid-argument-type, not-subscriptable]
         badges = []
         for user_badge in poster_badges:
-            badge_id = user_badge["badge_id"]
+            badge_id = user_badge["badge_id"]  # ty:ignore[invalid-argument-type, not-subscriptable]
             badge = await glob.db.fetch("SELECT * FROM badges WHERE id = %s", (badge_id,))
             if not badge:
                 continue
             badge_styles = await glob.db.fetchall("SELECT * FROM badge_styles WHERE badge_id = %s", (badge_id,))
             badge = dict(badge)
-            badge["styles"] = {style["type"]: style["value"] for style in badge_styles}
+            badge["styles"] = {style["type"]: style["value"] for style in badge_styles}  # ty:ignore[invalid-argument-type, not-subscriptable]
             badges.append(badge)
             badges.sort(key=lambda x: x['priority'], reverse=True)
-        
-        poster['badges'] = badges
-        log['poster'] = poster
+
+        poster['badges'] = badges  # ty:ignore[invalid-assignment]
+        log['poster'] = poster  # ty:ignore[invalid-assignment]
 
     if g.isDevEnv:
-        return await render_template('changelog.html', changelogs=changelogs, type=type, category=category, globalNotice=g.globalNotice, 
+        return await render_template('changelog.html', changelogs=changelogs, type=type, category=category, globalNotice=g.globalNotice,
                                    flash=f"This Website is the Dev Environment. Please play on <a href='https://{glob.config.official_domain}'>our Official Server</a>", status="success")
     if g.maintenance:
-        return await render_template('changelog.html', changelogs=changelogs, type=type, category=category, globalNotice=g.globalNotice, 
+        return await render_template('changelog.html', changelogs=changelogs, type=type, category=category, globalNotice=g.globalNotice,
                                    flash="Website is currently under maintenance", status="success")
-        
+
     return await render_template('changelog.html', changelogs=changelogs, type=type, category=category, globalNotice=g.globalNotice)
 
 # social media redirections
