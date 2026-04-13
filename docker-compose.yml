@@ -25,6 +25,8 @@ services:
       - .:/srv/root
       - ${GULAG_PATH}/kawata.py:/srv/root/gulag
       - ${GULAG_PATH}/.data/b.py:/srv/root/.data/b.py
+      # Create isolated .venv for container to avoid conflicts with host development
+      - .venv:/srv/root/.venv
     environment:
       - TZ=${TZ}
       - APP_HOST=${APP_HOST}

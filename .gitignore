@@ -145,6 +145,10 @@ dmypy.json
 # Cython debug symbols
 cython_debug/
 
+# uv
+uv.lock
+.venv/
+
 # Project specific
 .vscode/
 .data/*
