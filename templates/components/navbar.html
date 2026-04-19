@@ -11,6 +11,10 @@
         <div class="navbar-links">
             <a class="navbar-link is-arrowless" href="/home">Home</a>
             <a class="navbar-link is-arrowless" href="/leaderboard">Leaderboards</a>
+            <a class="navbar-link is-arrowless" href="/records">Top Plays</a>
+            {% if session.authenticated %}
+            <a class="navbar-link is-arrowless" href="/beatmaps">Beatmaps</a>
+            {% endif %}
             <a class="navbar-link is-arrowless" @click="showDocsPanel('Rules')">Docs</a>
             
             
@@ -18,6 +22,7 @@
                 <div class="navbar-dropdown-container">
                     <button class="navbar-dropdown-trigger">Admin <i class="fas fa-chevron-down"></i></button>
                     <div class="navbar-dropdown-menu">
+                        <a class="navbar-dropdown-item" href="/admin-v2">Admin V2</a>
                         <a class="navbar-dropdown-item" href="/admin">Dash</a>
                         <a class="navbar-dropdown-item" href="/admin/users/1">Users</a>
                         <a class="navbar-dropdown-item" href="/admin/beatmaps">Beatmap Requests</a>
@@ -30,16 +35,12 @@
             {% endif %}
 
             {% if session.authenticated and session.user_data['is_staff'] %}
-                <div class="navbar-dropdown-container">
+                <!--<div class="navbar-dropdown-container">
                     <button class="navbar-dropdown-trigger">hinaWIP <i class="fas fa-flask"></i></button>
                     <div class="navbar-dropdown-menu">
                         <a class="navbar-dropdown-item" href="#">Score Hunt</a>
-                        <a class="navbar-dropdown-item" href="/records">PP Records</a>
-                        <a class="navbar-dropdown-item" href="/beatmaps">Beatmaps</a>
-                        <a class="navbar-dropdown-item" href="/admin-v2">Admin V2</a>
-                        <a class="navbar-dropdown-item" href="/team">Team</a>
                     </div>
-                </div>
+                </div>-->
             {% endif %}
         </div>
         
@@ -56,13 +57,14 @@
                         <span class="navbar-username">{{ session.user_data['name'] }}</span>
                         <i class="fas fa-chevron-down nuc-chevron" :class="{ 'is-flipped': isUserDropdownOpen }"></i>
                     </button>
-                    <div class="navbar-user-card" v-cloak v-show="isUserDropdownOpen">
+                    <div class="navbar-user-card" v-show="isUserDropdownOpen" :class="{ 'is-active': isUserDropdownOpen }" style="display:none; --user-banner: url(/banners/{{session.user_data['id']}}); --user-background: url(/backgrounds/{{session.user_data['id']}});}">
                         {# Header — links to profile #}
                         <a class="nuc-header" href="/u/{{ session.user_data['id'] }}">
+                            <div class="user-banner"></div> 
                             <img src="https://a.{{domain()}}/{{ session.user_data['id'] }}" alt="{{ session.user_data['name'] }}" class="nuc-avatar">
                             <div class="nuc-header-info">
                                 <span class="nuc-username">{{ session.user_data['name'] }}</span>
-                                <span class="nuc-safe-name">@{{ session.user_data.get('safe_name', session.user_data['name']|lower|replace(' ', '_')) }}</span>
+                                <span class="nuc-user-badges"></span>
                             </div>
                             <i class="fas fa-eye nuc-header-arrow"></i>
                         </a>
@@ -82,6 +84,7 @@
 
                         {# Menu items #}
                         <div class="nuc-menu">
+                            <div class="user-background"></div>
                             {# Clan row — only if clan_id > 0 #}
                             {% if session.user_data.get('clan_id', 0) > 0 %}
                             <a class="nuc-menu-item" href="/clan/{{ session.user_data['clan_id'] }}">
@@ -248,14 +251,28 @@
                                 <div class="navbar-mobile-search-section-results">
                                     <div
                                         v-for="player in searchResults.players"
-                                        :key="player.info.id"
+                                        :key="player.info && player.info.id ? player.info.id : player.name"
                                         class="navbar-mobile-search-result player"
                                         @click="openPlayerProfile(player)"
                                     >
-                                        <img :src="'https://a.' + domain + '/' + player.info.id" :alt="player.info.name" class="navbar-mobile-search-result-avatar">
+                                        <img 
+                                            v-if="player.info && player.info.id" 
+                                            :src="'https://a.' + domain + '/' + player.info.id" 
+                                            :alt="player.info && player.info.name ? player.info.name : 'Player'" 
+                                            class="navbar-mobile-search-result-avatar"
+                                        >
+                                        <div v-else class="navbar-mobile-search-result-avatar navbar-mobile-search-result-avatar-fallback">
+                                            <i class="fas fa-user"></i>
+                                        </div>
                                         <div class="navbar-mobile-search-result-info">
-                                            <span class="navbar-mobile-search-result-title" v-text="player.info.name"></span>
-                                            <span class="navbar-mobile-search-result-subtitle" v-text="'Rank #' + player.info.rank"></span>
+                                            <span 
+                                                class="navbar-mobile-search-result-title" 
+                                                v-text="player.info && player.info.name ? player.info.name : 'Unknown Player'"
+                                            ></span>
+                                            <span 
+                                                class="navbar-mobile-search-result-subtitle" 
+                                                v-text="player.info && player.info.rank ? 'Rank #' + player.info.rank : 'Rank #?'"
+                                            ></span>
                                         </div>
                                     </div>
                                 </div>
@@ -317,6 +334,16 @@
                         <i class="fas fa-trophy"></i>
                         <span>Leaderboards</span>
                     </a>
+                    <a class="navbar-mobile-link" href="/records">
+                        <i class="fas fa-trophy"></i>
+                        <span>Top Plays</span>
+                    </a>
+                    {% if session.authenticated %}
+                    <a class="navbar-mobile-link" href="/beatmaps">
+                        <i class="fas fa-music"></i>
+                        <span>Beatmaps</span>
+                    </a>
+                    {% endif %}
                     <a class="navbar-mobile-link" @click="showDocsPanel('Rules'); closeMobileMenu()">
                         <i class="fas fa-book"></i>
                         <span>Docs</span>
@@ -331,6 +358,7 @@
                                 <i class="fas fa-chevron-down"></i>
                             </button>
                             <div class="navbar-mobile-dropdown-menu">
+                                <a class="navbar-mobile-dropdown-item" href="/admin-v2">Admin V2</a>
                                 <a class="navbar-mobile-dropdown-item" href="/admin">Dash</a>
                                 <a class="navbar-mobile-dropdown-item" href="/admin/users/1">Users</a>
                                 <a class="navbar-mobile-dropdown-item" href="/admin/beatmaps">Beatmap Requests</a>
@@ -346,7 +374,7 @@
                     {% endif %}
 
                     {% if session.authenticated and session.user_data['is_staff'] %}
-                        <div class="navbar-mobile-dropdown">
+                        <!--<div class="navbar-mobile-dropdown">
                             <button class="navbar-mobile-dropdown-trigger" @click="toggleMobileDropdown">
                                 <i class="fas fa-flask"></i>
                                 <span>hinaWIP</span>
@@ -354,12 +382,8 @@
                             </button>
                             <div class="navbar-mobile-dropdown-menu">
                                 <a class="navbar-mobile-dropdown-item" href="#">Score Hunt</a>
-                                <a class="navbar-mobile-dropdown-item" href="/records">PP Records</a>
-                                <a class="navbar-mobile-dropdown-item" href="/beatmaps">Beatmaps</a>
-                                <a class="navbar-mobile-dropdown-item" href="/admin-v2">Admin V2</a>
-                                <a class="navbar-mobile-dropdown-item" href="/team">Team</a>
                             </div>
-                        </div>
+                        </div>-->
                     {% endif %}
                 </div>
             </div>

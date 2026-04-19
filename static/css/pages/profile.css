@@ -5,15 +5,18 @@
 .main-block {
   border-top-right-radius: 20px;
   border-top-left-radius: 20px;
+  background-color: hsla(var(--main), 10%, 15%, 0.5);
 }
 
 .second-block {
-  background: hsl(var(--main), 12%, 15%);
+  background: hsla(var(--main), 12%, 15%, 0.5);
+  backdrop-filter: blur(8px) saturate(1.5);
 }
 
 .stats-block {
   width: 100%;
-  background: hsl(var(--main), 25%, 25%);
+  background: hsla(var(--main), 25%, 25%, 0.25);
+  backdrop-filter: blur(8px) saturate(1.5);
   padding: 9.5px;
   margin-bottom: 9.5px !important;
 }
@@ -46,6 +49,7 @@
   border-radius: 16px;
   object-fit: cover;
   transition: 0.2s ease;
+  z-index: 1;
 }
 
 .profile-stats-rank {
@@ -100,8 +104,11 @@
   text-decoration: none;
 }
 
+/* Friend button styles are in profile.html <style> block (unlayered, beats Bulma) */
+
 .mode-selects {
-  background: hsl(var(--main), 25%, 22%);
+  background: hsla(var(--main), 25%, 22%, 0.5);
+  backdrop-filter: blur(8px) saturate(1.5);
   padding: 10px 10px 10px 250px;
 }
 
@@ -308,7 +315,6 @@ html {
   grid-gap: 10px;
   /* Change to fixed 2 columns */
   grid-template-columns: repeat(2, 1fr);
-  background: hsl(var(--main), 20%, 20%);
   padding: 6px 6px 12px 6px;
 }
 
@@ -328,7 +334,7 @@ html {
   width: 100%;
   display: flex;
   justify-content: center;
-  background: hsl(var(--main), 20%, 20%);
+  /* background: hsl(var(--main), 20%, 20%); */
 }
 
 .show-button {
@@ -450,7 +456,7 @@ html {
     width: 145px;
   }
   .info-block {
-    padding: 10 200;
+    padding: 10px;
   }
 }
 
@@ -489,4 +495,8 @@ html {
   transition: 0.2s ease;
   margin-bottom: 12px;
   overflow: unset !important;
+  background: hsla(var(--main), 20%, 20%, 0.25);
+  backdrop-filter: blur(8px) saturate(1.5);
 }
+
+/* Season Switcher styles are in profile.html <style> block (unlayered, beats Bulma) */

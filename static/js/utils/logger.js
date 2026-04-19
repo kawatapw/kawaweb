@@ -163,7 +163,8 @@ const DEBUG_SECTIONS_STORAGE_KEY = 'KawataLoggerDebugSections';
             STORAGE: '#eed49f', // Light yellow
             NETWORK: '#f5a97f', // Light orange
             UTIL: '#b7bdf8',     // Light purple
-            SCORE: '#91d7e3' // Example for score-card component
+            SCORE: '#91d7e3', // Example for score-card component
+            COMPONENTS: '#c6a0f6' // Purple for components
         },
 
         // Known sections for argument parsing (for `_parseArgs` helper) - Kept for reference, but _parseArgs is more flexible now

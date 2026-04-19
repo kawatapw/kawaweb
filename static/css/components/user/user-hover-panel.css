@@ -1,0 +1,102 @@
+/* ============================================================================
+ * User Component - Hover Panel
+ * ============================================================================
+ *
+ * Popup panel that shows detailed user info on hover.
+ */
+
+/* === Panel Container === */
+.user-hover-panel {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    width: 300px;
+    min-width: 275px;
+    max-width: 640px;
+    z-index: 610;
+    opacity: 0;
+    visibility: hidden;
+    background-position: center;
+    background-size: cover;
+    border-radius: 16px;
+    margin-top: 8px;
+    margin-left: -20px;
+    color: white;
+    background-color: hsl(var(--main), 10%, 20%);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+    transition:
+        opacity 300ms ease-in-out,
+        visibility 300ms ease-in-out,
+        transform 300ms cubic-bezier(0.34, 1.56, 0.64, 1);
+    transform: translateY(10px) scale(0.98);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.user-hover-panel.visible {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0) scale(1);
+}
+
+/* === Panel Header === */
+.user-hover-panel__header {
+    display: flex;
+    padding: 12px;
+    position: relative;
+    align-items: center;
+}
+
+.user-hover-panel__avatar {
+    height: 72px;
+    width: 72px;
+    background-size: cover;
+    background-position: center;
+    border-radius: 50%;
+    border: 3px solid rgba(255, 255, 255, 0.3);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    transition: transform 0.3s ease, border-color 0.3s ease;
+    flex-shrink: 0;
+}
+
+.user-hover-panel__avatar:hover {
+    transform: scale(1.05);
+    border-color: rgba(255, 255, 255, 0.5);
+}
+
+.user-hover-panel__info {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    margin-left: 12px;
+    flex-grow: 1;
+}
+
+.user-hover-panel__name {
+    font-size: 22px;
+    font-weight: 700;
+    margin-bottom: 4px;
+    text-align: left;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.user-hover-panel__name .user-clan {
+    margin-right: 4px;
+}
+
+/* === Responsive Adjustments === */
+@media (max-width: 768px) {
+    .user-hover-panel {
+        width: 260px;
+    }
+}
+
+@media (max-width: 480px) {
+    .user-hover-panel {
+        width: 240px;
+        margin-left: -10px;
+    }
+}

@@ -1,0 +1,193 @@
+/* ============================================================================
+ * Beatmap Popup Styles
+ * ============================================================================
+ */
+
+/* Base popup */
+.beatmap-popup {
+  width: var(--beatmap-popup-width);
+  background: var(--beatmap-popup-bg);
+  backdrop-filter: blur(10px);
+  border-radius: var(--beatmap-border-radius-lg);
+  box-shadow: 0 10px 30px var(--beatmap-popup-shadow);
+  padding: 15px;
+  opacity: 0;
+  visibility: hidden;
+  transition: all var(--beatmap-transition-normal);
+  pointer-events: none;
+  z-index: 1000;
+}
+
+.beatmap-popup--visible {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+
+/* Header section */
+.beatmap-popup__header {
+  margin-bottom: 12px;
+  border-bottom: 1px solid var(--beatmap-popup-border);
+  padding-bottom: 10px;
+}
+
+.beatmap-popup__title {
+  font-weight: 600;
+  font-size: 16px;
+  color: var(--beatmap-text-primary);
+  margin-bottom: 4px;
+  overflow-wrap: break-word;
+}
+
+.beatmap-popup__artist {
+  font-size: 14px;
+  color: var(--beatmap-text-secondary);
+  margin-bottom: 4px;
+  overflow-wrap: break-word;
+}
+
+.beatmap-popup__version {
+  font-size: 14px;
+  color: var(--beatmap-text-dim);
+  font-style: italic;
+  overflow-wrap: break-word;
+}
+
+/* Details section */
+.beatmap-popup__details {
+  font-size: 13px;
+}
+
+.beatmap-popup__creator {
+  color: var(--beatmap-text-dim);
+  margin-bottom: 10px;
+}
+
+.beatmap-popup__creator span {
+  color: var(--beatmap-text-secondary);
+}
+
+/* Stats */
+.beatmap-popup__stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
+.beatmap-popup__stat {
+  background-color: var(--beatmap-popup-stat-bg);
+  padding: 4px 8px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  transition: background-color var(--beatmap-transition-fast);
+}
+
+.beatmap-popup__stat:hover {
+  background-color: var(--beatmap-popup-stat-bg-hover);
+}
+
+.beatmap-popup__status {
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--beatmap-text-primary);
+  text-transform: uppercase;
+}
+
+/* Rank change */
+.beatmap-popup__rank-change {
+  display: flex;
+  align-items: center;
+  margin-bottom: 15px;
+  padding: 8px 12px;
+  background-color: var(--beatmap-popup-stat-bg);
+  border-radius: 6px;
+}
+
+.beatmap-popup__rank-label {
+  font-weight: 600;
+  margin-right: 8px;
+}
+
+.beatmap-popup__rank-value {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+/* Other difficulties */
+.beatmap-popup__diffs {
+  margin-bottom: 15px;
+}
+
+.beatmap-popup__diffs-header {
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: var(--beatmap-text-secondary);
+}
+
+.beatmap-popup__diffs-list {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  max-height: 120px;
+  overflow-y: auto;
+}
+
+.beatmap-popup__diff-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 5px 8px;
+  background-color: var(--beatmap-popup-stat-bg);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color var(--beatmap-transition-fast);
+}
+
+.beatmap-popup__diff-item:hover {
+  background-color: var(--beatmap-popup-stat-bg-hover);
+}
+
+.beatmap-popup__diff-name {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.beatmap-popup__diff-stars {
+  margin: 0 8px;
+  font-size: 12px;
+  color: var(--beatmap-stars-default);
+}
+
+/* Actions */
+.beatmap-popup__actions {
+  display: flex;
+  gap: 8px;
+}
+
+.beatmap-popup__action {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 6px 10px;
+  background-color: var(--beatmap-popup-stat-bg);
+  border-radius: 4px;
+  color: var(--beatmap-text-primary);
+  text-decoration: none;
+  transition: all var(--beatmap-transition-fast);
+  cursor: pointer;
+}
+
+.beatmap-popup__action:hover {
+  background-color: var(--beatmap-popup-stat-bg-hover);
+  transform: translateY(-2px);
+}

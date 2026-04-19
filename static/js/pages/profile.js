@@ -48,15 +48,37 @@ new Vue({
             mods: mods,
             modegulag: 0,
             load: 0,
-            userid: userid
+            userid: userid,
+            // Season state
+            schedules: [],
+            selectedSchedule: null,
+            seasons: [],
+            selectedSeason: 0,     // 0 = all-time
+            selectedYear: null,
+            activeSeason: null,
+            // Friend state
+            isLoggedIn: typeof isLoggedIn !== 'undefined' ? isLoggedIn : false,
+            isOwnProfile: typeof isOwnProfile !== 'undefined' ? isOwnProfile : false,
+            isStaff: typeof isStaff !== 'undefined' ? isStaff : false,
+            isFriend: false,
+            isMutual: false,
+            friendHover: false,
+            friendLoading: false
         };
     },
     async created() {
         // starting a page
         this.modegulag = this.StrtoGulagInt();
-        this.LoadProfileData();
-        this.LoadAllofdata();
+        // Load seasons first, then data (fetchSeasons may set selectedSeason)
+        var self = this;
+        this.fetchSeasons().then(function() {
+            self.LoadProfileData();
+            self.LoadAllofdata();
+        });
         this.LoadUserStatus();
+        if (this.isLoggedIn && !this.isOwnProfile) {
+            this.checkFriendStatus();
+        }
         this.$log.debug('Data', "Profile Data Loaded:", this.data);
 
         // Pause status polling when tab is hidden
@@ -76,6 +98,48 @@ new Vue({
         }
     },
     methods: {
+        checkFriendStatus() {
+            var self = this;
+            // Check if we added this user: fetch their followers — if we appear, we added them
+            this.$axios.get(`${window.location.protocol}//api.${domain}/v1/get_friends_detailed`, {
+                params: { id: this.userid, scope: 'followers' }
+            }).then(function(res) {
+                if (res.data.status === 'success' && res.data.followers) {
+                    self.isFriend = res.data.followers.some(function(u) { return u.id === selfId; });
+                }
+            }).catch(function() {});
+            // Check mutuals from our side
+            this.$axios.get(`${window.location.protocol}//api.${domain}/v1/get_friends_detailed`, {
+                params: { id: selfId, scope: 'mutuals' }
+            }).then(function(res) {
+                if (res.data.status === 'success' && res.data.mutuals) {
+                    var mutual = res.data.mutuals.some(function(u) { return u.id === self.userid; });
+                    if (mutual) {
+                        self.isFriend = true;
+                        self.isMutual = true;
+                    }
+                }
+            }).catch(function() {});
+        },
+        toggleFriend() {
+            var self = this;
+            this.friendLoading = true;
+            var action = this.isFriend ? 'remove' : 'add';
+            var fd = new FormData();
+            fd.append('target_id', String(this.userid));
+            fetch('/friends/' + action, { method: 'POST', body: fd })
+                .then(function(res) { return res.json(); })
+                .then(function(data) {
+                    if (data.status === 'success') {
+                        self.isFriend = !self.isFriend;
+                        if (!self.isFriend) self.isMutual = false;
+                    }
+                })
+                .catch(function(err) {
+                    console.error('[Profile] toggleFriend error:', err);
+                })
+                .then(function() { self.friendLoading = false; });
+        },
         LoadAllofdata() {
             this.LoadMostBeatmaps();
             this.LoadScores('best');
@@ -83,11 +147,10 @@ new Vue({
         },
         LoadProfileData() {
             this.$set(this.data.stats, 'load', true);
+            var params = { id: this.userid, scope: 'all' };
+            if (this.selectedSeason) params.season_id = this.selectedSeason;
             this.$axios.get(`${window.location.protocol}//api.${domain}/v1/get_player_info`, {
-                    params: {
-                        id: this.userid,
-                        scope: 'all'
-                    }
+                    params: params
                 })
                 .then(res => {
                     this.$set(this.data.stats, 'out', res.data.player.stats);
@@ -101,13 +164,15 @@ new Vue({
         },
         LoadScores(sort) {
             this.$set(this.data.scores[`${sort}`], 'load', true);
+            var params = {
+                id: this.userid,
+                mode: this.StrtoGulagInt(),
+                scope: sort,
+                limit: this.data.scores[`${sort}`].more.limit
+            };
+            if (this.selectedSeason) params.season_id = this.selectedSeason;
             this.$axios.get(`${window.location.protocol}//api.${domain}/v1/get_player_scores`, {
-                    params: {
-                        id: this.userid,
-                        mode: this.StrtoGulagInt(),
-                        scope: sort,
-                        limit: this.data.scores[`${sort}`].more.limit
-                    }
+                    params: params
                 })
                 .then(res => {
                     this.data.scores[`${sort}`].out = res.data.scores;
@@ -117,12 +182,14 @@ new Vue({
         },
         LoadMostBeatmaps() {
             this.$set(this.data.maps.most, 'load', true);
+            var params = {
+                id: this.userid,
+                mode: this.StrtoGulagInt(),
+                limit: this.data.maps.most.more.limit
+            };
+            if (this.selectedSeason) params.season_id = this.selectedSeason;
             this.$axios.get(`${window.location.protocol}//api.${domain}/v1/get_player_most_played`, {
-                    params: {
-                        id: this.userid,
-                        mode: this.StrtoGulagInt(),
-                        limit: this.data.maps.most.more.limit
-                    }
+                    params: params
                 })
                 .then(res => {
                     this.data.maps.most.out = res.data.maps;
@@ -139,9 +206,9 @@ new Vue({
                 .then(res => {
                     this.$set(this.data, 'status', res.data.player_status)
                 })
-                .catch(function (error) {
+                .catch((error) => {
                     clearTimeout(loop);
-                    this.$log.error(error);
+                    console.error('[Profile] LoadUserStatus error:', error);
                 });
             loop = setTimeout(this.LoadUserStatus, 5000);
         },
@@ -157,6 +224,67 @@ new Vue({
             this.data.scores.best.more.limit = 5
             this.data.maps.most.more.limit = 6
             this.LoadAllofdata();
+        },
+        fetchSeasons() {
+            var self = this;
+            var proto = window.location.protocol;
+            // Fetch schedules and seasons in parallel
+            return Promise.all([
+                self.$axios.get(`${proto}//api.${domain}/v2/schedules`),
+                self.$axios.get(`${proto}//api.${domain}/v2/seasons`, { params: { page: 1, page_size: 100 } })
+            ]).then(function(results) {
+                var schedRes = results[0], seasRes = results[1];
+                if (schedRes.data.status === 'success' && schedRes.data.data) {
+                    self.schedules = schedRes.data.data;
+                    if (self.schedules.length > 0) {
+                        self.selectedSchedule = self.schedules[0].id;
+                    }
+                }
+                if (seasRes.data.status === 'success' && seasRes.data.data) {
+                    self.seasons = seasRes.data.data;
+                    self.activeSeason = self.seasons.find(function(s) { return s.is_active; }) || null;
+                    // Auto-select schedule of active season if available
+                    if (self.activeSeason && self.schedules.some(function(sc) { return sc.id === self.activeSeason.schedule_id; })) {
+                        self.selectedSchedule = self.activeSeason.schedule_id;
+                    }
+                    if (self.yearOptions.length > 0) {
+                        self.selectedYear = self.yearOptions[0];
+                    }
+                }
+            }).catch(function() {
+                // Seasons not available — switcher stays hidden
+            });
+        },
+        _resetAndReload() {
+            this.data.scores.recent.more.limit = 5;
+            this.data.scores.best.more.limit = 5;
+            this.data.maps.most.more.limit = 6;
+            this.LoadProfileData();
+            this.LoadAllofdata();
+        },
+        selectSeason(seasonId) {
+            this.selectedSeason = seasonId;
+            this._resetAndReload();
+        },
+        onScheduleChange() {
+            if (this.yearOptions.length > 0) {
+                this.selectedYear = this.yearOptions[0];
+            }
+            var seasons = this.filteredSeasons;
+            if (seasons.length > 0) {
+                this.selectedSeason = seasons[seasons.length - 1].id;
+                this._resetAndReload();
+            }
+        },
+        onYearChange() {
+            var seasons = this.filteredSeasons;
+            if (seasons.length > 0) {
+                this.selectedSeason = seasons[seasons.length - 1].id;
+                this._resetAndReload();
+            }
+        },
+        onSeasonChange() {
+            this._resetAndReload();
         },
         AddLimit(which) {
             if (window.event)
@@ -436,7 +564,43 @@ new Vue({
             return htmlString;
         },
     },
-    computed: {},
+    computed: {
+        currentStats() {
+            var s = this.data.stats.out[this.modegulag];
+            if (s && typeof s.rank !== 'undefined') return s;
+            return { rank: 0, country_rank: 0, pp: 0, rscore: 0, tscore: 0, max_combo: 0, plays: 0, playtime: 0, acc: 0, xh_count: 0, x_count: 0, sh_count: 0, s_count: 0, a_count: 0 };
+        },
+        scheduledSeasons() {
+            var self = this;
+            if (!this.selectedSchedule) return this.seasons;
+            return this.seasons.filter(function(s) {
+                return s.schedule_id === self.selectedSchedule;
+            });
+        },
+        yearOptions() {
+            var years = [];
+            var ss = this.scheduledSeasons;
+            for (var i = 0; i < ss.length; i++) {
+                var y = new Date(ss[i].start_date).getFullYear();
+                if (years.indexOf(y) === -1) years.push(y);
+            }
+            return years.sort(function(a, b) { return b - a; });
+        },
+        filteredSeasons() {
+            var self = this;
+            return this.scheduledSeasons
+                .filter(function(s) {
+                    return new Date(s.start_date).getFullYear() === self.selectedYear;
+                })
+                .map(function(s) {
+                    var parts = s.name.split('-');
+                    return Object.assign({}, s, { label: parts[parts.length - 1] });
+                })
+                .sort(function(a, b) {
+                    return new Date(a.start_date) - new Date(b.start_date);
+                });
+        }
+    },
 });
 window.showMaplePopup = (event, element) => {
     const popup = element.querySelector('.maple-popup');

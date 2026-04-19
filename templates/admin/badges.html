@@ -5,8 +5,8 @@
 <style>
   @import url("/static/css/pages/admin/badges.css") layer(styles);
 </style>
-<script src="/static/js/asserts/vue.js"></script>
-<script src="/static/js/asserts/vue-axios.js"></script>
+<script src="{{ bust('/static/js/asserts/vue.js') }}"></script>
+<script src="{{ bust('/static/js/asserts/vue-axios.js') }}"></script>
 <script>
     var domain = "{{ domain() }}";
     var badges = '{{ badges|tojson }}';
@@ -53,6 +53,6 @@
 </div>
 
 <div id="editBadgeWindow"></div>
-<script src="/static/js/pages/admin/badges.js"></script>
+<script src="{{ bust('/static/js/pages/admin/badges.js') }}"></script>
 
 {% endblock %}

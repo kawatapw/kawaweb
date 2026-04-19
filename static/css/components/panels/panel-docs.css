@@ -1,0 +1,220 @@
+/* Docs Panel Styles */
+    [data-panel="Docs"] {
+        width: 92vw;
+        max-height: 95vh;
+        transition: 0.2s ease; /* for responsive animation */
+        border-radius: 20px;
+        overflow: hidden;
+        position: absolute;
+        top: auto;
+        bottom: auto;
+        margin-top: auto;
+        margin-bottom: auto;
+    }
+
+    @media (min-width: 1000px) {
+        [data-panel="Docs"] {
+            width: 1000px;
+        }
+    }
+        [data-panel="Docs"] .main-block {
+            background: hsl(var(--main), 10%, 15%);
+            position: relative;
+            min-height: fit-content;
+        }
+            .main-block .selector {
+                position: absolute;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                display: flex;
+                align-items: flex-end;
+                justify-content: center;
+                pointer-events: all;
+                height: 27px;
+                z-index: 2;
+                width: 100%;
+            }
+                .selector .bottom-tab {
+                    display: flex;
+                    padding: 6px;
+                    background: hsl(var(--main), 10%, 15%);
+                    height: 36px;
+                    border-radius: 8px;
+                    opacity: 0.8;
+                    font-weight: 600;
+                    border-bottom: 3px solid;
+                    transition: 200ms opacity, 200ms border, 200ms filter, 300ms background-color;
+                    margin: 4px 5px 0px 5px;
+                    box-shadow: 0 1px 3px rgba(0,0,0,.25) !important;
+                    border-bottom-left-radius: 0;
+                    border-bottom-right-radius: 0;
+                    overflow: hidden;
+                }
+                    .selector .bottom-tab.active {
+                        opacity: 0.9;
+                        background-color: hsl(var(--main), 10%, 16%);
+                        border-bottom: 4px solid;
+                    }
+                    .selector .bottom-tab:hover {
+                        opacity: 1;
+                        background-color: hsl(var(--main), 10%, 16%);
+                        border-bottom: 4px solid;
+                    }
+                .selector .left {
+                    display: flex;
+                    flex-direction: row;
+                    pointer-events: all;
+                }
+                .selector .right {
+                    margin-left: auto;
+                    pointer-events: all;
+                    display: flex;
+                    flex-direction: row;
+                }
+            .docs-banner {
+                /*background-color: hsl(var(--main), 30%, 50%);*/
+                max-height: fit-content;
+                min-height: 194px;
+                width: 100%;
+                border-top-right-radius: 20px;
+                border-top-left-radius: 20px;
+                display: flex;
+                position: relative;
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+                pointer-events: auto;
+                background-size: 100%;
+                transition: max-height 0.4s ease;
+                z-index: 0;
+            }
+                .docs-banner .img {
+                    max-height: 280px;
+                    height: 100%; 
+                    min-height: 194px;
+                    position: absolute; /* position relative to .doc-banner */
+                    top: 0;
+                    left: 0;
+                    right: 0;
+                    bottom: 0;
+                    border-radius: 0;
+                    border-top-right-radius: 8px;
+                    border-top-left-radius: 8px;
+                    pointer-events: auto;
+                    background-size: 100%;
+                    background-position: center;
+                    transition: max-height 0.4s ease;
+                    z-index: 0;
+                }
+                .docs-banner.title {
+                    font-size: 2.5em;
+                    font-weight: 500;
+                    color: white;
+                    text-align: center;
+                    pointer-events: auto;
+                    z-index: 1;
+                    margin-bottom: 0px !important;
+                }
+        [data-panel="Docs"] .second-block {
+            background: var(--container-bg);
+            display: flex;
+            overflow-y: auto;
+        }
+            [data-panel="Docs"] .second-block .content {
+                background-color: hsl(var(--main), 18%, 18%);
+                padding: 4px;
+                padding-top: 12px !important;
+                margin: 1%;
+                margin-bottom: 2%;
+                width: 100%;
+                height: 100%;
+                overflow: hidden;
+                transition: 0.2s ease;
+                border-radius: 8px;
+                position: relative;
+            }
+                [data-panel="Docs"] .second-block .content .selector {
+                    position: absolute;
+                    top: 10;
+                    left: 0;
+                    right: 0;
+                    display: flex;
+                    align-items: flex-end;
+                    justify-content: center;
+                    pointer-events: all;
+                    height: 27px;
+                    z-index: 2;
+                    width: 100%;
+                }
+                    .selector .top-tab {
+                        display: flex;
+                        padding: 6px;
+                        background: hsl(var(--main), 10%, 15%);
+                        height: 36px;
+                        border-radius: 8px;
+                        opacity: 0.8;
+                        font-weight: 600;
+                        border-top: 3px solid;
+                        transition: 200ms opacity, 200ms border, 200ms filter, 300ms background-color;
+                        margin: 4px 5px 0px 5px;
+                        box-shadow: 0 1px 3px rgba(0,0,0,.25) !important;
+                        border-top-left-radius: 0;
+                        border-top-right-radius: 0;
+                        overflow: hidden;
+                    }
+                        .selector .top-tab.active {
+                            opacity: 0.9;
+                            background-color: hsl(var(--main), 10%, 16%);
+                            border-top: 4px solid;
+                        }
+                        .selector .top-tab:hover {
+                            opacity: 1;
+                            background-color: hsl(var(--main), 10%, 16%);
+                            border-top: 4px solid;
+                        }
+                .content .doc-block {
+                    padding: 22px;
+                }
+                    .doc-block .doc-notice {
+                        background-color: hsl(var(--main), 18%, 30%);
+                        border-radius: 8px;
+                        padding: 10px;
+                        margin: 10px 0px;
+                        border: 1px solid hsl(var(--main), 25%, 35%);
+                        text-align: center;
+                    }
+                        .doc-block .doc-notice .content {
+                            height: unset;
+                        }
+                    .doc-block .doc-section {
+                        background-color: hsl(var(--main), 20%, 20%);
+                        border-radius: 8px;
+                        padding: 10px;
+                        margin: 10px 0px;
+                        border: 1px solid hsl(var(--main), 20%, 25%);
+                    }
+                        .doc-section .subsection {
+                            background-color: hsl(var(--main), 20%, 22%);
+                            border-radius: 8px;
+                            padding: 10px;
+                            margin: 10px 0px;
+                            border: 1px solid hsl(var(--main), 20%, 25%);
+                        }
+                    .doc-content {
+                        background-color: hsl(var(--main), 20%, 25%);
+                        border-radius: 8px;
+                        padding: 10px;
+                        margin: 10px 0px;
+                        border: 1px solid hsl(var(--main), 20%, 28%);
+                    }
+                        .doc-content .subsection {
+                            background-color: hsl(var(--main), 20%, 26%);
+                            border-radius: 8px;
+                            padding: 10px;
+                            margin: 10px 0px;
+                            border: 1px solid hsl(var(--main), 20%, 30%);
+                        }
+                    .linked {
+                        pointer-events: all;
+                    }

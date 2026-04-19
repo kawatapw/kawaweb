@@ -1,8 +1,5 @@
-# -*- coding: utf-8 -*-
 
-from enum import IntFlag
-from enum import unique
-from typing import Union, List
+from enum import IntFlag, unique
 
 __all__ = ('Privileges',)
 
@@ -14,7 +11,7 @@ class Privileges(IntFlag):
     Normal              = 1        # user is not restricted.
     Verified            = 2 << 0   # has logged in to the server in-game.
     Supporter           = 2 << 1   # user is a supporter.
-    AccessPanel         = 2 << 2   # probably wont be used much.    
+    AccessPanel         = 2 << 2   # probably wont be used much.
     ManageUsers         = 2 << 3   # can manage users? probably going to be used for changing passwords/email/etc
     RestrictUsers       = 2 << 4   # can ban users
     SilenceUsers        = 2 << 5   # can silence users
@@ -50,14 +47,14 @@ class Privileges(IntFlag):
     SUPPORT = RestrictUsers | SilenceUsers | WipeUsers | KickUsers | ChatMod | ViewPanelLog | SendAlerts | ManageClans | AccessPanel
     Mod = SUPPORT | ManageUsers | ManageBadges | ViewSensitiveInfo  # define this as a moderator
     Admin = Mod | ManagePrivs # has moderator privileges, can view sensitive info
-    
+
 
     Donator = Supporter | Premium
     Staff = Mod | Admin | Dangerous
 
 
 
-def GetPriv(priv: Union[int, List[Privileges]]) -> Union[int, List[Privileges]]:
+def GetPriv(priv: int | list[Privileges]) -> int | list[Privileges]:
     """
     Get the privileges based on the given input.
 
@@ -65,8 +62,8 @@ def GetPriv(priv: Union[int, List[Privileges]]) -> Union[int, List[Privileges]]:
         priv (Union[int, List[Privileges]]): The input representing the privileges. It can be either an integer or a list of Privileges instances.
 
     Returns:
-        Union[int, List[Privileges]]: The privileges based on the input. 
-        If the input is an integer, it returns a list of Privileges instances that match the input. 
+        Union[int, List[Privileges]]: The privileges based on the input.
+        If the input is an integer, it returns a list of Privileges instances that match the input.
         If the input is a list of Privileges instances, it returns an integer representing the combined privileges.
 
     Raises:
@@ -89,14 +86,14 @@ def GetPriv(priv: Union[int, List[Privileges]]) -> Union[int, List[Privileges]]:
     return privs
 
 
-def ComparePrivs(l1: Union[int, List[Privileges]], l2: Union[int, List[Privileges]]) -> bool:
+def ComparePrivs(l1: int | list[Privileges], l2: int | list[Privileges]) -> bool:
     if isinstance(l1, int):
         l1 = GetPriv(l1)
     if isinstance(l2, int):
         l2 = GetPriv(l2)
-    
-    s1 = set(l1)
-    s2 = set(l2)
+
+    s1 = set(l1)  # ty:ignore[invalid-argument-type]
+    s2 = set(l2)  # ty:ignore[invalid-argument-type]
 
     # remove privs that dont matter
     s1.discard(Privileges.Supporter)

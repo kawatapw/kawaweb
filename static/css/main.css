@@ -13,9 +13,44 @@
 
     /* Components */
         @import url("/static/css/components.css") layer(components);
-        @import url("/static/css/components/badges.css") layer(components);
-        @import url("/static/css/components/panels.css") layer(components);
+        @import url("/static/css/components/beatmap/beatmap-old.css") layer(components);
+        @import url("/static/css/components/badges.css?v=20260401") layer(components);
         @import url("/static/css/components/navbar.css") layer(components);
+        @import url("/static/css/components/user/user-components.css") layer(components);
+        @import url("/static/css/components/panels/panels.css") layer(components);
+        @import url("/static/css/components/panels/panel-search.css") layer(components);
+        @import url("/static/css/components/panels/panel-docs.css") layer(components);
+        @import url("/static/css/components/panels/panel-beatmap.css") layer(components);
+        @import url("/static/css/components/panels/panel-score.css") layer(components);
+        @import url("/static/hinaDir/css/carousel.css") layer(components);
 
     /* Overrides (Hinamizawa) */
         @import url("/static/hinaDir/compiled/hina_import.css") layer(styles-override);
+
+/* === UNLAYERED OVERRIDES — highest cascade priority === */
+
+/* Fix double scrollbar: only html scrolls, body defers */
+html {
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--main), 40%, 40%) hsl(var(--main), 10%, 12%);
+}
+
+html::-webkit-scrollbar {
+    width: 8px;
+    background-color: hsl(var(--main), 10%, 12%);
+}
+
+html::-webkit-scrollbar-thumb {
+    border-radius: 10px;
+    background-color: hsl(var(--main), 15%, 35%);
+}
+
+html::-webkit-scrollbar-thumb:hover {
+    background-color: hsl(var(--main), 15%, 45%);
+}
+
+body {
+    overflow: visible !important;
+}

@@ -1,0 +1,28 @@
+/* ============================================================================
+ * User Component - Rank
+ * ============================================================================
+ *
+ * Displays user rank (global and/or country).
+ */
+
+/* === Rank Container === */
+.user-rank {
+    font-size: 12px;
+    opacity: 0.9;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+/* === Country Rank === */
+.user-rank__country {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.user-rank__country .user-flag {
+    width: 16px;
+    height: 11px;
+    border-radius: 2px;
+}

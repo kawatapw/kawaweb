@@ -16,6 +16,13 @@
                 { value: 2, name: 'osu!catch', short: 'catch' },
                 { value: 3, name: 'osu!mania', short: 'mania' },
             ],
+            // Season state
+            schedules: [],
+            selectedSchedule: null,
+            seasons: [],
+            selectedSeason: 0,
+            selectedYear: null,
+            activeSeason: null,
             // Compare state
             selectedPlayers: [],
             compareVisible: false,
@@ -33,6 +40,38 @@
             tipLeft: 0,
         },
         computed: {
+            scheduledSeasons() {
+                var self = this;
+                if (!this.selectedSchedule)
+                    return this.seasons;
+                return this.seasons.filter(function (s) {
+                    return s.schedule_id === self.selectedSchedule;
+                });
+            },
+            yearOptions() {
+                var years = [];
+                var ss = this.scheduledSeasons;
+                for (var i = 0; i < ss.length; i++) {
+                    var y = new Date(ss[i].start_date).getFullYear();
+                    if (years.indexOf(y) === -1)
+                        years.push(y);
+                }
+                return years.sort(function (a, b) { return b - a; });
+            },
+            filteredSeasons() {
+                var self = this;
+                return this.scheduledSeasons
+                    .filter(function (s) {
+                    return new Date(s.start_date).getFullYear() === self.selectedYear;
+                })
+                    .map(function (s) {
+                    var parts = s.name.split('-');
+                    return Object.assign({}, s, { label: parts[parts.length - 1] });
+                })
+                    .sort(function (a, b) {
+                    return new Date(a.start_date).getTime() - new Date(b.start_date).getTime();
+                });
+            },
             userHasStats() {
                 var self = this;
                 for (var i = 0; i < this.leaderboard.length; i++) {
@@ -122,8 +161,14 @@
             },
         },
         created() {
-            this.loadLeaderboard(0);
+            // Load seasons first, then leaderboard (fetchSeasons calls reloadForSeason after selecting)
             var self = this;
+            this.fetchSeasons().then(function () {
+                // If no season was auto-selected, load all-time
+                if (!self.selectedSeason) {
+                    self.loadLeaderboard(0);
+                }
+            });
             document.addEventListener('keydown', function (e) {
                 if (e.key === 'Escape' && self.compareVisible) {
                     self.closeCompare();
@@ -136,7 +181,8 @@
                 this.loading = true;
                 this.error = null;
                 var self = this;
-                fetch(location.protocol + '//api.' + domain + '/v1/get_friends_leaderboard?id=' + userId + '&mode=' + m)
+                var seasonParam = this.selectedSeason ? '&season_id=' + this.selectedSeason : '';
+                fetch(location.protocol + '//api.' + domain + '/v1/get_friends_leaderboard?id=' + userId + '&mode=' + m + seasonParam)
                     .then(function (res) {
                     if (!res.ok)
                         throw new Error('HTTP ' + res.status);
@@ -217,7 +263,8 @@
                 this.compareError = null;
                 var self = this;
                 var ids = [this.selfId].concat(this.selectedPlayers);
-                var url = location.protocol + '//api.' + domain + '/v1/compare_stats?users=' + ids.join(',') + '&mode=' + m;
+                var cmpSeasonParam = this.selectedSeason ? '&season_id=' + this.selectedSeason : '';
+                var url = location.protocol + '//api.' + domain + '/v1/compare_stats?users=' + ids.join(',') + '&mode=' + m + cmpSeasonParam;
                 fetch(url)
                     .then(function (res) {
                     if (!res.ok)
@@ -249,7 +296,7 @@
                 var rect = td.getBoundingClientRect();
                 this.tipTop = rect.bottom + 8;
                 this.tipLeft = rect.left;
-                var cacheKey = id + '-' + this.mode;
+                var cacheKey = id + '-' + this.mode + '-' + (this.selectedSeason || 0);
                 if (this.tipCache[cacheKey]) {
                     // Cached — show immediately
                     this.tooltipId = id;
@@ -277,8 +324,9 @@
             fetchTooltip(id) {
                 var self = this;
                 var mode = this.mode;
-                var cacheKey = id + '-' + mode;
-                var url = location.protocol + '//api.' + domain + '/v1/get_player_quick_stats?id=' + id + '&mode=' + mode;
+                var tipSeasonParam = this.selectedSeason ? '&season_id=' + this.selectedSeason : '';
+                var cacheKey = id + '-' + mode + '-' + (this.selectedSeason || 0);
+                var url = location.protocol + '//api.' + domain + '/v1/get_player_quick_stats?id=' + id + '&mode=' + mode + tipSeasonParam;
                 fetch(url)
                     .then(function (res) {
                     if (!res.ok)
@@ -300,6 +348,104 @@
                     if (self.tooltipId === id) {
                         self.tooltipLoading = false;
                     }
+                });
+            },
+            fetchSeasons() {
+                var self = this;
+                var proto = location.protocol;
+                return Promise.all([
+                    fetch(proto + '//api.' + domain + '/v2/schedules'),
+                    fetch(proto + '//api.' + domain + '/v2/seasons?page=1&page_size=100')
+                ])
+                    .then(function (responses) {
+                    return Promise.all(responses.map(function (r) {
+                        if (!r.ok)
+                            throw new Error('HTTP ' + r.status);
+                        return r.json();
+                    }));
+                })
+                    .then(function (results) {
+                    var schedData = results[0], seasData = results[1];
+                    if (schedData.status === 'success' && schedData.data) {
+                        self.schedules = schedData.data;
+                        if (self.schedules.length > 0) {
+                            self.selectedSchedule = self.schedules[0].id;
+                        }
+                    }
+                    if (seasData.status === 'success' && seasData.data) {
+                        self.seasons = seasData.data;
+                        self.activeSeason = self.seasons.find(function (s) { return s.is_active; }) || null;
+                        if (self.activeSeason && self.schedules.some(function (sc) { return sc.id === self.activeSeason.schedule_id; })) {
+                            self.selectedSchedule = self.activeSeason.schedule_id;
+                        }
+                        if (self.yearOptions.length > 0) {
+                            self.selectedYear = self.yearOptions[0];
+                            var filtered = self.filteredSeasons;
+                            if (self.activeSeason && filtered.some(function (s) { return s.id === self.activeSeason.id; })) {
+                                self.selectedSeason = self.activeSeason.id;
+                            }
+                            else if (filtered.length > 0) {
+                                self.selectedSeason = filtered[filtered.length - 1].id;
+                            }
+                            if (self.selectedSeason) {
+                                self.reloadForSeason();
+                            }
+                        }
+                    }
+                })
+                    .catch(function (err) {
+                    console.error('[FriendsLeaderboard] Failed to fetch seasons:', err);
+                });
+            },
+            selectSeason(seasonId) {
+                this.selectedSeason = seasonId;
+                this.tipCache = {};
+                this.reloadForSeason();
+            },
+            onScheduleChange() {
+                if (this.yearOptions.length > 0) {
+                    this.selectedYear = this.yearOptions[0];
+                }
+                var seasons = this.filteredSeasons;
+                if (seasons.length > 0) {
+                    this.selectedSeason = seasons[seasons.length - 1].id;
+                    this.tipCache = {};
+                    this.reloadForSeason();
+                }
+            },
+            onYearChange() {
+                var seasons = this.filteredSeasons;
+                if (seasons.length > 0) {
+                    this.selectedSeason = seasons[seasons.length - 1].id;
+                    this.tipCache = {};
+                    this.reloadForSeason();
+                }
+            },
+            onSeasonChange() {
+                this.tipCache = {};
+                this.reloadForSeason();
+            },
+            reloadForSeason() {
+                // Soft reload — don't set loading=true so the table stays visible (no layout shift)
+                var self = this;
+                this.error = null;
+                var seasonParam = this.selectedSeason ? '&season_id=' + this.selectedSeason : '';
+                fetch(location.protocol + '//api.' + domain + '/v1/get_friends_leaderboard?id=' + userId + '&mode=' + this.mode + seasonParam)
+                    .then(function (res) {
+                    if (!res.ok)
+                        throw new Error('HTTP ' + res.status);
+                    return res.json();
+                })
+                    .then(function (data) {
+                    if (data.status !== 'success')
+                        throw new Error(data.status || 'Unknown error');
+                    self.leaderboard = data.leaderboard || [];
+                    self.loading = false;
+                })
+                    .catch(function (e) {
+                    self.error = 'Failed to load leaderboard.';
+                    self.loading = false;
+                    console.error('[FriendsLeaderboard]', e);
                 });
             },
             formatTotalScore(n) {

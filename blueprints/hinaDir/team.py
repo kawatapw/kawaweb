@@ -2,7 +2,7 @@
 
 import time
 
-from quart import Blueprint, render_template, g
+from quart import Blueprint, g, render_template
 
 from objects import glob
 from objects.utils import error_catcher
@@ -30,7 +30,7 @@ _TEAM_LAYOUT = [
             'the server infrastructure and community.'
         ),
         'groups': [
-            {'db_name': 'Owner', 'flag': 17179869184, 'exclusive': True, 'fallback_color': '#FF69B4'},
+            {'db_name': 'Owner', 'flag': 17179869184, 'exclusive': False, 'fallback_color': '#FF69B4'},
         ],
     },
     {
@@ -128,7 +128,7 @@ async def team_page():
     db_groups = await glob.db.fetchall(
         "SELECT name, color FROM privileges_groups"
     )
-    color_map = {g['name']: g['color'] for g in (db_groups or [])}
+    color_map = {g['name']: g['color'] for g in (db_groups or [])}  # ty:ignore[invalid-argument-type, not-subscriptable]
 
     # 2. Fetch all staff users (AccessPanel + UNRESTRICTED, not BanchoBot)
     staff_users = await glob.db.fetchall(
@@ -158,32 +158,32 @@ async def team_page():
         section_placed = set()
 
         for grp in layout['groups']:
-            is_grp_exclusive = grp.get('exclusive', False)
+            is_grp_exclusive = grp.get('exclusive', False)  # ty:ignore[unresolved-attribute]
             members = []
 
-            if grp['flag'] is None:
+            if grp['flag'] is None:  # ty:ignore[invalid-argument-type]
                 # ID-based matching (Founders)
                 pool = founder_users or []
                 for user in pool:
-                    if user['id'] not in _FOUNDER_IDS:
+                    if user['id'] not in _FOUNDER_IDS:  # ty:ignore[invalid-argument-type, not-subscriptable]
                         continue
-                    if user['id'] in exclusive_placed or user['id'] in section_placed:
+                    if user['id'] in exclusive_placed or user['id'] in section_placed:  # ty:ignore[invalid-argument-type, not-subscriptable]
                         continue
                     members.append({
-                        **user,
-                        'joined_ago': _time_ago(user['creation_time']),
-                        'active_ago': _time_ago(user['latest_activity']),
+                        **user,  # ty:ignore[invalid-argument-type]
+                        'joined_ago': _time_ago(user['creation_time']),  # ty:ignore[invalid-argument-type, not-subscriptable]
+                        'active_ago': _time_ago(user['latest_activity']),  # ty:ignore[invalid-argument-type, not-subscriptable]
                     })
             else:
                 # Bitmask matching
                 for user in (staff_users or []):
-                    if user['id'] in exclusive_placed or user['id'] in section_placed:
+                    if user['id'] in exclusive_placed or user['id'] in section_placed:  # ty:ignore[invalid-argument-type, not-subscriptable]
                         continue
-                    if user['priv'] & grp['flag']:
+                    if user['priv'] & grp['flag']:  # ty:ignore[invalid-argument-type, not-subscriptable]
                         members.append({
-                            **user,
-                            'joined_ago': _time_ago(user['creation_time']),
-                            'active_ago': _time_ago(user['latest_activity']),
+                            **user,  # ty:ignore[invalid-argument-type]
+                            'joined_ago': _time_ago(user['creation_time']),  # ty:ignore[invalid-argument-type, not-subscriptable]
+                            'active_ago': _time_ago(user['latest_activity']),  # ty:ignore[invalid-argument-type, not-subscriptable]
                         })
 
             # Track per-group
@@ -194,8 +194,8 @@ async def team_page():
                     exclusive_placed.add(m['id'])
 
             section_groups.append({
-                'name': grp['db_name'],
-                'color': color_map.get(grp['db_name'], grp['fallback_color']),
+                'name': grp['db_name'],  # ty:ignore[invalid-argument-type]
+                'color': color_map.get(grp['db_name'], grp['fallback_color']),  # ty:ignore[invalid-argument-type]
                 'members': members,
             })
 
@@ -213,7 +213,7 @@ async def team_page():
     total = len(seen_ids)
 
     return await render_template(
-        'hinaDir/team.html',
+        'team.html',
         team_sections=team_sections,
         total_staff=total,
         globalNotice=g.globalNotice,

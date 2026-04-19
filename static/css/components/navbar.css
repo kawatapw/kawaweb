@@ -2,8 +2,8 @@
 
 /* Base Variables */
 :root {
-    --navbar-bg: hsl(var(--main), 10%, 15%);
-    --navbar-bg-hover: hsl(var(--main), 10%, 20%);
+    --navbar-bg: hsl(var(--main), 20%, 15%);
+    --navbar-bg-hover: hsl(var(--main), 20%, 20%);
     --navbar-text: hsl(var(--main), 50%, 90%);
     --navbar-text-muted: hsl(var(--main), 30%, 60%);
     --navbar-accent: hsl(var(--main), 50%, 60%);
@@ -198,6 +198,89 @@
 
 .navbar-user-trigger:hover {
     border-color: var(--navbar-accent);
+}
+
+/* User Dropdown Card - visibility controlled by v-show, animation on open */
+.navbar-user-card {
+    pointer-events: auto;
+}
+
+.nuc-header {
+    position: relative;
+}
+.nuc-header > * {
+    z-index: 1;
+}
+
+.nuc-menu {
+    position: relative;
+}
+.nuc-menu > * {
+    z-index: 1;
+}
+.nuc-menu .nuc-menu-item {
+    position: relative;
+}
+
+.navbar-user-card .nuc-header .user-banner {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background-image: var(--user-banner);
+    background-size: cover;
+    background-position: center;
+}
+
+.navbar-user-card .nuc-header .user-banner::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: linear-gradient(hsl(var(--main), 25%, 25%, 20%), hsl(var(--main), 25%, 25%, 60%));
+    background-size: cover;
+    background-position: center;
+    opacity: 0;
+    transition: opacity 0.5s ease-in-out;
+}
+
+.navbar-user-card.is-active .nuc-header .user-banner::before {
+    opacity: 1;
+}
+
+.nuc-menu .user-background {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    opacity: 0.5;
+    background-image: var(--user-background);
+    background-size: cover;
+    background-position: center;
+}
+
+.navbar-user-card .nuc-menu .user-background::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: linear-gradient(hsl(var(--main), 25%, 25%, 20%), hsl(var(--main), 25%, 25%, 60%));
+    background-size: cover;
+    background-position: center;
+    opacity: 0;
+    transition: opacity 0.5s ease-in-out;
+}
+
+.navbar-user-card.is-active .nuc-menu .user-background::before {
+    opacity: 1;
 }
 
 .navbar-avatar {
@@ -810,7 +893,7 @@
 
 .navbar-mobile-dropdown-menu {
     max-height: 0;
-    overflow: scroll;
+    overflow: hidden;
     transition: max-height 0.3s ease;
     background: hsl(var(--main), 8%, 18%);
 }
@@ -818,6 +901,7 @@
 .navbar-mobile-dropdown:hover .navbar-mobile-dropdown-menu,
 .navbar-mobile-dropdown.active .navbar-mobile-dropdown-menu {
     max-height: 240px;
+    overflow-y: auto;
 }
 
 .navbar-mobile-dropdown-item {

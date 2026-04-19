@@ -51,7 +51,11 @@ bootstrapVue('beatmap-panel', {
         selectedRuleset: 0, // 0: vanilla, 1: relax, 2: autopilot
         selectedMods: 0, // Bitmask of selected mods
         // Mobile leaderboard expansion state
-        expandedScoreId: null
+        expandedScoreId: null,
+        // Set-level metadata (from osu.direct, passed by /beatmaps page)
+        setMeta: null,
+        // Josu preview toggle
+        showJosuPreview: false
     },
     created() {
         this.$log = ColorfulLogger.child('Beatmap Panel');
@@ -92,12 +96,16 @@ bootstrapVue('beatmap-panel', {
             }
             return score;
         },
-        selectedStats() { 
+        josuPreviewUrl() {
+            if (!this.selected || !this.selected.id) return null;
+            return 'https://josu.hinamizawa.ai/?b=' + this.selected.id;
+        },
+        selectedStats() {
             const stats = this.selected || {};
-            this.$log.debug('DATA', 'selectedStats accessed', { 
-                hasSelected: !!this.selected, 
+            this.$log.debug('DATA', 'selectedStats accessed', {
+                hasSelected: !!this.selected,
                 title: stats.title,
-                artist: stats.artist 
+                artist: stats.artist
             });
             return stats;
         },
@@ -240,10 +248,11 @@ bootstrapVue('beatmap-panel', {
         }
     },
     methods: {
-        async openPanel(id, set_id) {
-            this.$log.info('LIFECYCLE', 'Opening beatmap panel', { id, set_id });
+        async openPanel(id, set_id, meta) {
+            this.$log.info('LIFECYCLE', 'Opening beatmap panel', { id, set_id, hasMeta: !!meta });
             this.id = id ?? null;
             this.set_id = set_id ?? null;
+            this.setMeta = meta || null;
             
             // Assert that set_id is provided
             this.$log.assert(
@@ -266,6 +275,11 @@ bootstrapVue('beatmap-panel', {
             this.$log.info('LIFECYCLE', 'Closing beatmap panel');
             this.show = false;
             this.expandedScoreId = null;
+            this.showJosuPreview = false;
+        },
+        toggleJosuPreview() {
+            this.showJosuPreview = !this.showJosuPreview;
+            this.$log.info('LIFECYCLE', 'Josu preview toggled', { showJosuPreview: this.showJosuPreview });
         },
         // Toggle expanded state for mobile score cards (accordion pattern)
         toggleScoreExpand(scoreId) {
@@ -304,11 +318,20 @@ bootstrapVue('beatmap-panel', {
                     false
                 );
                 
-                this.beatmaps = json.data.sort((a, b) => a.diff - b.diff);
-                this.$log.debug('DATA', 'Beatmaps sorted by difficulty', { 
+                this.beatmaps = (json.data || []).sort((a, b) => a.diff - b.diff);
+
+                // Fallback: if local DB has no data but we have osu.direct metadata, use that
+                if (this.beatmaps.length === 0 && this.setMeta && this.setMeta.beatmaps) {
+                    this.$log.info('DATA', 'No local data, falling back to osu.direct metadata');
+                    this.beatmaps = this.setMeta.beatmaps
+                        .map(d => this._mapOsuDirect(d))
+                        .sort((a, b) => a.diff - b.diff);
+                }
+
+                this.$log.debug('DATA', 'Beatmaps sorted by difficulty', {
                     count: this.beatmaps.length,
                     minDiff: this.beatmaps[0]?.diff,
-                    maxDiff: this.beatmaps[this.beatmaps.length - 1]?.diff 
+                    maxDiff: this.beatmaps[this.beatmaps.length - 1]?.diff
                 });
                 
                 // Determine selected beatmap
@@ -1084,6 +1107,35 @@ bootstrapVue('beatmap-panel', {
             };
             const bitIndex = Math.log2(modBit);
             return icons[bitIndex] || '<i class="fas fa-question"></i>';
-        }
+        },
+
+        // ── osu.direct → panel format mapper ──
+        _mapOsuDirect(d) {
+            return {
+                id: d.id,
+                set_id: d.beatmapset_id,
+                version: d.version,
+                diff: d.difficulty_rating,
+                cs: d.cs,
+                ar: d.ar,
+                od: d.accuracy,
+                hp: d.drain,
+                bpm: d.bpm,
+                total_length: d.total_length,
+                hit_length: d.hit_length,
+                max_combo: d.max_combo,
+                mode: d.mode_int,
+                status: -1,
+                plays: d.playcount || 0,
+                passes: d.passcount || 0,
+                creator: this.setMeta ? this.setMeta.creator : '',
+                artist: this.setMeta ? this.setMeta.artist : '',
+                title: this.setMeta ? this.setMeta.title : '',
+                count_circles: d.count_circles || 0,
+                count_sliders: d.count_sliders || 0,
+                count_spinners: d.count_spinners || 0,
+            };
+        },
+
     }
 });

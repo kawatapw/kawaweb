@@ -96,21 +96,23 @@ new Vue({
         status: 1,
         sets: [] as BeatmapSet[],
         loading: false,
-        loadingMore: false,
         error: null as string | null,
-        offset: 0,
-        amount: 30,
-        hasMore: true,
         searchTimer: null as number | null,
         downloadBase: '',
-        mirror: 'osu_direct',
-        infoSet: null as BeatmapSet | null,
-        ppTableShow: false,
-        ppTableLoading: false,
-        ppTableMods: 0,
-        ppTableData: null as Record<string, any> | null,
-        ppTableCache: {} as Record<string, any>,
-        ppTableError: '',
+        mirror: 'hinai',
+        hinaiOnline: true,
+        // Hero banner
+        heroSets: [] as {id: number; title: string; artist: string; creator: string; cover: string}[],
+        heroLoaded: false,
+        // Pagination state
+        currentPage: 0,
+        totalPages: 1,
+        totalCount: 0,
+        perPage: 50,
+        // Legacy load-more for osu.direct fallback
+        offset: 0,
+        hasMore: true,
+        loadingMore: false,
         modes: [
             { value: -1, name: 'All' },
             { value: 0, name: 'osu!' },
@@ -127,31 +129,217 @@ new Vue({
             { value: -2, name: 'Graveyard' },
         ] as StatusOption[],
         mirrors: [
+            { key: 'hinai', name: 'Hinai', enabled: true },
             { key: 'osu_direct', name: 'osu!direct', enabled: true },
             { key: 'osu_api_v1', name: 'osu! API v1', enabled: false },
             { key: 'osu_api_v2', name: 'osu! API v2', enabled: false },
             { key: 'catboy', name: 'catboy.best', enabled: false },
         ] as MirrorOption[],
     },
+    computed: {
+        // Whether to show pagination controls (Hinai mirror + online + multiple pages)
+        showPagination: function(): boolean {
+            var self = this as any;
+            return self.mirror === 'hinai' && self.hinaiOnline && self.totalPages > 1;
+        },
+        // Whether to show legacy load-more (osu.direct fallback)
+        showLoadMore: function(): boolean {
+            var self = this as any;
+            return self.mirror !== 'hinai' && self.sets.length > 0 && self.hasMore && !self.loading;
+        },
+        // Hero track: original + clone for seamless CSS marquee loop
+        heroTrack: function(): any[] {
+            var self = this as any;
+            return self.heroSets.concat(self.heroSets);
+        },
+        // Sliding window of page numbers (up to 10 visible)
+        pageNumbers: function(): number[] {
+            var self = this as any;
+            var total: number = self.totalPages;
+            var current: number = self.currentPage;
+            var windowSize = 10;
+
+            if (total <= windowSize) {
+                var pages: number[] = [];
+                for (var i = 0; i < total; i++) pages.push(i);
+                return pages;
+            }
+
+            // Center window around current page
+            var half = Math.floor(windowSize / 2);
+            var start = current - half;
+            var end = current + half;
+
+            if (start < 0) {
+                start = 0;
+                end = windowSize - 1;
+            }
+            if (end >= total) {
+                end = total - 1;
+                start = total - windowSize;
+            }
+
+            var result: number[] = [];
+            for (var j = start; j <= end; j++) result.push(j);
+            return result;
+        },
+    },
     mounted: function() {
         this.search();
+        this.fetchHero();
+        // One-time mirror health check on page load (stays client-side)
+        var self = this as any;
+        fetch('https://mirror.hinamizawa.ai/health', { mode: 'cors' })
+            .then(function(r: Response) { self.hinaiOnline = r.ok; })
+            .catch(function() { self.hinaiOnline = false; });
     },
     methods: {
+        fetchHero: function() {
+            var self = this as any;
+            var xhr = new XMLHttpRequest();
+            xhr.open('GET', '/beatmaps/api/hero', true);
+            xhr.onreadystatechange = function() {
+                if (xhr.readyState !== 4) return;
+                if (xhr.status !== 200) return;
+                try {
+                    var data = JSON.parse(xhr.responseText);
+                    if (data.status === 'success' && data.sets && data.sets.length > 0) {
+                        self.heroSets = data.sets;
+                        self.heroLoaded = true;
+                    }
+                } catch (e) { /* graceful fail */ }
+            };
+            xhr.send();
+        },
+
+        getDownloadUrl: function(setId: number, noVideo?: boolean): string {
+            var self = this as any;
+            var base: string;
+            if (self.mirror === 'osu_direct') {
+                base = 'https://osu.direct/api/d/' + setId;
+            } else {
+                base = self.downloadBase + '/' + setId;
+            }
+            return noVideo ? base + '?noVideo=1' : base;
+        },
+
         search: function() {
             var self = this as any;
+            self.currentPage = 0;
+            self.totalPages = 1;
+            self.totalCount = 0;
             self.offset = 0;
             self.sets = [];
             self.hasMore = true;
-            self.fetchResults(false);
+            self.fetchPage(0);
         },
+
+        // ── Pagination (Hinai mirror) ──
+
+        goToPage: function(page: number) {
+            var self = this as any;
+            if (page < 0 || page >= self.totalPages || page === self.currentPage) return;
+            self.currentPage = page;
+            self.fetchPage(page);
+            // Smooth scroll to results area
+            var el = document.querySelector('.bm-grid') || document.querySelector('.bm-header');
+            if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        },
+
+        prevPage: function() {
+            var self = this as any;
+            self.goToPage(self.currentPage - 1);
+        },
+
+        nextPage: function() {
+            var self = this as any;
+            self.goToPage(self.currentPage + 1);
+        },
+
+        // ── Legacy load-more (osu.direct fallback) ──
 
         loadMore: function() {
             var self = this as any;
-            self.offset += self.amount;
-            self.fetchResults(true);
+            self.offset += 30;
+            self.fetchLegacy(true);
         },
 
-        fetchResults: function(append: boolean) {
+        // ── Fetch (routes to pagination or legacy based on mirror) ──
+
+        fetchPage: function(page: number) {
+            var self = this as any;
+
+            if (self.mirror !== 'hinai') {
+                // osu.direct: use legacy offset-based fetch
+                self.fetchLegacy(false);
+                return;
+            }
+
+            self.loading = true;
+            self.error = null;
+
+            var statusParam = self.status;
+            if (statusParam === -99) {
+                statusParam = -1;
+            }
+
+            var url = '/beatmaps/api/search?query=' + encodeURIComponent(self.query)
+                + '&mode=' + self.mode
+                + '&status=' + statusParam
+                + '&page=' + page
+                + '&limit=' + self.perPage
+                + '&source=hinai';
+
+            var xhr = new XMLHttpRequest();
+            xhr.open('GET', url, true);
+            xhr.onreadystatechange = function() {
+                if (xhr.readyState !== 4) return;
+
+                self.loading = false;
+
+                if (xhr.status !== 200) {
+                    try {
+                        var errData = JSON.parse(xhr.responseText);
+                        self.error = errData.message || 'Failed to load results.';
+                    } catch (e) {
+                        self.error = 'Failed to load results (status ' + xhr.status + ').';
+                    }
+                    return;
+                }
+
+                try {
+                    var data = JSON.parse(xhr.responseText);
+                } catch (e) {
+                    self.error = 'Invalid response from server.';
+                    return;
+                }
+
+                if (data.status !== 'success') {
+                    self.error = data.message || 'Unknown error.';
+                    return;
+                }
+
+                self.downloadBase = data.download_base || '';
+                self.sets = data.sets || [];
+                self.totalCount = data.total_count || 0;
+                self.totalPages = data.total_pages || 1;
+                self.currentPage = data.page != null ? data.page : page;
+
+                // Prefetch next page in background
+                if (self.currentPage + 1 < self.totalPages) {
+                    var nextUrl = '/beatmaps/api/search?query=' + encodeURIComponent(self.query)
+                        + '&mode=' + self.mode
+                        + '&status=' + statusParam
+                        + '&page=' + (self.currentPage + 1)
+                        + '&limit=' + self.perPage
+                        + '&source=hinai';
+                    fetch(nextUrl).catch(function() {}); // fire-and-forget prefetch
+                }
+            };
+            xhr.send();
+        },
+
+        fetchLegacy: function(append: boolean) {
             var self = this as any;
 
             if (append) {
@@ -169,8 +357,9 @@ new Vue({
             var url = '/beatmaps/api/search?query=' + encodeURIComponent(self.query)
                 + '&mode=' + self.mode
                 + '&status=' + statusParam
-                + '&amount=' + self.amount
-                + '&offset=' + self.offset;
+                + '&amount=30'
+                + '&offset=' + self.offset
+                + '&source=osu_direct';
 
             var xhr = new XMLHttpRequest();
             xhr.open('GET', url, true);
@@ -203,7 +392,6 @@ new Vue({
                 }
 
                 self.downloadBase = data.download_base || '';
-
                 var newSets: BeatmapSet[] = data.sets || [];
 
                 if (append) {
@@ -214,7 +402,11 @@ new Vue({
                     self.sets = newSets;
                 }
 
-                if (newSets.length < self.amount) {
+                // No pagination for osu.direct
+                self.totalPages = 1;
+                self.totalCount = 0;
+
+                if (newSets.length < 30) {
                     self.hasMore = false;
                 }
             };
@@ -265,7 +457,7 @@ new Vue({
             // If user somehow selected a disabled mirror, revert
             for (var i = 0; i < self.mirrors.length; i++) {
                 if (self.mirrors[i].key === self.mirror && !self.mirrors[i].enabled) {
-                    self.mirror = 'osu_direct';
+                    self.mirror = 'hinai';
                     return;
                 }
             }
@@ -367,160 +559,13 @@ new Vue({
             return 'https://assets.ppy.sh/beatmaps/' + set.id + '/covers/cover.jpg';
         },
 
+        showBeatmapPanel: function(set: BeatmapSet) {
+            var firstDiff = (set.beatmaps && set.beatmaps.length > 0) ? set.beatmaps[0].id : null;
+            (window as any).beatmapBus.$emit('show-beatmap-panel', firstDiff, set.id, set);
+        },
+
         openInfo: function(set: BeatmapSet) {
-            var self = this as any;
-            self.infoSet = set;
-            document.body.style.overflow = 'hidden';
-        },
-
-        closeInfo: function() {
-            var self = this as any;
-            self.infoSet = null;
-            self.ppTableShow = false;
-            self.ppTableData = null;
-            self.ppTableCache = {};
-            self.ppTableError = '';
-            self.ppTableMods = 0;
-            document.body.style.overflow = '';
-        },
-
-        addCommas: function(n: number): string {
-            if (n == null) return '0';
-            return n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-        },
-
-        formatDateFull: function(isoStr: string): string {
-            if (!isoStr) return '';
-            var d = new Date(isoStr);
-            var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-            var h = d.getHours();
-            var min = d.getMinutes();
-            return months[d.getMonth()] + ' ' + d.getDate() + ', ' + d.getFullYear()
-                + ' at ' + (h < 10 ? '0' : '') + h + ':' + (min < 10 ? '0' : '') + min;
-        },
-
-        getDiffModesText: function(set: BeatmapSet): string {
-            var MODE_NAMES: Record<number, string> = { 0: 'osu!', 1: 'Taiko', 2: 'Catch', 3: 'Mania' };
-            var modeNums = this.getDiffModes(set);
-            var names: string[] = [];
-            for (var i = 0; i < modeNums.length; i++) {
-                names.push(MODE_NAMES[modeNums[i]] || 'Unknown');
-            }
-            return names.join(', ');
-        },
-
-        // ─── PP Table ────────────────────────────────────────────
-
-        togglePPTable: function() {
-            var self = this as any;
-            self.ppTableShow = !self.ppTableShow;
-            if (self.ppTableShow && !self.ppTableData) {
-                self.fetchPPData();
-            }
-        },
-
-        togglePPMod: function(bit: number) {
-            var self = this as any;
-            // EZ(2) / HR(16) conflict
-            if (bit === 2 && (self.ppTableMods & 16)) { self.ppTableMods &= ~16; }
-            if (bit === 16 && (self.ppTableMods & 2)) { self.ppTableMods &= ~2; }
-            // DT(64) / HT(256) conflict
-            if (bit === 64 && (self.ppTableMods & 256)) { self.ppTableMods &= ~256; }
-            if (bit === 256 && (self.ppTableMods & 64)) { self.ppTableMods &= ~64; }
-            self.ppTableMods ^= bit;
-            self.fetchPPData();
-        },
-
-        setPPModCombo: function(mods: number) {
-            var self = this as any;
-            self.ppTableMods = mods;
-            self.fetchPPData();
-        },
-
-        isPPModActive: function(bit: number): boolean {
-            return ((this as any).ppTableMods & bit) !== 0;
-        },
-
-        fetchPPData: function() {
-            var self = this as any;
-            if (!self.infoSet || !self.infoSet.beatmaps || self.infoSet.beatmaps.length === 0) return;
-
-            var cacheKey = '' + self.ppTableMods;
-            if (self.ppTableCache[cacheKey]) {
-                self.ppTableData = self.ppTableCache[cacheKey];
-                self.ppTableError = '';
-                return;
-            }
-
-            self.ppTableLoading = true;
-            self.ppTableError = '';
-            var ids: string[] = [];
-            for (var i = 0; i < self.infoSet.beatmaps.length; i++) {
-                ids.push(self.infoSet.beatmaps[i].id);
-            }
-
-            var xhr = new XMLHttpRequest();
-            xhr.open('GET', '/beatmaps/api/pp-table?ids=' + ids.join(',') + '&mods=' + self.ppTableMods, true);
-            xhr.onreadystatechange = function() {
-                if (xhr.readyState !== 4) return;
-                self.ppTableLoading = false;
-                if (xhr.status !== 200) {
-                    self.ppTableError = 'Failed to fetch PP data (status ' + xhr.status + ').';
-                    return;
-                }
-                try {
-                    var data = JSON.parse(xhr.responseText);
-                    if (data.status === 'success') {
-                        self.ppTableCache[cacheKey] = data.results;
-                        self.ppTableData = data.results;
-                        self.ppTableError = '';
-                    } else {
-                        self.ppTableError = data.message || 'Failed to fetch PP data.';
-                    }
-                } catch (e) {
-                    self.ppTableError = 'Invalid response.';
-                }
-            };
-            xhr.send();
-        },
-
-        formatPPMods: function(mods: number): string {
-            if (!mods) return 'None';
-            var MOD_BITS: Record<number, string> = {
-                1: 'NF', 2: 'EZ', 4: 'TD', 8: 'HD', 16: 'HR', 32: 'SD',
-                64: 'DT', 128: 'RX', 256: 'HT', 512: 'NC', 1024: 'FL'
-            };
-            var names: string[] = [];
-            for (var bit in MOD_BITS) {
-                if (MOD_BITS.hasOwnProperty(bit)) {
-                    var bitNum = parseInt(bit, 10);
-                    if (mods & bitNum) {
-                        names.push(MOD_BITS[bitNum]);
-                    }
-                }
-            }
-            return names.length ? '+' + names.join('') : 'None';
-        },
-
-        getPPValue: function(diffId: number, accIdx: number): string {
-            var self = this as any;
-            if (!self.ppTableData || !self.ppTableData[diffId]) return '\u2014';
-            var entry = self.ppTableData[diffId];
-            if (entry.error) return 'err';
-            if (entry.pp_values && entry.pp_values[accIdx]) {
-                return Math.round(entry.pp_values[accIdx].pp) + 'pp';
-            }
-            return '\u2014';
-        },
-
-        getPPStars: function(diffId: number, fallback: number): string {
-            var self = this as any;
-            if (!self.ppTableData || !self.ppTableData[diffId]) return (fallback || 0).toFixed(2);
-            var entry = self.ppTableData[diffId];
-            if (entry.difficulty && entry.difficulty.stars != null) {
-                return entry.difficulty.stars.toFixed(2);
-            }
-            return (fallback || 0).toFixed(2);
+            (window as any).hinaiInfoBus.$emit('open', set);
         },
     },
 });

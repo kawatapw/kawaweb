@@ -186,7 +186,6 @@ Vue.component('score-card', {
       settingsHTML += '</div>';
       return settingsHTML;
     },
-    
     generateSettingItem(name, value, iconMap) {
       const icon = iconMap[name] || '⚙️';
       return `
@@ -197,16 +196,14 @@ Vue.component('score-card', {
         </div>
       `;
     },
-    
     formatSettingName(name) {
       return name.split('_').join(' ').replace(/([A-Z])/g, ' $1').trim();
     },
-    
     formatSettingValue(value) {
       if (typeof value === 'boolean') return value ? 'On' : 'Off';
       if (typeof value === 'number') return value.toFixed(2);
       return value;
-    }
+    },
   },
   beforeDestroy() {
     // Clean up any resources

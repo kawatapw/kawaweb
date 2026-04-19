@@ -1,0 +1,410 @@
+/* ============================================================================
+ * User Component - Legacy Styles
+ * ============================================================================
+ *
+ * Old styles from the previous user profile system.
+ * Kept for backward compatibility in case of reimplementation.
+ *
+ * Classes:
+ * - .profile-panel (old hover panel)
+ * - .badge-popup (old badge popup)
+ * - .profile-panel-* (panel sub-elements)
+ */
+
+/* === Legacy Profile Panel === */
+.profile-panel {
+    position: absolute;
+    display: flex !important;
+    width: fit-content;
+    min-width: 275px;
+    max-width: 640px;
+    z-index: 610;
+    opacity: 0;
+    flex-direction: column;
+    background-position: center;
+    background-size: cover;
+    border-radius: 16px;
+    margin-top: -240px;
+    margin-left: -20px;
+    color: white;
+    background-color: hsl(var(--main), 10%, 20%);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+    transition:
+        opacity 300ms ease-in-out,
+        visibility 300ms ease-in-out,
+        transform 300ms cubic-bezier(0.34, 1.56, 0.64, 1);
+    visibility: hidden;
+    transform: translateY(10px) scale(0.98);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.profile-panel.visible {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0) scale(1);
+}
+
+.profile-panel-background {
+    height: 100%;
+    width: 100%;
+    border-radius: 12px;
+    position: absolute !important;
+    z-index: -1;
+    background-position: center;
+    background-size: cover;
+    opacity: 0.7;
+}
+
+.profile-panel-background::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+        to bottom,
+        rgba(0, 0, 0, 0.4) 0%,
+        rgba(0, 0, 0, 0.7) 100%
+    );
+    border-radius: 12px;
+}
+
+.profile-panel-header {
+    display: flex;
+    padding: 12px;
+    position: relative;
+    align-items: center;
+}
+
+.profile-panel-avatar {
+    height: 72px;
+    width: 72px;
+    background-size: cover;
+    background-position: center;
+    border-radius: 50%;
+    border: 3px solid rgba(255, 255, 255, 0.3);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    transition: transform 0.3s ease, border-color 0.3s ease;
+    flex-shrink: 0;
+}
+
+.profile-panel-avatar:hover {
+    transform: scale(1.05);
+    border-color: rgba(255, 255, 255, 0.5);
+}
+
+.profile-panel-info {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    margin-left: 12px;
+    flex-grow: 1;
+}
+
+.profile-panel-info .name {
+    font-size: 22px;
+    font-weight: 700;
+    margin-bottom: 4px;
+    text-align: left;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.profile-panel-info .rank {
+    font-size: 14px;
+    opacity: 0.9;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+}
+
+.profile-panel-info .rank .global::before {
+    content: '#';
+}
+
+.profile-panel-info .rank .country {
+    margin-left: 4px;
+    display: flex;
+    align-items: center;
+}
+
+.profile-panel-info .rank .country .flag {
+    width: 24px;
+    height: 16px;
+    margin-right: 4px;
+    border-radius: 15%;
+}
+
+.profile-panel-info .rank .country::before {
+    content: '';
+    display: inline-block;
+    width: 16px;
+    height: 12px;
+    margin-right: 4px;
+    background-size: cover;
+    background-position: center;
+}
+
+.profile-panel-info .badges {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    flex-wrap: wrap;
+    border-radius: 8px;
+    height: fit-content;
+    width: fit-content;
+    max-width: 100%;
+}
+
+.badges .badge {
+    margin-right: 4px;
+    margin-bottom: 4px;
+    text-shadow: 0 2px 2px rgba(0, 0, 0, 0.56);
+    transition: transform 0.2s ease;
+}
+
+.badges .badge:hover {
+    transform: scale(1.15);
+    z-index: 2;
+}
+
+.profile-panel-stats {
+    display: flex;
+    padding: 0 16px 16px;
+    justify-content: space-between;
+}
+
+.loading-indicator {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+    font-size: 14px;
+    opacity: 0.8;
+}
+
+.mode-selector {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 10px;
+    padding: 0 4px;
+}
+
+.mode-option {
+    font-size: 11px;
+    padding: 4px 8px;
+    border-radius: 12px;
+    background-color: rgba(0, 0, 0, 0.2);
+    cursor: pointer;
+    transition: background-color 0.2s ease, transform 0.2s ease;
+}
+
+.mode-option:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    transform: translateY(-1px);
+}
+
+.mode-option.active {
+    background-color: rgba(255, 255, 255, 0.2);
+    font-weight: 600;
+}
+
+.performance-stats {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+}
+
+.stat-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex: 1;
+}
+
+.stat-value {
+    font-size: 18px;
+    font-weight: 700;
+    margin-bottom: 2px;
+}
+
+.stat-label {
+    font-size: 12px;
+    opacity: 0.7;
+    text-transform: uppercase;
+}
+
+.profile-panel-expand {
+    padding: 12px;
+    display: flex;
+    justify-content: center;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.profile-panel-expand:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.profile-panel-expand .expand-icon {
+    width: 20px;
+    height: 20px;
+    transition: transform 0.3s ease;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='white'%3E%3Cpath d='M7.41,8.59L12,13.17l4.59-4.58L18,10l-6,6l-6-6L7.41,8.59z'/%3E%3C/svg%3E");
+    background-size: contain;
+    background-position: center;
+    background-repeat: no-repeat;
+}
+
+.profile-panel.expanded .profile-panel-expand .expand-icon {
+    transform: rotate(180deg);
+}
+
+.profile-panel-details {
+    max-height: 0;
+    transition: max-height 0.5s cubic-bezier(0, 1, 0, 1);
+}
+
+.profile-panel.expanded .profile-panel-details {
+    max-height: 500px;
+    transition: max-height 0.5s ease-in-out;
+}
+
+.profile-panel-tabs {
+    display: flex;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.profile-tab {
+    padding: 12px 16px;
+    cursor: pointer;
+    opacity: 0.7;
+    transition: opacity 0.2s ease, border-bottom 0.2s ease;
+    position: relative;
+    font-size: 14px;
+}
+
+.profile-tab:hover {
+    opacity: 1;
+}
+
+.profile-tab.active {
+    opacity: 1;
+}
+
+.profile-tab.active::after {
+    content: '';
+    position: absolute;
+    bottom: -1px;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background-color: white;
+    animation: tabActivate 0.3s ease;
+}
+
+@keyframes tabActivate {
+    from { transform: scaleX(0); }
+    to { transform: scaleX(1); }
+}
+
+.profile-panel-content {
+    padding: 16px;
+}
+
+.tab-content {
+    display: none;
+    animation: fadeIn 0.3s ease;
+    justify-content: center;
+}
+
+.tab-content.active {
+    display: flex;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Performance tab */
+.performance-stats {
+    display: grid !important;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+}
+
+.performance-item {
+    background-color: rgba(0, 0, 0, 0.2);
+    border-radius: 8px;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+}
+
+.performance-label {
+    font-size: 12px;
+    opacity: 0.7;
+    margin-bottom: 4px;
+}
+
+.performance-value {
+    font-size: 16px;
+    font-weight: 600;
+}
+
+/* Recent scores tab */
+.most-played,
+.best-scores,
+.recent-scores {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+/* === Legacy Badge Popup === */
+.badge-popup {
+    position: absolute;
+    width: fit-content;
+    max-width: 200px;
+    padding: 8px 12px;
+    height: fit-content;
+    border-radius: 12px;
+    background: rgba(0, 0, 0, .7);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-wrap: wrap;
+    opacity: 0;
+    transform: translateY(5px);
+    transition: .2s cubic-bezier(0.34, 1.56, 0.64, 1);
+    z-index: 99;
+    text-shadow: 0 2px 2px rgba(0, 0, 0, 0.56);
+    pointer-events: none;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    backdrop-filter: blur(4px);
+}
+
+.badge-popup.visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.badge-popup-title {
+    font-weight: 600;
+    margin-bottom: 4px;
+    text-align: center;
+}
+
+.badge-popup-description {
+    font-size: 12px;
+    text-align: center;
+    opacity: 0.9;
+}

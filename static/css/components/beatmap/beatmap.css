@@ -1,0 +1,20 @@
+/* ============================================================================
+ * Beatmap Components CSS
+ * ============================================================================
+ *
+ * Main CSS file that imports all beatmap component styles.
+ * Import this file in your HTML to use beatmap component styles.
+ *
+ * Usage:
+ *   <link rel="stylesheet" href="/static/css/components/beatmap/beatmap.css">
+ */
+
+/* Import variables first */
+@import '_variables.css';
+
+/* Import component styles */
+@import '_difficulty-icon.css';
+@import '_status-badge.css';
+@import '_popup.css';
+@import '_difficulty-list.css';
+@import '_mini-card.css';

@@ -2,8 +2,8 @@
 {% block title %} Clans {% endblock %}
 
 {% block header %}
-<script src="/static/js/asserts/vue.js"></script>
-<script src="/static/js/asserts/vue-axios.js"></script>
+<script src="{{ bust('/static/js/asserts/vue.js') }}"></script>
+<script src="{{ bust('/static/js/asserts/vue-axios.js') }}"></script>
 
 <script>
     var page = "{{ page }}";
@@ -86,6 +86,6 @@
     </div>
 </div>
 
-<script src="/static/js/asserts/vue-flags.js"></script>
-<script src="/static/js/pages/clans.js"></script>
+<script src="{{ bust('/static/js/asserts/vue-flags.js') }}"></script>
+<script src="{{ bust('/static/js/pages/clans.js') }}"></script>
 {% endblock %}

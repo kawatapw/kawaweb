@@ -1,0 +1,101 @@
+/* ============================================================================
+ * User Component - Card
+ * ============================================================================
+ *
+ * Rectangular card with banner, avatar, stats, and status.
+ */
+
+/* === Card Container === */
+.user-card {
+    position: relative;
+    display: inline-block;
+}
+
+/* === Card Inner === */
+.user-card__inner {
+    position: relative;
+    width: 100%;
+    max-width: 320px;
+    height: fit-content;
+    max-height: 180px;
+    border-radius: 12px;
+    background-color: hsl(var(--main), 10%, 20%);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.user-card__inner:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+
+/* === Card Content === */
+.user-card__content {
+    position: relative;
+    z-index: 2;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    padding: 12px;
+}
+
+/* === Card Header === */
+.user-card__header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 8px;
+}
+
+.user-card__avatar-wrap {
+    position: relative;
+    width: 56px;
+    height: 56px;
+    flex-shrink: 0;
+}
+
+.user-card__info {
+    flex: 1;
+    min-width: 0;
+}
+
+.user-card__name {
+    font-size: 16px;
+    font-weight: 700;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-bottom: 2px;
+}
+
+.user-card__name .user-flag,
+.user-card__name .user-clan {
+    display: inline-flex;
+    align-items: center;
+    margin-right: 4px;
+}
+
+.user-card__name .user-flag {
+    width: 20px;
+    height: 14px;
+    border-radius: 2px;
+}
+
+.user-card__name .user-username-link {
+    color: white;
+    text-decoration: none;
+    font-weight: 600;
+    transition: color 0.2s ease;
+}
+
+.user-card__name .user-username-link:hover {
+    color: hsl(var(--user), 70%, 85%);
+}
+
+/* === Responsive Adjustments === */
+@media (max-width: 480px) {
+    .user-card__inner {
+        width: 100%;
+        max-width: 300px;
+    }
+}

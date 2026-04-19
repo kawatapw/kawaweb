@@ -1,0 +1,151 @@
+/* Root Panel/Modal Styles */
+
+    :root {
+        /* Color Variables */
+        --modal-bg: hsl(var(--main), 10%, 15%);
+    }
+
+    .modal {
+        display: -webkit-box;
+        display: -webkit-flex;
+        display: -ms-flexbox;
+        display: flex;
+        visibility: hidden;
+    }
+
+    .modal.is-active {
+        visibility: visible;
+    }
+
+    .modal .modal-background {
+        -webkit-transition: all 0.3s;
+        -o-transition: all 0.3s;
+        transition: all 0.3s;
+        opacity: 0;
+    }
+
+    .modal.is-active .modal-background {
+        opacity: .65;
+    }
+
+    .modal .modal-content {
+        margin: 0;
+        max-height: 95vh;
+        max-width: 85vw;
+        width: fit-content;
+        box-shadow: 
+            0 0 1px rgba(0, 0, 0, 0.1),
+            0 1px 2px rgba(0, 0, 0, 0.15),
+            0 2px 4px rgba(0, 0, 0, 0.12),
+            0 4px 8px rgba(0, 0, 0, 0.1),
+            0 8px 16px rgba(0, 0, 0, 0.08),
+            0 16px 32px rgba(0, 0, 0, 0.06);
+        border: 1px solid hsla(var(--main), 50%, 70%, 0.15);
+        overflow-y: hidden;
+        -webkit-transform: scale(0.25);
+        -o-transform: scale(0.25);
+        transform: scale(0.25);
+        opacity: 0;
+        -webkit-transition: all 0.3s;
+        -o-transition: all 0.3s;
+        transition: all 0.3s;
+    }
+
+    .modal .modal-content.loading-state,
+    .modal .modal-content.error-state {
+        transform: scale(1);
+        opacity: 1;
+    }
+
+    .modal.is-active .modal-content {
+        -webkit-transform: scale(1);
+        -o-transform: scale(1);
+        transform: scale(1);
+        opacity: 1;
+        border-radius: 12px;
+        box-shadow: 
+            0 0 2px rgba(0, 0, 0, 0.1),
+            0 2px 4px rgba(0, 0, 0, 0.15),
+            0 4px 8px rgba(0, 0, 0, 0.12),
+            0 8px 16px rgba(0, 0, 0, 0.1),
+            0 16px 32px rgba(0, 0, 0, 0.08),
+            0 32px 64px rgba(0, 0, 0, 0.06),
+            0 0 0 1px hsla(var(--main), 100%, 100%, 0.08),
+            0 0 16px hsla(var(--main), 70%, 60%, 0.25),
+            inset 0 0 1px hsla(var(--main), 100%, 100%, 0.1);
+        border: 1px solid hsla(var(--main), 50%, 70%, 0.35);
+    }
+
+    .modal.is-active > * {
+        transition: all 0.3s;
+    }
+
+    @media screen and (min-width: 769px) {
+        .modal-content {
+            max-height: calc(100vh);
+            overflow: hidden;
+            /*width: 65%;*/
+        }
+    }
+
+        .modal-content .main-block {
+            background: hsl(var(--main), 10%, 15%);
+            position: relative;
+            max-height: 25vh;
+            padding: 0px;
+        }
+            .main-block .main-banner {
+                /*background-color: hsl(var(--main), 30%, 50%);*/
+                max-height: 250px;
+                min-height: 200px;
+                height: fit-content !important;
+                width: 100%;
+                border-top-right-radius: 20px;
+                border-top-left-radius: 20px;
+                display: flex;
+                position: relative;
+                flex-direction: row;
+                pointer-events: auto;
+                background-size: 100%;
+                padding: 0px;
+                transition: max-height 0.4s ease;
+                z-index: 0;
+            }
+                .main-block .main-banner::before {
+                    content: "";
+                    position: absolute;
+                    top: 0;
+                    left: 0;
+                    right: 0;
+                    bottom: 0;
+                    background-size: cover;
+                    background-position: center;
+                    background-image: var(--banner-bg);
+                    filter: blur(2px) brightness(0.75);
+                    z-index: 0;
+                    transition: max-height 0.4s ease;
+                }
+        
+        .modal-content .second-block {
+            display: flex;
+            background: var(--container-bg);
+            max-height: 65vh;
+            overflow-y: auto;
+        }
+            .second-block .content {
+                position: relative;
+                display: flex;
+                flex-direction: column;
+                width: 100%;
+                height: fit-content;
+                background-color: hsl(var(--main), 18%, 18%);
+                padding: 4px;
+                margin: 4px;
+                border-radius: 8px;
+                transition: 0.2s ease;
+            }
+
+  
+
+
+

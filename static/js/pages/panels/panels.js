@@ -95,7 +95,10 @@ bootstrapVue('search-panel', {
                     
                     const playersData = await playersResponse.json();
                     if (currentSearchId === this.searchId) {
-                        this.players = playersData.result || [];
+                        // Transform player data to match expected format
+                        this.players = (playersData.result || []).map(player => ({
+                            info: player
+                        }));
                     }
                 } catch (err) {
                     if (currentSearchId === this.searchId) {
@@ -182,18 +185,19 @@ bootstrapVue('search-panel', {
          * @returns {Array} - Normalized difficulty objects
          */
         getNormalizedDifficulties(map) {
-            if (!map || !map.ChildrenBeatmaps) return [];
+            if (!map || !map.ChildrenBeatmaps || !Array.isArray(map.ChildrenBeatmaps)) return [];
             
-            return map.ChildrenBeatmaps.map(diff => ({
-                id: diff.BeatmapID,
-                diff: diff.DifficultyRating,
-                mode: diff.Mode,
-                version: diff.DiffName,
-                // Add any other properties the component might need
-                bpm: diff.BPM,
-                hit_length: diff.HitLength,
-                difficulty_rating: diff.DifficultyRating
-            }));
+            return map.ChildrenBeatmaps
+                .filter(diff => diff && diff.BeatmapID) // Filter out null/undefined and invalid entries
+                .map(diff => ({
+                    id: diff.BeatmapID,
+                    diff: diff.DifficultyRating || 0,
+                    mode: diff.Mode || 0,
+                    version: diff.DiffName || 'Unknown',
+                    bpm: diff.BPM || 0,
+                    hit_length: diff.HitLength || 0,
+                    difficulty_rating: diff.DifficultyRating || 0
+                }));
         }
     },
     beforeDestroy() {

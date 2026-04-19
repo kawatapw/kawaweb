@@ -6,8 +6,8 @@
   @import url("/static/css/pages/admin/users.css") layer(styles);
   @import url("/static/css/pages/admin/panels/users.css") layer(components);
 </style>
-<script src="/static/js/asserts/vue.js"></script>
-<script src="/static/js/asserts/vue-axios.js"></script>
+<script src="{{ bust('/static/js/asserts/vue.js') }}"></script>
+<script src="{{ bust('/static/js/asserts/vue-axios.js') }}"></script>
 <script>
     var domain = "{{ domain() }}";
     var users = '{{ users|tojson }}';
@@ -331,6 +331,6 @@
 
 <div id="editUserWindow"></div>
 
-<script src="/static/js/pages/admin/users.js"></script>
+<script src="{{ bust('/static/js/pages/admin/users.js') }}"></script>
 
 {% endblock %}

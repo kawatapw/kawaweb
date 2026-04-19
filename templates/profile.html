@@ -36,7 +36,7 @@
         </div>
     </div>
     <div v-if="data.maps.{{ id }}.out.length != 0" class="beatmaps">
-        <bmap-card v-for="(map, index) in data.maps.{{ id }}.out" :key="map.set_id + '-' + map.id" :beatmap="map" mode="mini" :is-set="false" :show-all-difficulties="true" :selected-difficulty-id="map.id" :show-plays="true"></bmap-card>
+        <beatmap-card v-for="(map, index) in data.maps.{{ id }}.out" :key="map.set_id + '-' + map.id" :beatmap="map" mode="mini" :show-all-difficulties="false" :selected-difficulty-id="map.id" :show-plays="true"></beatmap-card>
     </div>
     <div v-else-if="data.maps.{{ id }}.out.length == 0" class="stats-block">
         <div class="columns is-marginless">
@@ -63,6 +63,275 @@
 <style>
     @import url("/static/css/pages/profile.css") layer(styles);
 </style>
+<style>
+/* Status + friend button row — inline next to each other */
+.profile-status-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.profile-status-row .subtitle {
+    margin-bottom: 0 !important;
+}
+.pim-status-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Friend button — unlayered to beat Bulma button resets */
+button.profile-friend-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 12px;
+    border-radius: 16px;
+    border: 1.5px solid hsl(var(--main), 50%, 45%);
+    background: transparent;
+    color: hsl(var(--main), 50%, 60%);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+    line-height: 1.4;
+    height: auto;
+    box-shadow: none;
+}
+button.profile-friend-btn:hover {
+    background: hsla(var(--main), 50%, 45%, 0.15);
+    border-color: hsl(var(--main), 50%, 55%);
+    color: hsl(var(--main), 50%, 70%);
+}
+/* Added (not mutual) — subtle filled */
+button.profile-friend-btn.is-friend {
+    background: hsla(var(--main), 40%, 40%, 0.3);
+    color: hsl(var(--main), 40%, 70%);
+    border-color: hsla(var(--main), 40%, 50%, 0.5);
+}
+/* Mutual — solid accent */
+button.profile-friend-btn.is-mutual {
+    background: hsl(var(--main), 50%, 42%);
+    color: #fff;
+    border-color: hsl(var(--main), 50%, 42%);
+}
+/* Hover on friend/mutual — red remove state */
+button.profile-friend-btn.is-friend.is-hover,
+button.profile-friend-btn.is-mutual.is-hover {
+    background: hsl(0, 55%, 48%);
+    border-color: hsl(0, 55%, 48%);
+    color: #fff;
+}
+button.profile-friend-btn.is-loading {
+    opacity: 0.6;
+    pointer-events: none;
+}
+/* Staff admin shortcut — icon-only pill */
+.profile-admin-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: 1.5px solid hsla(var(--main), 30%, 50%, 0.5);
+    background: hsla(var(--main), 20%, 20%, 0.4);
+    color: hsl(var(--main), 30%, 60%);
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-decoration: none;
+}
+.profile-admin-btn:hover {
+    background: hsla(var(--main), 40%, 35%, 0.5);
+    border-color: hsl(var(--main), 50%, 55%);
+    color: #fff;
+}
+@media (max-width: 768px) {
+    button.profile-friend-btn {
+        padding: 4px 10px;
+        font-size: 11px;
+    }
+    button.profile-friend-btn--desktop {
+        display: none;
+    }
+    .profile-admin-btn.profile-friend-btn--desktop {
+        display: none;
+    }
+}
+</style>
+<style>
+/* Season Switcher — unlayered to beat Bulma */
+.season-switcher {
+    background: hsla(var(--main), 20%, 22%, 0.7);
+    backdrop-filter: blur(10px) saturate(1.5);
+    padding: 12px;
+    margin-bottom: 10px;
+    border-radius: 8px;
+    border: 1px solid hsla(var(--main), 25%, 35%, 0.3);
+}
+
+.season-switcher .season-header {
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: hsl(var(--main), 50%, 70%);
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.season-switcher .season-controls {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.season-switcher .season-pill {
+    padding: 6px 16px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    background: hsla(var(--main), 15%, 28%, 0.7);
+    color: hsl(var(--main), 15%, 65%);
+    transition: all 0.2s ease;
+    user-select: none;
+    white-space: nowrap;
+    text-decoration: none;
+    border: 1px solid hsla(var(--main), 15%, 35%, 0.3);
+}
+
+.season-switcher .season-pill:hover {
+    background: hsla(var(--main), 25%, 35%, 0.8);
+    color: #fff;
+    border-color: hsla(var(--main), 30%, 45%, 0.5);
+}
+
+.season-switcher .season-pill.active {
+    background: hsl(var(--main), 45%, 42%);
+    color: #fff;
+    pointer-events: none;
+    border-color: hsl(var(--main), 50%, 50%);
+    box-shadow: 0 0 8px hsla(var(--main), 50%, 50%, 0.25);
+}
+
+.season-switcher .season-dropdowns {
+    display: flex;
+    gap: 5px;
+    flex: 1;
+    min-width: 0;
+}
+
+.season-switcher select.season-select,
+.season-switcher .season-select {
+    padding: 6px 28px 6px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    font-family: inherit;
+    background-color: hsla(var(--main), 12%, 18%, 0.9);
+    color: hsl(var(--main), 15%, 80%);
+    border: 1px solid hsla(var(--main), 20%, 32%, 0.5);
+    cursor: pointer;
+    outline: none;
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23777'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 8px center;
+    background-size: 9px;
+    flex: 1;
+    min-width: 0;
+    height: auto;
+    display: block;
+    line-height: 1.4;
+    box-shadow: none;
+    width: 100%;
+    transition: all 0.15s ease;
+    margin: 0;
+}
+
+.season-switcher select.season-select option,
+.season-switcher .season-select option {
+    background: hsl(var(--main), 10%, 15%);
+    color: #ddd;
+    padding: 4px 8px;
+}
+
+.season-switcher select.season-select:hover,
+.season-switcher .season-select:hover {
+    border-color: hsla(var(--main), 30%, 45%, 0.7);
+    background-color: hsla(var(--main), 14%, 22%, 0.95);
+}
+
+.season-switcher select.season-select:focus,
+.season-switcher .season-select:focus {
+    border-color: hsl(var(--main), 50%, 50%);
+    box-shadow: 0 0 0 2px hsla(var(--main), 50%, 50%, 0.15);
+}
+
+.season-switcher .season-active-tag {
+    margin-top: 8px;
+    font-size: 11px;
+    color: hsl(140, 55%, 55%);
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-weight: 500;
+}
+
+.season-switcher .active-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: hsl(140, 55%, 55%);
+    display: inline-block;
+    animation: season-pulse 2s ease-in-out infinite;
+}
+
+@keyframes season-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.35; }
+}
+
+/* Desktop: hide mobile switcher */
+.season-switcher-mobile {
+    display: none;
+}
+
+/* Mobile: show mobile switcher, desktop one is inside profile-stats-full which collapses */
+@media screen and (max-width: 1255px) {
+    .profile-stats-full .season-switcher {
+        display: none;
+    }
+    .season-switcher-mobile {
+        display: block;
+        margin-bottom: 10px;
+    }
+    .season-switcher-mobile .season-controls {
+        flex-direction: column;
+        gap: 8px;
+    }
+    .season-switcher-mobile .season-pill {
+        width: 100%;
+        text-align: center;
+        padding: 10px;
+        font-size: 13px;
+    }
+    .season-switcher-mobile .season-dropdowns {
+        width: 100%;
+    }
+    .season-switcher-mobile select.season-select,
+    .season-switcher-mobile .season-select {
+        padding: 10px 28px 10px 12px;
+        font-size: 13px;
+    }
+}
+</style>
 <script src="https://cdn.socket.io/4.2.0/socket.io.min.js"></script>
 <script>
     var userid = Number("{{ user['id'] }}"); //For text editor doesn't dizzy lmao
@@ -74,290 +343,400 @@
     {% else %}
     var isOwnProfile = false;
     {% endif %}
+    {% if 'user_data' in session %}
+    var selfId = {{ session['user_data']['id'] }};
+    var isLoggedIn = true;
+    var isStaff = {{ 'true' if session['user_data']['is_staff'] else 'false' }};
+    {% else %}
+    var selfId = null;
+    var isLoggedIn = false;
+    var isStaff = false;
+    {% endif %}
 </script>
 {% endblock %}
 
 {% block content %}
 <div id="app">
-    <div class="main-block">
-        <div class="profile-bg">
-            <div class="info-block">
-                <h1 class="title">
-                    <p class="ranks">
-                        <img src="/static/images/flags/{{ user['country']|upper }}.png" class="profile-flag">
-                        <span class="bgf">{{ user['name'] }}</span>
-                    </p>
-                </h1>
-                <transition name="fade">
-                    <div class="subtitle" style="margin-top: 0;" v-if='data.status.online == false'>
-                        <a class='circle'>●</a> Offline
-                    </div>
-                    <div class="subtitle" style="margin-top: 0;" v-else-if='data.status.online == true'>
-                        <a class='circle green'>●</a> Online
-                    </div>
-                </transition>
-            </div>
-            <div class="anime-girl">
-                <!-- (if you want to add it)
-                    <img src="{your transparent img src}" alt="">
-                -->
-            </div>
-            <transition name="click">
-                <div class="online-infomation" v-if='data.status.online == true'
-                    :key="actionIntToStr(data.status.status)">
-                    <% actionIntToStr(data.status.status) %>
-                </div>
-            </transition>
-        </div>
-        <div class="profile-flex">
-            <div class="profile-avatar-area">
-                <img src="https://a.{{ domain() }}/{{ user['id'] }}" alt="avatar" class="rounded-avatar profile-avatar"
-                    onError="this.src='/static/images/avatar_notwork.png';">
-            </div>
-            <div class="profile-identity-mobile">
-                <div class="pim-name">
-                    <img src="/static/images/flags/{{ user['country']|upper }}.png" class="pim-flag">
-                    <span class="pim-username">{{ user['name'] }}</span>
-                </div>
-                <transition name="fade">
-                    <div class="pim-status" v-if='data.status.online == false'>
-                        <span class='circle'>●</span> Offline
-                    </div>
-                    <div class="pim-status pim-online" v-else-if='data.status.online == true'>
-                        <span class='circle green'>●</span> Online
-                    </div>
-                </transition>
-            </div>
-            <div class="bar-selection mode-selects">
-                <div class="select-left">
-                    <a class="simple-banner-switch" v-bind:class="{ 'selected': mode === 'std' }"
-                        @click="ChangeModeMods('std',mods)"><i class="mode-icon mode-osu"></i><span
-                            class="mode-text">osu!</span></a>
-                    <a class="simple-banner-switch" v-bind:class="{ 'selected': mode === 'taiko', 'disabled': mods === 'ap' }"
-                        @click="ChangeModeMods('taiko',mods)"><i class="mode-icon mode-taiko"></i><span
-                            class="mode-text">osu!taiko</span></a>
-                    <a class="simple-banner-switch" v-bind:class="{ 'selected': mode === 'catch', 'disabled': mods === 'ap' }"
-                        @click="ChangeModeMods('catch',mods)"><i class="mode-icon mode-catch"></i><span
-                            class="mode-text">osu!catch</span></a>
-                    <a class="simple-banner-switch" v-bind:class="{ 'selected': mode === 'mania', 'disabled': mods === 'ap' || mods === 'rx' }"
-                        @click="ChangeModeMods('mania',mods)"><i class="mode-icon mode-mania"></i><span
-                            class="mode-text">osu!mania</span></a>
-                </div>
-                <div class="select-right">
-                    <a class="simple-banner-switch" v-bind:class=" { 'selected': mods === 'vn' }"
-                        @click="ChangeModeMods(mode,'vn')"><span class="mods-fulltext">Vanilla</span>
-                        <span class="mods-shorttext">VN</span></a>
-                    <a class="simple-banner-switch" v-bind:class=" { 'selected': mods === 'rx', 'disabled': mode === 'mania' }"
-                        @click="ChangeModeMods(mode,'rx')"><span class="mods-fulltext">Relax</span>
-                        <span class="mods-shorttext">RX</span></a>
-                    <a class="simple-banner-switch" v-bind:class=" { 'selected': mods === 'ap', 'disabled': mode === 'taiko' || mode === 'catch' || mode === 'mania'  }"
-                        @click="ChangeModeMods(mode,'ap')"><span class="mods-fulltext">Autopilot</span><span
-                            class="mods-shorttext">AP</span></a>
-                </div>
-            </div>
-            <div class="bar-selection badge-selects">
-                <div v-if="data.badges != undefined" class="select-left badge-block">
-                    <span class="badge-select-spacer"></span>
-                    <badge v-for="badge in data.badges" :badge="badge" :type="0"></badge>
-                </div>
-                <div v-else class="select-left">
-                    <div class="badge-block">
-                        <span>
-                            This user has no badges.
-                        </span>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="second-block" style="overflow: hidden;">
-        <div class="columns is-marginless two-sides">
-            <div class="column is-one-third" id =""v-cloak> <!--Bookmark-->
-                <div class="profile-stats-summary" v-if="data.stats.out[modegulag]">
-                    <div class="pss-pill">
-                        <span class="pss-label">PP</span>
-                        <span class="pss-value"><% addCommas(data.stats.out[modegulag].pp) %></span>
-                    </div>
-                    <div class="pss-pill">
-                        <span class="pss-label">Rank</span>
-                        <span class="pss-value" v-if="data.stats.out[modegulag].rank != 0"><% '#' + data.stats.out[modegulag].rank %></span>
-                        <span class="pss-value" v-else>-</span>
-                    </div>
-                    <div class="pss-pill">
-                        <span class="pss-label">Acc</span>
-                        <span class="pss-value"><% data.stats.out[modegulag].acc %>%</span>
-                    </div>
-                    <div class="pss-grades" v-if="data.grades">
-                        <div class="pss-grade">
-                            <div class="map-rank rank-X">SS</div>
-                            <span class="pss-grade-count"><% data.stats.out[modegulag].x_count %></span>
-                        </div>
-                        <div class="pss-grade">
-                            <div class="map-rank rank-S">S</div>
-                            <span class="pss-grade-count"><% data.stats.out[modegulag].s_count %></span>
-                        </div>
-                        <div class="pss-grade">
-                            <div class="map-rank rank-A">A</div>
-                            <span class="pss-grade-count"><% data.stats.out[modegulag].a_count %></span>
-                        </div>
-                    </div>
-                </div>
-                <input type="checkbox" id="profile-stats-expand">
-                <div class="profile-stats-full">
-                <div class="header" v-if='(data.stats.out[modegulag].rank) != 0'>
-                    <div class="title">
-                        <i class="fas fa-user-friends"></i> Rank
-                    </div>
-                </div>
-                <div class="stats-block rank-block" id="hina-stats-block"v-if='(data.stats.out[modegulag].rank) != 0'>
-                    <table class="is-striped">
-                        <tbody>
-                            <tr>
-                                <td>Global rank</td>
-                                <td class="right-aligned">
-                                    <span id="global-rank">
-                                        <% '#' + (data.stats.out[modegulag].rank) %>
-                                    </span>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>Country rank</td>
-                                <td class="right-aligned">
-                                    <span id="country-rank">
-                                        <% '#' + (data.stats.out[modegulag].country_rank) %>
-                                    </span>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-                <div class="header">
-                    <div class="title">
-                        <i class="fas fa-chart-pie"></i> Statistics
-                    </div>
-                </div>
-            <div class="stats-block" id="hina-stats-block">
-                    <table class="is-striped">
-                        <tbody>
-                            <tr>
-                                <td><b>PP</b></td>
-                                <td class="right-aligned">
-                                    <% addCommas(data.stats.out[modegulag].pp) %>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td><b>Ranked score</b></td>
-                                <td class="right-aligned">
-                                    <% addCommas(data.stats.out[modegulag].rscore) %>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td><b>Total score</b></td>
-                                <td class="right-aligned">
-                                    <% addCommas(data.stats.out[modegulag].tscore) %>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td><b>Max combo</b></td>
-                                <td class="right-aligned">
-                                    <% addCommas(data.stats.out[modegulag].max_combo) %>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td><b>Playcount</b></td>
-                                <td class="right-aligned">
-                                    <% addCommas(data.stats.out[modegulag].plays) %>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td><b>Playtime</b></td>
-                                <td class="right-aligned">
-                                    <% secondsToDhm(data.stats.out[modegulag].playtime) %>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td><b>Accuracy</b></td>
-                                <td class="right-aligned">
-                                    <% data.stats.out[modegulag].acc %>%
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                    <div class="grade-block" v-if="data.grades">
-                        <article class="media">
-                            <div class="media-content">
-                                <div class="grade-line">
-                                    <div class="rank-single">
-                                        <div class="map-rank rank-X">SS</div>
-                                        <div class="rank-amount">
-                                            <% data.stats.out[modegulag].x_count %>
-                                        </div>
-                                    </div>
-                                    <div class="rank-single">
-                                        <div class="map-rank rank-XH">SS</div>
-                                        <div class="rank-amount">
-                                            <% data.stats.out[modegulag].xh_count %>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="grade-line">
-                                    <div class="rank-single">
-                                        <div class="map-rank rank-S">S</div>
-                                        <div class="rank-amount">
-                                            <% data.stats.out[modegulag].s_count %>
-                                        </div>
-                                    </div>
-                                    <div class="rank-single">
-                                        <div class="map-rank rank-SH">S</div>
-                                        <div class="rank-amount">
-                                            <% data.stats.out[modegulag].sh_count %>
-                                        </div>
-                                    </div>
-                                    <div class="rank-single">
-                                        <div class="map-rank rank-A">A</div>
-                                        <div class="rank-amount">
-                                            <% data.stats.out[modegulag].a_count %>
-                                        </div>
-                                    </div>
-                                </div>
+    <!-- User Data Provider: Makes user data available to all child components via provide/inject -->
+    <user-data-provider :auto-refresh-status="true" :userId="userid">
+        <div class="main-block">
+            <div class="profile-bg">
+                <div class="info-block">
+                    <h1 class="title">
+                        <p class="ranks">
+                            <img src="/static/images/flags/{{ user['country']|upper }}.png" class="profile-flag">
+                            <span class="bgf">{{ user['name'] }}</span>
+                        </p>
+                    </h1>
+                    <div class="profile-status-row">
+                        <transition name="fade">
+                            <div class="subtitle" style="margin-top: 0;" v-if='data.status.online == false'>
+                                <a class='circle'>●</a> Offline
                             </div>
-                        </article>
+                            <div class="subtitle" style="margin-top: 0;" v-else-if='data.status.online == true'>
+                                <a class='circle green'>●</a> Online
+                            </div>
+                        </transition>
+                        <button type="button" v-if="isLoggedIn && !isOwnProfile"
+                                class="profile-friend-btn profile-friend-btn--desktop"
+                                :class="{ 'is-friend': isFriend, 'is-mutual': isMutual, 'is-loading': friendLoading, 'is-hover': friendHover }"
+                                @click="toggleFriend"
+                                @mouseenter="friendHover = true"
+                                @mouseleave="friendHover = false"
+                                :disabled="friendLoading">
+                            <template v-if="friendLoading">
+                                <i class="fas fa-spinner fa-spin"></i> <span>...</span>
+                            </template>
+                            <template v-else-if="isMutual && !friendHover">
+                                <i class="fas fa-user-group"></i> <span>Mutual</span>
+                            </template>
+                            <template v-else-if="isMutual && friendHover">
+                                <i class="fas fa-user-minus"></i> <span>Remove</span>
+                            </template>
+                            <template v-else-if="isFriend && !friendHover">
+                                <i class="fas fa-user-check"></i> <span>Added</span>
+                            </template>
+                            <template v-else-if="isFriend && friendHover">
+                                <i class="fas fa-user-minus"></i> <span>Remove</span>
+                            </template>
+                            <template v-else>
+                                <i class="fas fa-user-plus"></i> <span>Add Friend</span>
+                            </template>
+                        </button>
+                        <a v-if="isStaff"
+                           :href="'/admin-v2/user/' + userid"
+                           class="profile-admin-btn profile-friend-btn--desktop"
+                           title="Open in Admin V2">
+                            <i class="fas fa-shield-alt"></i>
+                        </a>
                     </div>
                 </div>
-                <!--<div class="level-block">
-                    <div class="columns is-marginless is-2">
-                        <div class="column level-bar is-paddingless">
-                            <div class="progress-level"></div>
-                        </div>
-                        <div class="column level-num is-one-fifth is-textcen">
-                            <% data.stats[`level_${modegulag}`] %>
-                        </div>
-                    </div>
-                </div>-->
+                <div class="anime-girl">
+                    <!-- (if you want to add it)
+                        <img src="{your transparent img src}" alt="">
+                    -->
                 </div>
-                <label for="profile-stats-expand" class="profile-stats-toggle">
-                    <span class="pst-show">Show full stats</span>
-                    <span class="pst-hide">Hide stats</span>
-                </label>
+                <transition name="click">
+                    <div class="online-infomation" v-if='data.status.online == true'
+                        :key="actionIntToStr(data.status.status)">
+                        <% actionIntToStr(data.status.status) %>
+                    </div>
+                </transition>
             </div>
-            <div class="column">
-                <div class="profile-score-nav" v-cloak>
-                    <a href="#best-scores" class="score-nav-item">Best</a>
-                    <a href="#recent-scores" class="score-nav-item">Recent</a>
-                    <a href="#most-played" class="score-nav-item">Most Played</a>
+            <div class="profile-flex">
+                <div class="profile-avatar-area">
+                    <img src="https://a.{{ domain() }}/{{ user['id'] }}" alt="avatar" class="rounded-avatar profile-avatar"
+                        onError="this.src='/static/images/avatar_notwork.png';">
                 </div>
-                {{ userpage('Userpage | Bio | !me', 'bio') }}
-                {{ scores('Best Scores', 'best')}}
-                {{ scores('Recent Scores', 'recent')}}
-                {{ maps('Most Beatmaps Played', 'most')}}
+                <div class="profile-identity-mobile">
+                    <div class="pim-name">
+                        <img src="/static/images/flags/{{ user['country']|upper }}.png" class="pim-flag">
+                        <span class="pim-username">{{ user['name'] }}</span>
+                    </div>
+                    <div class="pim-status-row">
+                        <transition name="fade">
+                            <div class="pim-status" v-if='data.status.online == false'>
+                                <span class='circle'>●</span> Offline
+                            </div>
+                            <div class="pim-status pim-online" v-else-if='data.status.online == true'>
+                                <span class='circle green'>●</span> Online
+                            </div>
+                        </transition>
+                        <button type="button" v-if="isLoggedIn && !isOwnProfile"
+                                class="profile-friend-btn"
+                                :class="{ 'is-friend': isFriend, 'is-mutual': isMutual, 'is-loading': friendLoading }"
+                                @click="toggleFriend"
+                                :disabled="friendLoading">
+                            <template v-if="friendLoading">
+                                <i class="fas fa-spinner fa-spin"></i>
+                            </template>
+                            <template v-else-if="isMutual">
+                                <i class="fas fa-user-group"></i> <span>Mutual</span>
+                            </template>
+                            <template v-else-if="isFriend">
+                                <i class="fas fa-user-check"></i> <span>Added</span>
+                            </template>
+                            <template v-else>
+                                <i class="fas fa-user-plus"></i> <span>Add</span>
+                            </template>
+                        </button>
+                        <a v-if="isStaff"
+                           :href="'/admin-v2/user/' + userid"
+                           class="profile-admin-btn"
+                           title="Open in Admin V2">
+                            <i class="fas fa-shield-alt"></i>
+                        </a>
+                    </div>
+                </div>
+                <div class="bar-selection mode-selects">
+                    <div class="select-left">
+                        <a class="simple-banner-switch" v-bind:class="{ 'selected': mode === 'std' }"
+                            @click="ChangeModeMods('std',mods)"><i class="mode-icon mode-osu"></i><span
+                                class="mode-text">osu!</span></a>
+                        <a class="simple-banner-switch" v-bind:class="{ 'selected': mode === 'taiko', 'disabled': mods === 'ap' }"
+                            @click="ChangeModeMods('taiko',mods)"><i class="mode-icon mode-taiko"></i><span
+                                class="mode-text">osu!taiko</span></a>
+                        <a class="simple-banner-switch" v-bind:class="{ 'selected': mode === 'catch', 'disabled': mods === 'ap' }"
+                            @click="ChangeModeMods('catch',mods)"><i class="mode-icon mode-catch"></i><span
+                                class="mode-text">osu!catch</span></a>
+                        <a class="simple-banner-switch" v-bind:class="{ 'selected': mode === 'mania', 'disabled': mods === 'ap' || mods === 'rx' }"
+                            @click="ChangeModeMods('mania',mods)"><i class="mode-icon mode-mania"></i><span
+                                class="mode-text">osu!mania</span></a>
+                    </div>
+                    <div class="select-right">
+                        <a class="simple-banner-switch" v-bind:class=" { 'selected': mods === 'vn' }"
+                            @click="ChangeModeMods(mode,'vn')"><span class="mods-fulltext">Vanilla</span>
+                            <span class="mods-shorttext">VN</span></a>
+                        <a class="simple-banner-switch" v-bind:class=" { 'selected': mods === 'rx', 'disabled': mode === 'mania' }"
+                            @click="ChangeModeMods(mode,'rx')"><span class="mods-fulltext">Relax</span>
+                            <span class="mods-shorttext">RX</span></a>
+                        <a class="simple-banner-switch" v-bind:class=" { 'selected': mods === 'ap', 'disabled': mode === 'taiko' || mode === 'catch' || mode === 'mania'  }"
+                            @click="ChangeModeMods(mode,'ap')"><span class="mods-fulltext">Autopilot</span><span
+                                class="mods-shorttext">AP</span></a>
+                    </div>
+                </div>
+                <div class="bar-selection badge-selects">
+                    <div v-if="data.badges != undefined" class="select-left badge-block">
+                        <span class="badge-select-spacer"></span>
+                        <user-badges :userId="userid" :badges="data.badges"></user-badges>
+                    </div>
+                    <div v-else class="select-left">
+                        <div class="badge-block">
+                            <span>
+                                This user has no badges.
+                            </span>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
-    </div>
+        <div class="second-block" style="overflow: hidden;">
+            <div class="columns is-marginless two-sides">
+                <div class="column is-one-third" id =""v-cloak> <!--Bookmark-->
+                    <div class="season-switcher season-switcher-mobile" v-if="seasons.length > 0">
+                        <div class="season-controls">
+                            <button type="button" class="season-pill" :class="{ 'active': selectedSeason === 0 }" @click="selectSeason(0)">All Time</button>
+                            <div class="season-dropdowns" v-if="yearOptions.length > 0">
+                                <select class="season-select" aria-label="Schedule" v-model.number="selectedSchedule" @change="onScheduleChange" v-if="schedules.length > 1">
+                                    <option v-for="sc in schedules" :key="'msc'+sc.id" :value="sc.id"><% sc.name %></option>
+                                </select>
+                                <select class="season-select" aria-label="Year" v-model.number="selectedYear" @change="onYearChange">
+                                    <option v-for="y in yearOptions" :key="'m'+y" :value="y"><% y %></option>
+                                </select>
+                                <select class="season-select" aria-label="Season" v-model.number="selectedSeason" @change="onSeasonChange">
+                                    <option v-for="s in filteredSeasons" :key="'m'+s.id" :value="s.id"><% s.label %></option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="profile-stats-summary" v-if="currentStats">
+                        <div class="pss-pill">
+                            <span class="pss-label">PP</span>
+                            <span class="pss-value"><% addCommas(currentStats.pp) %></span>
+                        </div>
+                        <div class="pss-pill">
+                            <span class="pss-label">Rank</span>
+                            <span class="pss-value" v-if="currentStats.rank != 0"><% '#' + currentStats.rank %></span>
+                            <span class="pss-value" v-else>-</span>
+                        </div>
+                        <div class="pss-pill">
+                            <span class="pss-label">Acc</span>
+                            <span class="pss-value"><% currentStats.acc %>%</span>
+                        </div>
+                        <div class="pss-grades" v-if="data.grades">
+                            <div class="pss-grade">
+                                <div class="map-rank rank-X">SS</div>
+                                <span class="pss-grade-count"><% currentStats.x_count %></span>
+                            </div>
+                            <div class="pss-grade">
+                                <div class="map-rank rank-S">S</div>
+                                <span class="pss-grade-count"><% currentStats.s_count %></span>
+                            </div>
+                            <div class="pss-grade">
+                                <div class="map-rank rank-A">A</div>
+                                <span class="pss-grade-count"><% currentStats.a_count %></span>
+                            </div>
+                        </div>
+                    </div>
+                    <input type="checkbox" id="profile-stats-expand">
+                    <div class="profile-stats-full">
+                    <div class="season-switcher" v-if="seasons.length > 0">
+                        <div class="season-header">
+                            <i class="fas fa-calendar-alt"></i> Season
+                        </div>
+                        <div class="season-controls">
+                            <button type="button" class="season-pill" :class="{ 'active': selectedSeason === 0 }" @click="selectSeason(0)">All Time</button>
+                            <div class="season-dropdowns" v-if="yearOptions.length > 0">
+                                <select class="season-select" aria-label="Schedule" v-model.number="selectedSchedule" @change="onScheduleChange" v-if="schedules.length > 1">
+                                    <option v-for="sc in schedules" :key="'sc'+sc.id" :value="sc.id"><% sc.name %></option>
+                                </select>
+                                <select class="season-select" aria-label="Year" v-model.number="selectedYear" @change="onYearChange">
+                                    <option v-for="y in yearOptions" :key="y" :value="y"><% y %></option>
+                                </select>
+                                <select class="season-select" aria-label="Season" v-model.number="selectedSeason" @change="onSeasonChange">
+                                    <option v-for="s in filteredSeasons" :key="s.id" :value="s.id"><% s.label %></option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="season-active-tag" v-if="activeSeason && selectedSeason === activeSeason.id">
+                            <span class="active-dot"></span> Active Season
+                        </div>
+                    </div>
+                    <div class="header" v-if='(currentStats.rank) != 0'>
+                        <div class="title">
+                            <i class="fas fa-user-friends"></i> Rank
+                        </div>
+                    </div>
+                    <div class="stats-block rank-block" id="hina-stats-block"v-if='(currentStats.rank) != 0'>
+                        <table class="is-striped">
+                            <tbody>
+                                <tr>
+                                    <td>Global rank</td>
+                                    <td class="right-aligned">
+                                        <span id="global-rank">
+                                            <% '#' + (currentStats.rank) %>
+                                        </span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>Country rank</td>
+                                    <td class="right-aligned">
+                                        <span id="country-rank">
+                                            <% '#' + (currentStats.country_rank) %>
+                                        </span>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="header">
+                        <div class="title">
+                            <i class="fas fa-chart-pie"></i> Statistics
+                        </div>
+                    </div>
+                <div class="stats-block" id="hina-stats-block">
+                        <table class="is-striped">
+                            <tbody>
+                                <tr>
+                                    <td><b>PP</b></td>
+                                    <td class="right-aligned">
+                                        <% addCommas(currentStats.pp) %>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td><b>Ranked score</b></td>
+                                    <td class="right-aligned">
+                                        <% addCommas(currentStats.rscore) %>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td><b>Total score</b></td>
+                                    <td class="right-aligned">
+                                        <% addCommas(currentStats.tscore) %>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td><b>Max combo</b></td>
+                                    <td class="right-aligned">
+                                        <% addCommas(currentStats.max_combo) %>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td><b>Playcount</b></td>
+                                    <td class="right-aligned">
+                                        <% addCommas(currentStats.plays) %>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td><b>Playtime</b></td>
+                                    <td class="right-aligned">
+                                        <% secondsToDhm(currentStats.playtime) %>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td><b>Accuracy</b></td>
+                                    <td class="right-aligned">
+                                        <% currentStats.acc %>%
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <div class="grade-block" v-if="data.grades">
+                            <article class="media">
+                                <div class="media-content">
+                                    <div class="grade-line">
+                                        <div class="rank-single">
+                                            <div class="map-rank rank-X">SS</div>
+                                            <div class="rank-amount">
+                                                <% currentStats.x_count %>
+                                            </div>
+                                        </div>
+                                        <div class="rank-single">
+                                            <div class="map-rank rank-XH">SS</div>
+                                            <div class="rank-amount">
+                                                <% currentStats.xh_count %>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="grade-line">
+                                        <div class="rank-single">
+                                            <div class="map-rank rank-S">S</div>
+                                            <div class="rank-amount">
+                                                <% currentStats.s_count %>
+                                            </div>
+                                        </div>
+                                        <div class="rank-single">
+                                            <div class="map-rank rank-SH">S</div>
+                                            <div class="rank-amount">
+                                                <% currentStats.sh_count %>
+                                            </div>
+                                        </div>
+                                        <div class="rank-single">
+                                            <div class="map-rank rank-A">A</div>
+                                            <div class="rank-amount">
+                                                <% currentStats.a_count %>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </article>
+                        </div>
+                    </div>
+                    <!--<div class="level-block">
+                        <div class="columns is-marginless is-2">
+                            <div class="column level-bar is-paddingless">
+                                <div class="progress-level"></div>
+                            </div>
+                            <div class="column level-num is-one-fifth is-textcen">
+                                <% data.stats[`level_${modegulag}`] %>
+                            </div>
+                        </div>
+                    </div>-->
+                    </div>
+                    <label for="profile-stats-expand" class="profile-stats-toggle">
+                        <span class="pst-show">Show full stats</span>
+                        <span class="pst-hide">Hide stats</span>
+                    </label>
+                </div>
+                <div class="column">
+                    <div class="profile-score-nav" v-cloak>
+                        <a href="#best-scores" class="score-nav-item">Best</a>
+                        <a href="#recent-scores" class="score-nav-item">Recent</a>
+                        <a href="#most-played" class="score-nav-item">Most Played</a>
+                    </div>
+                    {{ userpage('Userpage | Bio | !me', 'bio') }}
+                    {{ scores('Best Scores', 'best')}}
+                    {{ scores('Recent Scores', 'recent')}}
+                    {{ maps('Most Beatmaps Played', 'most')}}
+                </div>
+            </div>
+        </div>
+    </user-data-provider>
 </div>
 {% endblock %}
 
 {% block bottom %}
-<script src="/static/js/pages/profile.js"></script>
+<script src="{{ bust('/static/js/pages/profile.js') }}"></script>
 
 <style id="style">
     :root {
@@ -380,6 +759,7 @@
             background: linear-gradient(hsl(var(--profile-hue), 25%, 25%, 20%), hsl(var(--profile-hue), 10%, 10%)), url("/backgrounds/{{ user['id'] }}");
             background-size: cover;
             background-clip: content-box;
+            background-position: center;
         }
     {% endif %}
     {% endif %}

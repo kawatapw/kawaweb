@@ -1,0 +1,356 @@
+{# hinaDir: Unified auth shell — single page with tab switching between Login / Register / Forgot.
+   Each thin wrapper (login.html, register.html, forgot_password.html) sets active_tab and extends this.
+   All forms live in DOM; JS toggles visibility with fade+slide transitions. #}
+{% extends 'base_auth.html' %}
+{% block title %}{{ 'Login' if active_tab == 'login' else ('Register' if active_tab == 'register' else 'Forgot Password') }}{% endblock %}
+
+{% block header %}
+<link rel="stylesheet" href="{{ bust('/static/hinaDir/compiled/auth.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="auth-layout">
+
+  {# ── LEFT PANEL ── #}
+  <div class="auth-form-panel">
+    <div class="auth-topbar">
+      <a href="/" class="auth-home-link">
+        <img src="/static/images/logo.png" alt="{{ appName() }}" class="auth-logo">
+        <span>{{ appName() }}</span>
+      </a>
+      <a href="/" class="auth-back-link">
+        <i class="fas fa-arrow-left"></i> Back to home
+      </a>
+    </div>
+
+    <div class="auth-form-wrapper">
+      <div class="auth-card">
+
+        {# ── Tab switcher ── #}
+        <div class="auth-tabs" role="tablist">
+          <button type="button" class="auth-tab" role="tab" data-tab="login"
+                  aria-selected="{{ 'true' if active_tab == 'login' else 'false' }}"
+                  aria-controls="auth-pane-login">Log in</button>
+          <button type="button" class="auth-tab" role="tab" data-tab="register"
+                  aria-selected="{{ 'true' if active_tab == 'register' else 'false' }}"
+                  aria-controls="auth-pane-register">Register</button>
+          <button type="button" class="auth-tab" role="tab" data-tab="forgot"
+                  aria-selected="{{ 'true' if active_tab == 'forgot' else 'false' }}"
+                  aria-controls="auth-pane-forgot">Forgot</button>
+          <div class="auth-tab-indicator"></div>
+        </div>
+
+        {# ── Form panes container ── #}
+        <div class="auth-panes">
+
+          {# ── LOGIN ── #}
+          <div class="auth-pane" id="auth-pane-login" role="tabpanel" data-tab="login">
+            <h1 class="auth-heading">Welcome back</h1>
+            <p class="auth-subheading">Sign in to your {{ appName() }} account</p>
+
+            {% if flash and active_tab == 'login' %}
+            <div class="auth-alert auth-alert--{{ status }}">
+              <i class="fas fa-{{ 'exclamation-circle' if status == 'error' else 'check-circle' }}"></i>
+              <span>{{ flash | safe }}</span>
+            </div>
+            {% endif %}
+
+            <form action="/login" method="post" class="auth-form" autocomplete="on">
+              <div class="auth-field">
+                <label for="login-username" class="auth-label">Username</label>
+                <div class="auth-input-wrap">
+                  <i class="fas fa-user auth-input-icon"></i>
+                  <input id="login-username" type="text" name="username"
+                         placeholder="Enter your username"
+                         class="auth-input" autocomplete="username" required>
+                </div>
+              </div>
+              <div class="auth-field">
+                <label for="login-password" class="auth-label">Password</label>
+                <div class="auth-input-wrap">
+                  <i class="fas fa-lock auth-input-icon"></i>
+                  <input id="login-password" type="password" name="password"
+                         placeholder="Enter your password"
+                         class="auth-input" autocomplete="current-password" required>
+                </div>
+              </div>
+              <div class="auth-row auth-row--between">
+                <label class="auth-checkbox">
+                  <input type="checkbox" name="remember"> Remember me
+                </label>
+                <a href="javascript:void(0)" class="auth-link" onclick="switchTab('forgot')">Forgot password?</a>
+              </div>
+              <button type="submit" class="auth-btn auth-btn--primary">
+                <i class="fas fa-sign-in-alt"></i> Log in
+              </button>
+            </form>
+          </div>
+
+          {# ── REGISTER ── #}
+          <div class="auth-pane" id="auth-pane-register" role="tabpanel" data-tab="register">
+            <h1 class="auth-heading">Create your account</h1>
+            <p class="auth-subheading">Join {{ appName() }} and start playing</p>
+
+            {% if flash and active_tab == 'register' %}
+            <div class="auth-alert auth-alert--{{ status }}">
+              <i class="fas fa-{{ 'exclamation-circle' if status == 'error' else 'check-circle' }}"></i>
+              <span>{{ flash | safe }}</span>
+            </div>
+            {% endif %}
+
+            <form action="/register" method="post" class="auth-form" autocomplete="on">
+              <div class="auth-field">
+                <label for="reg-username" class="auth-label">Username</label>
+                <div class="auth-input-wrap">
+                  <i class="fas fa-user auth-input-icon"></i>
+                  <input id="reg-username" type="text" name="username"
+                         placeholder="e.g. Aika"
+                         class="auth-input" autocomplete="username" required>
+                </div>
+              </div>
+              <div class="auth-field">
+                <label for="reg-email" class="auth-label">Email</label>
+                <div class="auth-input-wrap">
+                  <i class="fas fa-envelope auth-input-icon"></i>
+                  <input id="reg-email" type="email" name="email"
+                         placeholder="e.g. aika@kawata.pw"
+                         class="auth-input" autocomplete="email" required>
+                </div>
+              </div>
+              <div class="auth-field">
+                <label for="reg-password" class="auth-label">Password</label>
+                <div class="auth-input-wrap">
+                  <i class="fas fa-lock auth-input-icon"></i>
+                  <input id="reg-password" type="password" name="password"
+                         placeholder="8-32 characters"
+                         class="auth-input" autocomplete="new-password" required>
+                </div>
+              </div>
+              {% if captchaKey() and captchaKey() != 'changeme' %}
+              <div class="auth-field auth-captcha-wrap">
+                <div class="h-captcha" data-sitekey="{{ captchaKey() }}" data-theme="dark"></div>
+              </div>
+              {% endif %}
+              <button type="submit" class="auth-btn auth-btn--primary">
+                <i class="fas fa-user-plus"></i> Register
+              </button>
+            </form>
+          </div>
+
+          {# ── FORGOT PASSWORD ── #}
+          <div class="auth-pane" id="auth-pane-forgot" role="tabpanel" data-tab="forgot">
+            <div id="forgot-form-state">
+              <h1 class="auth-heading">Forgot password?</h1>
+              <p class="auth-subheading">
+                Enter your username and email to request a reset.
+              </p>
+
+              <form id="forgot-form" class="auth-form" onsubmit="return handleForgotSubmit(event)">
+                <div class="auth-field">
+                  <label for="forgot-username" class="auth-label">Username</label>
+                  <div class="auth-input-wrap">
+                    <i class="fas fa-user auth-input-icon"></i>
+                    <input id="forgot-username" type="text" name="username"
+                           placeholder="Enter your username"
+                           class="auth-input" required>
+                  </div>
+                </div>
+                <div class="auth-field">
+                  <label for="forgot-email" class="auth-label">Email address</label>
+                  <div class="auth-input-wrap">
+                    <i class="fas fa-envelope auth-input-icon"></i>
+                    <input id="forgot-email" type="email" name="email"
+                           placeholder="Enter your email"
+                           class="auth-input" required>
+                  </div>
+                </div>
+                <button type="submit" class="auth-btn auth-btn--primary">
+                  <i class="fas fa-paper-plane"></i> Reset Password
+                </button>
+              </form>
+            </div>
+
+            <div id="forgot-success-state" style="display: none;">
+              <div class="auth-success-icon">
+                <i class="fas fa-envelope-open-text"></i>
+              </div>
+              <h1 class="auth-heading">Check your email</h1>
+              <p class="auth-subheading">
+                If an account exists with that username and email,
+                we'll send password reset instructions shortly.
+              </p>
+              <button type="button" class="auth-btn auth-btn--primary" style="margin-top: 1rem;" onclick="switchTab('login')">
+                <i class="fas fa-arrow-left"></i> Back to login
+              </button>
+            </div>
+          </div>
+
+        </div>{# /auth-panes #}
+      </div>{# /auth-card #}
+
+      {# ── Perks grid (desktop) ── #}
+      <div class="auth-perks-strip">
+        <div class="auth-perk"><i class="fas fa-chart-line"></i><span>Custom PP &amp; leaderboards</span></div>
+        <div class="auth-perk"><i class="fas fa-gamepad"></i><span>Relax &amp; Autopilot ranked</span></div>
+        <div class="auth-perk"><i class="fas fa-users"></i><span>Active community &amp; clans</span></div>
+      </div>
+
+      {# ── Mobile perk line ── #}
+      <div class="auth-perks-mobile">Custom PP, relax, clans &amp; more</div>
+
+      {# ── HUD pill ── #}
+      <div class="auth-hud">
+        <div class="auth-hud-stat"><span class="auth-hud-dot"></span><span>Server online</span></div>
+        <span class="auth-hud-sep"></span>
+        <div class="auth-hud-stat"><i class="fas fa-globe"></i><span>{{ appName() }} v{{ appVersion() }}</span></div>
+      </div>
+
+      <p class="auth-tagline">Your rhythm, your rules.</p>
+
+      <p class="auth-copyright">&copy; 2018&ndash;{{ now().year }} {{ appName() }}<br>All osu! content belongs to osu! / ppy.</p>
+    </div>
+  </div>
+
+  {# ── RIGHT PANEL: Hero ── #}
+  <div class="auth-hero-panel">
+    <div class="auth-stars-container">
+      <div id="stars"></div>
+      <div id="stars2"></div>
+      <div id="stars3"></div>
+    </div>
+    <div class="auth-hero-particles"></div>
+    <div class="auth-hero-particle-extra"></div>
+    <div class="auth-hero-overlay"></div>
+    <div class="auth-hero-content">
+      <p class="auth-hero-tagline">Your rhythm, your rules.</p>
+      <p class="auth-hero-sub">
+        Custom PP, relaxed mods, community events, and more &mdash;
+        all on your favorite rhythm game.
+      </p>
+    </div>
+  </div>
+
+</div>
+
+{% if captchaKey() and captchaKey() != 'changeme' %}
+<script src="https://hcaptcha.com/1/api.js" async defer></script>
+{% endif %}
+
+<script>
+(function() {
+  var current = '{{ active_tab }}';
+  var tabs = document.querySelectorAll('.auth-tab');
+  var panes = document.querySelectorAll('.auth-pane');
+  var indicator = document.querySelector('.auth-tab-indicator');
+  var tabIndexMap = { login: 0, register: 1, forgot: 2 };
+  var urlMap = { login: '/login', register: '/register', forgot: '/forgot-password' };
+
+  function positionIndicator(animate) {
+    var activeBtn = document.querySelector('.auth-tab[data-tab="' + current + '"]');
+    if (!activeBtn || !indicator) return;
+    var left = activeBtn.offsetLeft;
+    var width = activeBtn.offsetWidth;
+    indicator.style.transition = animate ? 'left 350ms cubic-bezier(.68,-.35,.565,1.35), width 250ms ease' : 'none';
+    indicator.style.left = left + 'px';
+    indicator.style.width = width + 'px';
+  }
+
+  function activate(tab, animate) {
+    current = tab;
+
+    // Update tabs
+    tabs.forEach(function(t) {
+      var isActive = t.getAttribute('data-tab') === tab;
+      t.classList.toggle('auth-tab--active', isActive);
+      t.setAttribute('aria-selected', isActive ? 'true' : 'false');
+    });
+
+    // Measure active pane height and lock container to prevent hero resize
+    var panesContainer = document.querySelector('.auth-panes');
+    var activePane = document.getElementById('auth-pane-' + tab);
+
+    // Temporarily show the new pane to measure it
+    activePane.classList.add('auth-pane--active');
+    activePane.style.position = 'relative';
+    var newHeight = activePane.offsetHeight;
+    activePane.classList.remove('auth-pane--active');
+    activePane.style.position = '';
+
+    // Set explicit height for smooth transition
+    if (animate && panesContainer) {
+      panesContainer.style.height = panesContainer.offsetHeight + 'px';
+      // Force reflow
+      panesContainer.offsetHeight;
+      panesContainer.style.height = newHeight + 'px';
+      // Clear after transition
+      setTimeout(function() { panesContainer.style.height = ''; }, 260);
+    }
+
+    // Animate panes
+    panes.forEach(function(p) {
+      var pTab = p.getAttribute('data-tab');
+      if (pTab === tab) {
+        p.classList.remove('auth-pane--exit-left', 'auth-pane--exit-right');
+        p.classList.add('auth-pane--active');
+      } else {
+        p.classList.remove('auth-pane--active');
+        var dir = tabIndexMap[pTab] < tabIndexMap[tab] ? 'left' : 'right';
+        p.classList.add('auth-pane--exit-' + dir);
+      }
+    });
+
+    positionIndicator(animate);
+
+    // Update URL without reload
+    if (urlMap[tab] && window.history.replaceState) {
+      window.history.replaceState(null, '', urlMap[tab]);
+    }
+
+    // Focus first input in new pane after transition
+    if (animate) {
+      setTimeout(function() {
+        var pane = document.getElementById('auth-pane-' + tab);
+        var input = pane && pane.querySelector('input:not([type="hidden"]):not([type="checkbox"])');
+        if (input) input.focus();
+      }, 280);
+    }
+  }
+
+  // Tab click handlers
+  tabs.forEach(function(t) {
+    t.addEventListener('click', function() {
+      var tab = t.getAttribute('data-tab');
+      if (tab !== current) activate(tab, true);
+    });
+  });
+
+  // Initial state (no animation)
+  activate(current, false);
+
+  // Expose for inline onclick
+  window.switchTab = function(tab) { activate(tab, true); };
+
+  // Forgot password handler
+  window.handleForgotSubmit = function(e) {
+    e.preventDefault();
+    document.getElementById('forgot-form-state').style.display = 'none';
+    document.getElementById('forgot-success-state').style.display = 'block';
+    return false;
+  };
+
+  // Override the success message to indicate feature is not yet available
+  (function() {
+    var successState = document.getElementById('forgot-success-state');
+    if (successState) {
+      successState.querySelector('.auth-heading').textContent = 'Not yet available';
+      successState.querySelector('.auth-subheading').textContent =
+        'Password reset is not yet available. Please contact a staff member for assistance.';
+      var icon = successState.querySelector('.auth-success-icon i');
+      if (icon) {
+        icon.className = 'fas fa-exclamation-circle';
+      }
+    }
+  })();
+})();
+</script>
+{% endblock %}

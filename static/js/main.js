@@ -65,6 +65,7 @@ class KawataApp {
             name: 'Kawata-Web',
             showTimestamp: true,
         });
+        const logger = this.logger;
     }
 
     async _loadDependencies() {
@@ -139,12 +140,53 @@ class KawataApp {
             this.logger.error('COMPONENT', 'Misc components failed to load', error);
         }
 
+        // Load new modular user profile components
+        // These provide a modern, provide/inject-based architecture
+        try {
+            // Load core controller and provider
+            await this._loadComponent('/static/js/components/user/userDataController.js', 'user-data-controller');
+            await this._loadComponent('/static/js/components/user/userDataProvider.js', 'user-data-provider');
+            
+            // Load all individual user components (these register themselves with Vue)
+            const userComponents = [
+              'userAvatar',
+              'userUsername',
+              'userBanner',
+              'userBadges',
+              'userStatus',
+              'userStats',
+              'userFlag',
+              'userClan',
+              'userRank',
+              'userHoverPanel',
+              'userCard',
+              'userSearch',
+              'userUsernameHover'
+            ];
+            
+            for (const componentName of userComponents) {
+              const path = `/static/js/components/user/comps/${componentName}.js`;
+              await this._loadComponent(path, componentName);
+            }
+            
+            this.logger.info('COMPONENT', 'New user profile component system loaded');
+        } catch (error) {
+            this.logger.error('COMPONENT', 'Failed to load new user components', error);
+        }
+
         // Load other components in parallel with proper error handling
         const componentPromises = [
             this._loadComponent('/static/js/utils/portal.js', 'portal').catch(() => {}),
             this._loadComponent('/static/js/components/shaders.js', 'shaders').catch(() => {}),
-            this._loadComponent('/static/js/components/userProfile.js', 'userProfile').catch(() => {}),
-            this._loadComponent('/static/js/components/beatmap.js', 'beatmap').catch(() => {}),
+            // Load new beatmap components
+            this._loadComponent('/static/js/components/beatmap/beatmapDataStore.js', 'beatmap-data-store').catch(() => {}),
+            this._loadComponent('/static/js/components/beatmap/BeatmapDifficultyIcon.js', 'beatmap-difficulty-icon').catch(() => {}),
+            this._loadComponent('/static/js/components/beatmap/BeatmapStatusBadge.js', 'beatmap-status-badge').catch(() => {}),
+            this._loadComponent('/static/js/components/beatmap/BeatmapPopup.js', 'beatmap-popup').catch(() => {}),
+            this._loadComponent('/static/js/components/beatmap/BeatmapDifficultyList.js', 'beatmap-difficulty-list').catch(() => {}),
+            this._loadComponent('/static/js/components/beatmap/BeatmapMiniCard.js', 'beatmap-mini-card').catch(() => {}),
+            this._loadComponent('/static/js/components/beatmap/BeatmapCard.js', 'beatmap-card').catch(() => {}),
+            this._loadComponent('/static/js/components/beatmap/index.js', 'beatmap-index').catch(() => {}),
             this._loadComponent('/static/js/components/score.js', 'score').catch(() => {}),
             this._loadComponent('/static/js/pages/panels/panels.js', 'panels').catch(() => {}),
             this._loadComponent('/static/js/pages/panels/beatmap.js', 'beatmap-panel').catch(() => {}),

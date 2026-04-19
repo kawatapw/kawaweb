@@ -1,0 +1,66 @@
+/* ============================================================================
+ * User Component - Username
+ * ============================================================================
+ *
+ * Inline username display with optional clan tag and country flag.
+ * Links to user profile page.
+ */
+
+/* === Username Container === */
+.user-name {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    transition: background-color 0.2s ease;
+}
+
+.user-name:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.user-name__loading {
+    opacity: 0.6;
+}
+
+/* === Country Flag in Username === */
+.user-country {
+    display: inline-flex;
+    align-items: center;
+}
+
+.user-country .user-flag {
+    margin-right: 4px;
+}
+
+/* === Clan Tag in Username === */
+.user-clan {
+    display: inline-flex;
+    align-items: center;
+}
+
+.user-clan-link {
+    color: hsl(var(--user), 70%, 70%);
+    text-decoration: none;
+    font-weight: 600;
+    transition: color 0.2s ease;
+}
+
+.user-clan-link:hover {
+    color: hsl(var(--user), 70%, 80%);
+    text-decoration: underline;
+}
+
+/* === Username Link === */
+.user-username-link {
+    color: hsl(var(--user), 70%, 75%);
+    text-decoration: none;
+    font-weight: 600;
+    transition: color 0.2s ease;
+}
+
+.user-username-link:hover {
+    color: hsl(var(--user), 70%, 85%);
+    text-decoration: underline;
+}

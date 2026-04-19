@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Custom Exceptions for Admin Panel
 
@@ -6,7 +5,6 @@ This module contains custom exceptions for the admin panel,
 providing clear error handling and better error messages.
 """
 
-from typing import Optional, List
 
 
 class AdminPanelError(Exception):
@@ -31,7 +29,7 @@ class AuthorizationError(AdminPanelError):
 
 class ValidationError(AdminPanelError):
     """Raised when input validation fails."""
-    def __init__(self, message: str, field: Optional[str] = None):
+    def __init__(self, message: str, field: str | None = None):
         self.field = field
         super().__init__(message, 400)
 
@@ -39,6 +37,8 @@ class ValidationError(AdminPanelError):
 class ResourceNotFoundError(AdminPanelError):
     """Raised when a requested resource is not found."""
     def __init__(self, resource_type: str, resource_id: int):
+        self.resource_type = resource_type
+        self.resource_id = resource_id
         message = f"{resource_type} with ID {resource_id} does not exist."
         super().__init__(message, 404)
 
@@ -65,7 +65,7 @@ class StateConflictError(AdminPanelError):
 
 class DatabaseError(AdminPanelError):
     """Raised when a database operation fails."""
-    def __init__(self, message: str, original_error: Optional[Exception] = None):
+    def __init__(self, message: str, original_error: Exception | None = None):
         self.original_error = original_error
         super().__init__(message, 500)
 
@@ -91,7 +91,7 @@ class PrivilegeError(AdminPanelError):
 
 class FormValidationError(AdminPanelError):
     """Raised when form data is missing or invalid."""
-    def __init__(self, message: str, missing_fields: Optional[List[str]] = None):
+    def __init__(self, message: str, missing_fields: list[str] | None = None):
         self.missing_fields = missing_fields or []
         super().__init__(message, 400)
 
@@ -135,10 +135,10 @@ class ConfigurationError(AdminPanelError):
 def handle_admin_error(error: AdminPanelError) -> tuple:
     """
     Convert an AdminPanelError to a response tuple.
-    
+
     Args:
         error: The AdminPanelError to handle
-        
+
     Returns:
         tuple: (response_dict, status_code)
     """
@@ -146,17 +146,17 @@ def handle_admin_error(error: AdminPanelError) -> tuple:
         "status": "error",
         "message": error.message
     }
-    
+
     # Add additional context for specific error types
     if isinstance(error, ValidationError) and error.field:
         response["field"] = error.field
-    
+
     if isinstance(error, FormValidationError) and error.missing_fields:
         response["missing_fields"] = error.missing_fields
-    
+
     if isinstance(error, ResourceNotFoundError):
-        response["resource_type"] = error.__class__.__name__.replace("Error", "").replace("Resource", "")
-    
+        response["resource_type"] = error.resource_type
+
     return response, error.status_code
 
 
