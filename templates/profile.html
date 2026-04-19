@@ -545,20 +545,20 @@ button.profile-friend-btn.is-loading {
                         </div>
                         <div class="pss-grades" v-if="data.grades">
                             <div class="pss-grade">
-                                <div class="map-rank rank-X">SS</div>
-                                <span class="pss-grade-count"><% currentStats.x_count %></span>
-                            </div>
-                            <div class="pss-grade">
                                 <div class="map-rank rank-XH">SS</div>
                                 <span class="pss-grade-count"><% currentStats.xh_count %></span>
                             </div>
                             <div class="pss-grade">
-                                <div class="map-rank rank-S">S</div>
-                                <span class="pss-grade-count"><% currentStats.s_count %></span>
+                                <div class="map-rank rank-X">SS</div>
+                                <span class="pss-grade-count"><% currentStats.x_count %></span>
                             </div>
                             <div class="pss-grade">
                                 <div class="map-rank rank-SH">S</div>
                                 <span class="pss-grade-count"><% currentStats.sh_count %></span>
+                            </div>
+                            <div class="pss-grade">
+                                <div class="map-rank rank-S">S</div>
+                                <span class="pss-grade-count"><% currentStats.s_count %></span>
                             </div>
                             <div class="pss-grade">
                                 <div class="map-rank rank-A">A</div>
@@ -674,29 +674,29 @@ button.profile-friend-btn.is-loading {
                                 <div class="media-content">
                                     <div class="grade-line">
                                         <div class="rank-single">
-                                            <div class="map-rank rank-X">SS</div>
-                                            <div class="rank-amount">
-                                                <% currentStats.x_count %>
-                                            </div>
-                                        </div>
-                                        <div class="rank-single">
                                             <div class="map-rank rank-XH">SS</div>
                                             <div class="rank-amount">
                                                 <% currentStats.xh_count %>
                                             </div>
                                         </div>
-                                    </div>
-                                    <div class="grade-line">
                                         <div class="rank-single">
-                                            <div class="map-rank rank-S">S</div>
+                                            <div class="map-rank rank-X">SS</div>
                                             <div class="rank-amount">
-                                                <% currentStats.s_count %>
+                                                <% currentStats.x_count %>
                                             </div>
                                         </div>
+                                    </div>
+                                    <div class="grade-line">
                                         <div class="rank-single">
                                             <div class="map-rank rank-SH">S</div>
                                             <div class="rank-amount">
                                                 <% currentStats.sh_count %>
+                                            </div>
+                                        </div>
+                                        <div class="rank-single">
+                                            <div class="map-rank rank-S">S</div>
+                                            <div class="rank-amount">
+                                                <% currentStats.s_count %>
                                             </div>
                                         </div>
                                         <div class="rank-single">
