@@ -11,6 +11,6 @@ hina_auth = Blueprint('hina_auth', __name__)
 @error_catcher
 async def forgot_password():
     return await render_template(
-        'hinaDir/forgot_password.html',
+        'forgot_password.html',
         globalNotice=g.globalNotice,
     )
