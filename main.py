@@ -27,6 +27,11 @@ from quart import Response, request
 
 app = Quart(f'{glob.config.app_name}')
 
+# Auto-reload templates in dev so .html changes appear without container restart.
+# In production (QUART_ENV != 'development'), templates stay cached for performance.
+if os.environ.get('QUART_ENV') == 'development':
+    app.config['TEMPLATES_AUTO_RELOAD'] = True
+
 version = Version(1, 3, 0)
 
 # used to secure session data.
@@ -112,11 +117,47 @@ def captchaKey() -> str:
 def domain() -> str:
     return glob.config.domain
 
+@app.template_global()
+def developerMode() -> bool:
+    return glob.config.developer_mode
+
+@app.before_request
+async def inject_globals():
+    """App-wide defaults for g — ensures all blueprints have these set."""
+    g.globalNotice = None
+    g.isDevEnv = False
+    g.maintenance = False
+
+    try:
+        if glob.sys.get('globalNotice'):
+            g.globalNotice = glob.sys['globalNotice']
+        if glob.sys.get('isDevEnv') == "True":
+            g.isDevEnv = True
+        if glob.sys.get('maintenance') == "True":
+            g.maintenance = True
+    except Exception:
+        pass
+
 from blueprints.frontend import frontend
 app.register_blueprint(frontend)
 
+from blueprints.hinaDir import hina_friends
+app.register_blueprint(hina_friends)
+
 from blueprints.admin import admin
 app.register_blueprint(admin, url_prefix='/admin')
+
+from blueprints.hinaDir import hina_admin
+app.register_blueprint(hina_admin, url_prefix='/admin-v2')
+
+from blueprints.hinaDir import hina_beatmaps
+app.register_blueprint(hina_beatmaps)
+
+from blueprints.hinaDir import hina_team
+app.register_blueprint(hina_team)
+
+from blueprints.hinaDir import hina_pp_records
+app.register_blueprint(hina_pp_records)
 
 @app.errorhandler(404)
 async def page_not_found(e):

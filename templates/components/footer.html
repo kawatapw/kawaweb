@@ -7,60 +7,64 @@
                 <div class="brand-identity">
                     <img src="/static/images/logo.png" alt="Kawata Logo" class="brand-logo">
                     <div class="brand-info">
-                        <h3 class="brand-name">Kawata <span class="brand-version">v1.5.0</span></h3>
-                        <p class="brand-tagline">An osu! server that allows the usage of cheats and custom features.</p>
+                        <h3 class="brand-name">Kawata <span class="brand-version">v2.0.1</span></h3>
+                        <p class="brand-tagline">An osu! server with cheats and custom features.</p>
+                        <p class="brand-tagline-secondary">No bans. No shame. Just follow the rules.</p>
                     </div>
                 </div>
             </div>
 
             <!-- Links Grid -->
             <div class="footer-links-grid">
-                <!-- Social Links -->
+                <!-- Quick Links -->
                 <div class="footer-column">
-                    <h4 class="column-title">
-                        <span class="title-text">Connect</span>
-                        <span class="title-accent"></span>
-                    </h4>
-                    <nav class="column-links" aria-label="Social Media Links">
-                        <a href="/github" class="footer-link" aria-label="GitHub">
-                            <span class="link-icon"><i class="fab fa-github"></i></span>
-                            <span class="link-text">GitHub</span>
-                            <span class="link-arrow">→</span>
+                    <h4 class="column-title">Quick Links</h4>
+                    <nav class="column-links" aria-label="Quick Links">
+                        <a href="/team" class="footer-link" aria-label="Staff Team">
+                            <span class="link-icon"><i class="fas fa-user-shield"></i></span>
+                            <span class="link-text">Staff Team</span>
                         </a>
+                        <a href="/leaderboard" class="footer-link" aria-label="Leaderboards">
+                            <span class="link-icon"><i class="fas fa-trophy"></i></span>
+                            <span class="link-text">Leaderboards</span>
+                        </a>
+                    </nav>
+                </div>
+
+                <!-- Community -->
+                <div class="footer-column">
+                    <h4 class="column-title">Community</h4>
+                    <nav class="column-links" aria-label="Community Links">
                         <a href="/discord" class="footer-link" aria-label="Discord">
                             <span class="link-icon"><i class="fab fa-discord"></i></span>
                             <span class="link-text">Discord</span>
-                            <span class="link-arrow">→</span>
                         </a>
                         <a href="/youtube" class="footer-link" aria-label="YouTube">
                             <span class="link-icon"><i class="fab fa-youtube"></i></span>
                             <span class="link-text">YouTube</span>
-                            <span class="link-arrow">→</span>
                         </a>
                         <a href="/twitter" class="footer-link" aria-label="Twitter">
                             <span class="link-icon"><i class="fab fa-twitter"></i></span>
                             <span class="link-text">Twitter</span>
-                            <span class="link-arrow">→</span>
                         </a>
                     </nav>
                 </div>
 
-                <!-- Quick Links -->
+                <!-- Server -->
                 <div class="footer-column">
-                    <h4 class="column-title">
-                        <span class="title-text">Quick Links</span>
-                        <span class="title-accent"></span>
-                    </h4>
-                    <nav class="column-links" aria-label="Quick Links">
+                    <h4 class="column-title">Server</h4>
+                    <nav class="column-links" aria-label="Server Links">
                         <a class="footer-link footer-link--interactive" onClick="docsBus.$emit('show-docs-panel', 'Rules')" tabindex="0" role="button" aria-label="View Rules">
-                            <span class="link-icon"><i class="fas fa-book"></i></span>
+                            <span class="link-icon"><i class="fas fa-scroll"></i></span>
                             <span class="link-text">Rules</span>
-                            <span class="link-arrow">→</span>
                         </a>
-                        <a class="footer-link footer-link--interactive" onClick="docsBus.$emit('show-docs-panel', 'Clients', 'Main')" tabindex="0" role="button" aria-label="View Cheating Clients">
+                        <a class="footer-link footer-link--interactive" onClick="docsBus.$emit('show-docs-panel', 'Clients', 'Main')" tabindex="0" role="button" aria-label="Custom Clients">
                             <span class="link-icon"><i class="fas fa-download"></i></span>
-                            <span class="link-text">Cheating Clients</span>
-                            <span class="link-arrow">→</span>
+                            <span class="link-text">Custom Clients</span>
+                        </a>
+                        <a href="/github" class="footer-link" aria-label="GitHub">
+                            <span class="link-icon"><i class="fab fa-github"></i></span>
+                            <span class="link-text">GitHub</span>
                         </a>
                     </nav>
                 </div>
@@ -68,25 +72,17 @@
         </div>
     </div>
 
-    <!-- Bottom Bar - Full Width -->
+    <!-- Bottom Bar -->
     <div class="footer-bottom">
         <div class="footer-bottom-content">
             <div class="footer-copyright">
-                <span>© 2024 Kawata</span>
-                <span class="separator">•</span>
-                <span>osu! Private Server</span>
+                <span class="copyright-main">© 2018–2026 Kawata</span>
+                <span class="copyright-attribution">All osu! content belongs to osu! / ppy.</span>
             </div>
             <div class="footer-status">
                 <span class="status-indicator status-indicator--online"></span>
-                <span class="status-text">Server Online</span>
+                <span class="status-text">Online</span>
             </div>
         </div>
-    </div>
-
-    <!-- Background decoration -->
-    <div class="footer-decoration" aria-hidden="true">
-        <div class="decoration-line decoration-line--1"></div>
-        <div class="decoration-line decoration-line--2"></div>
-        <div class="decoration-line decoration-line--3"></div>
     </div>
 </footer>

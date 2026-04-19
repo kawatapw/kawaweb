@@ -1,122 +1,373 @@
-<nav id="navbar" class="navbar is-primary">
-    <script src="/static/js/components.js" crossorigin="anonymous"></script>
-    <div class="navbar-brand">
-        <a class="navbar-item navbar-logo" href="/home">
-            {{ appName() }}
-        </a>
-
-        <a role="button" class="navbar-burger" id="navbar-burger" onclick="togglenavbar()">
-            <span aria-hidden="true"></span>
-            <span aria-hidden="true"></span>
-            <span aria-hidden="true"></span>
-        </a>
-    </div>
-
-    <div id="navbar-menu" class="navbar-menu">
-        <div class="navbar-start">
-            <a class="navbar-item" href="/home">
-                Home
+<nav id="navbar" class="modern-navbar">
+    <!-- Desktop Navbar -->
+    <div class="navbar-desktop">
+        <div class="navbar-brand">
+            <a class="navbar-logo" href="/home">
+                <img src="/static/images/logo.png" alt="Kawata" class="navbar-logo-img">
+                {{ appName() }}
             </a>
-
-            <a class="navbar-item" href="/leaderboard">
-                Leaderboards
-            </a>
-
-            <a id="docs" class="navbar-item" @click="showDocsPanel('Rules')">
-                Docs
-            </a>
-            {% if session.authenticated and session.user_data['is_dev'] %}
-                <a class="navbar-item" href="/admin/stuffbroke">
-                    Stuff Broke
-                </a>
-            {% endif %}
+        </div>
+        
+        <div class="navbar-links">
+            <a class="navbar-link is-arrowless" href="/home">Home</a>
+            <a class="navbar-link is-arrowless" href="/leaderboard">Leaderboards</a>
+            <a class="navbar-link is-arrowless" @click="showDocsPanel('Rules')">Docs</a>
+            
+            
             {% if session.authenticated and session.user_data['is_staff'] %}
-            <div class="navbar-item has-dropdown is-hoverable">
-                <a class="navbar-link">
-                    Admin
-                </a>
-                <div class="navbar-dropdown">
-                    <a class="navbar-item" href="/admin">
-                        Dash
-                    </a>
-                    <a class="navbar-item" href="/admin/users/1">
-                        Users
-                    </a>
-                    <a class="navbar-item" href="/admin/beatmaps">
-                        Beatmap Requests
-                    </a>
-                    <a class="navbar-item" href="/admin/badges">
-                        Badges
-                    </a>
+                <div class="navbar-dropdown-container">
+                    <button class="navbar-dropdown-trigger">Admin <i class="fas fa-chevron-down"></i></button>
+                    <div class="navbar-dropdown-menu">
+                        <a class="navbar-dropdown-item" href="/admin">Dash</a>
+                        <a class="navbar-dropdown-item" href="/admin/users/1">Users</a>
+                        <a class="navbar-dropdown-item" href="/admin/beatmaps">Beatmap Requests</a>
+                        <a class="navbar-dropdown-item" href="/admin/badges">Badges</a>
+                        {% if session.authenticated and session.user_data['is_dev'] %}
+                            <a class="navbar-dropdown-item" href="/admin/stuffbroke">Stuff Broke</a>
+                        {% endif %}
+                    </div>
                 </div>
-            </div>
+            {% endif %}
+
+            {% if session.authenticated and session.user_data['is_staff'] %}
+                <div class="navbar-dropdown-container">
+                    <button class="navbar-dropdown-trigger">hinaWIP <i class="fas fa-flask"></i></button>
+                    <div class="navbar-dropdown-menu">
+                        <a class="navbar-dropdown-item" href="#">Score Hunt</a>
+                        <a class="navbar-dropdown-item" href="/records">PP Records</a>
+                        <a class="navbar-dropdown-item" href="/beatmaps">Beatmaps</a>
+                        <a class="navbar-dropdown-item" href="/admin-v2">Admin V2</a>
+                        <a class="navbar-dropdown-item" href="/team">Team</a>
+                    </div>
+                </div>
             {% endif %}
         </div>
-
-        <div class="navbar-end">
-            <div id="search-icon" @click="showSearchWindow" @mouseover="startAnimation" @mouseleave="stopAnimation" class="navbar-item search-button" style="
-                position: relative;
-            ">
-                <div class="navbar-item search-circle" :class="{ 'animate': isAnimating }"></div>
+        
+        <div class="navbar-actions">
+            <button class="navbar-search-btn" @click="showSearchWindow()" @mouseover="startAnimation" @mouseleave="stopAnimation">
+                <div class="search-circle" :class="{ 'animate': isAnimating }"></div>
                 <i class="fas fa-search"></i>
-            </div>
-            {% if session.authenticated %}
+            </button>
             
-            <div class="navbar-item has-dropdown is-hoverable">
-                <a class="navbar-link">
-                    {{ session.user_data['name'] }}
-                </a>
-                <div id="userDropdown" class="navbar-dropdown navbar-user-dropdown">
-                    <div class="user-card-block">
-                        <a class="user-card" href="/u/{{ session.user_data['id'] }}" style="background-image: url(/banners/{{ session.user_data['id'] }});">
-                            <div class="user-card-avatar" style="background-image: url(https://a.{{domain()}}/{{ session.user_data['id'] }});"></div>
-                            <div class="user-card-info">
-                                <span class="user-card-name">{{ session.user_data['name'] }}</span>
-                                <div class="user-card-badges">
-                                    {% if session.user_data.get('badges') %}
-                                    <div data-badge-group="user-card" class="badge-block compact">
-                                        {% for badge in session.user_data['badges'][:8] %}
-                                            <badge :type="1" :test="0" :badge="{{ badge }}"></badge>
-                                        {% endfor %}
-                                        <script>
-                                            new Vue({
-                                                el: '.user-card-badges',
-                                            });
-                                        </script>
-                                    </div>
-                                    {% endif %}
-                                </div>
-                                <span class="user-card-data_angle">
-                                    <i class="fas fa-angle-right"></i>
-                                </span>
+            {% if session.authenticated %}
+                <div class="navbar-user-dropdown-container" data-user-hue="{{ session.user_data.get('hue', 180) or 180 }}">
+                    <button class="navbar-user-trigger" @click="toggleUserDropdown" :class="{ 'is-active': isUserDropdownOpen }">
+                        <img src="https://a.{{domain()}}/{{ session.user_data['id'] }}" alt="{{ session.user_data['name'] }}" class="navbar-avatar">
+                        <span class="navbar-username">{{ session.user_data['name'] }}</span>
+                        <i class="fas fa-chevron-down nuc-chevron" :class="{ 'is-flipped': isUserDropdownOpen }"></i>
+                    </button>
+                    <div class="navbar-user-card" v-cloak v-show="isUserDropdownOpen">
+                        {# Header — links to profile #}
+                        <a class="nuc-header" href="/u/{{ session.user_data['id'] }}">
+                            <img src="https://a.{{domain()}}/{{ session.user_data['id'] }}" alt="{{ session.user_data['name'] }}" class="nuc-avatar">
+                            <div class="nuc-header-info">
+                                <span class="nuc-username">{{ session.user_data['name'] }}</span>
+                                <span class="nuc-safe-name">@{{ session.user_data.get('safe_name', session.user_data['name']|lower|replace(' ', '_')) }}</span>
                             </div>
+                            <i class="fas fa-eye nuc-header-arrow"></i>
+                        </a>
+
+                        {# Supporter row — only if donor_end > 0 #}
+                        {% if session.user_data.get('donor_end', 0) > 0 %}
+                        <div class="nuc-supporter-row">
+                            <div class="nuc-supporter-badge">
+                                <i class="fas fa-star"></i>
+                                <span>Supporter</span>
+                            </div>
+                            <span class="nuc-supporter-expiry" data-donor-end="{{ session.user_data['donor_end'] }}"></span>
+                        </div>
+                        {% endif %}
+
+                        <div class="nuc-divider"></div>
+
+                        {# Menu items #}
+                        <div class="nuc-menu">
+                            {# Clan row — only if clan_id > 0 #}
+                            {% if session.user_data.get('clan_id', 0) > 0 %}
+                            <a class="nuc-menu-item" href="/clan/{{ session.user_data['clan_id'] }}">
+                                <i class="fas fa-flag nuc-menu-icon"></i>
+                                <span>My clan</span>
+                                {% if session.user_data.get('clan_tag') %}
+                                <span class="nuc-clan-tag">[{{ session.user_data['clan_tag'] }}]</span>
+                                {% endif %}
+                            </a>
+                            {% endif %}
+
+                            {# Coins shop — enable when shop system exists #}
+                            {# <a class="nuc-menu-item" href="/shop">
+                                <i class="fas fa-coins nuc-menu-icon"></i>
+                                <span>Coins shop</span>
+                                <span class="nuc-coin-balance">0</span>
+                            </a> #}
+
+                            <a class="nuc-menu-item" href="/friends">
+                                <i class="fas fa-user-friends nuc-menu-icon"></i>
+                                <span>Friends</span>
+                            </a>
+
+                            <a class="nuc-menu-item" href="/settings">
+                                <i class="fas fa-cog nuc-menu-icon"></i>
+                                <span>Settings</span>
+                            </a>
+
+                            <div class="nuc-menu-item nuc-theme-row">
+                                <i class="fas fa-palette nuc-menu-icon"></i>
+                                <span>Theme</span>
+                                <input type="range" class="nuc-hue-slider"
+                                       min="0" max="360"
+                                       :value="currentHue"
+                                       @input="previewHue($event.target.value)"
+                                       @change="saveHue($event.target.value)">
+                                <span class="nuc-hue-value" v-text="currentHue"></span>
+                            </div>
+
+                            <div class="nuc-divider"></div>
+
+                            <a class="nuc-menu-item nuc-menu-item--danger" href="/logout">
+                                <i class="fas fa-sign-out-alt nuc-menu-icon"></i>
+                                <span>Sign out</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            {% else %}
+                <a class="navbar-btn navbar-btn-primary" href="/register">Sign up</a>
+                <a class="navbar-btn navbar-btn-secondary" href="/login">Log in</a>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Mobile Navbar -->
+    <div class="navbar-mobile">
+        <div class="navbar-mobile-bar">
+            <a class="navbar-logo navbar-logo--mobile" href="/home">
+                <img src="/static/images/logo.png" alt="Kawata" class="navbar-logo-img navbar-logo-img--mobile">
+                <span class="navbar-logo-text--mobile">{{ appName() }}</span>
+            </a>
+            
+            <div class="navbar-mobile-actions">
+                {% if session.authenticated %}
+                    <a class="navbar-mobile-avatar" href="/u/{{ session.user_data['id'] }}">
+                        <img src="https://a.{{domain()}}/{{ session.user_data['id'] }}" alt="{{ session.user_data['name'] }}">
+                    </a>
+                {% endif %}
+                
+                <button class="navbar-menu-btn" @click="toggleMobileMenu" :class="{ 'is-active': isMobileMenuOpen }">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+            </div>
+        </div>
+        
+        <!-- Mobile Menu Overlay -->
+        <div class="navbar-mobile-menu" :class="{ 'is-open': isMobileMenuOpen }">
+            <div class="navbar-mobile-menu-content">
+                <!-- Close Button -->
+                <button class="navbar-mobile-close" @click="closeMobileMenu">
+                    <i class="fas fa-times"></i>
+                </button>
+                
+                <!-- User Profile Section (if authenticated) -->
+                {% if session.authenticated %}
+                    <div class="navbar-mobile-user">
+                        <div class="navbar-mobile-user-banner" style="background-image: url(/banners/{{ session.user_data['id'] }});"></div>
+                        <div class="navbar-mobile-user-info">
+                            <a href="/u/{{ session.user_data['id'] }}"><img src="https://a.{{domain()}}/{{ session.user_data['id'] }}" alt="{{ session.user_data['name'] }}" class="navbar-mobile-user-avatar"></a>
+                            <div class="navbar-mobile-user-details">
+                                <span class="navbar-mobile-user-name">{{ session.user_data['name'] }}</span>
+                                <div class="navbar-mobile-user-actions">
+                                    <a class="navbar-mobile-btn" href="/settings">Settings</a>
+                                    <a class="navbar-mobile-btn" href="/logout">Logout</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {# Quick links — clan & friends above the main nav #}
+                    <div class="nuc-mobile-quicklinks">
+                        {% if session.user_data.get('clan_id', 0) > 0 %}
+                        <a class="nuc-mobile-quicklink" href="/clan/{{ session.user_data['clan_id'] }}">
+                            <i class="fas fa-flag"></i>
+                            <span>My clan</span>
+                            {% if session.user_data.get('clan_tag') %}
+                            <span class="nuc-mobile-clan-tag">[{{ session.user_data['clan_tag'] }}]</span>
+                            {% endif %}
+                        </a>
+                        {% endif %}
+                        <a class="nuc-mobile-quicklink" href="/friends">
+                            <i class="fas fa-user-friends"></i>
+                            <span>Friends</span>
                         </a>
                     </div>
-                    <a class="navbar-item" href="/settings">
-                        Settings
+                {% else %}
+                    <div class="navbar-mobile-auth">
+                        <a class="navbar-mobile-btn navbar-mobile-btn-primary" href="/register">Sign up</a>
+                        <a class="navbar-mobile-btn navbar-mobile-btn-secondary" href="/login">Log in</a>
+                    </div>
+                {% endif %}
+                
+                <!-- Search Section -->
+                <div class="navbar-mobile-search">
+                    <div class="navbar-mobile-search-input">
+                        <input
+                            type="search"
+                            placeholder="Search players or beatmaps..."
+                            v-model="searchQuery"
+                            @input="handleSearchInput"
+                            ref="mobileSearchInput"
+                            autocomplete="off"
+                        >
+                        <i class="fas fa-search"></i>
+                        <button v-if="searchQuery" class="navbar-mobile-search-clear" @click="resetSearch">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    
+                    <!-- Search Results -->
+                    <div class="navbar-mobile-search-results" v-if="hasSearched">
+                        <!-- Loading State -->
+                        <div v-if="searchLoading" class="navbar-mobile-search-loading">
+                            <div class="loading-spinner"></div>
+                        </div>
+                        
+                        <!-- Error State -->
+                        <div v-else-if="searchError" class="navbar-mobile-search-error">
+                            <i class="fas fa-exclamation-circle"></i>
+                            <span v-text="searchError"></span>
+                        </div>
+                        
+                        <!-- Results -->
+                        <div v-else>
+                            <!-- Players -->
+                            <div v-if="searchResults.players.length > 0" class="navbar-mobile-search-section">
+                                <div class="navbar-mobile-search-section-header">
+                                    <i class="fas fa-users"></i>
+                                    <span>Players</span>
+                                    <span class="count" v-text="searchResults.players.length"></span>
+                                </div>
+                                <div class="navbar-mobile-search-section-results">
+                                    <div
+                                        v-for="player in searchResults.players"
+                                        :key="player.info.id"
+                                        class="navbar-mobile-search-result player"
+                                        @click="openPlayerProfile(player)"
+                                    >
+                                        <img :src="'https://a.' + domain + '/' + player.info.id" :alt="player.info.name" class="navbar-mobile-search-result-avatar">
+                                        <div class="navbar-mobile-search-result-info">
+                                            <span class="navbar-mobile-search-result-title" v-text="player.info.name"></span>
+                                            <span class="navbar-mobile-search-result-subtitle" v-text="'Rank #' + player.info.rank"></span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Beatmaps -->
+                            <div v-if="searchResults.maps.length > 0" class="navbar-mobile-search-section">
+                                <div class="navbar-mobile-search-section-header">
+                                    <i class="fas fa-music"></i>
+                                    <span>Beatmaps</span>
+                                    <span class="count" v-text="searchResults.maps.length"></span>
+                                </div>
+                                <div class="navbar-mobile-search-section-results">
+                                    <div
+                                        v-for="map in searchResults.maps"
+                                        :key="map.SetID"
+                                        class="navbar-mobile-search-result beatmap"
+                                        @click="openBeatmapPanel(map)"
+                                    >
+                                        <div class="navbar-mobile-search-result-thumbnail">
+                                            <img
+                                                v-if="!map.thumbnailError"
+                                                :src="'https://assets.ppy.sh/beatmaps/' + map.SetID + '/covers/card@2x.jpg'"
+                                                @error="map.thumbnailError = true"
+                                                alt="Beatmap thumbnail"
+                                            >
+                                            <i v-else class="fas fa-music"></i>
+                                        </div>
+                                        <div class="navbar-mobile-search-result-info">
+                                            <span class="navbar-mobile-search-result-title" v-text="map.Title"></span>
+                                            <span class="navbar-mobile-search-result-subtitle" v-text="map.Artist + ' - ' + map.Creator"></span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- No Results -->
+                            <div v-if="!searchResults.players.length && !searchResults.maps.length" class="navbar-mobile-search-no-results">
+                                <i class="fas fa-search"></i>
+                                <span>No results found</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Empty State -->
+                    <div v-else class="navbar-mobile-search-empty">
+                        <i class="fas fa-search"></i>
+                        <span>Start typing to search</span>
+                    </div>
+                </div>
+                
+                <!-- Navigation Links -->
+                <div class="navbar-mobile-links">
+                    <a class="navbar-mobile-link" href="/home">
+                        <i class="fas fa-home"></i>
+                        <span>Home</span>
                     </a>
+                    <a class="navbar-mobile-link" href="/leaderboard">
+                        <i class="fas fa-trophy"></i>
+                        <span>Leaderboards</span>
+                    </a>
+                    <a class="navbar-mobile-link" @click="showDocsPanel('Rules'); closeMobileMenu()">
+                        <i class="fas fa-book"></i>
+                        <span>Docs</span>
+                    </a>
+                    
+                    
+                    {% if session.authenticated and session.user_data['is_staff'] %}
+                        <div class="navbar-mobile-dropdown">
+                            <button class="navbar-mobile-dropdown-trigger" @click="toggleMobileDropdown">
+                                <i class="fas fa-shield-alt"></i>
+                                <span>Admin</span>
+                                <i class="fas fa-chevron-down"></i>
+                            </button>
+                            <div class="navbar-mobile-dropdown-menu">
+                                <a class="navbar-mobile-dropdown-item" href="/admin">Dash</a>
+                                <a class="navbar-mobile-dropdown-item" href="/admin/users/1">Users</a>
+                                <a class="navbar-mobile-dropdown-item" href="/admin/beatmaps">Beatmap Requests</a>
+                                <a class="navbar-mobile-dropdown-item" href="/admin/badges">Badges</a>
+                                {% if session.authenticated and session.user_data['is_dev'] %}
+                                    <a class="navbar-mobile-dropdown-item" href="/admin/stuffbroke">
+                                        <i class="fas fa-exclamation-triangle"></i>
+                                        <span>Stuff Broke</span>
+                                    </a>
+                                {% endif %}
+                            </div>
+                        </div>
+                    {% endif %}
+
+                    {% if session.authenticated and session.user_data['is_staff'] %}
+                        <div class="navbar-mobile-dropdown">
+                            <button class="navbar-mobile-dropdown-trigger" @click="toggleMobileDropdown">
+                                <i class="fas fa-flask"></i>
+                                <span>hinaWIP</span>
+                                <i class="fas fa-chevron-down"></i>
+                            </button>
+                            <div class="navbar-mobile-dropdown-menu">
+                                <a class="navbar-mobile-dropdown-item" href="#">Score Hunt</a>
+                                <a class="navbar-mobile-dropdown-item" href="/records">PP Records</a>
+                                <a class="navbar-mobile-dropdown-item" href="/beatmaps">Beatmaps</a>
+                                <a class="navbar-mobile-dropdown-item" href="/admin-v2">Admin V2</a>
+                                <a class="navbar-mobile-dropdown-item" href="/team">Team</a>
+                            </div>
+                        </div>
+                    {% endif %}
                 </div>
             </div>
-            <div class="navbar-item">
-                <a class="button is-light" href="/logout">
-                    Logout
-                </a>
-            </div>
-            {% else %}
-            <div class="navbar-item">
-                <div class="buttons">
-                    <a class="button is-primary" href="/register">
-                        <strong>Sign up</strong>
-                    </a>
-                    <a class="button is-light" href="/login">
-                        Log in
-                    </a>
-                </div>
-            </div>
-            {% endif %}
         </div>
     </div>
-    </div>
 </nav>
+
+{# Admin V2 is now a standalone SPA at /admin-v2 #}
+
 {% block content %}
 {% endblock %}

@@ -589,7 +589,6 @@
     .user-profile-card-stats {
       display: flex;
       gap: 8px;
-      margin-bottom: 8px;
       justify-content: center;
       text-shadow: 1px 1px 2px rgb(0, 0, 0), 2px 2px 4px rgb(0, 0, 0);
     }

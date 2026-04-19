@@ -2,10 +2,12 @@
 {% block title %} Users {% endblock %}
 {% block panel %} Users {% endblock %}
 {% block header %}
-<link rel="stylesheet" href="/static/css/pages/admin/users.css">
+<style>
+  @import url("/static/css/pages/admin/users.css") layer(styles);
+  @import url("/static/css/pages/admin/panels/users.css") layer(components);
+</style>
 <script src="/static/js/asserts/vue.js"></script>
 <script src="/static/js/asserts/vue-axios.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/timeago.js/4.0.2/timeago.min.js"></script>
 <script>
     var domain = "{{ domain() }}";
     var users = '{{ users|tojson }}';

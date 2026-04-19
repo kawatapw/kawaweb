@@ -1,0 +1,21 @@
+/* Setup Layers */
+    @layer frameworks, styles, styles-override, components, utilities, overrides;
+
+/* Import styles into Layers */
+    /* Frameworks */
+        @import url("/static/css/bulma.min-v7.css") layer(frameworks);
+        @import url("https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css") layer(frameworks);
+
+    /* Styles */
+        @import url("/static/css/style.css") layer(styles);
+        @import url("/static/css/pages/generic.css") layer(styles);
+        @import url("/static/css/stars.css") layer(styles);
+
+    /* Components */
+        @import url("/static/css/components.css") layer(components);
+        @import url("/static/css/components/badges.css") layer(components);
+        @import url("/static/css/components/panels.css") layer(components);
+        @import url("/static/css/components/navbar.css") layer(components);
+
+    /* Overrides (Hinamizawa) */
+        @import url("/static/hinaDir/compiled/hina_import.css") layer(styles-override);

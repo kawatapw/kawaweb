@@ -269,7 +269,7 @@
         </script>
 
         <script type="text/x-template" id="user-profile-template">
-            <div class="user-profile-master" style="display: flex; justify-content: center;" v-if="hasUserData">
+            <div class="user-profile-master" style="display: flex; justify-content: center; height: fit-content;" v-if="hasUserData">
             
               <!-- Username style -->
               <user-profile-username
@@ -398,7 +398,8 @@
 
         <script type="text/x-template" id="score-card-template">
             <div class="map-single"
-                :style="'background: linear-gradient(hsl(var(--main), 25%, 25%, 90%), hsl(var(--main), 25%, 25%, 90%)), url(https://assets.ppy.sh/beatmaps/' + score.beatmap.set_id + '/covers/cover.jpg)'"
+                :data-score-type="type"
+                :style="'--cover-url: url(https://assets.ppy.sh/beatmaps/' + score.beatmap.set_id + '/covers/cover.jpg); background: linear-gradient(hsl(var(--main), 25%, 25%, 90%), hsl(var(--main), 25%, 25%, 90%)), url(https://assets.ppy.sh/beatmaps/' + score.beatmap.set_id + '/covers/cover.jpg)'"
                 @click="scoreBus.$emit('show-score-window', score.id)">
                 <div class="map-data">
                     <div class="map-image">
@@ -1789,15 +1790,19 @@
     </script>
     
     <script type="text/x-template" id="beatmap-panel-template">
-        <div id="beatmap-panel" class="modal" :class="{ 'is-active': show }" style="z-index: 25;">
+        <div id="beatmap-panel" class="modal" :class="{ 'is-active': show }" style="z-index: 40;">
             <div class="modal-background" @click="close"></div>
         
             <div id="beatmap-window" data-panel="Beatmap" class="modal-content" :class="{ 'hidden': !show }" >
+                <!-- Panel close button -->
+                <button class="panel-close-btn" @click="close" aria-label="Close beatmap panel">
+                    <i class="fas fa-times"></i>
+                </button>
                 <div class="main-block">
                     <div class="main-banner" :style="{'--banner-bg': `url(https://assets.ppy.sh/beatmaps/` + set_id + `/covers/cover.jpg)`}">
                     
-                        <!-- ================= MAP STATS ================= -->
-                        <div class="map-stats" v-if="selected">
+                        <!-- ================= MAP STATS (Desktop) ================= -->
+                        <div class="map-stats map-stats-desktop" v-if="selected">
                             <a class="stat-block map-play top" @click="playMapAudio(set_id)">
                                 <i :class="currentAudio && currentAudio.paused === false && currentAudio.id === 'audio-' + set_id ? 'fas fa-pause' : 'fas fa-play'" :id="'play-' + set_id">
                                     <audio
@@ -1806,7 +1811,7 @@
                                     ></audio>
                                 </i>
                             </a>
-        
+
                             <div class="stat-block">
                                 <div style="width: 100%; display: flex; flex-direction: row; justify-content: space-between;">
                                     <span class="level-left" style="margin-right: auto;">Circle Size</span><span class="level-right" v-text="selected.cs"></span>
@@ -1821,7 +1826,7 @@
                                     <span class="level-left" style="margin-right: auto;">HP Drain</span><span class="level-right" v-text="selected.hp"></span>
                                 </div>
                             </div>
-    
+
                             <div class="stat-block row-stats bottom">
                                 <div data-stat="length" class="stat-item">
                                     <span class="stat-icon">
@@ -1843,6 +1848,54 @@
                                 </div>
                             </div>
                         </div>
+
+                        <!-- ================= MOBILE STATS OVERLAY ================= -->
+                        <div class="map-stats-mobile-overlay" v-if="selected">
+                            <!-- Audio player row with progress bar -->
+                            <div class="mobile-player-row" :id="'mobile-player-' + set_id">
+                                <button class="mobile-play-btn" @click="playMapAudio(set_id)">
+                                    <i :class="currentAudio && currentAudio.paused === false && currentAudio.id === 'audio-' + set_id ? 'fas fa-pause' : 'fas fa-play'"></i>
+                                </button>
+                                <div class="mobile-player-info">
+                                    <span class="mobile-player-title" v-text="selectedStats.title"></span>
+                                    <span class="mobile-player-artist" v-text="selectedStats.artist"></span>
+                                </div>
+                                <div class="mobile-player-duration">
+                                    <span v-text="formatDuration(selected.total_length)"></span>
+                                </div>
+                                <!-- Progress bar -->
+                                <div class="mobile-player-progress">
+                                    <div class="mobile-player-progress-fill"></div>
+                                </div>
+                            </div>
+                            <!-- Stat pills row -->
+                            <div class="mobile-stats-row">
+                                <div class="stat-pill">
+                                    <span class="stat-pill-label">CS</span>
+                                    <span class="stat-pill-value" v-text="selected.cs"></span>
+                                </div>
+                                <div class="stat-pill">
+                                    <span class="stat-pill-label">AR</span>
+                                    <span class="stat-pill-value" v-text="selected.ar"></span>
+                                </div>
+                                <div class="stat-pill">
+                                    <span class="stat-pill-label">OD</span>
+                                    <span class="stat-pill-value" v-text="selected.od"></span>
+                                </div>
+                                <div class="stat-pill">
+                                    <span class="stat-pill-label">HP</span>
+                                    <span class="stat-pill-value" v-text="selected.hp"></span>
+                                </div>
+                                <div class="stat-pill">
+                                    <span class="stat-pill-label">BPM</span>
+                                    <span class="stat-pill-value" v-text="selected.bpm"></span>
+                                </div>
+                                <div class="stat-pill stat-pill-stars">
+                                    <span class="stat-pill-label"><i class="fas fa-star"></i></span>
+                                    <span class="stat-pill-value" v-text="selected.diff"></span>
+                                </div>
+                            </div>
+                        </div>
                         
                         <!-- ================= LOADING/ERROR STATE ================= -->
                         <div class="map-stats" v-else>
@@ -1853,9 +1906,9 @@
                                 </div>
                             </div>
                         </div>
-    
-                        <!-- ================= DIFFICULTY SELECTOR ================= -->
-                        <div class="selector">
+
+                        <!-- ================= DIFFICULTY SELECTOR (Desktop) ================= -->
+                        <div class="selector selector-desktop">
                             <a
                                 v-for="map in beatmaps"
                                 :key="map.id"
@@ -1873,40 +1926,76 @@
                         </div>
                     </div>
                 </div>
-        
+
                 <!-- ================= SECOND BLOCK ================= -->
                 <div class="second-block">
                     <div class="content" v-if="selected">
-                    
+
                         <!-- ================= BEATMAP INFO ================= -->
                         <div class="beatmap-info">
-                            <div class="info-block">
-                                <h2 v-text="selectedStats.title"></h2>
-                                <h4 v-text="selectedStats.artist"></h4>
-        
-                                <div class="divider"></div>
-        
-                                <div class="buttons">
-                                    <button class="button" @click="window.location.href = 'https://osu.direct/d/' + set_id">
-                                        <i class="fas fa-download"></i> Download
-                                    </button>
-                                    <button class="button" @click="window.location.href = 'osu://dl/' + set_id">
-                                        <i class="fas fa-external-link-alt"></i> osu!direct
-                                    </button>
-                                    <button class="button" @click="window.location.href = 'https://osu.ppy.sh/b/' + selectedStats.id">
-                                        <i class="fas fa-external-link-alt"></i> View on ppy.sh
+                            <!-- ================= DIFFICULTY SELECTOR STRIP (Mobile) ================= -->
+                            <div class="info-hina-block">
+                                <div class="difficulty-strip">
+                                    <button
+                                        v-for="diff in beatmaps"
+                                        :key="diff.id"
+                                        class="difficulty-pill"
+                                        :class="{ 'active': selected && selected.id === diff.id }"
+                                        @click="beatmapBus.$emit('select-beatmap', diff.id)"
+                                    >
+                                        <difficulty-icon :diff="diff" :set-id="set_id" :interactive="false" class="diff-icon"></difficulty-icon>
+                                        <span class="diff-name" v-text="diff.version"></span>
+                                        <span class="diff-stars"><span v-text="diff.diff"></span>★</span>
                                     </button>
                                 </div>
                             </div>
-        
-                            <div class="info-block">
-                                <span>
-                                    Mapped by
-                                    <a
-                                        :href="'https://osu.ppy.sh/u/' + selectedStats.creator"
-                                        v-text="selectedStats.creator"
-                                    ></a>
-                                </span>
+
+                            <!-- ================= TITLE/ARTIST + MAPPER INFO ================= -->
+                            <div class="info-blocks-wrapper">
+                                <div class="info-block">
+                                    <h2 v-text="selectedStats.title"></h2>
+                                    <h4 v-text="selectedStats.artist"></h4>
+
+                                    <div class="divider"></div>
+
+                                    <div class="buttons">
+                                        <button class="button" @click="window.location.href = 'https://osu.direct/d/' + set_id">
+                                            <i class="fas fa-download"></i> Download
+                                        </button>
+                                        <button class="button" @click="window.location.href = 'osu://dl/' + set_id">
+                                            <i class="fas fa-external-link-alt"></i> osu!direct
+                                        </button>
+                                        <button class="button" @click="window.location.href = 'https://osu.ppy.sh/b/' + selectedStats.id">
+                                            <i class="fas fa-external-link-alt"></i> View on ppy.sh
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div class="info-block info-block-details">
+                                    <div class="info-detail">
+                                        <span class="info-label">Status:</span>
+                                        <span class="info-value" :class="'status-' + selectedStats.status" v-text="getStatusName(selectedStats.status)"></span>
+                                    </div>
+                                    <div class="info-detail">
+                                        <span class="info-label">Mapped by:</span>
+                                        <a
+                                            :href="'https://osu.ppy.sh/u/' + selectedStats.creator"
+                                            v-text="selectedStats.creator"
+                                            class="info-value info-link"
+                                        ></a>
+                                    </div>
+                                    <div class="info-detail">
+                                        <span class="info-label"><span class="label-mobile">Updated:</span><span class="label-desktop">Last Updated:</span></span>
+                                        <span class="info-value" v-text="formatDate(selectedStats.last_update)"></span>
+                                    </div>
+                                    <div class="info-detail">
+                                        <span class="info-label">Plays:</span>
+                                        <span class="info-value">
+                                            <span v-text="formatNumber(selectedStats.plays)"></span>
+                                            <span class="sub"> (<span v-text="formatNumber(selectedStats.passes)"></span> passes)</span>
+                                        </span>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                         <!-- ================= LEADERBOARD FILTERS ================= -->
@@ -1974,8 +2063,8 @@
                             <!-- ===== FIRST PLACE ===== -->
                             <div class="table-responsive" v-if="topScore">
                                 <div class="lb-first-place-header">
-                                    <div class="user-block">
-                                    
+                                    <!-- Left: rank + avatar -->
+                                    <div class="lb-fp-identity">
                                         <div class="play-rank">
                                             <span class="score-rank">#1</span>
                                             <span
@@ -1983,13 +2072,16 @@
                                                 v-text="topScore.grade"
                                             ></span>
                                         </div>
-        
+
                                         <a
                                             class="user-avatar"
                                             :href="'/u/' + topScore.userid"
                                             :style="'background-image: url(https://a.' + domain + '/' + topScore.userid + ');'"
                                         ></a>
-        
+                                    </div>
+
+                                    <!-- Right: name + stats -->
+                                    <div class="lb-fp-details">
                                         <div class="user">
                                             <span v-if="topScore.clan_id != null"
                                                   v-text="'[' + topScore.clan_tag + ']'"></span>
@@ -1998,16 +2090,14 @@
                                                 :href="'/u/' + topScore.userid"
                                                 v-text="topScore.player_name"
                                             ></a>
-        
+
                                             <div
                                                 class="user-flag"
                                                 :style="'background-image: url(/static/images/flags/' + topScore.player_country.toUpperCase() + '.png);'"
                                             ></div>
                                         </div>
-                                    </div>
-        
-                                    <div class="playstats-block">
-                                        <div class="beatmap-score-top__stats">
+
+                                        <div class="playstats-block">
                                             <div class="stat-block stat-bolder">
                                                 <div class="stat-title">PP</div>
                                                 <span v-text="topScore.pp.toFixed(2)"></span>
@@ -2024,8 +2114,6 @@
                                                 <div class="stat-title">Mods</div>
                                                 <span v-text="topScore.mods_readable"></span>
                                             </div>
-                                        </div>
-                                        <div class="beatmap-score-top__stats">
                                             <div class="stat-block">
                                                 <div class="stat-title">Score</div>
                                                 <span v-text="topScore.score"></span>
@@ -2051,25 +2139,25 @@
                                 </div>
                             </div>
         
-                            <!-- ===== FULL LEADERBOARD ===== -->
-                            <div class="bm-lb-bg table-responsive" v-if="hasLeaderboards">
+                            <!-- ===== FULL LEADERBOARD (Desktop table) ===== -->
+                            <div class="bm-lb-bg table-responsive bm-lb-desktop" v-if="hasLeaderboards">
                                 <table class="bm-lb-table table-responsive">
                                     <thead class="leaderboard-thead">
                                         <tr>
-                                            <th class="leaderboard-table__heading table-header-rank"> Rank</th> 
-                                            <th class="leaderboard-table__heading table-header-grade"></th> 
-                                            <th class="leaderboard-table__heading table-header-flag"></th> 
-                                            <th class="leaderboard-table__heading table-header-player">Player</th> 
-                                            <th class="leaderboard-table__heading table-header-pp">PP</th> 
-                                            <th class="leaderboard-table__heading table-header-score">Score</th> 
-                                            <th class="leaderboard-table__heading table-header-acc">Accuracy</th> 
+                                            <th class="leaderboard-table__heading table-header-rank"> Rank</th>
+                                            <th class="leaderboard-table__heading table-header-grade"></th>
+                                            <th class="leaderboard-table__heading table-header-flag"></th>
+                                            <th class="leaderboard-table__heading table-header-player">Player</th>
+                                            <th class="leaderboard-table__heading table-header-pp">PP</th>
+                                            <th class="leaderboard-table__heading table-header-score">Score</th>
+                                            <th class="leaderboard-table__heading table-header-acc">Accuracy</th>
                                             <th class="leaderboard-table__heading table-header-combo">Combo</th>
                                             <th class="leaderboard-table__heading table-header-hitstat">300</th>
-                                            <th class="leaderboard-table__heading table-header-hitstat">100</th> 
-                                            <th class="leaderboard-table__heading table-header-hitstat">50</th> 
-                                            <th class="leaderboard-table__heading table-header-miss">Miss</th> 
-                                            <th class="leaderboard-table__heading table-header-mods">Mods</th> 
-                                            <th class="leaderboard-table__heading table-header-date">Date</th> 
+                                            <th class="leaderboard-table__heading table-header-hitstat">100</th>
+                                            <th class="leaderboard-table__heading table-header-hitstat">50</th>
+                                            <th class="leaderboard-table__heading table-header-miss">Miss</th>
+                                            <th class="leaderboard-table__heading table-header-mods">Mods</th>
+                                            <th class="leaderboard-table__heading table-header-date">Date</th>
                                             <th class="leaderboard-table__heading table-header-report"></th>
                                         </tr>
                                     </thead>
@@ -2118,6 +2206,89 @@
                                     </tbody>
                                 </table>
                             </div>
+
+                            <!-- ===== MOBILE LEADERBOARD (Card-based) ===== -->
+                            <div class="bm-lb-mobile" v-if="hasLeaderboards">
+                                <div
+                                    v-for="(score, index) in leaderboards"
+                                    :key="'mobile-' + score.id"
+                                    class="lb-score-card"
+                                    :class="[index % 2 === 0 ? 'row2p' : 'row1p', { 'is-expanded': expandedScoreId === score.id }]"
+                                >
+                                    <!-- Primary row: rank, grade, player, PP -->
+                                    <div class="lb-card-primary" @click="toggleScoreExpand(score.id)">
+                                        <div class="lb-card-rank-grade">
+                                            <span class="lb-card-rank" @click.stop="scoreBus.$emit('show-score-window', score.id)" v-text="'#' + (index + 1)"></span>
+                                            <span class="lb-card-grade" :class="'rank-' + score.grade" v-text="score.grade"></span>
+                                        </div>
+                                        <div class="lb-card-player">
+                                            <img class="lb-card-flag" :src="'/static/images/flags/' + score.player_country.toUpperCase() + '.png'">
+                                            <a class="lb-card-name" :href="'/u/' + score.userid" @click.stop>
+                                                <span v-if="score.clan_id != null" v-text="'[' + score.clan_tag + '] '"></span><span v-text="score.player_name"></span>
+                                            </a>
+                                        </div>
+                                        <div class="lb-card-pp">
+                                            <span class="lb-card-pp-value" v-text="Math.round(score.pp)"></span>
+                                            <span class="lb-card-pp-label">pp</span>
+                                        </div>
+                                    </div>
+
+                                    <!-- Secondary row: acc, combo, score, mods, time -->
+                                    <div class="lb-card-secondary">
+                                        <span class="lb-card-stat">
+                                            <span class="lb-card-stat-value" v-text="score.acc.toFixed(2) + '%'"></span>
+                                        </span>
+                                        <span class="lb-card-stat">
+                                            <span class="lb-card-stat-value" v-text="score.max_combo + 'x'"></span>
+                                        </span>
+                                        <span class="lb-card-stat lb-card-stat-score">
+                                            <span class="lb-card-stat-value" v-text="score.score.toLocaleString()"></span>
+                                        </span>
+                                        <span class="lb-card-stat lb-card-stat-mods" v-if="score.mods_readable !== 'NM'">
+                                            <span class="lb-card-stat-value" v-text="score.mods_readable"></span>
+                                        </span>
+                                        <span class="lb-card-stat lb-card-stat-time">
+                                            <span class="lb-card-stat-value" v-text="formatTimeAgo(score.play_time)"></span>
+                                        </span>
+                                        <button class="lb-card-expand-btn" @click.stop="toggleScoreExpand(score.id)" :aria-expanded="expandedScoreId === score.id ? 'true' : 'false'" aria-label="Show details">
+                                            <i class="fas" :class="expandedScoreId === score.id ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
+                                        </button>
+                                    </div>
+
+                                    <!-- Expandable details: hitcounts, exact date, report -->
+                                    <transition name="lb-card-expand">
+                                        <div class="lb-card-details" v-if="expandedScoreId === score.id">
+                                            <div class="lb-card-hitcounts">
+                                                <div class="lb-card-hit">
+                                                    <span class="lb-card-hit-label">300</span>
+                                                    <span class="lb-card-hit-value" v-text="score.n300 + score.ngeki"></span>
+                                                </div>
+                                                <div class="lb-card-hit">
+                                                    <span class="lb-card-hit-label">100</span>
+                                                    <span class="lb-card-hit-value" v-text="score.n100 + score.nkatu"></span>
+                                                </div>
+                                                <div class="lb-card-hit">
+                                                    <span class="lb-card-hit-label">50</span>
+                                                    <span class="lb-card-hit-value" v-text="score.n50"></span>
+                                                </div>
+                                                <div class="lb-card-hit lb-card-hit-miss">
+                                                    <span class="lb-card-hit-label">Miss</span>
+                                                    <span class="lb-card-hit-value" v-text="score.nmiss"></span>
+                                                </div>
+                                            </div>
+                                            <div class="lb-card-details-row">
+                                                <span class="lb-card-exact-date" v-text="formatDate(score.play_time)"></span>
+                                                <button class="lb-card-view-btn" @click="scoreBus.$emit('show-score-window', score.id)">
+                                                    <i class="fas fa-external-link-alt"></i> View Score
+                                                </button>
+                                                <button class="lb-card-report-btn" aria-label="Report score">
+                                                    <i class="fa-solid fa-triangle-exclamation"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </transition>
+                                </div>
+                            </div>
                         </div>
                     </div>
                     
@@ -2134,7 +2305,7 @@
     </script>
     
     <script type="text/x-template" id="score-panel-template">
-        <div id="score-panel-modal" class="modal" :class="{ 'is-active': show }" style="z-index: 26;">
+        <div id="score-panel-modal" class="modal" :class="{ 'is-active': show }" style="z-index: 40;">
             <div class="modal-background" @click="close"></div>
     
             <!-- Loading State -->
@@ -2165,6 +2336,10 @@
     
             <!-- Main Content - Only show when data is ready -->
             <div v-if="fetchState === 'success'" id="score-panel" data-panel="Score" class="modal-content" :class="{ 'hidden': !show && fetchState !== 'success' }" style="animation: scaleIn 0.3s ease-out;">
+                <!-- Panel close button -->
+                <button class="panel-close-btn" @click="close" aria-label="Close score panel">
+                    <i class="fas fa-times"></i>
+                </button>
                 <!-- ================= MAIN BANNER ================= -->
                 <div class="main-block">
                     <div class="main-banner" :style="{'--banner-bg': safeBeatmap && safeBeatmap.set_id ? `url(https://assets.ppy.sh/beatmaps/` + safeBeatmap.set_id + `/covers/cover@2x.jpg)` : 'none'}">
@@ -2233,20 +2408,6 @@
                                             <span v-text="safeScore ? formatDate(safeScore.play_time) : '-'"></span>
                                         </div>
                                     </div>
-                                </div>
-                                <div class="score-buttons">
-                                    <button class="button score-button is-primary" @click="DownloadReplay(safeScore.id)" :disabled="!safeScore">
-                                        Download Replay
-                                    </button>
-                                    <button class="button score-button" @click="" :disabled="!safeScore">
-                                        View Beatmap Page
-                                    </button>
-                                    <button class="button score-button not-ready" @click="" :disabled="!safeScore" tooltip="You can use this to watch a replay of this score in your browser!">
-                                        Open Beatmap in JoSu!
-                                    </button>
-                                    <button class="button score-button" @click="shareScore()" :disabled="!safeScore">
-                                        Share Score
-                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -2359,6 +2520,81 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- ================= ACTIONS ================= -->
+                <!-- Desktop: inline button row (hidden on mobile) -->
+                <div class="score-actions score-actions--desktop">
+                    <div class="score-buttons">
+                        <button class="button score-button is-primary" @click="DownloadReplay(safeScore.id)" :disabled="!safeScore">
+                            Download Replay
+                        </button>
+                        <button class="button score-button" @click="viewBeatmapPage()" :disabled="!safeBeatmap">
+                            View Beatmap Page
+                        </button>
+                        <button class="button score-button not-ready" @click="" :disabled="!safeScore" tooltip="You can use this to watch a replay of this score in your browser!">
+                            Open Beatmap in JoSu!
+                        </button>
+                        <button class="button score-button" @click="shareScore()" :disabled="!safeScore">
+                            Share Score
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Mobile: compact trigger button (hidden on desktop) -->
+                <div class="score-actions score-actions--mobile">
+                    <button
+                        class="action-sheet-trigger"
+                        @click="openActionSheet"
+                        aria-label="Open score actions menu"
+                        role="button"
+                    >
+                        <i class="fas fa-ellipsis-h"></i>
+                        <span>Score Actions</span>
+                    </button>
+                </div>
+
+                <!-- Mobile: bottom sheet overlay -->
+                <transition name="action-sheet">
+                    <div
+                        v-if="showActionSheet"
+                        class="action-sheet-overlay"
+                        @click.self="closeActionSheet"
+                        role="dialog"
+                        aria-modal="true"
+                        aria-labelledby="action-sheet-title"
+                    >
+                        <div class="action-sheet">
+                            <div class="action-sheet-header">
+                                <span id="action-sheet-title" class="action-sheet-title">Score Actions</span>
+                                <button class="action-sheet-close" @click="closeActionSheet" aria-label="Close actions menu">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                            <div class="action-sheet-body">
+                                <button class="action-sheet-item" @click="DownloadReplay(safeScore.id); closeActionSheet()" :disabled="!safeScore">
+                                    <i class="fas fa-download"></i>
+                                    <span>Download Replay</span>
+                                    <i class="fas fa-chevron-right action-sheet-chevron"></i>
+                                </button>
+                                <button class="action-sheet-item" @click="viewBeatmapPage()" :disabled="!safeBeatmap">
+                                    <i class="fas fa-info-circle"></i>
+                                    <span>View Beatmap Page</span>
+                                    <i class="fas fa-chevron-right action-sheet-chevron"></i>
+                                </button>
+                                <button class="action-sheet-item" disabled>
+                                    <i class="fas fa-external-link-alt"></i>
+                                    <span>Open Beatmap in JoSu!</span>
+                                    <i class="fas fa-chevron-right action-sheet-chevron"></i>
+                                </button>
+                                <button class="action-sheet-item" @click="shareScore(); closeActionSheet()" :disabled="!safeScore">
+                                    <i class="fas fa-share-alt"></i>
+                                    <span>Share Score</span>
+                                    <i class="fas fa-chevron-right action-sheet-chevron"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </transition>
             </div>
         </div>
     </script>

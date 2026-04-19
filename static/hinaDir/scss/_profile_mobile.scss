@@ -1,0 +1,614 @@
+// ============================================================
+// Profile Page — Mobile Overrides
+// Imported via hina_import.scss → overrides layer (highest specificity)
+// Desktop layout is UNTOUCHED — all rules are inside media queries.
+// ============================================================
+
+// ----------------------------------------------------------
+// 1. Stats reorder — scores above stats on mobile
+// ----------------------------------------------------------
+@media (max-width: 768px) {
+  // Override the display:contents that flattens DOM ordering at 1255px
+  .two-sides {
+    display: flex !important;
+    flex-direction: column;
+  }
+
+  .two-sides > .column.is-one-third {
+    order: 2;
+    width: 100% !important;
+  }
+
+  .two-sides > .column:not(.is-one-third) {
+    order: 1;
+    width: 100% !important;
+  }
+}
+
+// ----------------------------------------------------------
+// 2. Mobile stats summary bar
+// ----------------------------------------------------------
+// Hidden on desktop, shown only at mobile breakpoint
+.profile-stats-summary {
+  display: none;
+}
+
+#profile-stats-expand {
+  display: none; // always hidden — checkbox hack, never visible
+}
+
+.profile-stats-toggle {
+  display: none; // hidden on desktop
+}
+
+@media (max-width: 768px) {
+  .profile-stats-summary {
+    display: flex;
+    gap: 6px;
+    padding: 8px;
+    flex-wrap: wrap;
+    justify-content: center;
+    background: hsl(var(--main), 20%, 20%);
+    border-radius: 8px;
+    margin-bottom: 8px;
+  }
+
+  .pss-pill {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: hsl(var(--main), 25%, 28%);
+    border-radius: 6px;
+    padding: 6px 14px;
+    min-width: 80px;
+    flex: 1;
+  }
+
+  .pss-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    opacity: 0.6;
+    font-weight: 500;
+  }
+
+  .pss-value {
+    font-size: 16px;
+    font-weight: 700;
+    line-height: 1.3;
+  }
+
+  // Compact grade row inside summary
+  .pss-grades {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    width: 100%;
+    padding: 4px 0 0;
+  }
+
+  .pss-grade {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+  }
+
+  .pss-grade .map-rank {
+    font-size: 14px;
+    width: 36px;
+    padding: 2px 4px;
+  }
+
+  .pss-grade-count {
+    font-size: 11px;
+    font-weight: 600;
+  }
+
+  // Toggle for full stats
+  .profile-stats-toggle {
+    display: block;
+    text-align: center;
+    padding: 8px;
+    font-size: 12px;
+    opacity: 0.6;
+    cursor: pointer;
+    background: hsl(var(--main), 20%, 22%);
+    border-radius: 0 0 6px 6px;
+    margin-top: -4px;
+    margin-bottom: 8px;
+
+    &:hover {
+      opacity: 0.9;
+    }
+  }
+
+  // Hide full stats tables by default on mobile — toggled via checkbox hack
+  .profile-stats-full {
+    display: none;
+  }
+
+  #profile-stats-expand:checked ~ .profile-stats-full {
+    display: block;
+  }
+
+  #profile-stats-expand:checked ~ .profile-stats-toggle .pst-show {
+    display: none;
+  }
+
+  #profile-stats-expand:checked ~ .profile-stats-toggle .pst-hide {
+    display: inline;
+  }
+
+  .pst-hide {
+    display: none;
+  }
+}
+
+// ----------------------------------------------------------
+// 3. Score card mobile variant — art-first blur-strip design
+//
+//    ┌─────────────────────────────────┐
+//    │        COVER ART (~65-70%)      │  ← clean, barely touched
+//    │                                 │
+//    ├─────────────────────────────────┤
+//    │ blur strip                      │  ← backdrop-filter: blur
+//    │  Title [diff] +mods     2h ago  │  Row 1
+//    │  425pp  98.52%            SS    │  Row 2
+//    └─────────────────────────────────┘
+//      ↑ accent border-left
+// ----------------------------------------------------------
+@media (max-width: 768px) {
+  // --- Card shell ---
+  .map-single {
+    // Override the heavy inline gradient — use the clean cover image
+    background: var(--cover-url, hsl(var(--main), 25%, 25%)) !important;
+    background-size: cover !important;
+    background-position: center !important;
+
+    height: 130px !important;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end; // push text strip to bottom
+    padding: 0 !important;
+    border-left: 3px solid hsl(var(--main), 40%, 50%);
+    border-radius: 6px;
+    overflow: hidden;
+    position: relative;
+    cursor: pointer;
+    transition: transform 0.15s ease;
+
+    // Subtle gradient blending art into the strip — no heavy overlay
+    &::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to bottom, transparent 55%, rgba(0, 0, 0, 0.10) 100%);
+      border-radius: inherit;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    > * {
+      position: relative;
+      z-index: 1;
+    }
+
+    // Press feedback
+    &:active {
+      transform: scale(0.98);
+    }
+  }
+
+  // --- Best vs Recent mood ---
+  // Best: competitive, stronger blur strip, accent border
+  .map-single[data-score-type="best"] .map-data {
+    backdrop-filter: blur(8px) brightness(0.78);
+    -webkit-backdrop-filter: blur(8px) brightness(0.78);
+    background: rgba(0, 0, 0, 0.28);
+  }
+
+  // Recent: activity-feed, lighter strip so art breathes
+  .map-single[data-score-type="recent"] {
+    border-left-color: hsl(var(--main), 20%, 38%);
+
+    .map-data {
+      backdrop-filter: blur(5px) brightness(0.88);
+      -webkit-backdrop-filter: blur(5px) brightness(0.88);
+      background: rgba(0, 0, 0, 0.15);
+    }
+  }
+
+  // --- Bottom blur strip (the text band) ---
+  // Reset desktop residuals: margin, fixed height, min-width overflow
+  .map-data {
+    backdrop-filter: blur(6px) brightness(0.82);
+    -webkit-backdrop-filter: blur(6px) brightness(0.82);
+    background: rgba(0, 0, 0, 0.22); // fallback for no backdrop-filter support
+    padding: 6px 10px !important;
+    flex-direction: column !important;
+    height: auto !important;
+    min-width: 0 !important; // desktop has 100% which overflows with margin
+    width: 100% !important;
+    margin: 0 !important; // desktop has 8px 0 which pushes outside card
+    gap: 2px;
+    box-sizing: border-box;
+  }
+
+  // Hide inner thumbnail — cover comes from card background
+  .map-image {
+    display: none !important;
+  }
+
+  // --- Row 1: title + timeago ---
+  .map-content1 {
+    width: 100% !important;
+    height: auto !important; // desktop has height: 100%
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center;
+    gap: 8px;
+    min-width: 0 !important;
+  }
+
+  .map-title-block {
+    flex: 1;
+    min-width: 0 !important; // allow truncation
+    margin: 0 !important; // reset desktop margin-left: 6px, margin-top: 5px
+    padding: 0 !important; // reset desktop padding-right: 12px
+  }
+
+  .map-title {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 13px;
+    color: #fff !important;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+  }
+
+  // Push artist/mapper + score/combo to the details panel
+  .map-creators { display: none !important; }
+  .map-single .play-stats { display: none !important; }
+
+  // Timeago floats right in row 1
+  .play-stats-block {
+    flex-shrink: 0;
+    margin: 0 !important; // reset desktop margin-left: 6px
+    padding: 0 !important; // reset desktop padding-right: 12px
+  }
+
+  .map-date {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.55) !important;
+    white-space: nowrap;
+  }
+
+  // --- Row 2: PP + accuracy + grade ---
+  .map-content2 {
+    width: 100% !important;
+    height: auto !important; // desktop has height: 100%
+    flex-direction: row !important;
+    justify-content: flex-start !important;
+    align-items: center !important; // override desktop align-items: flex-end
+    min-width: 0 !important;
+  }
+
+  .score-details {
+    width: 100%;
+  }
+
+  .score-details_right-block {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+  }
+
+  .score-details_pp-block {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .map-pp {
+    font-size: 15px;
+    font-weight: 700;
+    color: #fff !important;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+  }
+
+  .map-acc {
+    font-size: 12px;
+    color: #f2f2f2 !important;
+  }
+
+  .score-details_grade-block {
+    margin-left: auto;
+  }
+
+  .score-details_grade-block .map-rank {
+    font-size: 14px;
+    width: 36px;
+    padding: 2px 4px;
+    // Subtle glow on grade badge
+    text-shadow: 0 0 8px rgba(255, 255, 255, 0.25);
+  }
+
+  // --- Scores container ---
+  .scores {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 6px;
+  }
+}
+
+// ----------------------------------------------------------
+// 4. Sticky score section nav
+// ----------------------------------------------------------
+.profile-score-nav {
+  display: none; // hidden on desktop
+}
+
+@media (max-width: 768px) {
+  .profile-score-nav {
+    display: flex;
+    gap: 6px;
+    padding: 8px 10px;
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    background: hsl(var(--main), 12%, 15%);
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+
+    &::-webkit-scrollbar {
+      display: none;
+    }
+  }
+
+  .score-nav-item {
+    padding: 6px 16px;
+    border-radius: 20px;
+    background: hsl(var(--main), 25%, 28%);
+    color: #fff !important;
+    font-size: 13px;
+    font-weight: 500;
+    white-space: nowrap;
+    text-decoration: none;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    transition: background 0.2s;
+
+    &:hover {
+      background: hsl(var(--main), 30%, 35%);
+    }
+  }
+
+  // Scroll targets — offset so sticky nav doesn't cover them
+  #best-scores,
+  #recent-scores,
+  #most-played {
+    scroll-margin-top: 60px;
+  }
+}
+
+// ----------------------------------------------------------
+// 5. Most Played simplification
+// ----------------------------------------------------------
+@media (max-width: 768px) {
+  .beatmaps {
+    grid-template-columns: 1fr !important;
+    gap: 4px !important;
+    padding: 4px !important;
+  }
+}
+
+// ----------------------------------------------------------
+// 6. Mode selector refinement
+// ----------------------------------------------------------
+@media (max-width: 768px) {
+  .mode-selects {
+    padding: 8px 10px !important;
+    flex-wrap: wrap;
+    gap: 6px;
+    height: auto !important;
+  }
+
+  .simple-banner-switch {
+    padding: 6px 12px !important;
+    border-radius: 6px !important;
+    background: hsla(var(--main), 20%, 30%, 0.6) !important;
+    margin: 0 !important;
+    font-size: 13px !important;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .select-left,
+  .select-right {
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+}
+
+// ----------------------------------------------------------
+// 7. Mobile header — art-focused banner + identity strip
+//
+//    ┌─────────────────────────────────┐
+//    │   [Playing: Song Name]          │
+//    │                                 │
+//    │       BANNER ART (9:4)          │  ← clean, no text overlay
+//    │                                 │
+//    └─────────────────────────────────┘
+//    │ ┌──────┐ Username               │  ← identity strip (same container)
+//    │ │avatar│ ● Online               │     avatar + name are siblings
+//    │ └──────┘                        │     so alignment is trivial
+//    ├─────────────────────────────────┤
+//    │ [std] [taiko] [catch] [mania]   │
+//    └─────────────────────────────────┘
+//
+// ----------------------------------------------------------
+
+// Hidden on desktop — mobile-only identity row
+.profile-identity-mobile {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  // --- Banner: pure art showcase ---
+  .profile-bg {
+    min-height: unset !important;
+    aspect-ratio: 9 / 4;
+    max-height: 220px;
+    border-radius: 10px 10px 0 0 !important;
+    background-size: cover !important;
+    background-position: center !important;
+  }
+
+  // Hide the desktop info-block (name lives inside the banner on desktop)
+  .info-block {
+    display: none;
+  }
+
+  // --- Profile flex: grid layout on mobile ---
+  // Row 1: [avatar] [identity]   — side by side
+  // Row 2: [mode-selects]        — full width
+  // Row 3: [badge-selects]       — full width
+  .profile-flex {
+    display: grid !important;
+    grid-template-columns: auto 1fr;
+    grid-template-rows: auto auto auto;
+    align-items: start;
+  }
+
+  // --- Avatar: in-flow, no absolute positioning ---
+  .profile-avatar-area {
+    position: relative !important;
+    grid-column: 1;
+    grid-row: 1;
+    padding: 10px 0 10px 12px !important;
+    display: flex;
+    align-items: center;
+  }
+
+  .profile-avatar {
+    width: 56px !important;
+    height: 56px !important;
+    margin-top: 0 !important;
+    border-radius: 10px !important;
+    border: 2px solid hsl(var(--main), 20%, 25%);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+  }
+
+  // --- Mobile identity row: name + status beside avatar ---
+  .profile-identity-mobile {
+    display: flex !important;
+    flex-direction: column;
+    justify-content: center;
+    grid-column: 2;
+    grid-row: 1;
+    padding: 10px 12px 10px 10px;
+    min-width: 0; // allow text truncation
+  }
+
+  .pim-name {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    overflow: hidden;
+  }
+
+  .pim-flag {
+    height: 18px;
+    flex-shrink: 0;
+  }
+
+  .pim-username {
+    font-size: 17px;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .pim-status {
+    font-size: 13px;
+    margin-top: 2px;
+    opacity: 0.7;
+  }
+
+  .pim-online {
+    opacity: 1;
+  }
+
+  // --- Mode & badge bars span full width ---
+  .bar-selection.mode-selects {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+
+  .bar-selection.badge-selects {
+    grid-column: 1 / -1;
+    grid-row: 3;
+  }
+
+  // --- Online activity pill (stays in banner, top-left) ---
+  .online-infomation {
+    font-size: 11px !important;
+    padding: 4px 10px !important;
+    top: 8px !important;
+    left: 12px !important;
+    max-width: calc(100% - 24px);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    border-radius: 4px;
+  }
+
+  // --- Username overflow fix (for the hidden desktop .info-block) ---
+  p.ranks {
+    width: 100% !important;
+    max-width: none !important;
+  }
+}
+
+// ----------------------------------------------------------
+// 8. Touch targets
+// ----------------------------------------------------------
+@media (max-width: 768px) {
+  .show-button {
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px 32px;
+  }
+
+  .extra-block {
+    padding: 4px;
+  }
+}
+
+// ----------------------------------------------------------
+// 9. Badge bar compact
+// ----------------------------------------------------------
+@media (max-width: 768px) {
+  .bar-selection.badge-selects {
+    height: auto !important;
+    padding: 8px !important;
+    flex-wrap: wrap;
+  }
+
+  .badge-block {
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+}
