@@ -380,6 +380,18 @@
     padding: 8px 0;
     margin-left: 4px;
     z-index: 1002;
+
+    // Invisible bridge covering the 4px gap + slack so :hover stays alive
+    // when the cursor traverses from parent item to flyout.
+    &::before {
+        content: '';
+        position: absolute;
+        top: -4px;
+        left: -10px;
+        width: 14px;
+        height: calc(100% + 8px);
+        background: transparent;
+    }
 }
 
 // ── Nested admin dropdown: mobile accordion (tap to expand) ──

@@ -721,6 +721,15 @@
   margin-left: 4px;
   z-index: 1002;
 }
+.navbar-dropdown-menu .navbar-dropdown-submenu::before {
+  content: "";
+  position: absolute;
+  top: -4px;
+  left: -10px;
+  width: 14px;
+  height: calc(100% + 8px);
+  background: transparent;
+}
 
 .navbar-mobile-dropdown-subgroup {
   display: flex;
