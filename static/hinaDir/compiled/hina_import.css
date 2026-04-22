@@ -679,38 +679,36 @@
   color: hsl(0, 70%, 60%);
 }
 
-.navbar-dropdown-item--has-submenu {
+.navbar-dropdown-menu .navbar-dropdown-item--has-submenu {
   position: relative;
-  display: flex;
+  display: flex !important;
   align-items: center;
   justify-content: space-between;
   gap: 10px;
   cursor: pointer;
   user-select: none;
 }
-.navbar-dropdown-item--has-submenu:hover, .navbar-dropdown-item--has-submenu:focus, .navbar-dropdown-item--has-submenu:focus-within {
+.navbar-dropdown-menu .navbar-dropdown-item--has-submenu:hover, .navbar-dropdown-menu .navbar-dropdown-item--has-submenu:focus, .navbar-dropdown-menu .navbar-dropdown-item--has-submenu:focus-within {
   background: var(--navbar-bg-hover);
   color: var(--navbar-accent);
 }
-.navbar-dropdown-item--has-submenu:hover > .navbar-dropdown-submenu, .navbar-dropdown-item--has-submenu:focus > .navbar-dropdown-submenu, .navbar-dropdown-item--has-submenu:focus-within > .navbar-dropdown-submenu {
-  opacity: 1;
-  visibility: visible;
-  transform: translateX(0);
-  pointer-events: auto;
+.navbar-dropdown-menu .navbar-dropdown-item--has-submenu:hover > .navbar-dropdown-submenu, .navbar-dropdown-menu .navbar-dropdown-item--has-submenu:focus > .navbar-dropdown-submenu, .navbar-dropdown-menu .navbar-dropdown-item--has-submenu:focus-within > .navbar-dropdown-submenu {
+  display: block;
 }
-.navbar-dropdown-item--has-submenu:hover > .navbar-dropdown-submenu-chevron, .navbar-dropdown-item--has-submenu:focus > .navbar-dropdown-submenu-chevron, .navbar-dropdown-item--has-submenu:focus-within > .navbar-dropdown-submenu-chevron {
+.navbar-dropdown-menu .navbar-dropdown-item--has-submenu:hover > .navbar-dropdown-submenu-chevron, .navbar-dropdown-menu .navbar-dropdown-item--has-submenu:focus > .navbar-dropdown-submenu-chevron, .navbar-dropdown-menu .navbar-dropdown-item--has-submenu:focus-within > .navbar-dropdown-submenu-chevron {
   transform: translateX(2px);
   color: var(--navbar-accent);
 }
 
-.navbar-dropdown-submenu-chevron {
+.navbar-dropdown-menu .navbar-dropdown-submenu-chevron {
   font-size: 0.7rem;
   color: var(--navbar-text-muted);
   transition: transform 0.2s ease, color 0.2s ease;
   flex-shrink: 0;
 }
 
-.navbar-dropdown-submenu {
+.navbar-dropdown-menu .navbar-dropdown-submenu {
+  display: none;
   position: absolute;
   top: -8px;
   left: 100%;
@@ -721,12 +719,7 @@
   box-shadow: var(--navbar-shadow);
   padding: 8px 0;
   margin-left: 4px;
-  opacity: 0;
-  visibility: hidden;
-  transform: translateX(-6px);
-  transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s ease;
   z-index: 1002;
-  pointer-events: none;
 }
 
 .navbar-mobile-dropdown-subgroup {

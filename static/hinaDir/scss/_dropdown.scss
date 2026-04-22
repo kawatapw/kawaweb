@@ -329,9 +329,14 @@
 }
 
 // ── Nested admin dropdown: desktop flyout (hover to reveal) ──
-.navbar-dropdown-item--has-submenu {
+// Use .navbar-dropdown-menu scoping so these rules match Loki's component-layer
+// specificity (0,2,0) and aren't short-circuited by the @layer components
+// precedence over @layer styles-override. Also use display: none/block for the
+// submenu visibility because visibility:hidden is inheritable and can be
+// forced-visible by ancestor hover rules.
+.navbar-dropdown-menu .navbar-dropdown-item--has-submenu {
     position: relative;
-    display: flex;
+    display: flex !important;
     align-items: center;
     justify-content: space-between;
     gap: 10px;
@@ -345,10 +350,7 @@
         color: var(--navbar-accent);
 
         > .navbar-dropdown-submenu {
-            opacity: 1;
-            visibility: visible;
-            transform: translateX(0);
-            pointer-events: auto;
+            display: block;
         }
 
         > .navbar-dropdown-submenu-chevron {
@@ -358,14 +360,15 @@
     }
 }
 
-.navbar-dropdown-submenu-chevron {
+.navbar-dropdown-menu .navbar-dropdown-submenu-chevron {
     font-size: 0.7rem;
     color: var(--navbar-text-muted);
     transition: transform 0.2s ease, color 0.2s ease;
     flex-shrink: 0;
 }
 
-.navbar-dropdown-submenu {
+.navbar-dropdown-menu .navbar-dropdown-submenu {
+    display: none;
     position: absolute;
     top: -8px;
     left: 100%;
@@ -376,12 +379,7 @@
     box-shadow: var(--navbar-shadow);
     padding: 8px 0;
     margin-left: 4px;
-    opacity: 0;
-    visibility: hidden;
-    transform: translateX(-6px);
-    transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s ease;
     z-index: 1002;
-    pointer-events: none;
 }
 
 // ── Nested admin dropdown: mobile accordion (tap to expand) ──
