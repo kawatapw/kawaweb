@@ -124,8 +124,7 @@
 <div id="pp-records-app" v-cloak>
 
   {% with ppr_title='<i class="fas fa-chart-line"></i> PP Records',
-          ppr_subtitle='Top plays across kawata, with detection flags surfaced for staff review.',
-          ppr_badge_html='<i class="fas fa-flag"></i> Staff view' if session.user_data.get('is_staff') else None %}
+          ppr_subtitle='The highest-rated plays across the kawata community. Pick a mode, a season, and see who is on top.' %}
     {% include 'components/hero_banner.html' %}
   {% endwith %}
 

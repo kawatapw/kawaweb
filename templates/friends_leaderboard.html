@@ -152,6 +152,11 @@
 {% block content %}
 <div id="friends-leaderboard-app" v-cloak>
 
+  {% with ppr_title='<i class="fas fa-ranking-star"></i> Friend Leaderboards',
+          ppr_subtitle='PP rankings across your mutuals — see who is climbing the charts, season by season.' %}
+    {% include 'components/hero_banner.html' %}
+  {% endwith %}
+
   <!-- Back link -->
   <a href="/friends" class="flb-back">
     <i class="fas fa-arrow-left"></i>

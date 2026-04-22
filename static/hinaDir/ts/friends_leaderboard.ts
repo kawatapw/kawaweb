@@ -17,8 +17,11 @@ interface LeaderboardEntry {
     pp_delta: { value: number; type: string } | null;
 }
 
+var HeroBannerMixin = (window as any).HeroBannerMixin;
+
 new Vue({
     el: '#friends-leaderboard-app',
+    mixins: HeroBannerMixin ? [HeroBannerMixin] : [],
     data: {
         mode: 0,
         leaderboard: [] as LeaderboardEntry[],
@@ -176,6 +179,7 @@ new Vue({
         },
     },
     created() {
+        if (typeof (this as any).fetchHero === 'function') (this as any).fetchHero();
         // Load seasons first, then leaderboard (fetchSeasons calls reloadForSeason after selecting)
         var self = this;
         this.fetchSeasons().then(function() {

@@ -2,8 +2,10 @@
     var Vue = window.Vue;
     var domain = window.domain;
     var userId = window.userId;
+    var HeroBannerMixin = window.HeroBannerMixin;
     new Vue({
         el: '#friends-leaderboard-app',
+        mixins: HeroBannerMixin ? [HeroBannerMixin] : [],
         data: {
             mode: 0,
             leaderboard: [],
@@ -161,6 +163,8 @@
             },
         },
         created() {
+            if (typeof this.fetchHero === 'function')
+                this.fetchHero();
             // Load seasons first, then leaderboard (fetchSeasons calls reloadForSeason after selecting)
             var self = this;
             this.fetchSeasons().then(function () {

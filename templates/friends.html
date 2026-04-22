@@ -7,6 +7,12 @@
 
 {% block content %}
 <div id="friends-app" v-cloak>
+
+  {% with ppr_title='<i class="fas fa-user-friends"></i> Friends',
+          ppr_subtitle='Everyone you follow and everyone following you — see who is online and jump into their latest plays.' %}
+    {% include 'components/hero_banner.html' %}
+  {% endwith %}
+
   <!-- Header -->
   <div class="friends-header">
     <h1 class="friends-title">Friends</h1>
