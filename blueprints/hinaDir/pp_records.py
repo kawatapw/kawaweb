@@ -1,4 +1,4 @@
-"""hinaDir: PP Records page route."""
+"""hinaDir: PP Records + Most Played page routes."""
 
 from quart import Blueprint, g, render_template
 
@@ -11,3 +11,9 @@ hina_pp_records = Blueprint('hina_pp_records', __name__)
 @error_catcher
 async def pp_records():
     return await render_template('pp_records.html', globalNotice=g.globalNotice)
+
+
+@hina_pp_records.route('/most-played')
+@error_catcher
+async def most_played():
+    return await render_template('most_played.html', globalNotice=g.globalNotice)
