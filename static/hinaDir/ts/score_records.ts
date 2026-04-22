@@ -183,14 +183,14 @@ new Vue({
 
         rankClass: function(i: number): string {
             var r = (this.page - 1) * this.pageSize + i + 1;
-            if (r === 1) return 'ppr-rank--gold';
-            if (r === 2) return 'ppr-rank--silver';
-            if (r === 3) return 'ppr-rank--bronze';
+            if (r === 1) return 'gold';
+            if (r === 2) return 'silver';
+            if (r === 3) return 'bronze';
             return '';
         },
 
-        getRank: function(i: number): string {
-            return '#' + ((this.page - 1) * this.pageSize + i + 1);
+        getRank: function(i: number): number {
+            return (this.page - 1) * this.pageSize + i + 1;
         },
 
         formatScore: function(s: number): string {

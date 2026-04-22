@@ -152,15 +152,15 @@
             rankClass: function (i) {
                 var r = (this.page - 1) * this.pageSize + i + 1;
                 if (r === 1)
-                    return 'ppr-rank--gold';
+                    return 'gold';
                 if (r === 2)
-                    return 'ppr-rank--silver';
+                    return 'silver';
                 if (r === 3)
-                    return 'ppr-rank--bronze';
+                    return 'bronze';
                 return '';
             },
             getRank: function (i) {
-                return '#' + ((this.page - 1) * this.pageSize + i + 1);
+                return (this.page - 1) * this.pageSize + i + 1;
             },
             formatScore: function (s) {
                 return s.toLocaleString();
