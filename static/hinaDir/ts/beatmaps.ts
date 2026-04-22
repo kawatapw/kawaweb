@@ -131,21 +131,26 @@ new Vue({
         mirrors: [
             { key: 'hinai', name: 'Hinai', enabled: true },
             { key: 'osu_direct', name: 'osu!direct', enabled: true },
-            { key: 'osu_api_v1', name: 'osu! API v1', enabled: false },
-            { key: 'osu_api_v2', name: 'osu! API v2', enabled: false },
-            { key: 'catboy', name: 'catboy.best', enabled: false },
+            { key: 'nerinyan', name: 'Nerinyan', enabled: true },
         ] as MirrorOption[],
     },
     computed: {
-        // Whether to show pagination controls (Hinai mirror + online + multiple pages)
+        // Whether this mirror supports paginated fetch (Hinai + Nerinyan).
+        mirrorPaginated: function(): boolean {
+            var self = this as any;
+            return self.mirror === 'hinai' || self.mirror === 'nerinyan';
+        },
+        // Whether to show pagination controls
         showPagination: function(): boolean {
             var self = this as any;
-            return self.mirror === 'hinai' && self.hinaiOnline && self.totalPages > 1;
+            if (!self.mirrorPaginated) return false;
+            if (self.mirror === 'hinai' && !self.hinaiOnline) return false;
+            return self.totalPages > 1;
         },
         // Whether to show legacy load-more (osu.direct fallback)
         showLoadMore: function(): boolean {
             var self = this as any;
-            return self.mirror !== 'hinai' && self.sets.length > 0 && self.hasMore && !self.loading;
+            return self.mirror === 'osu_direct' && self.sets.length > 0 && self.hasMore && !self.loading;
         },
         // Hero track: original + clone for seamless CSS marquee loop
         heroTrack: function(): any[] {
@@ -217,6 +222,8 @@ new Vue({
             var base: string;
             if (self.mirror === 'osu_direct') {
                 base = 'https://osu.direct/api/d/' + setId;
+            } else if (self.mirror === 'nerinyan') {
+                base = 'https://api.nerinyan.moe/d/' + setId;
             } else {
                 base = self.downloadBase + '/' + setId;
             }
@@ -269,7 +276,7 @@ new Vue({
         fetchPage: function(page: number) {
             var self = this as any;
 
-            if (self.mirror !== 'hinai') {
+            if (self.mirror === 'osu_direct') {
                 // osu.direct: use legacy offset-based fetch
                 self.fetchLegacy(false);
                 return;
@@ -288,7 +295,7 @@ new Vue({
                 + '&status=' + statusParam
                 + '&page=' + page
                 + '&limit=' + self.perPage
-                + '&source=hinai';
+                + '&source=' + self.mirror;
 
             var xhr = new XMLHttpRequest();
             xhr.open('GET', url, true);
@@ -332,7 +339,7 @@ new Vue({
                         + '&status=' + statusParam
                         + '&page=' + (self.currentPage + 1)
                         + '&limit=' + self.perPage
-                        + '&source=hinai';
+                        + '&source=' + self.mirror;
                     fetch(nextUrl).catch(function() {}); // fire-and-forget prefetch
                 }
             };

@@ -22,6 +22,10 @@ HINAI_AUDIO = f'{HINAI_MIRROR}/v3/osu/music/audio'
 OSUDIRECT_SEARCH = 'https://osu.direct/api/v2/search'
 MIRROR_DOWNLOAD = f'{HINAI_MIRROR}/api/v1/hinai/d'
 
+# Nerinyan — third official mirror (partner of Hinai). Public API, no auth.
+NERINYAN_SEARCH = 'https://api.nerinyan.moe/search'
+NERINYAN_DOWNLOAD = 'https://api.nerinyan.moe/d'
+
 # Mirror is fully public — no auth headers needed.
 _MIRROR_HEADERS = {}
 
@@ -181,8 +185,65 @@ async def beatmaps_search():
 
     if source == 'hinai':
         return await _search_hinai_v2(query, mode, status, page, limit, sort)
+    elif source == 'nerinyan':
+        return await _search_nerinyan(query, mode, status, page, limit, sort)
     else:
         return await _search_osudirect(query, mode, status, amount, offset)
+
+
+async def _search_nerinyan(query, mode, status, page, limit, sort):
+    """Search via Nerinyan mirror (https://api.nerinyan.moe).
+
+    Nerinyan returns a raw array of osu! API v2 beatmapset objects. No
+    total_count header — pagination driven by array length vs limit.
+    """
+    # Nerinyan uses 1-indexed pages.
+    params: dict = {'ps': limit, 'p': max(1, page + 1)}
+    if query:
+        params['q'] = query
+    if mode >= 0:
+        params['m'] = mode
+    # Nerinyan status: comma-separated strings. -1/-99 => unspecified.
+    if status not in (-99, -1):
+        params['s'] = _STATUS_INT_TO_STR.get(status, 'ranked')
+    # Map Hinai sort keys to Nerinyan equivalents (approximate).
+    sort_map = {
+        'ranked_desc': 'ranked_desc',
+        'ranked_asc': 'ranked_asc',
+        'updated_desc': 'updated_desc',
+        'updated_asc': 'updated_asc',
+        'plays_desc': 'plays_desc',
+        'favourites_desc': 'favourites_desc',
+    }
+    if sort in sort_map:
+        params['sort'] = sort_map[sort]
+
+    try:
+        async with glob.http.get(NERINYAN_SEARCH, params=params, timeout=15) as resp:
+            if resp.status != 200:
+                klogging.log(f'Nerinyan search returned {resp.status}',
+                             klogging.Ansi.LYELLOW)
+                return jsonify({
+                    'status': 'error',
+                    'message': f'Nerinyan returned {resp.status}',
+                }), 502
+            data = await resp.json(content_type=None)
+            sets = data if isinstance(data, list) else []
+            has_more = len(sets) >= limit
+            return jsonify({
+                'status': 'success',
+                'sets': sets,
+                'total_count': len(sets),
+                'total_pages': page + 2 if has_more else page + 1,
+                'page': page,
+                'limit': limit,
+                'download_base': NERINYAN_DOWNLOAD,
+                'source': 'nerinyan',
+                'has_more': has_more,
+            })
+    except Exception as e:
+        klogging.log(f'Nerinyan search error: {e}', klogging.Ansi.LRED)
+        return jsonify({'status': 'error', 'message': str(e)}), 502
 
 
 async def _search_hinai_v2(query, mode, status, page, limit, sort):
