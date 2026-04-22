@@ -53,7 +53,7 @@
             mirrors: [
                 { key: 'hinai', name: 'Hinai', enabled: true },
                 { key: 'osu_direct', name: 'osu!direct', enabled: true },
-                { key: 'nerinyan', name: 'Nerinyan', enabled: true },
+                { key: 'nerinyan', name: 'NeriNyan', enabled: true },
             ],
         },
         computed: {
