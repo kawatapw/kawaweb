@@ -57,24 +57,16 @@
             ],
         },
         computed: {
-            // Whether this mirror supports paginated fetch (Hinai + Nerinyan).
-            mirrorPaginated: function () {
-                var self = this;
-                return self.mirror === 'hinai' || self.mirror === 'nerinyan';
-            },
-            // Whether to show pagination controls
+            // Only Hinai supports full paginated search (dedicated v2 endpoint
+            // with total_count + total_pages metadata). osu!direct and Nerinyan
+            // use the legacy offset/load-more flow.
             showPagination: function () {
                 var self = this;
-                if (!self.mirrorPaginated)
-                    return false;
-                if (self.mirror === 'hinai' && !self.hinaiOnline)
-                    return false;
-                return self.totalPages > 1;
+                return self.mirror === 'hinai' && self.hinaiOnline && self.totalPages > 1;
             },
-            // Whether to show legacy load-more (osu.direct fallback)
             showLoadMore: function () {
                 var self = this;
-                return self.mirror === 'osu_direct' && self.sets.length > 0 && self.hasMore && !self.loading;
+                return self.mirror !== 'hinai' && self.sets.length > 0 && self.hasMore && !self.loading;
             },
             // Hero track: original + clone for seamless CSS marquee loop
             heroTrack: function () {
@@ -194,8 +186,8 @@
             // ── Fetch (routes to pagination or legacy based on mirror) ──
             fetchPage: function (page) {
                 var self = this;
-                if (self.mirror === 'osu_direct') {
-                    // osu.direct: use legacy offset-based fetch
+                if (self.mirror !== 'hinai') {
+                    // osu.direct + Nerinyan: legacy offset-based load-more
                     self.fetchLegacy(false);
                     return;
                 }
@@ -274,7 +266,7 @@
                     + '&status=' + statusParam
                     + '&amount=30'
                     + '&offset=' + self.offset
-                    + '&source=osu_direct';
+                    + '&source=' + self.mirror;
                 var xhr = new XMLHttpRequest();
                 xhr.open('GET', url, true);
                 xhr.onreadystatechange = function () {

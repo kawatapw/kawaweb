@@ -135,22 +135,16 @@ new Vue({
         ] as MirrorOption[],
     },
     computed: {
-        // Whether this mirror supports paginated fetch (Hinai + Nerinyan).
-        mirrorPaginated: function(): boolean {
-            var self = this as any;
-            return self.mirror === 'hinai' || self.mirror === 'nerinyan';
-        },
-        // Whether to show pagination controls
+        // Only Hinai supports full paginated search (dedicated v2 endpoint
+        // with total_count + total_pages metadata). osu!direct and Nerinyan
+        // use the legacy offset/load-more flow.
         showPagination: function(): boolean {
             var self = this as any;
-            if (!self.mirrorPaginated) return false;
-            if (self.mirror === 'hinai' && !self.hinaiOnline) return false;
-            return self.totalPages > 1;
+            return self.mirror === 'hinai' && self.hinaiOnline && self.totalPages > 1;
         },
-        // Whether to show legacy load-more (osu.direct fallback)
         showLoadMore: function(): boolean {
             var self = this as any;
-            return self.mirror === 'osu_direct' && self.sets.length > 0 && self.hasMore && !self.loading;
+            return self.mirror !== 'hinai' && self.sets.length > 0 && self.hasMore && !self.loading;
         },
         // Hero track: original + clone for seamless CSS marquee loop
         heroTrack: function(): any[] {
@@ -276,8 +270,8 @@ new Vue({
         fetchPage: function(page: number) {
             var self = this as any;
 
-            if (self.mirror === 'osu_direct') {
-                // osu.direct: use legacy offset-based fetch
+            if (self.mirror !== 'hinai') {
+                // osu.direct + Nerinyan: legacy offset-based load-more
                 self.fetchLegacy(false);
                 return;
             }
@@ -366,7 +360,7 @@ new Vue({
                 + '&status=' + statusParam
                 + '&amount=30'
                 + '&offset=' + self.offset
-                + '&source=osu_direct';
+                + '&source=' + self.mirror;
 
             var xhr = new XMLHttpRequest();
             xhr.open('GET', url, true);
