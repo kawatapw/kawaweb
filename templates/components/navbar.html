@@ -33,6 +33,16 @@
                                 <a class="navbar-dropdown-item" href="/admin/badges">Badges</a>
                             </div>
                         </div>
+                        <div class="navbar-dropdown-item navbar-dropdown-item--has-submenu" tabindex="0">
+                            <span><i class="fas fa-flask"></i> hinaWIP</span>
+                            <i class="fas fa-chevron-right navbar-dropdown-submenu-chevron"></i>
+                            <div class="navbar-dropdown-submenu">
+                                <a class="navbar-dropdown-item" href="#">Score Hunt</a>
+                                <a class="navbar-dropdown-item" href="#">LDB</a>
+                                <a class="navbar-dropdown-item" href="#">Support</a>
+                                <a class="navbar-dropdown-item" href="#">Clan</a>
+                            </div>
+                        </div>
                         {% if session.authenticated and session.user_data['is_dev'] %}
                             <a class="navbar-dropdown-item" href="/admin/stuffbroke">Stuff Broke</a>
                         {% endif %}
@@ -375,6 +385,18 @@
                                         <a class="navbar-mobile-dropdown-item" href="/admin/users/1">Users</a>
                                         <a class="navbar-mobile-dropdown-item" href="/admin/beatmaps">Beatmap Requests</a>
                                         <a class="navbar-mobile-dropdown-item" href="/admin/badges">Badges</a>
+                                    </div>
+                                </div>
+                                <div class="navbar-mobile-dropdown-subgroup" :class="{ 'is-open': isMobileHinaWIPOpen }">
+                                    <button type="button" class="navbar-mobile-dropdown-subgroup-trigger" @click.stop.prevent="toggleMobileHinaWIP">
+                                        <span><i class="fas fa-flask"></i> hinaWIP</span>
+                                        <i class="fas fa-chevron-right navbar-mobile-dropdown-subgroup-chevron" :class="{ 'is-flipped': isMobileHinaWIPOpen }"></i>
+                                    </button>
+                                    <div class="navbar-mobile-dropdown-submenu">
+                                        <a class="navbar-mobile-dropdown-item" href="#">Score Hunt</a>
+                                        <a class="navbar-mobile-dropdown-item" href="#">LDB</a>
+                                        <a class="navbar-mobile-dropdown-item" href="#">Support</a>
+                                        <a class="navbar-mobile-dropdown-item" href="#">Clan</a>
                                     </div>
                                 </div>
                                 {% if session.authenticated and session.user_data['is_dev'] %}

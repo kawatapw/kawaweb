@@ -29,6 +29,7 @@ if (typeof Vue === 'undefined') {
                 searchBusListener: null,
                 isUserDropdownOpen: false,
                 isMobileLegacyAdminOpen: false,
+                isMobileHinaWIPOpen: false,
                 currentHue: 180,
                 _userDropdownClickHandler: null,
                 _userDropdownKeyHandler: null
@@ -345,6 +346,9 @@ if (typeof Vue === 'undefined') {
                 },
                 toggleMobileLegacyAdmin() {
                     this.isMobileLegacyAdminOpen = !this.isMobileLegacyAdminOpen;
+                },
+                toggleMobileHinaWIP() {
+                    this.isMobileHinaWIPOpen = !this.isMobileHinaWIPOpen;
                 },
                 showDocsPanel(doc, page) {
                     docsBus.$emit('show-docs-panel', doc || 'Rules', page || 'Main');
