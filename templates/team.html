@@ -8,22 +8,14 @@
 {% block content %}
 <div class="team-page">
 
-    <!-- ── Hero Header ────────────────────────────────────────────── -->
-    <header class="team-hero">
-        <div class="team-hero-bg"></div>
-        <div class="team-hero-content">
-            <h1 class="team-hero-title">
-                <i class="fas fa-shield-alt"></i> Staff Team
-            </h1>
-            <p class="team-hero-sub">
-                This is a list of the wonderful people who keep Kawata up
-                and running and deal with our amazing community.
-            </p>
-            <span class="team-hero-badge">
-                <i class="fas fa-users"></i> {{ total_staff }} member{{ 's' if total_staff != 1 }}
-            </span>
-        </div>
-    </header>
+    <!-- ── Dynamic hero banner ──────────────────────────────────────── -->
+    <div id="team-hero-app" v-cloak>
+        {% with ppr_title='<i class="fas fa-shield-alt"></i> Staff Team',
+                ppr_subtitle='This is a list of the wonderful people who keep Kawata up and running and deal with our amazing community.',
+                ppr_badge_html='<i class="fas fa-users"></i> ' ~ total_staff ~ (' member' if total_staff == 1 else ' members') %}
+            {% include 'components/hero_banner.html' %}
+        {% endwith %}
+    </div>
 
     <!-- ── Role Filter Pills ──────────────────────────────────────── -->
     {% if team_sections|length > 1 %}
@@ -165,6 +157,18 @@
 
 <script>
 (function() {
+    // Hero banner: minimal Vue instance scoped to #team-hero-app, pulls
+    // data from /v1/get_hero_banners via the shared HeroBannerMixin.
+    var el = document.getElementById('team-hero-app');
+    if (el && window.Vue && window.HeroBannerMixin) {
+        var appOpts = {
+            el: '#team-hero-app',
+            mixins: [window.HeroBannerMixin],
+            mounted: function() { this.fetchHero(); }
+        };
+        new window.Vue(appOpts);
+    }
+
     // ── Role filter pills ────────────────────────────────────────
     var pills = document.querySelectorAll('.team-pill');
     var sections = document.querySelectorAll('.team-section');

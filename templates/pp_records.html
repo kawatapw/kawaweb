@@ -117,124 +117,17 @@
     }
 }
 
-/* Hero banner (dynamic, from /v1/get_hero_banners) */
-.ppr-hero {
-    position: relative;
-    height: 180px;
-    margin: 0 0 18px 0;
-    border-radius: 12px;
-    overflow: hidden;
-    background-size: cover;
-    background-position: center;
-    background-color: hsla(var(--main), 15%, 20%, 1);
-    cursor: pointer;
-    transition: transform 0.25s ease, box-shadow 0.25s ease;
-    border: 1px solid hsla(var(--main), 25%, 35%, 0.4);
-}
-.ppr-hero:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 12px 32px hsla(var(--main), 50%, 18%, 0.55);
-}
-.ppr-hero-vignette {
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(
-        90deg,
-        hsla(var(--main), 20%, 10%, 0.92) 0%,
-        hsla(var(--main), 20%, 10%, 0.65) 50%,
-        hsla(var(--main), 20%, 10%, 0.15) 100%
-    );
-}
-.ppr-hero-label {
-    position: absolute;
-    left: 24px;
-    bottom: 22px;
-    right: 24px;
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    color: #fff;
-    z-index: 1;
-    pointer-events: none;
-}
-.ppr-hero-eyebrow {
-    font-size: 11px;
-    font-weight: 600;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: hsl(var(--main), 60%, 70%);
-}
-.ppr-hero-title {
-    font-size: 22px;
-    font-weight: 700;
-    line-height: 1.2;
-    max-width: 70%;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
-}
-.ppr-hero-artist {
-    font-size: 13px;
-    font-weight: 500;
-    color: hsl(var(--main), 15%, 85%);
-    max-width: 70%;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-.ppr-hero-meta {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    margin-top: 6px;
-    font-size: 12px;
-    color: hsl(var(--main), 15%, 80%);
-}
-.ppr-hero-meta i {
-    margin-right: 4px;
-    color: hsl(var(--main), 55%, 65%);
-}
-.ppr-hero-meta-sep {
-    opacity: 0.55;
-}
-@media (max-width: 600px) {
-    .ppr-hero {
-        height: 140px;
-    }
-    .ppr-hero-title {
-        font-size: 17px;
-        max-width: 90%;
-    }
-    .ppr-hero-artist {
-        font-size: 12px;
-        max-width: 90%;
-    }
-}
 </style>
 {% endblock %}
 
 {% block content %}
 <div id="pp-records-app" v-cloak>
 
-  <!-- Hero banner (dynamic, from /v1/get_hero_banners) -->
-  <div v-if="hero" class="ppr-hero" :style="{ backgroundImage: 'url(' + hero.cover_url + ')' }" @click="openHeroPanel">
-    <div class="ppr-hero-vignette"></div>
-    <div class="ppr-hero-label">
-      <span class="ppr-hero-eyebrow">Now trending</span>
-      <span class="ppr-hero-title" v-text="hero.title"></span>
-      <span class="ppr-hero-artist" v-text="hero.artist + ' — mapped by ' + hero.creator"></span>
-      <span class="ppr-hero-meta">
-        <i class="fas fa-play"></i>
-        <span v-text="hero.total_plays.toLocaleString() + ' plays'"></span>
-        <span v-if="hero.fav_count > 0" class="ppr-hero-meta-sep">·</span>
-        <span v-if="hero.fav_count > 0">
-          <i class="fas fa-heart"></i>
-          <span v-text="hero.fav_count"></span>
-        </span>
-      </span>
-    </div>
-  </div>
+  {% with ppr_title='<i class="fas fa-chart-line"></i> PP Records',
+          ppr_subtitle='Top plays across kawata, with detection flags surfaced for staff review.',
+          ppr_badge_html='<i class="fas fa-flag"></i> Staff view' if session.user_data.get('is_staff') else None %}
+    {% include 'components/hero_banner.html' %}
+  {% endwith %}
 
   <!-- Header -->
   <div class="ppr-header">

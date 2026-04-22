@@ -25,7 +25,7 @@
         @import url("/static/hinaDir/css/carousel.css") layer(components);
 
     /* Overrides (Hinamizawa) */
-        @import url("/static/hinaDir/compiled/hina_import.css?v=20260422a") layer(styles-override);
+        @import url("/static/hinaDir/compiled/hina_import.css?v=20260422b") layer(styles-override);
 
 /* === UNLAYERED OVERRIDES — highest cascade priority === */
 
