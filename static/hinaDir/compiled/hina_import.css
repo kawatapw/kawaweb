@@ -679,6 +679,108 @@
   color: hsl(0, 70%, 60%);
 }
 
+.navbar-dropdown-item--has-submenu {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  cursor: pointer;
+  user-select: none;
+}
+.navbar-dropdown-item--has-submenu:hover, .navbar-dropdown-item--has-submenu:focus, .navbar-dropdown-item--has-submenu:focus-within {
+  background: var(--navbar-bg-hover);
+  color: var(--navbar-accent);
+}
+.navbar-dropdown-item--has-submenu:hover > .navbar-dropdown-submenu, .navbar-dropdown-item--has-submenu:focus > .navbar-dropdown-submenu, .navbar-dropdown-item--has-submenu:focus-within > .navbar-dropdown-submenu {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(0);
+  pointer-events: auto;
+}
+.navbar-dropdown-item--has-submenu:hover > .navbar-dropdown-submenu-chevron, .navbar-dropdown-item--has-submenu:focus > .navbar-dropdown-submenu-chevron, .navbar-dropdown-item--has-submenu:focus-within > .navbar-dropdown-submenu-chevron {
+  transform: translateX(2px);
+  color: var(--navbar-accent);
+}
+
+.navbar-dropdown-submenu-chevron {
+  font-size: 0.7rem;
+  color: var(--navbar-text-muted);
+  transition: transform 0.2s ease, color 0.2s ease;
+  flex-shrink: 0;
+}
+
+.navbar-dropdown-submenu {
+  position: absolute;
+  top: -8px;
+  left: 100%;
+  min-width: 200px;
+  background: var(--navbar-bg);
+  border: 1px solid var(--navbar-border);
+  border-radius: var(--navbar-radius);
+  box-shadow: var(--navbar-shadow);
+  padding: 8px 0;
+  margin-left: 4px;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateX(-6px);
+  transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s ease;
+  z-index: 1002;
+  pointer-events: none;
+}
+
+.navbar-mobile-dropdown-subgroup {
+  display: flex;
+  flex-direction: column;
+}
+
+.navbar-mobile-dropdown-subgroup-trigger {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 16px 12px 48px;
+  background: none;
+  border: none;
+  color: var(--navbar-text);
+  font-weight: 500;
+  font-size: 0.711rem;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+.navbar-mobile-dropdown-subgroup-trigger:hover {
+  background: var(--navbar-bg-hover);
+  color: var(--navbar-accent);
+}
+
+.navbar-mobile-dropdown-subgroup-chevron {
+  width: auto;
+  margin-left: auto;
+  font-size: 0.75rem;
+  color: var(--navbar-text-muted);
+  transition: transform 0.25s ease;
+}
+.navbar-mobile-dropdown-subgroup-chevron.is-flipped {
+  transform: rotate(90deg);
+}
+
+.navbar-mobile-dropdown-submenu {
+  max-height: 0;
+  overflow: hidden;
+  background: hsl(var(--main), 8%, 14%);
+  transition: max-height 0.3s ease;
+}
+.navbar-mobile-dropdown-submenu .navbar-mobile-dropdown-item {
+  padding-left: 68px;
+}
+
+.navbar-mobile-dropdown-subgroup.is-open .navbar-mobile-dropdown-submenu {
+  max-height: 320px;
+  overflow-y: auto;
+}
+
 /*Mobile nav quick links*/
 html, body {
   overflow-x: hidden;
@@ -1483,3 +1585,5 @@ html, body {
   }
 }
 /* Admin V2 is now standalone — compiled separately as admin_v2.css */
+
+/*# sourceMappingURL=hina_import.css.map */
