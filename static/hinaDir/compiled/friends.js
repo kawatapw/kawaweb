@@ -3,8 +3,10 @@
     var domain = window.domain;
     var userId = window.userId;
     var timeago = window.timeago;
+    var HeroBannerMixin = window.HeroBannerMixin;
     new Vue({
         el: '#friends-app',
+        mixins: HeroBannerMixin ? [HeroBannerMixin] : [],
         data: {
             tab: 'mutuals',
             mutuals: [],
@@ -121,6 +123,8 @@
             },
         },
         created() {
+            if (typeof this.fetchHero === 'function')
+                this.fetchHero();
             this.loadAll();
             this.startPolling();
             var self = this;

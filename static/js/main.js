@@ -204,7 +204,9 @@ class KawataApp {
 
         const promise = new Promise((resolve, reject) => {
             const script = document.createElement('script');
-            script.src = url;
+            const ver = (document.currentScript && document.currentScript.src.match(/\?v=([^&]+)/)) ||
+                        (Array.from(document.querySelectorAll('script[src*="/static/js/main.js"]')).pop()?.src?.match(/\?v=([^&]+)/));
+            script.src = ver && ver[1] ? url + (url.includes('?') ? '&' : '?') + 'v=' + ver[1] : url;
             script.async = true;
 
             script.onload = () => {

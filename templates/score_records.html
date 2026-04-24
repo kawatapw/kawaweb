@@ -1,10 +1,9 @@
 {% extends 'base.html' %}
-{% block title %}PP Records{% endblock %}
+{% block title %}Score Records{% endblock %}
 
 {% block header %}
 <link rel="stylesheet" href="{{ bust('/static/hinaDir/compiled/pp_records.css') }}">
 <style>
-/* Season switcher — unlayered to beat Bulma */
 .ppr-season-switcher {
     display: flex;
     align-items: center;
@@ -43,8 +42,7 @@
     display: flex;
     gap: 6px;
 }
-.ppr-season-switcher select.ppr-season-select,
-.ppr-season-switcher .ppr-season-select {
+.ppr-season-switcher select.ppr-season-select {
     padding: 6px 28px 6px 10px;
     border-radius: 6px;
     font-size: 12px;
@@ -57,80 +55,25 @@
     outline: none;
     appearance: none;
     -webkit-appearance: none;
-    -moz-appearance: none;
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23777'/%3E%3C/svg%3E");
     background-repeat: no-repeat;
     background-position: right 8px center;
     background-size: 9px;
-    height: auto;
-    box-shadow: none;
-    line-height: 1.4;
-    margin: 0;
 }
-.ppr-season-switcher select.ppr-season-select option {
-    background: hsl(var(--main), 10%, 15%);
-    color: #ddd;
-}
-.ppr-season-switcher select.ppr-season-select:hover {
-    border-color: hsla(var(--main), 30%, 45%, 0.7);
-}
-.ppr-season-switcher select.ppr-season-select:focus {
-    border-color: hsl(var(--main), 50%, 50%);
-    box-shadow: 0 0 0 2px hsla(var(--main), 50%, 50%, 0.15);
-}
-.ppr-season-active {
-    font-size: 11px;
-    color: hsl(140, 55%, 55%);
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    font-weight: 500;
-}
-.ppr-season-dot {
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    background: hsl(140, 55%, 55%);
-    display: inline-block;
-    animation: ppr-pulse 2s ease-in-out infinite;
-}
-@keyframes ppr-pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.35; }
-}
-@media screen and (max-width: 600px) {
-    .ppr-season-switcher {
-        flex-direction: column;
-        align-items: stretch;
-    }
-    .ppr-season-pill {
-        text-align: center;
-        padding: 10px;
-    }
-    .ppr-season-dropdowns {
-        width: 100%;
-    }
-    .ppr-season-switcher select.ppr-season-select {
-        flex: 1;
-        padding: 10px 28px 10px 12px;
-        font-size: 13px;
-    }
-}
-
 </style>
 {% endblock %}
 
 {% block content %}
-<div id="pp-records-app" v-cloak>
+<div id="score-records-app" v-cloak>
 
-  {% with ppr_title='<i class="fas fa-chart-line"></i> PP Records',
-          ppr_subtitle='The highest-rated plays across the kawata community. Pick a mode, a season, and see who is on top.' %}
+  {% with ppr_title='<i class="fas fa-trophy"></i> Score Records',
+          ppr_subtitle='The biggest raw scores across kawata — vanilla and relax, season by season. Pure leaderboard, no filters.' %}
     {% include 'components/hero_banner.html' %}
   {% endwith %}
 
   <!-- Header -->
   <div class="ppr-header">
-    <h1 class="ppr-title">PP Records</h1>
+    <h1 class="ppr-title">Score Records</h1>
     <p class="ppr-subtitle" v-if="!loading && total > 0">
       <span v-text="total.toLocaleString()"></span> scores found
     </p>
@@ -162,58 +105,12 @@
         <option v-for="s in filteredSeasons" :key="'ps'+s.id" :value="s.id" v-text="s.label"></option>
       </select>
     </div>
-    <span class="ppr-season-active" v-if="activeSeason && selectedSeason === activeSeason.id">
-      <span class="ppr-season-dot"></span> Active
-    </span>
   </div>
 
-  <!-- Filter toggle -->
-  <button class="ppr-filter-toggle" :class="{ open: filtersOpen }" @click="toggleFilters">
-    <i class="fas fa-filter"></i>
-    <span>Detection Filters</span>
-    <i class="fas fa-chevron-down"></i>
-  </button>
-
-  <!-- Filter panel -->
-  <div class="ppr-filter-panel" :class="{ open: filtersOpen }">
-    <div class="ppr-filter-row">
-      <div class="ppr-filter-group">
-        <span class="ppr-filter-label">Detection Type</span>
-        <select class="ppr-filter-select" v-model="cheatType" @change="onCheatTypeChange">
-          <option value="">None (all scores)</option>
-          <option v-for="ct in cheatTypes" :key="ct.key" :value="ct.key" :disabled="ct.disabled" v-text="ct.label"></option>
-        </select>
-      </div>
-      <div class="ppr-filter-group" v-if="cheatType && isNumericCheat">
-        <span class="ppr-filter-label">Min Value</span>
-        <input class="ppr-filter-input" type="number" step="any" v-model="cheatMin" placeholder="0">
-      </div>
-      <div class="ppr-filter-group" v-if="cheatType && isNumericCheat">
-        <span class="ppr-filter-label">Max Value</span>
-        <input class="ppr-filter-input" type="number" step="any" v-model="cheatMax" placeholder="any">
-      </div>
-      <button class="ppr-filter-apply" v-if="cheatType && isNumericCheat" @click="applyFilter">Apply Range</button>
-      <button class="ppr-filter-clear" v-if="activeCheatType" @click="clearFilter">Clear</button>
-    </div>
-  </div>
-
-  <!-- Loading -->
-  <div v-if="loading" class="ppr-loading">
-    <i class="fas fa-spinner"></i>
-    Loading records...
-  </div>
-
-  <!-- Error -->
-  <div v-if="!loading && error" class="ppr-error">
-    <i class="fas fa-exclamation-triangle"></i>
-    <span v-text="error"></span>
-  </div>
-
-  <!-- Empty -->
-  <div v-if="!loading && !error && records.length === 0" class="ppr-empty">
-    <i class="fas fa-trophy" style="font-size:2rem;display:block;margin-bottom:12px;opacity:0.3"></i>
-    No scores found for this mode/filter.
-  </div>
+  <!-- Loading / error / empty -->
+  <div v-if="loading" class="ppr-loading"><div class="ppr-spinner"></div>Loading scores…</div>
+  <div v-else-if="error" class="ppr-error"><i class="fas fa-exclamation-triangle"></i><span v-text="error"></span></div>
+  <div v-else-if="records.length === 0" class="ppr-empty">No scores found for this mode.</div>
 
   <!-- Desktop table -->
   <div v-if="!loading && !error && records.length > 0" class="ppr-desktop">
@@ -223,13 +120,12 @@
           <th>#</th>
           <th>Player</th>
           <th>Beatmap</th>
-          <th>PP</th>
+          <th>Score</th>
           <th>Accuracy</th>
           <th>Combo</th>
           <th>Mods</th>
           <th>Grade</th>
           <th>Date</th>
-          <th v-if="activeCheatType">Detection</th>
         </tr>
       </thead>
       <tbody>
@@ -240,9 +136,7 @@
               <img class="ppr-flag"
                    :src="'/static/images/flags/' + r.player_country.toUpperCase() + '.png'"
                    :alt="r.player_country">
-              <a class="ppr-player-name"
-                 :href="'/u/' + r.player_id"
-                 v-text="r.player_name"></a>
+              <a class="ppr-player-name" :href="'/u/' + r.player_id" v-text="r.player_name"></a>
             </div>
           </td>
           <td>
@@ -257,15 +151,12 @@
               </div>
             </div>
           </td>
-          <td class="ppr-pp" v-text="formatPP(r.pp)"></td>
+          <td class="ppr-pp" v-text="formatScore(r.score)"></td>
           <td class="ppr-acc" v-text="formatAcc(r.acc)"></td>
           <td v-text="r.max_combo + 'x'"></td>
           <td class="ppr-mods" v-text="r.mods_readable || 'NM'"></td>
-          <td>
-            <img class="ppr-grade" :src="gradeUrl(r.grade)" :alt="r.grade">
-          </td>
+          <td><img class="ppr-grade" :src="gradeUrl(r.grade)" :alt="r.grade"></td>
           <td class="ppr-date" v-text="formatDate(r.play_time)"></td>
-          <td v-if="activeCheatType" class="ppr-cheat-val" v-text="cheatDisplay(r)"></td>
         </tr>
       </tbody>
     </table>
@@ -275,14 +166,11 @@
   <div v-if="!loading && !error && records.length > 0" class="ppr-mobile">
     <div v-for="(r, i) in records" :key="'m-' + r.id" class="ppr-card">
       <div class="ppr-card-rank" :class="rankClass(i)" v-text="getRank(i)"></div>
-      <img class="ppr-card-cover"
-           :src="coverUrl(r.set_id)"
-           @error="coverError($event)"
-           loading="lazy">
+      <img class="ppr-card-cover" :src="coverUrl(r.set_id)" @error="coverError($event)" loading="lazy">
       <div class="ppr-card-body">
         <div class="ppr-card-top">
           <span class="ppr-card-map" v-text="r.artist + ' - ' + r.title + ' [' + r.version + ']'"></span>
-          <span class="ppr-card-pp" v-text="formatPP(r.pp)"></span>
+          <span class="ppr-card-pp" v-text="formatScore(r.score)"></span>
         </div>
         <div class="ppr-card-details">
           <span class="ppr-card-player">
@@ -293,8 +181,6 @@
           <span v-text="formatAcc(r.acc)"></span>
           <span class="ppr-card-sep">|</span>
           <span v-text="r.mods_readable || 'NM'"></span>
-          <span v-if="activeCheatType" class="ppr-card-sep">|</span>
-          <span v-if="activeCheatType" class="ppr-cheat-val" v-text="cheatDisplay(r)"></span>
         </div>
       </div>
     </div>
@@ -302,18 +188,15 @@
 
   <!-- Pagination -->
   <div v-if="!loading && !error && total > pageSize" class="ppr-pagination">
-    <button class="ppr-page-btn" :disabled="page <= 1" @click="changePage(-1)">
-      <i class="fas fa-chevron-left"></i> Previous
+    <button class="ppr-page-btn" :disabled="page === 1" @click="goToPage(page - 1)">
+      <i class="fas fa-chevron-left"></i>
     </button>
-    <span class="ppr-page-info">
-      Page <span v-text="page"></span> of <span v-text="totalPages"></span>
-    </span>
-    <button class="ppr-page-btn" :disabled="page >= totalPages" @click="changePage(1)">
-      Next <i class="fas fa-chevron-right"></i>
+    <span class="ppr-page-info">Page <span v-text="page"></span> / <span v-text="totalPages"></span></span>
+    <button class="ppr-page-btn" :disabled="page >= totalPages" @click="goToPage(page + 1)">
+      <i class="fas fa-chevron-right"></i>
     </button>
   </div>
-
 </div>
 
-<script src="{{ bust('/static/hinaDir/compiled/pp_records.js') }}"></script>
+<script src="{{ bust('/static/hinaDir/compiled/score_records.js') }}"></script>
 {% endblock %}

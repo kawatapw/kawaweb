@@ -1,0 +1,89 @@
+{% extends 'base.html' %}
+{% block title %}Most Played{% endblock %}
+
+{% block header %}
+<link rel="stylesheet" href="{{ bust('/static/hinaDir/compiled/most_played.css') }}">
+{% endblock %}
+
+{% block content %}
+<div id="most-played-app" v-cloak>
+
+  {% with ppr_title='<i class="fas fa-fire"></i> Most Played',
+          ppr_subtitle='The 100 most-played maps on kawata for each game mode. Pure community signal — every play counted.' %}
+    {% include 'components/hero_banner.html' %}
+  {% endwith %}
+
+  <!-- Mode tabs -->
+  <div class="mp-mode-tabs">
+    <button v-for="m in modes" :key="'mode-' + m.value"
+            class="mp-mode-btn"
+            :class="{ active: mode === m.value }"
+            @click="switchMode(m.value)">
+      <span v-text="m.short"></span>
+    </button>
+  </div>
+
+  <!-- Loading state -->
+  <div v-if="loading" class="mp-loading">
+    <div class="mp-loading-spinner"></div>
+    <span>Loading most played maps…</span>
+  </div>
+
+  <!-- Error state -->
+  <div v-else-if="error" class="mp-error">
+    <i class="fas fa-exclamation-triangle"></i>
+    <span v-text="error"></span>
+  </div>
+
+  <!-- Empty state -->
+  <div v-else-if="maps.length === 0" class="mp-empty">
+    <i class="fas fa-ghost"></i>
+    <span>No plays yet for this mode.</span>
+  </div>
+
+  <!-- Ranked list -->
+  <ol v-else class="mp-list">
+    <li v-for="(map, idx) in maps" :key="'m-' + map.map_id"
+        class="mp-row"
+        :data-rank="idx + 1"
+        @click="openMap(map)">
+      <div class="mp-rank" v-text="idx + 1"></div>
+      <div class="mp-cover" :style="{ backgroundImage: 'url(' + map.thumbnail_url + ')' }"></div>
+      <div class="mp-info">
+        <div class="mp-title-row">
+          <span class="mp-title" v-text="map.title"></span>
+          <span class="mp-status-chip" :class="'mp-status-' + map.status" v-text="statusLabel(map.status)"></span>
+        </div>
+        <div class="mp-sub">
+          <span class="mp-artist" v-text="map.artist"></span>
+          <span class="mp-sep">·</span>
+          <span class="mp-version" v-text="'[' + map.version + ']'"></span>
+          <span class="mp-sep">·</span>
+          <span class="mp-creator">mapped by <span v-text="map.creator"></span></span>
+        </div>
+        <div class="mp-meta">
+          <span class="mp-meta-item" :title="'Star rating'">
+            <i class="fas fa-star"></i>
+            <span v-text="map.diff.toFixed(2)"></span>
+          </span>
+          <span class="mp-meta-item" :title="'BPM'">
+            <i class="fas fa-heartbeat"></i>
+            <span v-text="Math.round(map.bpm)"></span>
+          </span>
+          <span class="mp-meta-item" :title="'Length'">
+            <i class="fas fa-clock"></i>
+            <span v-text="formatLength(map.total_length)"></span>
+          </span>
+        </div>
+      </div>
+      <div class="mp-plays">
+        <i class="fas fa-play"></i>
+        <span v-text="formatPlays(map.plays)"></span>
+        <span class="mp-plays-label">plays</span>
+      </div>
+    </li>
+  </ol>
+</div>
+
+<script src="{{ bust('/static/hinaDir/compiled/most_played.js') }}"></script>
+{% endblock %}

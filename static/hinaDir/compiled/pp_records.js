@@ -1,8 +1,10 @@
 (function () {
     var Vue = window.Vue;
     var domain = window.domain;
+    var HeroBannerMixin = window.HeroBannerMixin;
     new Vue({
         el: '#pp-records-app',
+        mixins: HeroBannerMixin ? [HeroBannerMixin] : [],
         data: {
             mode: 0,
             records: [],
@@ -102,6 +104,7 @@
         },
         mounted: function () {
             var self = this;
+            this.fetchHero();
             this.fetchSeasons().then(function () {
                 self.loadRecords();
             });

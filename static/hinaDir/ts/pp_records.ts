@@ -34,8 +34,11 @@ interface CheatTypeOption {
     disabled: boolean;
 }
 
+var HeroBannerMixin = (window as any).HeroBannerMixin;
+
 new Vue({
     el: '#pp-records-app',
+    mixins: HeroBannerMixin ? [HeroBannerMixin] : [],
     data: {
         mode: 0,
         records: [] as PPRecord[],
@@ -135,6 +138,7 @@ new Vue({
     },
     mounted: function() {
         var self = this;
+        this.fetchHero();
         this.fetchSeasons().then(function() {
             self.loadRecords();
         });
