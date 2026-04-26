@@ -112,7 +112,7 @@ def _cheesegull_to_v2(cg: dict) -> dict:
 @hina_beatmaps.route('/beatmaps')
 async def beatmaps_page():
     if not session or 'authenticated' not in session:
-        return await flash('error', 'You must be logged in to access that page.', 'hinaDir/login')
+        return await flash('error', 'You must be logged in to access that page.', 'login')
     return await render_template('beatmaps.html', globalNotice=g.globalNotice)
 
 
