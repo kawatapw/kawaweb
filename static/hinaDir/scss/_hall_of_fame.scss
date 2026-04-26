@@ -114,7 +114,7 @@ $bronze-soft: hsl(28, 60%, 52%);
 
 .hof-mode-btn {
     flex: 1;
-    min-width: 76px;
+    min-width: 88px;
     padding: 8px 14px;
     background: transparent;
     border: none;
@@ -123,7 +123,6 @@ $bronze-soft: hsl(28, 60%, 52%);
     font-size: 12px;
     font-weight: 600;
     letter-spacing: 0.03em;
-    text-transform: lowercase;
     cursor: pointer;
     transition: background 180ms ease, color 180ms ease, transform 180ms ease;
 
