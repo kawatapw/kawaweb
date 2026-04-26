@@ -1,6 +1,7 @@
 #Hina
 CLAUDE.md
 hina_import.css.map
+static/hinaDir/compiled/*.css.map
 static/css/scss/*.css
 static/css/scss/*.css.map
 node_modules/
@@ -147,7 +148,6 @@ cython_debug/
 
 # uv
 uv.lock
-.venv/
 
 # Project specific
 .vscode/

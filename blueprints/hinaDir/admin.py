@@ -295,20 +295,13 @@ async def api_dashboard():
     action_placeholders = ', '.join(['%s'] * len(_STAFF_ACTION_WHITELIST))
     whitelist = list(_STAFF_ACTION_WHITELIST)
     raw_actions = await glob.db.fetchall(
-        'SELECT * FROM ('
-        '  SELECT CAST(l.id AS CHAR) AS id, '
-        '    CONVERT(l.action USING utf8mb4) AS action, '
-        '    CONVERT(l.msg USING utf8mb4) AS msg, '
-        '    l.created_at AS time, l.from_id AS mod_id, l.to_id AS target_id '
-        f'  FROM logs l WHERE l.action IN ({action_placeholders}) '
-        '  UNION ALL '
-        '  SELECT CAST(l.id AS CHAR) AS id, '
-        '    CONVERT(l.action USING utf8mb4) AS action, '
-        '    CONVERT(l.msg USING utf8mb4) AS msg, '
-        '    l.created_at AS time, l.from_id AS mod_id, l.to_id AS target_id '
-        f'  FROM logs l WHERE l.action IN ({action_placeholders}) '
-        ') combined ORDER BY time DESC LIMIT 10',
-        whitelist + whitelist
+        'SELECT CAST(l.id AS CHAR) AS id, '
+        '  CONVERT(l.action USING utf8mb4) AS action, '
+        '  CONVERT(l.msg USING utf8mb4) AS msg, '
+        '  l.created_at AS time, l.from_id AS mod_id, l.to_id AS target_id '
+        f'FROM logs l WHERE l.action IN ({action_placeholders}) '
+        'ORDER BY time DESC LIMIT 10',
+        whitelist
     )
 
     recent_actions = []
@@ -895,7 +888,8 @@ async def action_silence():
         return jsonify({'status': 'error', 'message': 'User not found.'}), 404
     if user['priv'] and not ComparePrivs(mod_priv, user['priv']):  # ty:ignore[invalid-argument-type]
         return jsonify({'status': 'error', 'message': 'Cannot modify users with privileges you do not possess.'}), 403
-    if user['silence_end'] != 0:  # ty:ignore[invalid-argument-type]
+    now_ts = int(datetime.datetime.now().timestamp())
+    if user['silence_end'] and user['silence_end'] > now_ts:  # ty:ignore[invalid-argument-type]
         return jsonify({'status': 'error', 'message': 'User is already silenced.'}), 400
 
     silence_end = int(datetime.datetime.now().timestamp()) + duration_hours * 3600
@@ -1981,6 +1975,9 @@ async def api_bm_assign(item_id):
 @staff_required
 async def api_bm_checklist(item_id):
     data = await request.get_json()
+    if not isinstance(data, dict):
+        return jsonify({'status': 'error', 'message': 'Request body must be a JSON object.'}), 400
+
     item = await glob.db.fetch("SELECT checklist FROM beatmap_work_items WHERE id = %s", [item_id])
     if not item:
         return jsonify({'status': 'error', 'message': 'Work item not found.'}), 404

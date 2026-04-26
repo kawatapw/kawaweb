@@ -109,6 +109,9 @@ if (typeof Vue === 'undefined') {
                 },
                 closeMobileMenu() {
                     this.isMobileMenuOpen = false;
+                    // Reset submenu state so toggles don't persist across opens.
+                    this.isMobileLegacyAdminOpen = false;
+                    this.isMobileHinaWIPOpen = false;
                     this.resetSearch();
                 },
                 startAnimation() {

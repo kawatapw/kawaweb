@@ -22,7 +22,9 @@
             ],
         },
         mounted: function () {
-            this.fetchHero();
+            if (typeof this.fetchHero === 'function') {
+                this.fetchHero();
+            }
             this.loadMaps();
         },
         methods: {

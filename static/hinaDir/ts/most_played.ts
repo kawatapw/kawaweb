@@ -49,7 +49,9 @@ new Vue({
         ],
     },
     mounted: function() {
-        this.fetchHero();
+        if (typeof (this as any).fetchHero === 'function') {
+            (this as any).fetchHero();
+        }
         this.loadMaps();
     },
     methods: {

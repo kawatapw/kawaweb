@@ -687,7 +687,7 @@ async def profile_select(id):
 @frontend.route('/lb/<mode>/<sort>/<mods>/<view>')
 @frontend.route('/lb/<mode>/<sort>/<mods>/<view>/<season>')
 @error_catcher
-async def leaderboard(mode='std', sort='pp', mods='vn', view='alltime', season='0'):
+async def leaderboard(mode='std', sort='pp', mods='vn', view='seasonal', season='0'):
     if g.isDevEnv:
         return await render_template('leaderboard.html', mode=mode, sort=sort, mods=mods, view=view, season=season, globalNotice=g.globalNotice,
                                    flash=f"This Website is the Dev Environment. Please play on <a href='https://{glob.config.official_domain}'>our Official Server</a>", status="success")

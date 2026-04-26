@@ -11,5 +11,6 @@ export QUART_ENV=development
 export QUART_DEBUG=0
 # Python for Dev
 # Hypercorn for Prod
-uv run python main.py
-#hypercorn main.py
+# `exec` so Python becomes PID 1 and receives SIGTERM directly on stop.
+exec uv run python main.py
+#exec hypercorn main.py

@@ -12,8 +12,8 @@ RUN apt update && apt install --no-install-recommends -y \
     nginx \
     && rm -rf /var/lib/apt/lists/* 
 
-# Install uv
-RUN pip install --no-cache-dir uv
+# Install uv. Pin to match uv.lock generation so builds stay reproducible.
+RUN pip install --no-cache-dir uv==0.4.30
 
 # Copy pyproject.toml and uv.lock for better layer caching
 COPY pyproject.toml ./
