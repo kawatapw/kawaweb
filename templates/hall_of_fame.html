@@ -1,0 +1,226 @@
+{% extends 'base.html' %}
+{% block title %}Hall of Fame{% endblock %}
+
+{% block header %}
+<link rel="stylesheet" href="{{ bust('/static/hinaDir/compiled/hall_of_fame.css') }}">
+{% endblock %}
+
+{% block content %}
+<div id="hall-of-fame-app" v-cloak class="hof-page" :class="{ 'hof--switching': switching }">
+
+  <!-- Header -->
+  <header class="hof-header">
+    <h1 class="hof-title">
+      <i class="fas fa-trophy"></i>
+      <span>Hall of Fame</span>
+    </h1>
+    <p class="hof-tagline">All-time legends &mdash; where the best come to rest.</p>
+  </header>
+
+  <!-- Mode tabs -->
+  <nav class="hof-mode-tabs">
+    <button v-for="m in modes" :key="'mode-' + m.value"
+            class="hof-mode-btn"
+            :class="{ active: mode === m.value }"
+            @click="switchMode(m.value)">
+      <span v-text="m.short"></span>
+    </button>
+  </nav>
+
+  <!-- Sort + country row -->
+  <div class="hof-controls">
+    <div class="hof-sort-tabs" role="tablist">
+      <button v-for="s in sorts" :key="'sort-' + s.value"
+              class="hof-sort-btn"
+              :class="{ active: sort === s.value }"
+              role="tab"
+              @click="switchSort(s.value)">
+        <i :class="s.icon"></i>
+        <span v-text="s.label"></span>
+      </button>
+    </div>
+    <label class="hof-country-wrap">
+      <i class="fas fa-globe-asia hof-country-icon"></i>
+      <select class="hof-country" v-model="country" @change="reload">
+        <option value="">Global</option>
+        <option v-for="c in countries" :key="c.code" :value="c.code" v-text="c.name"></option>
+      </select>
+      <i class="fas fa-chevron-down hof-country-chevron"></i>
+    </label>
+  </div>
+
+  <!-- HERO PODIUM STAGE -->
+  <section class="hof-stage" :class="{ 'hof-stage--shrunk': scrolled }">
+    <div class="hof-stage-spotlight"></div>
+
+    <!-- skeleton podium -->
+    <div v-if="loading" class="hof-podium hof-podium--skeleton">
+      <div class="hof-sk-card hof-sk-card--silver">
+        <span class="hof-sk-bar hof-sk-rank"></span>
+        <span class="hof-sk-bar hof-sk-avatar hof-sk-avatar--side"></span>
+        <span class="hof-sk-bar hof-sk-name"></span>
+        <span class="hof-sk-bar hof-sk-pp"></span>
+        <span class="hof-sk-bar hof-sk-meta"></span>
+      </div>
+      <div class="hof-sk-card hof-sk-card--gold">
+        <span class="hof-sk-bar hof-sk-rank"></span>
+        <span class="hof-sk-bar hof-sk-avatar hof-sk-avatar--gold"></span>
+        <span class="hof-sk-bar hof-sk-name hof-sk-name--gold"></span>
+        <span class="hof-sk-bar hof-sk-pp hof-sk-pp--gold"></span>
+        <span class="hof-sk-bar hof-sk-meta"></span>
+      </div>
+      <div class="hof-sk-card hof-sk-card--bronze">
+        <span class="hof-sk-bar hof-sk-rank"></span>
+        <span class="hof-sk-bar hof-sk-avatar hof-sk-avatar--side"></span>
+        <span class="hof-sk-bar hof-sk-name"></span>
+        <span class="hof-sk-bar hof-sk-pp"></span>
+        <span class="hof-sk-bar hof-sk-meta"></span>
+      </div>
+    </div>
+
+    <!-- error -->
+    <div v-else-if="error" class="hof-error">
+      <i class="fas fa-exclamation-triangle"></i>
+      <span v-text="error"></span>
+    </div>
+
+    <!-- empty -->
+    <div v-else-if="podium.length === 0" class="hof-empty">
+      <i class="fas fa-ghost"></i>
+      <span>The pedestal is bare. Be the first to claim a place.</span>
+    </div>
+
+    <!-- real podium -->
+    <div v-else class="hof-podium">
+      <a v-for="(p, i) in podium"
+         :key="'p-' + mode + '-' + sort + '-' + (country || 'global') + '-' + p.player_id"
+         :href="'/u/' + p.player_id"
+         class="hof-podium-card"
+         :class="['hof-podium-card--' + tierFor(i)]"
+         :data-rank="i + 1"
+         :style="{ animationDelay: tierDelay(i) }">
+
+        <span class="hof-card-rank-numeral" v-text="i + 1"></span>
+
+        <span v-if="i === 0" class="hof-card-laurel hof-card-laurel--left"><i class="fas fa-leaf"></i></span>
+        <span v-if="i === 0" class="hof-card-laurel hof-card-laurel--right"><i class="fas fa-leaf"></i></span>
+        <span v-if="i === 0" class="hof-card-crown"><i class="fas fa-crown"></i></span>
+
+        <div class="hof-card-avatar-wrap">
+          <span class="hof-card-avatar-ring"></span>
+          <span class="hof-card-avatar-glow"></span>
+          <img class="hof-card-avatar" :src="p.avatar_url" :alt="p.name" loading="lazy">
+        </div>
+
+        <div class="hof-card-name-row">
+          <img class="hof-card-flag" loading="lazy"
+               :src="'/static/images/flags/' + (p.country || 'xx').toUpperCase() + '.png'"
+               :title="(p.country || '').toUpperCase()" :alt="(p.country || '').toUpperCase()">
+          <span class="hof-card-name" v-text="p.name"></span>
+        </div>
+
+        <div v-if="p.clan_tag" class="hof-card-clan">
+          <i class="fas fa-shield-alt"></i>
+          <span v-text="'[' + p.clan_tag + ']'"></span>
+        </div>
+
+        <div class="hof-card-stat-primary">
+          <span class="hof-card-stat-value" v-text="primaryStat(p)"></span>
+          <span class="hof-card-stat-label" v-text="primaryLabel"></span>
+        </div>
+
+        <div class="hof-card-stat-secondary">
+          <span class="hof-card-mini">
+            <i class="fas fa-bullseye"></i>
+            <span v-text="p.acc.toFixed(2) + '%'"></span>
+          </span>
+          <span class="hof-card-sep">&middot;</span>
+          <span class="hof-card-mini">
+            <i class="fas fa-play"></i>
+            <span v-text="formatBig(p.plays)"></span>
+          </span>
+        </div>
+
+        <div v-if="i === 0 && hasGrades(p)" class="hof-card-grades">
+          <span v-if="p.xh_count > 0" class="hof-grade hof-grade--xh" :title="p.xh_count + ' SS+'">
+            <span v-text="p.xh_count"></span>
+          </span>
+          <span v-if="p.x_count > 0" class="hof-grade hof-grade--x" :title="p.x_count + ' SS'">
+            <span v-text="p.x_count"></span>
+          </span>
+          <span v-if="p.sh_count > 0" class="hof-grade hof-grade--sh" :title="p.sh_count + ' S+'">
+            <span v-text="p.sh_count"></span>
+          </span>
+          <span v-if="p.s_count > 0" class="hof-grade hof-grade--s" :title="p.s_count + ' S'">
+            <span v-text="p.s_count"></span>
+          </span>
+        </div>
+
+        <div v-if="p.badges && p.badges.length" class="hof-card-badges">
+          <span v-for="b in p.badges.slice(0, 4)" :key="'b-' + p.player_id + '-' + b.id"
+                class="hof-card-badge"
+                :title="b.name + ' &mdash; ' + b.description">
+            <i :class="(b.styles && (b.styles.icon || b.styles.fa_icon)) ? (b.styles.icon || b.styles.fa_icon) : 'fas fa-medal'"></i>
+          </span>
+        </div>
+
+        <span class="hof-card-sparkle"></span>
+      </a>
+    </div>
+
+    <div class="hof-stage-plinth"></div>
+  </section>
+
+  <!-- Section divider for the list -->
+  <div class="hof-list-divider">
+    <span>The Honor Roll</span>
+  </div>
+
+  <!-- LIST: ranks #4 .. #50 -->
+  <section class="hof-list-wrap">
+
+    <!-- skeleton list -->
+    <ol v-if="loading" class="hof-list hof-list--skeleton">
+      <li v-for="n in 12" :key="'sk-row-' + n" class="hof-row hof-row--skeleton">
+        <span class="hof-sk-bar hof-sk-row-rank"></span>
+        <span class="hof-sk-bar hof-sk-row-flag"></span>
+        <span class="hof-sk-bar hof-sk-row-name"></span>
+        <span class="hof-sk-bar hof-sk-row-stat"></span>
+        <span class="hof-sk-bar hof-sk-row-acc"></span>
+        <span class="hof-sk-bar hof-sk-row-plays"></span>
+      </li>
+    </ol>
+
+    <!-- empty -->
+    <div v-else-if="!error && list.length === 0" class="hof-empty hof-empty--list">
+      <i class="fas fa-feather"></i>
+      <span>No ranked players past the podium yet.</span>
+    </div>
+
+    <!-- real list -->
+    <ol v-else class="hof-list">
+      <li v-for="(p, i) in list" :key="'r-' + p.player_id"
+          class="hof-row"
+          :data-rank="i + 4"
+          :style="{ animationDelay: (i * 30) + 'ms' }">
+        <a :href="'/u/' + p.player_id" class="hof-row-link">
+          <span class="hof-row-rank" v-text="'#' + (i + 4)"></span>
+          <img class="hof-row-flag" loading="lazy"
+               :src="'/static/images/flags/' + (p.country || 'xx').toUpperCase() + '.png'"
+               :title="(p.country || '').toUpperCase()" :alt="(p.country || '').toUpperCase()">
+          <span class="hof-row-name">
+            <span class="hof-row-username" v-text="p.name"></span>
+            <span v-if="p.clan_tag" class="hof-row-clan" v-text="'[' + p.clan_tag + ']'"></span>
+          </span>
+          <span class="hof-row-stat" v-text="primaryStat(p)"></span>
+          <span class="hof-row-acc" v-text="p.acc.toFixed(2) + '%'"></span>
+          <span class="hof-row-plays" v-text="formatBig(p.plays)"></span>
+          <i class="fas fa-chevron-right hof-row-chev"></i>
+        </a>
+      </li>
+    </ol>
+  </section>
+</div>
+
+<script src="{{ bust('/static/hinaDir/compiled/hall_of_fame.js') }}"></script>
+{% endblock %}
