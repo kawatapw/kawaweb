@@ -125,6 +125,10 @@
                     if (self.schedules.length > 0) {
                         self.selectedSchedule = self.schedules[0].id;
                     }
+                    // Default to current season (was 0 = All Time before).
+                    if (self.activeSeason && (self.selectedSeason == null || self.selectedSeason === 0)) {
+                        self.selectedSeason = self.activeSeason.id;
+                    }
                     var now = new Date().getFullYear();
                     self.selectedYear = now;
                 })

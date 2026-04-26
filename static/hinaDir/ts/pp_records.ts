@@ -310,6 +310,10 @@ new Vue({
                         if (self.activeSeason && self.schedules.some(function(sc: any) { return sc.id === self.activeSeason.schedule_id; })) {
                             self.selectedSchedule = self.activeSeason.schedule_id;
                         }
+                        // Default to current season (was 0 = All Time before).
+                        if (self.activeSeason && (self.selectedSeason == null || self.selectedSeason === 0)) {
+                            self.selectedSeason = self.activeSeason.id;
+                        }
                         if (self.yearOptions.length > 0) {
                             self.selectedYear = self.yearOptions[0];
                         }
