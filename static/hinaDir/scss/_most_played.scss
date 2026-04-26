@@ -88,6 +88,52 @@
     opacity: 0.6;
 }
 
+// ── Skeleton (loading state) ─────────────────────────────────────
+@keyframes mp-skeleton-shimmer {
+    0%   { background-position: -150% 0; }
+    100% { background-position: 250% 0; }
+}
+
+.mp-skeleton-wrap {
+    pointer-events: none;
+    user-select: none;
+}
+
+.mp-skeleton-bar {
+    display: inline-block;
+    height: 14px;
+    border-radius: 4px;
+    background: linear-gradient(
+        90deg,
+        hsla(var(--main), 18%, 18%, 0.55) 0%,
+        hsla(var(--main), 18%, 30%, 0.85) 45%,
+        hsla(var(--main), 18%, 18%, 0.55) 100%
+    );
+    background-size: 200% 100%;
+    animation: mp-skeleton-shimmer 1.6s ease-in-out infinite;
+    vertical-align: middle;
+}
+
+.mp-skeleton-row {
+    cursor: default;
+
+    &:hover {
+        background: hsla(var(--main), 18%, 16%, 0.72);
+        border-color: hsla(var(--main), 25%, 28%, 0.35);
+        transform: none;
+    }
+}
+
+.mp-sk-rank  { width: 28px; height: 22px; }
+.mp-sk-cover { width: 96px; height: 96px; border-radius: 6px; }
+
+.mp-sk-title { width: 60%; height: 16px; max-width: 320px; }
+.mp-sk-chip  { width: 70px; height: 18px; border-radius: 6px; flex-shrink: 0; }
+.mp-sk-sub   { width: 80%; height: 12px; max-width: 380px; }
+.mp-sk-meta  { width: 56px; height: 12px; }
+
+.mp-sk-plays { width: 70px; height: 16px; }
+
 // ── List ──────────────────────────────────────────────────────────
 .mp-list {
     list-style: none;

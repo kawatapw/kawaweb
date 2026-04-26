@@ -23,11 +23,30 @@
     </button>
   </div>
 
-  <!-- Loading state -->
-  <div v-if="loading" class="mp-loading">
-    <div class="mp-loading-spinner"></div>
-    <span>Loading most played maps…</span>
-  </div>
+  <!-- Skeleton state -->
+  <ol v-if="loading" class="mp-list mp-skeleton-wrap">
+    <li v-for="n in 10" :key="'sk-' + n" class="mp-row mp-skeleton-row">
+      <div class="mp-rank"><span class="mp-skeleton-bar mp-sk-rank"></span></div>
+      <span class="mp-skeleton-bar mp-sk-cover"></span>
+      <div class="mp-info">
+        <div class="mp-title-row">
+          <span class="mp-skeleton-bar mp-sk-title"></span>
+          <span class="mp-skeleton-bar mp-sk-chip"></span>
+        </div>
+        <div class="mp-sub">
+          <span class="mp-skeleton-bar mp-sk-sub"></span>
+        </div>
+        <div class="mp-meta">
+          <span class="mp-skeleton-bar mp-sk-meta"></span>
+          <span class="mp-skeleton-bar mp-sk-meta"></span>
+          <span class="mp-skeleton-bar mp-sk-meta"></span>
+        </div>
+      </div>
+      <div class="mp-plays">
+        <span class="mp-skeleton-bar mp-sk-plays"></span>
+      </div>
+    </li>
+  </ol>
 
   <!-- Error state -->
   <div v-else-if="error" class="mp-error">

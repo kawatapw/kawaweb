@@ -232,6 +232,62 @@ $medal-bronze: #CD7F32;
   color: #ff6b6b;
 }
 
+// ── Skeleton (loading state) ──
+
+@keyframes ppr-skeleton-shimmer {
+  0%   { background-position: -150% 0; }
+  100% { background-position: 250% 0; }
+}
+
+.ppr-skeleton-wrap {
+  pointer-events: none;
+  user-select: none;
+}
+
+.ppr-skeleton-bar {
+  display: inline-block;
+  height: 14px;
+  width: 100%;
+  border-radius: 4px;
+  background: linear-gradient(
+    90deg,
+    hsla(var(--main), 12%, 22%, 0.55) 0%,
+    hsla(var(--main), 12%, 34%, 0.85) 45%,
+    hsla(var(--main), 12%, 22%, 0.55) 100%
+  );
+  background-size: 200% 100%;
+  animation: ppr-skeleton-shimmer 1.6s ease-in-out infinite;
+  vertical-align: middle;
+}
+
+.ppr-skeleton-row td {
+  padding: 12px 12px;
+}
+
+.ppr-sk-rank      { width: 22px; height: 14px; }
+.ppr-sk-flag      { width: 18px; height: 12px; }
+.ppr-sk-player    { width: 110px; height: 14px; }
+.ppr-sk-cover     { width: 40px; height: 40px; border-radius: 4px; flex-shrink: 0; }
+.ppr-sk-map-title { width: 200px; height: 14px; display: block; margin-bottom: 6px; }
+.ppr-sk-map-diff  { width: 130px; height: 11px; display: block; }
+.ppr-sk-pp        { width: 54px; height: 14px; }
+.ppr-sk-acc       { width: 50px; height: 14px; }
+.ppr-sk-combo     { width: 46px; height: 14px; }
+.ppr-sk-mods      { width: 42px; height: 14px; }
+.ppr-sk-grade     { width: 24px; height: 24px; border-radius: 50%; }
+.ppr-sk-date      { width: 80px; height: 14px; }
+
+.ppr-skeleton-card {
+  cursor: default;
+  &:hover { background: inherit; transform: none; }
+}
+
+.ppr-sk-mob-rank   { width: 28px; height: 18px; }
+.ppr-sk-mob-cover  { width: 56px; height: 56px; border-radius: 6px; flex-shrink: 0; }
+.ppr-sk-mob-map    { flex: 1; min-width: 0; height: 14px; max-width: 70%; }
+.ppr-sk-mob-pp     { width: 56px; height: 14px; }
+.ppr-sk-mob-detail { width: 90%; height: 11px; display: block; }
+
 // ── Desktop table ──
 
 .ppr-desktop {

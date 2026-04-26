@@ -107,8 +107,68 @@
     </div>
   </div>
 
-  <!-- Loading / error / empty -->
-  <div v-if="loading" class="ppr-loading"><div class="ppr-spinner"></div>Loading scores…</div>
+  <!-- Skeleton: desktop -->
+  <div v-if="loading" class="ppr-desktop ppr-skeleton-wrap">
+    <table class="ppr-table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Player</th>
+          <th>Beatmap</th>
+          <th>Score</th>
+          <th>Accuracy</th>
+          <th>Combo</th>
+          <th>Mods</th>
+          <th>Grade</th>
+          <th>Date</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr v-for="n in 10" :key="'sk-' + n" class="ppr-skeleton-row">
+          <td><span class="ppr-skeleton-bar ppr-sk-rank"></span></td>
+          <td>
+            <div class="ppr-player-cell">
+              <span class="ppr-skeleton-bar ppr-sk-flag"></span>
+              <span class="ppr-skeleton-bar ppr-sk-player"></span>
+            </div>
+          </td>
+          <td>
+            <div class="ppr-beatmap-cell">
+              <span class="ppr-skeleton-bar ppr-sk-cover"></span>
+              <div class="ppr-map-info">
+                <span class="ppr-skeleton-bar ppr-sk-map-title"></span>
+                <span class="ppr-skeleton-bar ppr-sk-map-diff"></span>
+              </div>
+            </div>
+          </td>
+          <td><span class="ppr-skeleton-bar ppr-sk-pp"></span></td>
+          <td><span class="ppr-skeleton-bar ppr-sk-acc"></span></td>
+          <td><span class="ppr-skeleton-bar ppr-sk-combo"></span></td>
+          <td><span class="ppr-skeleton-bar ppr-sk-mods"></span></td>
+          <td><span class="ppr-skeleton-bar ppr-sk-grade"></span></td>
+          <td><span class="ppr-skeleton-bar ppr-sk-date"></span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Skeleton: mobile -->
+  <div v-if="loading" class="ppr-mobile ppr-skeleton-wrap">
+    <div v-for="n in 6" :key="'mk-' + n" class="ppr-card ppr-skeleton-card">
+      <div class="ppr-card-rank"><span class="ppr-skeleton-bar ppr-sk-mob-rank"></span></div>
+      <span class="ppr-skeleton-bar ppr-sk-mob-cover"></span>
+      <div class="ppr-card-body">
+        <div class="ppr-card-top">
+          <span class="ppr-skeleton-bar ppr-sk-mob-map"></span>
+          <span class="ppr-skeleton-bar ppr-sk-mob-pp"></span>
+        </div>
+        <div class="ppr-card-details">
+          <span class="ppr-skeleton-bar ppr-sk-mob-detail"></span>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <div v-else-if="error" class="ppr-error"><i class="fas fa-exclamation-triangle"></i><span v-text="error"></span></div>
   <div v-else-if="records.length === 0" class="ppr-empty">No scores found for this mode.</div>
 
