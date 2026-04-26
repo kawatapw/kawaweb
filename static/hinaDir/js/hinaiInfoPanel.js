@@ -143,11 +143,15 @@
                     self.detailError = 'No beatmapset ID.';
                     return;
                 }
-                var url = DETAIL + self.infoSet.id;
+                // Capture the requested set id; if the user switches modal mid-flight,
+                // ignore the stale response so we don't clobber the active set.
+                var requestedId = self.infoSet.id;
+                var url = DETAIL + requestedId;
                 fetch(url).then(function (r) {
                     if (!r.ok) throw new Error('HTTP ' + r.status);
                     return r.json();
                 }).then(function (data) {
+                    if (!self.infoSet || self.infoSet.id !== requestedId) return;
                     // The response has a `beatmapset` wrapper or is the beatmapset itself
                     var bs = data.beatmapset || data;
                     // Merge enriched data into infoSet via Vue.set for reactivity
@@ -162,6 +166,7 @@
                     }
                     self.detailState = 'ready';
                 }).catch(function (e) {
+                    if (!self.infoSet || self.infoSet.id !== requestedId) return;
                     self.detailState = 'error';
                     self.detailError = e.message || 'Failed to load details.';
                 });
@@ -292,6 +297,12 @@
                 self.ppTableLoading = true;
                 self.ppTableError = '';
 
+                // Token captures the (set, mods) tuple this request was launched for.
+                // If the user switches set or toggles mods before the Promise.all
+                // resolves, the response is dropped — prevents clobbering newer state.
+                var requestToken = (self.infoSet.id || 0) + ':' + self.ppTableMods;
+                self._ppRequestToken = requestToken;
+
                 var diffs = self.infoSet.beatmaps;
                 var promises = [];
                 var mapping = [];
@@ -307,6 +318,7 @@
                 }
 
                 Promise.all(promises).then(function (results) {
+                    if (self._ppRequestToken !== requestToken) return;
                     var data = {};
                     for (var k = 0; k < results.length; k++) {
                         var m = mapping[k];
@@ -328,6 +340,7 @@
                     self.ppTableLoading = false;
                     self.ppTableError = '';
                 }).catch(function () {
+                    if (self._ppRequestToken !== requestToken) return;
                     self.ppTableLoading = false;
                     self.ppTableError = 'Network error.';
                 });

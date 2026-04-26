@@ -98,16 +98,25 @@ new Vue({
     },
     mounted: function() {
         var self = this;
-        this.fetchHero();
+        if (typeof (this as any).fetchHero === 'function') {
+            (this as any).fetchHero();
+        }
         this.fetchSeasons().then(function() {
             self.loadRecords();
         });
     },
     methods: {
         loadRecords: function() {
-            var self = this;
+            var self = this as any;
             self.loading = true;
             self.error = null;
+
+            // Cancel any prior in-flight request so a stale response can't clobber newer state.
+            if (self._loadCtl && typeof self._loadCtl.abort === 'function') {
+                self._loadCtl.abort();
+            }
+            var ctl = new AbortController();
+            self._loadCtl = ctl;
 
             var offset = (self.page - 1) * self.pageSize;
             var url = 'https://api.' + domain + '/v1/get_score_records'
@@ -119,19 +128,22 @@ new Vue({
                 url += '&season_id=' + self.selectedSeason;
             }
 
-            fetch(url, { credentials: 'omit' })
+            fetch(url, { credentials: 'omit', signal: ctl.signal })
                 .then(function(r: Response) {
                     if (!r.ok) throw new Error('score_records ' + r.status);
                     return r.json();
                 })
                 .then(function(d: any) {
+                    if (self._loadCtl !== ctl) return;
                     if (d.status !== 'success') throw new Error(d.message || 'bad response');
                     self.records = d.records || [];
                     self.total = d.total || 0;
                     self.loading = false;
                 })
-                .catch(function(e: Error) {
-                    self.error = 'Failed to load score records: ' + e.message;
+                .catch(function(e: any) {
+                    if (e && e.name === 'AbortError') return;
+                    if (self._loadCtl !== ctl) return;
+                    self.error = 'Failed to load score records: ' + (e && e.message ? e.message : String(e));
                     self.loading = false;
                 });
         },

@@ -104,7 +104,9 @@
         },
         mounted: function () {
             var self = this;
-            this.fetchHero();
+            if (typeof this.fetchHero === 'function') {
+                this.fetchHero();
+            }
             this.fetchSeasons().then(function () {
                 self.loadRecords();
             });

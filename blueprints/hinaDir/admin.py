@@ -895,7 +895,8 @@ async def action_silence():
         return jsonify({'status': 'error', 'message': 'User not found.'}), 404
     if user['priv'] and not ComparePrivs(mod_priv, user['priv']):  # ty:ignore[invalid-argument-type]
         return jsonify({'status': 'error', 'message': 'Cannot modify users with privileges you do not possess.'}), 403
-    if user['silence_end'] != 0:  # ty:ignore[invalid-argument-type]
+    now_ts = int(datetime.datetime.now().timestamp())
+    if user['silence_end'] and user['silence_end'] > now_ts:  # ty:ignore[invalid-argument-type]
         return jsonify({'status': 'error', 'message': 'User is already silenced.'}), 400
 
     silence_end = int(datetime.datetime.now().timestamp()) + duration_hours * 3600
@@ -1981,6 +1982,9 @@ async def api_bm_assign(item_id):
 @staff_required
 async def api_bm_checklist(item_id):
     data = await request.get_json()
+    if not isinstance(data, dict):
+        return jsonify({'status': 'error', 'message': 'Request body must be a JSON object.'}), 400
+
     item = await glob.db.fetch("SELECT checklist FROM beatmap_work_items WHERE id = %s", [item_id])
     if not item:
         return jsonify({'status': 'error', 'message': 'Work item not found.'}), 404

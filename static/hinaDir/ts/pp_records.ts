@@ -138,7 +138,9 @@ new Vue({
     },
     mounted: function() {
         var self = this;
-        this.fetchHero();
+        if (typeof (this as any).fetchHero === 'function') {
+            (this as any).fetchHero();
+        }
         this.fetchSeasons().then(function() {
             self.loadRecords();
         });
