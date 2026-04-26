@@ -977,7 +977,11 @@ $status-graveyard: #999;
   right: 0;
   bottom: 0;
   background: rgba(0, 0, 0, 0.75);
-  z-index: 50;
+  /* Coderabbit: 50 was below navbar dropdowns (1001-1002 in
+     _dropdown.scss) and Admin V2 toasts (100), so the modal could be
+     hidden behind an open dropdown. Bumped to 1100 — above all
+     known site chrome but below any future modal-layer reservations. */
+  z-index: 1100;
   display: flex;
   align-items: flex-start;
   justify-content: center;
@@ -1043,7 +1047,17 @@ $status-graveyard: #999;
   right: 50px;
   z-index: 1;
 
-  .bm-status { margin-bottom: 6px; }
+  /* Coderabbit: the global .bm-status rule is `position: absolute;
+     top: 8px; left: 8px;` (anchors the badge to a card cover). Inside
+     this banner-info container we want the badge to flow above the
+     title in normal block order, so reset positioning before applying
+     spacing — without this the badge overlaps the title/artist text. */
+  .bm-status {
+    position: static;
+    top: auto;
+    left: auto;
+    margin-bottom: 6px;
+  }
 }
 
 .bm-modal-title {
