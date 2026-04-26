@@ -359,7 +359,7 @@
                         <span>Leaderboards</span>
                     </a>
                     <div class="navbar-mobile-dropdown">
-                        <button class="navbar-mobile-dropdown-trigger" @click="toggleMobileDropdown">
+                        <button type="button" class="navbar-mobile-dropdown-trigger" @click="toggleMobileDropdown">
                             <i class="fas fa-trophy"></i>
                             <span>Top Plays</span>
                             <i class="fas fa-chevron-down"></i>
@@ -385,7 +385,7 @@
                     
                     {% if session.authenticated and session.user_data['is_staff'] %}
                         <div class="navbar-mobile-dropdown">
-                            <button class="navbar-mobile-dropdown-trigger" @click="toggleMobileDropdown">
+                            <button type="button" class="navbar-mobile-dropdown-trigger" @click="toggleMobileDropdown">
                                 <i class="fas fa-shield-alt"></i>
                                 <span>Admin</span>
                                 <i class="fas fa-chevron-down"></i>

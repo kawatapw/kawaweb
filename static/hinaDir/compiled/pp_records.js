@@ -17,7 +17,10 @@
             schedules: [],
             selectedSchedule: null,
             seasons: [],
-            selectedSeason: 0,
+            // Coderabbit: null sentinel for "no season selected" — onScheduleChange
+            // and onYearChange both clear to null when filteredSeasons is empty,
+            // so the initial value matches the cleared state.
+            selectedSeason: null,
             selectedYear: null,
             activeSeason: null,
             // Filter state
@@ -303,12 +306,18 @@
                 this.loadRecords();
             },
             onYearChange: function () {
+                // Coderabbit: mirror onScheduleChange so empty-year switches
+                // clear the season selection and reload (was leaving stale
+                // records on screen when filteredSeasons came back empty).
                 var seasons = this.filteredSeasons;
+                this.page = 1;
                 if (seasons.length > 0) {
                     this.selectedSeason = seasons[seasons.length - 1].id;
-                    this.page = 1;
-                    this.loadRecords();
                 }
+                else {
+                    this.selectedSeason = null;
+                }
+                this.loadRecords();
             },
             onSeasonChange: function () {
                 this.page = 1;

@@ -146,7 +146,7 @@ $status-graveyard: #999;
   align-items: center;
   height: 100%;
   padding: 0 6px;
-  // No gap — use margin-right on frames for seamless -50% loop
+  /* No gap — use margin-right on frames for seamless -50% loop */
   animation: bm-hero-scroll 60s linear infinite;
   will-change: transform;
   position: relative;
@@ -280,6 +280,16 @@ $status-graveyard: #999;
   .bm-hero {
     animation: none;
   }
+  /* Coderabbit: also disable the mirror status pulse, the player-pulse
+     loop, and the modal-skeleton shimmer for users who prefer reduced
+     motion — they were added after the original block and were running
+     unconditionally. */
+  .bm-mirror-ping-pulse,
+  .bm-player-button--playing,
+  .bm-modal-skeleton-circle,
+  .bm-modal-skeleton-lines div {
+    animation: none !important;
+  }
 }
 
 // ── Header ──
@@ -312,7 +322,8 @@ $status-graveyard: #999;
 .bm-search-bar {
   position: relative;
   max-width: 600px;
-  margin-bottom: 22px;
+  /* Coderabbit: prior margin-bottom: 22px was overridden by this shorthand,
+     keeping single source of truth. */
   margin: 0 auto 20px;
 }
 

@@ -116,11 +116,20 @@
 
 // Respect users' system preference — disable shimmer + spin so they get a
 // static placeholder instead of an animation loop.
+// Coderabbit: extended to neutralise the row hover transform/transition
+// because that motion can also trigger vestibular discomfort.
 @media (prefers-reduced-motion: reduce) {
     .mp-loading-spinner,
     .mp-skeleton-bar {
         animation: none !important;
         background-position: 0 0 !important;
+    }
+
+    .mp-row,
+    .mp-row:hover,
+    .mp-row:focus {
+        transition: none !important;
+        transform: none !important;
     }
 }
 
@@ -135,7 +144,11 @@
 }
 
 .mp-sk-rank  { width: 28px; height: 22px; }
-.mp-sk-cover { width: 96px; height: 96px; border-radius: 6px; }
+// Coderabbit: skeleton cover must mirror the real .mp-cover dimensions
+// (96 × 48 desktop, 72 × 40 ≤ 768, 56 × 32 ≤ 480) so the layout doesn't
+// shift when the loaded thumbnails replace the skeleton. Responsive
+// overrides live with the rest of the breakpoint blocks below.
+.mp-sk-cover { width: 96px; height: 48px; border-radius: 6px; }
 
 .mp-sk-title { width: 60%; height: 16px; max-width: 320px; }
 .mp-sk-chip  { width: 70px; height: 18px; border-radius: 6px; flex-shrink: 0; }
@@ -319,7 +332,8 @@
         padding: 8px 10px;
     }
 
-    .mp-cover {
+    .mp-cover,
+    .mp-sk-cover {
         width: 72px;
         height: 40px;
     }
@@ -357,7 +371,8 @@
         gap: 8px;
     }
 
-    .mp-cover {
+    .mp-cover,
+    .mp-sk-cover {
         width: 56px;
         height: 32px;
     }
