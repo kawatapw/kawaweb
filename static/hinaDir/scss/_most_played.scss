@@ -144,6 +144,7 @@
 }
 
 .mp-sk-rank  { width: 28px; height: 22px; }
+
 // Coderabbit: skeleton cover must mirror the real .mp-cover dimensions
 // (96 × 48 desktop, 72 × 40 ≤ 768, 56 × 32 ≤ 480) so the layout doesn't
 // shift when the loaded thumbnails replace the skeleton. Responsive

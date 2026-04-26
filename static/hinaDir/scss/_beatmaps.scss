@@ -283,9 +283,10 @@ $status-graveyard: #999;
   /* Coderabbit: also disable the mirror status pulse, the player-pulse
      loop, and the modal-skeleton shimmer for users who prefer reduced
      motion — they were added after the original block and were running
-     unconditionally. */
+     unconditionally. The player class is .hinai-player-btn--playing
+     (correcting an earlier typo of .bm-player-button--playing). */
   .bm-mirror-ping-pulse,
-  .bm-player-button--playing,
+  .hinai-player-btn--playing,
   .bm-modal-skeleton-circle,
   .bm-modal-skeleton-lines div {
     animation: none !important;
@@ -1111,7 +1112,9 @@ $status-graveyard: #999;
   font-weight: 600;
   color: $text-primary;
   text-align: center;
-  word-break: break-word;
+  /* Coderabbit: overflow-wrap is the modern equivalent of word-break:
+     break-word; the latter is deprecated outside of legacy IE/Edge. */
+  overflow-wrap: break-word;
 }
 
 .bm-modal-stat-key {
@@ -1177,7 +1180,8 @@ $status-graveyard: #999;
   font-size: 0.78rem;
   color: $text-muted;
   line-height: 1.6;
-  word-break: break-word;
+  /* Coderabbit: see .bm-modal-stat-val above for rationale. */
+  overflow-wrap: break-word;
   margin: 0;
 }
 
