@@ -107,6 +107,13 @@
   vertical-align: middle;
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .mp-loading-spinner,
+  .mp-skeleton-bar {
+    animation: none !important;
+    background-position: 0 0 !important;
+  }
+}
 .mp-skeleton-row {
   cursor: default;
 }

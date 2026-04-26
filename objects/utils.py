@@ -26,7 +26,9 @@ import sys
 import time
 import traceback
 from collections.abc import Mapping
+from datetime import date as _dt_date
 from datetime import datetime
+from datetime import time as _dt_time
 from enum import IntEnum
 
 import orjson
@@ -126,8 +128,9 @@ def magnitude_fmt_time(nanosec: int | float) -> str:
     """
     Formats a time value in nanoseconds into a human-readable string representation.
     """
-    suffix = None
+    suffix = TIME_ORDER_SUFFIXES[0]
     for _suffix in TIME_ORDER_SUFFIXES:
+        suffix = _suffix
         if nanosec < 1000:
             break
         nanosec /= 1000
@@ -530,7 +533,7 @@ class klogging:
 
         def serialize(value):
             try:
-                if isinstance(value, (datetime, datetime.date, datetime.time)):
+                if isinstance(value, (datetime, _dt_date, _dt_time)):
                     return value.isoformat()
                 elif isinstance(value, decimal.Decimal):
                     return float(value)

@@ -292,11 +292,15 @@
                     this.selectedYear = this.yearOptions[0];
                 }
                 var seasons = this.filteredSeasons;
+                this.page = 1;
                 if (seasons.length > 0) {
                     this.selectedSeason = seasons[seasons.length - 1].id;
-                    this.page = 1;
-                    this.loadRecords();
                 }
+                else {
+                    // Empty schedule — clear selection so stale records aren't shown.
+                    this.selectedSeason = null;
+                }
+                this.loadRecords();
             },
             onYearChange: function () {
                 var seasons = this.filteredSeasons;

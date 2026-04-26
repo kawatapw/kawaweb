@@ -295,20 +295,13 @@ async def api_dashboard():
     action_placeholders = ', '.join(['%s'] * len(_STAFF_ACTION_WHITELIST))
     whitelist = list(_STAFF_ACTION_WHITELIST)
     raw_actions = await glob.db.fetchall(
-        'SELECT * FROM ('
-        '  SELECT CAST(l.id AS CHAR) AS id, '
-        '    CONVERT(l.action USING utf8mb4) AS action, '
-        '    CONVERT(l.msg USING utf8mb4) AS msg, '
-        '    l.created_at AS time, l.from_id AS mod_id, l.to_id AS target_id '
-        f'  FROM logs l WHERE l.action IN ({action_placeholders}) '
-        '  UNION ALL '
-        '  SELECT CAST(l.id AS CHAR) AS id, '
-        '    CONVERT(l.action USING utf8mb4) AS action, '
-        '    CONVERT(l.msg USING utf8mb4) AS msg, '
-        '    l.created_at AS time, l.from_id AS mod_id, l.to_id AS target_id '
-        f'  FROM logs l WHERE l.action IN ({action_placeholders}) '
-        ') combined ORDER BY time DESC LIMIT 10',
-        whitelist + whitelist
+        'SELECT CAST(l.id AS CHAR) AS id, '
+        '  CONVERT(l.action USING utf8mb4) AS action, '
+        '  CONVERT(l.msg USING utf8mb4) AS msg, '
+        '  l.created_at AS time, l.from_id AS mod_id, l.to_id AS target_id '
+        f'FROM logs l WHERE l.action IN ({action_placeholders}) '
+        'ORDER BY time DESC LIMIT 10',
+        whitelist
     )
 
     recent_actions = []

@@ -138,11 +138,14 @@ async def team_page():
         "ORDER BY name"
     )
 
-    # 3. Fetch founders separately (ID 1 is excluded by the staff query)
-    founder_ids_str = ','.join(str(i) for i in _FOUNDER_IDS)
+    # 3. Fetch founders separately (ID 1 is excluded by the staff query).
+    # IDs are parameterized via placeholders rather than f-string interpolation
+    # so the DB driver handles escaping, matching the rest of the codebase.
+    founder_placeholders = ','.join(['%s'] * len(_FOUNDER_IDS))
     founder_users = await glob.db.fetchall(
         "SELECT id, name, country, creation_time, latest_activity, priv "
-        f"FROM users WHERE id IN ({founder_ids_str})"
+        f"FROM users WHERE id IN ({founder_placeholders})",
+        list(_FOUNDER_IDS),
     )
 
     # 4. Build sections with per-group exclusive dedup

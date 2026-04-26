@@ -20,6 +20,7 @@
   <!-- Mode tabs -->
   <nav class="hof-mode-tabs">
     <button v-for="m in modes" :key="'mode-' + m.value"
+            type="button"
             class="hof-mode-btn"
             :class="{ active: mode === m.value }"
             @click="switchMode(m.value)">
@@ -31,6 +32,7 @@
   <div class="hof-controls">
     <div class="hof-sort-tabs" role="tablist">
       <button v-for="s in sorts" :key="'sort-' + s.value"
+              type="button"
               class="hof-sort-btn"
               :class="{ active: sort === s.value }"
               role="tab"
