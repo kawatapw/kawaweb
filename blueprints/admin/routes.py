@@ -6,6 +6,7 @@ handling HTTP requests and coordinating with services.
 """
 
 import datetime
+import logging
 
 import timeago
 from quart import jsonify, render_template, request
@@ -128,6 +129,7 @@ async def action(action_type: str):
     try:
         action_enum = ActionType(action_type)
     except ValueError as e:
+        klogging.log(f"Invalid action type: {action_type}", start_color=klogging.Ansi.LRED, level=logging.WARNING, extra={"action_type": action_type})
         raise InvalidActionError(action_type) from e
 
     # Build action request
@@ -149,6 +151,7 @@ async def action(action_type: str):
 
     # Get current user ID
     mod_id = SessionManager.get_user_id()
+    klogging.log(f"Admin action requested: {action_type} by mod {mod_id}", level=logging.INFO, extra={"action_type": action_type, "mod_id": mod_id, "target_user_id": request_data.user_id, "target_map_id": request_data.map_id})
 
     # Create and execute action
     action_obj = await action_service.create_action(request_data, mod_id)  # ty:ignore[invalid-argument-type]
@@ -187,6 +190,7 @@ async def action(action_type: str):
     except Exception as e:
         klogging.log(f"Discord webhook failed (action still succeeded): {e}", klogging.Ansi.LYELLOW)
 
+    klogging.log(f"Admin action completed: {action_type} (action_id: {response.action_id})", level=logging.INFO, extra={"action_type": action_type, "action_id": response.action_id, "status": response.status})
     return jsonify(ResponseFormatter.success(
         response.message,
         response.action_id
@@ -203,9 +207,14 @@ async def home():
     SessionManager.require_authentication()
     SessionManager.require_staff()
 
+    # Get current admin context
+    current_user_id = SessionManager.get_user_id()
+    klogging.log(f"Admin dashboard accessed by user {current_user_id}", level=logging.INFO, extra={"user_id": current_user_id, "route": "/dashboard"})
+
     # Get dashboard data
     dashboard_data = await dashboard_service.get_dashboard_data()
 
+    klogging.log(f"Dashboard data loaded successfully for user {current_user_id}", level=logging.DEBUG, extra={"user_id": current_user_id})
     return await render_template(
         'admin/home.html',
         dashdata=dashboard_data,
@@ -226,6 +235,9 @@ async def users(page: int | None = None):
     SessionManager.require_authentication()
     SessionManager.require_staff()
 
+    # Get current admin context
+    current_user_id = SessionManager.get_user_id()
+
     # Parse request parameters
     update = request.args.get('update') == 'true'
     search = str(request.args.get('search') or '')
@@ -233,6 +245,8 @@ async def users(page: int | None = None):
     sort_order = str(request.args.get('order') or 'ASC')
     filter_priv = str(request.args.get('priv') or '')
     filter_country = str(request.args.get('country') or '')
+
+    klogging.log(f"Users list requested by user {current_user_id}: page={page}, search='{search}', sort={sort_by} {sort_order}", level=logging.INFO, extra={"user_id": current_user_id, "page": page, "search": search, "sort_by": sort_by, "sort_order": sort_order, "filter_priv": filter_priv, "filter_country": filter_country, "update": update})
 
     # Build request
     request_data = UserListRequest(
@@ -248,6 +262,7 @@ async def users(page: int | None = None):
     # Validate request
     errors = request_data.validate()
     if errors:
+        klogging.log(f"Invalid users list request: {', '.join(errors)}", level=logging.WARNING, extra={"errors": errors})
         raise ValidationError(f"Invalid request: {', '.join(errors)}")
 
     # Calculate pagination
@@ -276,12 +291,15 @@ async def users(page: int | None = None):
         filters=filters
     )
 
+    klogging.log(f"Retrieved {len(users)} users out of {total_count} total (page {request_data.page}/{total_pages})", level=logging.DEBUG, extra={"returned_count": len(users), "total_count": total_count, "page": request_data.page, "total_pages": total_pages})
+
     # Get customizations for each user
     for user in users:
         user['customisations'] = await user_repo.get_customisations(user['id'])
 
     # Return JSON if update request
     if update:
+        klogging.log(f"Returning JSON users list for page {request_data.page}", level=logging.DEBUG, extra={"page": request_data.page, "count": len(users)})
         return jsonify(UserListResponse(
             users=users,
             pagination={
@@ -293,6 +311,7 @@ async def users(page: int | None = None):
         ))
 
     # Render template
+    klogging.log(f"Rendering users page for page {request_data.page}", level=logging.DEBUG, extra={"page": request_data.page})
     return await render_template(
         'admin/users.html',
         users=users,
@@ -312,19 +331,45 @@ async def users(page: int | None = None):
 @admin.route('/user/<int:userid>')
 async def user(userid: int):
     """Get detailed user information."""
-    # Validate authentication
-    SessionManager.require_authentication()
-    SessionManager.require_staff()
+    # Log route entry
+    klogging.log(f"Admin user detail route called for userid: {userid}",
+                 extra={"userid": userid, "route": "/user/<int:userid>"})
 
-    # Get user detail
-    user_detail = await user_service.get_user_detail(userid)
+    try:
+        # Validate authentication
+        SessionManager.require_authentication()
+        SessionManager.require_staff()
 
-    # Strip sensitive data if caller lacks ViewSensitiveInfo
-    session_priv = SessionManager.get_user_priv()
-    if not PrivilegeChecker.has_privilege(session_priv, "ViewSensitiveInfo"):  # ty:ignore[invalid-argument-type]
-        user_detail.user.get("logs", {}).pop("hashes", None)
+        # Get current admin context
+        current_user_id = SessionManager.get_user_id()
+        session_priv = SessionManager.get_user_priv()
+        klogging.log(f"Admin {current_user_id} requesting user {userid} details",
+                     extra={"admin_id": current_user_id, "target_userid": userid, "privileges": session_priv})
 
-    return jsonify(user_detail.user)
+        # Get user detail
+        klogging.log(f"Calling user_service.get_user_detail for userid: {userid}",
+                     extra={"userid": userid})
+        user_detail = await user_service.get_user_detail(userid)
+        klogging.log(f"Successfully retrieved user detail for userid: {userid}",
+                     extra={"userid": userid})
+
+        # Strip sensitive data if caller lacks ViewSensitiveInfo
+        if not PrivilegeChecker.has_privilege(session_priv, "ViewSensitiveInfo"):  # ty:ignore[invalid-argument-type]
+            klogging.log(f"Stripping sensitive data for user {userid} (admin lacks ViewSensitiveInfo)",
+                         extra={"userid": userid, "admin_privileges": session_priv},
+                         level=klogging.logLevel.WARNING)
+            user_detail.user.get("logs", {}).pop("hashes", None)
+
+        klogging.log(f"Successfully completed user detail request for userid: {userid}",
+                     extra={"userid": userid})
+        return jsonify(user_detail.user)
+
+    except Exception as e:
+        klogging.log(f"Error in user detail route for userid {userid}: {e}",
+                     start_color=klogging.Ansi.LRED,
+                     level=klogging.logLevel.ERROR,
+                     extra={"userid": userid, "error": str(e)})
+        raise
 
 
 @admin.route('/badges')
@@ -335,14 +380,22 @@ async def badges():
     SessionManager.require_authentication()
     SessionManager.require_staff()
 
+    # Get current admin context
+    current_user_id = SessionManager.get_user_id()
+
     # Check if JSON response is requested
     is_json = request.args.get('json') == 'true'
+
+    klogging.log(f"Badges page requested by user {current_user_id} (json={is_json})", level=logging.INFO, extra={"user_id": current_user_id, "json_request": is_json})
 
     # Get all badges
     badges = await badge_service.get_all_badges()
 
+    klogging.log(f"Retrieved {len(badges)} badges", level=logging.DEBUG, extra={"badge_count": len(badges)})
+
     # Return JSON if requested
     if is_json:
+        klogging.log(f"Returning JSON badges list", level=logging.DEBUG, extra={"count": len(badges)})
         return jsonify(badges)
 
     # Render template
@@ -361,9 +414,15 @@ async def badge(badgeid: int):
     SessionManager.require_authentication()
     SessionManager.require_staff()
 
+    # Get current admin context
+    current_user_id = SessionManager.get_user_id()
+
+    klogging.log(f"Badge detail requested by user {current_user_id}: badgeid={badgeid}", level=logging.INFO, extra={"user_id": current_user_id, "badge_id": badgeid})
+
     # Get badge detail
     badge_detail = await badge_service.get_badge_detail(badgeid)
 
+    klogging.log(f"Badge detail retrieved successfully: {badgeid}", level=logging.DEBUG, extra={"badge_id": badgeid})
     return jsonify(badge_detail.badge)
 
 
@@ -374,13 +433,19 @@ async def update_badge(badgeid: int):
     SessionManager.require_authentication()
     SessionManager.require_staff()
 
+    # Get current admin context
+    current_user_id = SessionManager.get_user_id()
+
     # Check permission
     user_priv = SessionManager.get_user_priv()
     if not PrivilegeChecker.has_privilege(user_priv, "ManageBadges"):  # ty:ignore[invalid-argument-type]
+        klogging.log(f"Permission denied for badge update: user {current_user_id} lacks ManageBadges", level=logging.WARNING, extra={"user_id": current_user_id, "badge_id": badgeid})
         return jsonify(ResponseFormatter.permission_error("update badges")), 403
 
     # Get JSON data
     data = await RequestValidator.get_json_data()
+
+    klogging.log(f"Badge update requested by user {current_user_id}: badgeid={badgeid}", level=logging.INFO, extra={"user_id": current_user_id, "badge_id": badgeid, "name": data.get('name'), "priority": data.get('priority')})
 
     # Build request
     request_data = BadgeRequest(
@@ -393,6 +458,7 @@ async def update_badge(badgeid: int):
     # Validate request
     errors = request_data.validate()
     if errors:
+        klogging.log(f"Invalid badge update request: {', '.join(errors)}", level=logging.WARNING, extra={"errors": errors})
         raise ValidationError(f"Invalid request: {', '.join(errors)}")
 
     # Update badge
@@ -404,6 +470,7 @@ async def update_badge(badgeid: int):
         request_data.styles  # ty:ignore[invalid-argument-type]
     )
 
+    klogging.log(f"Badge updated successfully: {badgeid}", level=logging.INFO, extra={"user_id": current_user_id, "badge_id": badgeid})
     return jsonify(ResponseFormatter.success("Badge updated successfully")), 200
 
 
@@ -414,13 +481,19 @@ async def create_badge():
     SessionManager.require_authentication()
     SessionManager.require_staff()
 
+    # Get current admin context
+    current_user_id = SessionManager.get_user_id()
+
     # Check permission
     user_priv = SessionManager.get_user_priv()
     if not PrivilegeChecker.has_privilege(user_priv, "ManageBadges"):  # ty:ignore[invalid-argument-type]
+        klogging.log(f"Permission denied for badge creation: user {current_user_id} lacks ManageBadges", level=logging.WARNING, extra={"user_id": current_user_id})
         return jsonify(ResponseFormatter.permission_error("create badges")), 403
 
     # Get JSON data
     data = await RequestValidator.get_json_data()
+
+    klogging.log(f"Badge creation requested by user {current_user_id}: name={data.get('name')}", level=logging.INFO, extra={"user_id": current_user_id, "name": data.get('name'), "priority": data.get('priority')})
 
     # Build request
     request_data = BadgeRequest(
@@ -433,6 +506,7 @@ async def create_badge():
     # Validate request
     errors = request_data.validate()
     if errors:
+        klogging.log(f"Invalid badge creation request: {', '.join(errors)}", level=logging.WARNING, extra={"errors": errors})
         raise ValidationError(f"Invalid request: {', '.join(errors)}")
 
     # Create badge
@@ -443,6 +517,7 @@ async def create_badge():
         request_data.styles  # ty:ignore[invalid-argument-type]
     )
 
+    klogging.log(f"Badge created successfully: {data.get('name')}", level=logging.INFO, extra={"user_id": current_user_id, "name": data.get('name')})
     return jsonify(ResponseFormatter.success("Badge created successfully")), 200
 
 
@@ -455,10 +530,16 @@ async def beatmaps(page: int | None = None):
     SessionManager.require_authentication()
     SessionManager.require_staff()
 
+    # Get current admin context
+    current_user_id = SessionManager.get_user_id()
+
     # Check permission
     user_priv = SessionManager.get_user_priv()
     if not PrivilegeChecker.has_privilege(user_priv, "ManageBeatmaps"):  # ty:ignore[invalid-argument-type]
+        klogging.log(f"Permission denied for beatmaps page: user {current_user_id} lacks ManageBeatmaps", level=logging.WARNING, extra={"user_id": current_user_id})
         return await flash('error', 'You have insufficient privileges.', 'home')
+
+    klogging.log(f"Beatmaps page requested by user {current_user_id}: page={page}", level=logging.INFO, extra={"user_id": current_user_id, "page": page})
 
     # Build request
     request_data = MapRequest(page=page or 1)
@@ -466,10 +547,13 @@ async def beatmaps(page: int | None = None):
     # Validate request
     errors = request_data.validate()
     if errors:
+        klogging.log(f"Invalid beatmaps request: {', '.join(errors)}", level=logging.WARNING, extra={"errors": errors})
         raise ValidationError(f"Invalid request: {', '.join(errors)}")
 
     # Get active map requests
     requests = await map_request_service.get_active_requests(request_data.page)
+
+    klogging.log(f"Retrieved {len(requests)} active map requests", level=logging.DEBUG, extra={"count": len(requests), "page": request_data.page})
 
     # Render template
     return await render_template(
@@ -488,10 +572,16 @@ async def stuffbroke():
     # Validate authentication
     SessionManager.require_authentication()
 
+    # Get current admin context
+    current_user_id = SessionManager.get_user_id()
+
     # Check permission
     user_priv = SessionManager.get_user_priv()
     if not PrivilegeChecker.has_privilege(user_priv, "Dangerous"):  # ty:ignore[invalid-argument-type]
+        klogging.log(f"Permission denied for /stuffbroke: user {current_user_id} lacks Dangerous", level=logging.WARNING, extra={"user_id": current_user_id})
         return await flash('error', 'You have insufficient privileges.', 'home')
+
+    klogging.log(f"Break event triggered by user {current_user_id}", level=logging.WARNING, extra={"user_id": current_user_id, "route": "/stuffbroke"})
 
     # Trigger break event
     await server_data_service.trigger_break_event()
@@ -506,10 +596,16 @@ async def test():
     # Validate authentication
     SessionManager.require_authentication()
 
+    # Get current admin context
+    current_user_id = SessionManager.get_user_id()
+
     # Check permission
     user_priv = SessionManager.get_user_priv()
     if not PrivilegeChecker.has_privilege(user_priv, "Dangerous"):  # ty:ignore[invalid-argument-type]
+        klogging.log(f"Permission denied for /test: user {current_user_id} lacks Dangerous", level=logging.WARNING, extra={"user_id": current_user_id})
         return await flash('error', 'You have insufficient privileges.', 'home')
+
+    klogging.log(f"Test endpoint accessed by user {current_user_id}", level=logging.INFO, extra={"user_id": current_user_id, "route": "/test"})
 
     return await flash('success', 'Successfully tested. Results: ', 'home')
 
@@ -518,6 +614,7 @@ async def test():
 @admin.errorhandler(AdminPanelError)
 async def handle_admin_panel_error(error: AdminPanelError):
     """Handle AdminPanelError exceptions."""
+    klogging.log(f"Admin panel error: {error.message}", start_color=klogging.Ansi.LYELLOW, level=logging.WARNING, extra={"error_type": type(error).__name__, "status_code": error.status_code, "message": error.message})
     response, status_code = handle_admin_error(error)
     return jsonify(response), status_code
 
@@ -525,7 +622,7 @@ async def handle_admin_panel_error(error: AdminPanelError):
 @admin.errorhandler(Exception)
 async def handle_unexpected_error(error):
     """Handle unexpected exceptions with JSON response."""
-    klogging.log(f"Unexpected admin error: {error}", klogging.Ansi.LRED)
+    klogging.log(f"Unexpected admin error: {error}", start_color=klogging.Ansi.LRED, level=logging.ERROR, extra={"error_type": type(error).__name__, "error_message": str(error)})
     return jsonify({"status": "error", "message": "An unexpected error occurred."}), 500
 
 

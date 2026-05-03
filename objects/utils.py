@@ -448,14 +448,8 @@ class klogging:
 
         msg = f"{color_prefix}{msg}{color_suffix}"
 
-        # Check if 'msg' is a format string
-        if '%' in msg:
-            # If 'extra' is a dictionary, use it to format the string
-            if isinstance(extra, dict):
-                msg = msg % extra
-            # If 'extra' is a list or tuple, ensure it has the correct length
-            elif isinstance(extra, (list, tuple)) and len(extra) == msg.count('%'):
-                msg = msg % extra
+        # Note: The msg parameter should be pre-formatted before calling klogging.log()
+        # The extra parameter is for structured logging data, not string formatting
 
         # Create a LogRecord with the correct information
         record = logging.LogRecord(
