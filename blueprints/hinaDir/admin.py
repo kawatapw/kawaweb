@@ -1203,10 +1203,10 @@ async def action_removescore():
         "INSERT INTO wiped_scores "
         "(id, map_md5, score, pp, acc, max_combo, mods, n300, n100, n50, nmiss, "
         "ngeki, nkatu, grade, status, mode, play_time, time_elapsed, client_flags, "
-        "userid, perfect, online_checksum, r_replay_id) "
+        "userid, perfect, online_checksum) "
         "SELECT id, map_md5, score, pp, acc, max_combo, mods, n300, n100, n50, nmiss, "
         "ngeki, nkatu, grade, status, mode, play_time, time_elapsed, client_flags, "
-        "userid, perfect, online_checksum, r_replay_id "
+        "userid, perfect, online_checksum"
         "FROM scores WHERE id = %s",
         [score_id]
     )

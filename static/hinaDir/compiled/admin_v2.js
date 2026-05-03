@@ -86,9 +86,11 @@ document.addEventListener('DOMContentLoaded', function () {
                 needsReason: false,
                 needsDuration: false,
                 needsPassword: false,
+                needsScoreId: false,
                 reason: '',
                 duration: 24,
                 password: '',
+                scoreId: '',
                 targetId: 0,
             },
             // Dashboard
@@ -696,6 +698,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     silence: 'Silence ' + userName + '?',
                     unsilence: 'Unsilence ' + userName + '?',
                     wipe: 'Wipe all scores for ' + userName + '?',
+                    removescore: 'Remove a score for ' + userName + '?',
                     changepassword: 'Change password for ' + userName + '?',
                 };
                 var messages = {
@@ -704,6 +707,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     silence: 'They will not be able to send messages in-game.',
                     unsilence: 'They will be able to send messages again.',
                     wipe: 'This will delete ALL scores and reset ALL stats. This cannot be undone easily.',
+                    removescore: 'Enter the ID of the score you want to remove. This can be found in console when clicking on a users score in their profile.',
                     changepassword: 'Enter a new password for this user.',
                 };
                 this.confirmDialog = {
@@ -714,10 +718,12 @@ document.addEventListener('DOMContentLoaded', function () {
                     needsReason: true,
                     needsDuration: action === 'silence',
                     needsPassword: action === 'changepassword',
+                    needsScoreId: action === 'removescore',
                     reason: '',
                     duration: 24,
                     password: '',
                     targetId: userId,
+                    scoreId: '',
                 };
             },
             executeConfirmedAction: function () {
@@ -752,6 +758,8 @@ document.addEventListener('DOMContentLoaded', function () {
                     body.duration = d.duration;
                 if (d.needsPassword)
                     body.password = d.password;
+                if (d.needsScoreId)
+                    body.score = d.scoreId;
                 d.show = false;
                 adminApi('action/' + d.action, {
                     method: 'POST',
