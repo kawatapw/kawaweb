@@ -61,7 +61,7 @@ class SessionManager:
     def require_authentication() -> None:
         """Require authentication, raise error if not authenticated."""
         if not SessionManager.is_authenticated():
-            klogging.log("Authentication required but user not authenticated", level=logging.WARNING, extra={"ip": request.remote_addr, "path": request.path})
+            klogging.log("Authentication required but user not authenticated", level=klogging.logLevel.WARNING, extra={"ip": request.remote_addr, "path": request.path})
             raise AuthenticationError()
 
     @staticmethod
@@ -70,7 +70,7 @@ class SessionManager:
         SessionManager.require_authentication()
         if not SessionManager.is_staff():
             user_id = SessionManager.get_user_id()
-            klogging.log(f"Staff privileges required but user {user_id} is not staff", level=logging.WARNING, extra={"user_id": user_id, "path": request.path})
+            klogging.log(f"Staff privileges required but user {user_id} is not staff", level=klogging.logLevel.WARNING, extra={"user_id": user_id, "path": request.path})
             raise AuthorizationError()
 
 
@@ -82,7 +82,7 @@ class RequestValidator:
         """Validate request content type."""
         received = (request.content_type or "").split(";", 1)[0].strip()
         if received != expected:
-            klogging.log(f"Invalid content type: received '{received}', expected '{expected}'", level=logging.WARNING, extra={"received_content_type": received, "expected_content_type": expected, "path": request.path})
+            klogging.log(f"Invalid content type: received '{received}', expected '{expected}'", level=klogging.logLevel.WARNING, extra={"received_content_type": received, "expected_content_type": expected, "path": request.path})
             raise ValidationError(f"Invalid content type. Use {expected}.")
 
     @staticmethod
@@ -90,7 +90,7 @@ class RequestValidator:
         """Get form data from request."""
         form = await request.form
         if not form:
-            klogging.log("No form data provided in request", level=logging.WARNING, extra={"path": request.path, "method": request.method})
+            klogging.log("No form data provided in request", level=klogging.logLevel.WARNING, extra={"path": request.path, "method": request.method})
             raise ValidationError("No form data provided.")
         return form
 
@@ -99,7 +99,7 @@ class RequestValidator:
         """Get JSON data from request."""
         data = await request.get_json()
         if not data:
-            klogging.log("No JSON data provided in request", level=logging.WARNING, extra={"path": request.path, "method": request.method})
+            klogging.log("No JSON data provided in request", level=klogging.logLevel.WARNING, extra={"path": request.path, "method": request.method})
             raise ValidationError("No JSON data provided.")
         return data
 
@@ -121,10 +121,10 @@ class DiscordLogger:
         try:
             if action.action == ActionType.CHANGE_PASSWORD:
                 # Don't log password changes
-                klogging.log("Skipping Discord log for password change", level=logging.DEBUG, extra={"action_id": action.id, "user_id": user_id})
+                klogging.log("Skipping Discord log for password change", level=klogging.logLevel.DEBUG, extra={"action_id": action.id, "user_id": user_id})
                 return
 
-            klogging.log(f"Logging user action to Discord: {action.action.value} on {user_name}", level=logging.INFO, extra={"action_id": action.id, "mod_id": mod_id, "user_id": user_id, "action_type": action.action.value})
+            klogging.log(f"Logging user action to Discord: {action.action.value} on {user_name}", level=klogging.logLevel.INFO, extra={"action_id": action.id, "mod_id": mod_id, "user_id": user_id, "action_type": action.action.value})
 
             webhook = DiscordWebhook(self.admin_webhook_url)
 
@@ -153,14 +153,14 @@ class DiscordLogger:
 
             webhook.add_embed(embed)
             await asyncio.to_thread(webhook.execute)
-            klogging.log(f"Successfully logged user action to Discord", level=logging.INFO, extra={"action_id": action.id})
+            klogging.log("Successfully logged user action to Discord", level=klogging.logLevel.INFO, extra={"action_id": action.id})
         except Exception as e:
-            klogging.log(f"Failed to log user action to Discord: {e}", start_color=klogging.Ansi.LYELLOW, level=logging.WARNING, extra={"action_id": action.id, "error": str(e)})
+            klogging.log(f"Failed to log user action to Discord: {e}", start_color=klogging.Ansi.LYELLOW, level=klogging.logLevel.WARNING, extra={"action_id": action.id, "error": str(e)})
 
     async def log_map_action(self, action: Action, mod_name: str, mod_id: int, map_obj: Any) -> None:
         """Log map action to Discord."""
         try:
-            klogging.log(f"Logging map action to Discord: {action.action.value} on {map_obj.title} [{map_obj.version}]", level=logging.INFO, extra={"action_id": action.id, "mod_id": mod_id, "map_id": map_obj.id, "action_type": action.action.value})
+            klogging.log(f"Logging map action to Discord: {action.action.value} on {map_obj.title} [{map_obj.version}]", level=klogging.logLevel.INFO, extra={"action_id": action.id, "mod_id": mod_id, "map_id": map_obj.id, "action_type": action.action.value})
 
             webhook = DiscordWebhook(self.ranked_webhook_url)
 
@@ -196,14 +196,14 @@ class DiscordLogger:
 
             webhook.add_embed(embed)
             await asyncio.to_thread(webhook.execute)
-            klogging.log(f"Successfully logged map action to Discord", level=logging.INFO, extra={"action_id": action.id, "map_id": map_obj.id})
+            klogging.log("Successfully logged map action to Discord", level=klogging.logLevel.INFO, extra={"action_id": action.id, "map_id": map_obj.id})
         except Exception as e:
-            klogging.log(f"Failed to log map action to Discord: {e}", start_color=klogging.Ansi.LYELLOW, level=logging.WARNING, extra={"action_id": action.id, "map_id": map_obj.id, "error": str(e)})
+            klogging.log(f"Failed to log map action to Discord: {e}", start_color=klogging.Ansi.LYELLOW, level=klogging.logLevel.WARNING, extra={"action_id": action.id, "map_id": map_obj.id, "error": str(e)})
 
     async def log_badge_action(self, action: Action, mod_name: str, mod_id: int, user_name: str, user_id: int, badge: Any) -> None:
         """Log badge action to Discord."""
         try:
-            klogging.log(f"Logging badge action to Discord: {action.action.value} badge '{badge['name']}' on {user_name}", level=logging.INFO, extra={"action_id": action.id, "mod_id": mod_id, "user_id": user_id, "badge_id": badge['id'], "action_type": action.action.value})
+            klogging.log(f"Logging badge action to Discord: {action.action.value} badge '{badge['name']}' on {user_name}", level=klogging.logLevel.INFO, extra={"action_id": action.id, "mod_id": mod_id, "user_id": user_id, "badge_id": badge['id'], "action_type": action.action.value})
 
             webhook = DiscordWebhook(self.admin_webhook_url)
 
@@ -237,9 +237,9 @@ class DiscordLogger:
 
             webhook.add_embed(embed)
             await asyncio.to_thread(webhook.execute)
-            klogging.log(f"Successfully logged badge action to Discord", level=logging.INFO, extra={"action_id": action.id, "badge_id": badge['id']})
+            klogging.log("Successfully logged badge action to Discord", level=klogging.logLevel.INFO, extra={"action_id": action.id, "badge_id": badge['id']})
         except Exception as e:
-            klogging.log(f"Failed to log badge action to Discord: {e}", start_color=klogging.Ansi.LYELLOW, level=logging.WARNING, extra={"action_id": action.id, "badge_id": badge['id'], "error": str(e)})
+            klogging.log(f"Failed to log badge action to Discord: {e}", start_color=klogging.Ansi.LYELLOW, level=klogging.logLevel.WARNING, extra={"action_id": action.id, "badge_id": badge['id'], "error": str(e)})
 
 
 class ResponseFormatter:
@@ -369,7 +369,7 @@ class MapStatusUpdater:
     async def update_status(map_id: int, status: int) -> bool:
         """Update map status via external API."""
         try:
-            klogging.log(f"Updating map {map_id} status to {status} via API", level=logging.INFO, extra={"map_id": map_id, "status": status, "operation": "update_map_status"})
+            klogging.log(f"Updating map {map_id} status to {status} via API", level=klogging.logLevel.INFO, extra={"map_id": map_id, "status": status, "operation": "update_map_status"})
             url = "http://bancho:10000/v1/update_map_status"
             headers = {
                 "Authorization": f"Bearer {glob.config.api_key}",
@@ -384,13 +384,13 @@ class MapStatusUpdater:
                 json_response = await response.json(content_type=None)
 
             if json_response.get("status") == "success":
-                klogging.log(f"Successfully updated map {map_id} status to {status}", level=logging.INFO, extra={"map_id": map_id, "status": status})
+                klogging.log(f"Successfully updated map {map_id} status to {status}", level=klogging.logLevel.INFO, extra={"map_id": map_id, "status": status})
                 return True
             else:
-                klogging.log(f"Failed to update map status: {json_response.get('status')}", start_color=klogging.Ansi.LRED, level=logging.ERROR, extra={"map_id": map_id, "api_response": json_response})
+                klogging.log(f"Failed to update map status: {json_response.get('status')}", start_color=klogging.Ansi.LRED, level=klogging.logLevel.ERROR, extra={"map_id": map_id, "api_response": json_response})
                 return False
         except Exception as e:
-            klogging.log(f"Error updating map status: {e}", start_color=klogging.Ansi.LRED, level=logging.ERROR, extra={"map_id": map_id, "error": str(e)})
+            klogging.log(f"Error updating map status: {e}", start_color=klogging.Ansi.LRED, level=klogging.logLevel.ERROR, extra={"map_id": map_id, "error": str(e)})
             return False
 
 

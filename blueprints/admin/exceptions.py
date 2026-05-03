@@ -18,7 +18,7 @@ class AdminPanelError(Exception):
         klogging.log(
             f"AdminPanelError raised: {message} (status: {status_code})",
             start_color=klogging.Ansi.LYELLOW,
-            level=logging.WARNING,
+            level=klogging.logLevel.WARNING,
             extra={"status_code": status_code, "error_type": "AdminPanelError"}
         )
         super().__init__(self.message)
@@ -30,7 +30,7 @@ class AuthenticationError(AdminPanelError):
         klogging.log(
             f"Authentication failed: {message}",
             start_color=klogging.Ansi.LRED,
-            level=logging.WARNING,
+            level=klogging.logLevel.WARNING,
             extra={"error_type": "AuthenticationError"}
         )
         super().__init__(message, 401)
@@ -42,7 +42,7 @@ class AuthorizationError(AdminPanelError):
         klogging.log(
             f"Authorization failed: {message}",
             start_color=klogging.Ansi.LRED,
-            level=logging.WARNING,
+            level=klogging.logLevel.WARNING,
             extra={"error_type": "AuthorizationError"}
         )
         super().__init__(message, 403)
@@ -55,7 +55,7 @@ class ValidationError(AdminPanelError):
         klogging.log(
             f"Validation failed: {message}" + (f" (field: {field})" if field else ""),
             start_color=klogging.Ansi.LYELLOW,
-            level=logging.WARNING,
+            level=klogging.logLevel.WARNING,
             extra={"error_type": "ValidationError", "field": field}
         )
         super().__init__(message, 400)
@@ -70,7 +70,7 @@ class ResourceNotFoundError(AdminPanelError):
         klogging.log(
             f"Resource not found: {resource_type} (ID: {resource_id})",
             start_color=klogging.Ansi.LYELLOW,
-            level=logging.WARNING,
+            level=klogging.logLevel.WARNING,
             extra={"error_type": "ResourceNotFoundError", "resource_type": resource_type, "resource_id": resource_id}
         )
         super().__init__(message, 404)
@@ -83,7 +83,7 @@ class AlreadyExistsError(AdminPanelError):
         klogging.log(
             f"Resource already exists: {resource_type} (identifier: {identifier})",
             start_color=klogging.Ansi.LYELLOW,
-            level=logging.WARNING,
+            level=klogging.logLevel.WARNING,
             extra={"error_type": "AlreadyExistsError", "resource_type": resource_type, "identifier": identifier}
         )
         super().__init__(message, 400)
@@ -96,7 +96,7 @@ class InvalidActionError(AdminPanelError):
         klogging.log(
             f"Invalid action requested: {action}",
             start_color=klogging.Ansi.LRED,
-            level=logging.WARNING,
+            level=klogging.logLevel.WARNING,
             extra={"error_type": "InvalidActionError", "action": action}
         )
         super().__init__(message, 400)
@@ -108,7 +108,7 @@ class StateConflictError(AdminPanelError):
         klogging.log(
             f"State conflict: {message}",
             start_color=klogging.Ansi.LYELLOW,
-            level=logging.WARNING,
+            level=klogging.logLevel.WARNING,
             extra={"error_type": "StateConflictError"}
         )
         super().__init__(message, 400)
@@ -121,7 +121,7 @@ class DatabaseError(AdminPanelError):
         klogging.log(
             f"Database error: {message}",
             start_color=klogging.Ansi.LRED,
-            level=logging.ERROR,
+            level=klogging.logLevel.ERROR,
             extra={"error_type": "DatabaseError", "original_error": str(original_error) if original_error else None}
         )
         super().__init__(message, 500)
@@ -135,7 +135,7 @@ class ExternalServiceError(AdminPanelError):
         klogging.log(
             error_msg,
             start_color=klogging.Ansi.LRED,
-            level=logging.ERROR,
+            level=klogging.logLevel.ERROR,
             extra={"error_type": "ExternalServiceError", "service": service}
         )
         super().__init__(error_msg, 502)
@@ -147,7 +147,7 @@ class PasswordValidationError(AdminPanelError):
         klogging.log(
             f"Password validation failed: {message}",
             start_color=klogging.Ansi.LYELLOW,
-            level=logging.WARNING,
+            level=klogging.logLevel.WARNING,
             extra={"error_type": "PasswordValidationError"}
         )
         super().__init__(message, 400)
@@ -159,7 +159,7 @@ class PrivilegeError(AdminPanelError):
         klogging.log(
             f"Privilege error: {message}",
             start_color=klogging.Ansi.LRED,
-            level=logging.WARNING,
+            level=klogging.logLevel.WARNING,
             extra={"error_type": "PrivilegeError"}
         )
         super().__init__(message, 403)
@@ -172,7 +172,7 @@ class FormValidationError(AdminPanelError):
         klogging.log(
             f"Form validation failed: {message}" + (f" (missing: {', '.join(missing_fields)})" if missing_fields else ""),
             start_color=klogging.Ansi.LYELLOW,
-            level=logging.WARNING,
+            level=klogging.logLevel.WARNING,
             extra={"error_type": "FormValidationError", "missing_fields": missing_fields}
         )
         super().__init__(message, 400)
@@ -184,7 +184,7 @@ class MapStatusError(AdminPanelError):
         klogging.log(
             f"Map status error: {message}",
             start_color=klogging.Ansi.LRED,
-            level=logging.WARNING,
+            level=klogging.logLevel.WARNING,
             extra={"error_type": "MapStatusError"}
         )
         super().__init__(message, 400)
@@ -196,7 +196,7 @@ class ScoreError(AdminPanelError):
         klogging.log(
             f"Score error: {message}",
             start_color=klogging.Ansi.LRED,
-            level=logging.WARNING,
+            level=klogging.logLevel.WARNING,
             extra={"error_type": "ScoreError"}
         )
         super().__init__(message, 400)
@@ -208,7 +208,7 @@ class BadgeError(AdminPanelError):
         klogging.log(
             f"Badge error: {message}",
             start_color=klogging.Ansi.LRED,
-            level=logging.WARNING,
+            level=klogging.logLevel.WARNING,
             extra={"error_type": "BadgeError"}
         )
         super().__init__(message, 400)
@@ -220,7 +220,7 @@ class UserAccountError(AdminPanelError):
         klogging.log(
             f"User account error: {message}",
             start_color=klogging.Ansi.LRED,
-            level=logging.WARNING,
+            level=klogging.logLevel.WARNING,
             extra={"error_type": "UserAccountError"}
         )
         super().__init__(message, 400)
@@ -232,7 +232,7 @@ class RateLimitError(AdminPanelError):
         klogging.log(
             f"Rate limit exceeded: {message}",
             start_color=klogging.Ansi.LYELLOW,
-            level=logging.WARNING,
+            level=klogging.logLevel.WARNING,
             extra={"error_type": "RateLimitError"}
         )
         super().__init__(message, 429)
@@ -244,7 +244,7 @@ class ConfigurationError(AdminPanelError):
         klogging.log(
             f"Configuration error: {message}",
             start_color=klogging.Ansi.LRED,
-            level=logging.ERROR,
+            level=klogging.logLevel.ERROR,
             extra={"error_type": "ConfigurationError"}
         )
         super().__init__(message, 500)
