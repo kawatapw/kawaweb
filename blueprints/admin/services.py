@@ -642,7 +642,7 @@ class ActionService:
         # Remove score
         klogging.log(f"Removing score {score_id} from database", level=klogging.logLevel.WARNING, extra={"score_id": score_id})
         await self.score_repo.remove_score(score_id)
-        klogging.log(f"Successfully removed score {score_id}", level=klogging.logLevel.WARNING, extra={"score_id": score_id, "mod_id": action.mod_id})  # ty:ignore[unresolved-attribute]
+        klogging.log(f"Successfully removed score {score_id}", level=klogging.logLevel.WARNING, extra={"score_id": score_id, "mod_id": action.mod_id})
 
     async def _execute_rank(self, action: Action) -> None:
         """Execute rank action."""

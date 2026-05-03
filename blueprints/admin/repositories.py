@@ -32,7 +32,7 @@ class UserRepository:
             if data is None:
                 klogging.log(f"User not found with ID: {user_id}", level=klogging.logLevel.DEBUG, extra={"user_id": user_id})
                 return None
-            klogging.log(f"Successfully fetched user: {data.get('name', 'unknown')} (ID: {user_id})", level=klogging.logLevel.DEBUG, extra={"user_id": user_id})
+            klogging.log(f"Successfully fetched user: {data.get('name', 'unknown')} (ID: {user_id})", level=klogging.logLevel.DEBUG, extra={"user_id": user_id})  # ty:ignore[unresolved-attribute]
             return User.from_dict(data)  # ty:ignore[invalid-argument-type]
         except Exception as e:
             klogging.log(f"Error fetching user {user_id}: {e}", start_color=klogging.Ansi.LRED, level=klogging.logLevel.ERROR, extra={"user_id": user_id, "error": str(e)})
@@ -50,7 +50,7 @@ class UserRepository:
             if data is None:
                 klogging.log(f"User not found with safe_name: {safe_name}", level=klogging.logLevel.DEBUG, extra={"safe_name": safe_name})
                 return None
-            klogging.log(f"Successfully fetched user: {data.get('name', 'unknown')} (safe_name: {safe_name})", level=klogging.logLevel.DEBUG, extra={"safe_name": safe_name})
+            klogging.log(f"Successfully fetched user: {data.get('name', 'unknown')} (safe_name: {safe_name})", level=klogging.logLevel.DEBUG, extra={"safe_name": safe_name})  # ty:ignore[unresolved-attribute]
             return User.from_dict(data)  # ty:ignore[invalid-argument-type]
         except Exception as e:
             klogging.log(f"Error fetching user by safe_name {safe_name}: {e}", start_color=klogging.Ansi.LRED, level=klogging.logLevel.ERROR, extra={"safe_name": safe_name, "error": str(e)})
@@ -68,7 +68,7 @@ class UserRepository:
             if data is None:
                 klogging.log(f"User not found with name: {name}", level=klogging.logLevel.DEBUG, extra={"name": name})
                 return None
-            klogging.log(f"Successfully fetched user: {data.get('name', 'unknown')} (name: {name})", level=klogging.logLevel.DEBUG, extra={"name": name})
+            klogging.log(f"Successfully fetched user: {data.get('name', 'unknown')} (name: {name})", level=klogging.logLevel.DEBUG, extra={"name": name})  # ty:ignore[unresolved-attribute]
             return User.from_dict(data)  # ty:ignore[invalid-argument-type]
         except Exception as e:
             klogging.log(f"Error fetching user by name {name}: {e}", start_color=klogging.Ansi.LRED, level=klogging.logLevel.ERROR, extra={"name": name, "error": str(e)})
@@ -86,7 +86,7 @@ class UserRepository:
             if data is None:
                 klogging.log(f"User not found with email: {email}", level=klogging.logLevel.DEBUG, extra={"email": email})
                 return None
-            klogging.log(f"Successfully fetched user: {data.get('name', 'unknown')} (email: {email})", level=klogging.logLevel.DEBUG, extra={"email": email})
+            klogging.log(f"Successfully fetched user: {data.get('name', 'unknown')} (email: {email})", level=klogging.logLevel.DEBUG, extra={"email": email})  # ty:ignore[unresolved-attribute]
             return User.from_dict(data)  # ty:ignore[invalid-argument-type]
         except Exception as e:
             klogging.log(f"Error fetching user by email {email}: {e}", start_color=klogging.Ansi.LRED, level=klogging.logLevel.ERROR, extra={"email": email, "error": str(e)})
@@ -273,9 +273,9 @@ class UserRepository:
             params.extend([limit, offset])
 
             klogging.log(f"Executing list query: {query} with params: {params}", level=klogging.logLevel.DEBUG, extra={"query": query, "params": params})
-            results = await glob.db.fetchall(query, params)  # ty:ignore[invalid-return-type]
+            results = await glob.db.fetchall(query, params)
             klogging.log(f"User list query returned {len(results)} results", level=klogging.logLevel.DEBUG, extra={"result_count": len(results)})
-            return results
+            return list(results)  # ty:ignore[invalid-return-type]
         except Exception as e:
             klogging.log(f"Error getting user list: {e}", start_color=klogging.Ansi.LRED, level=klogging.logLevel.ERROR, extra={"limit": limit, "offset": offset, "error": str(e)})
             raise DatabaseError(f"Failed to get user list: {str(e)}") from e
@@ -288,9 +288,9 @@ class UserRepository:
             result = await glob.db.fetch(
                 "SELECT * FROM user_customisations WHERE userid = %s",
                 [user_id]
-            )  # ty:ignore[invalid-return-type]
+            )
             klogging.log(f"Customisations for user {user_id}: {'found' if result else 'not found'}", level=klogging.logLevel.DEBUG, extra={"user_id": user_id, "found": result is not None})
-            return result
+            return result  # ty:ignore[invalid-return-type]
         except Exception as e:
             klogging.log(f"Error getting customisations for user {user_id}: {e}", start_color=klogging.Ansi.LRED, level=klogging.logLevel.ERROR, extra={"user_id": user_id, "error": str(e)})
             raise DatabaseError(f"Failed to get customisations for user {user_id}: {str(e)}") from e
@@ -311,7 +311,7 @@ class MapRepository:
             if data is None:
                 klogging.log(f"Map not found with ID: {map_id}", level=klogging.logLevel.DEBUG, extra={"map_id": map_id})
                 return None
-            klogging.log(f"Successfully fetched map: {data.get('title', 'unknown')} (ID: {map_id})", level=klogging.logLevel.DEBUG, extra={"map_id": map_id})
+            klogging.log(f"Successfully fetched map: {data.get('title', 'unknown')} (ID: {map_id})", level=klogging.logLevel.DEBUG, extra={"map_id": map_id})  # ty:ignore[unresolved-attribute]
             return Map.from_dict(data)  # ty:ignore[invalid-argument-type]
         except Exception as e:
             klogging.log(f"Error fetching map {map_id}: {e}", start_color=klogging.Ansi.LRED, level=klogging.logLevel.ERROR, extra={"map_id": map_id, "error": str(e)})
@@ -379,7 +379,7 @@ class BadgeRepository:
             if data is None:
                 klogging.log(f"Badge not found with ID: {badge_id}", level=klogging.logLevel.DEBUG, extra={"badge_id": badge_id})
                 return None
-            klogging.log(f"Successfully fetched badge: {data.get('name', 'unknown')} (ID: {badge_id})", level=klogging.logLevel.DEBUG, extra={"badge_id": badge_id})
+            klogging.log(f"Successfully fetched badge: {data.get('name', 'unknown')} (ID: {badge_id})", level=klogging.logLevel.DEBUG, extra={"badge_id": badge_id})  # ty:ignore[unresolved-attribute]
             return Badge.from_dict(data)  # ty:ignore[invalid-argument-type]
         except Exception as e:
             klogging.log(f"Error fetching badge {badge_id}: {e}", start_color=klogging.Ansi.LRED, level=klogging.logLevel.ERROR, extra={"badge_id": badge_id, "error": str(e)})
@@ -410,7 +410,7 @@ class BadgeRepository:
             if data is None:
                 klogging.log(f"Badge not found with name: {name}", level=klogging.logLevel.DEBUG, extra={"name": name})
                 return None
-            klogging.log(f"Successfully fetched badge: {data.get('name', 'unknown')} (name: {name})", level=klogging.logLevel.DEBUG, extra={"name": name})
+            klogging.log(f"Successfully fetched badge: {data.get('name', 'unknown')} (name: {name})", level=klogging.logLevel.DEBUG, extra={"name": name})  # ty:ignore[unresolved-attribute]
             return Badge.from_dict(data)  # ty:ignore[invalid-argument-type]
         except Exception as e:
             klogging.log(f"Error fetching badge by name {name}: {e}", start_color=klogging.Ansi.LRED, level=klogging.logLevel.ERROR, extra={"name": name, "error": str(e)})
@@ -429,9 +429,9 @@ class BadgeRepository:
                 "SELECT id FROM badges WHERE name = %s",
                 [name]
             )
-            badge_id = result['id'] if result else None  # ty:ignore[invalid-argument-type, invalid-return-type]
+            badge_id = result['id'] if result else None  # ty:ignore[invalid-argument-type]
             klogging.log(f"Successfully created badge with ID: {badge_id}", level=klogging.logLevel.INFO, extra={"badge_id": badge_id, "name": name})
-            return badge_id
+            return badge_id or 0
         except Exception as e:
             klogging.log(f"Error creating badge: {e}", start_color=klogging.Ansi.LRED, level=klogging.logLevel.ERROR, extra={"name": name, "error": str(e)})
             raise DatabaseError(f"Failed to create badge: {str(e)}") from e
@@ -458,9 +458,9 @@ class BadgeRepository:
             styles = await glob.db.fetchall(
                 "SELECT * FROM badge_styles WHERE badge_id = %s",
                 [badge_id]
-            )  # ty:ignore[invalid-return-type]
+            )
             klogging.log(f"Found {len(styles)} styles for badge {badge_id}", level=klogging.logLevel.DEBUG, extra={"badge_id": badge_id, "count": len(styles)})
-            return styles
+            return list(styles)  # ty:ignore[invalid-return-type]
         except Exception as e:
             klogging.log(f"Error fetching styles for badge {badge_id}: {e}", start_color=klogging.Ansi.LRED, level=klogging.logLevel.ERROR, extra={"badge_id": badge_id, "error": str(e)})
             raise DatabaseError(f"Failed to get styles for badge {badge_id}: {str(e)}") from e
@@ -548,9 +548,9 @@ class UserBadgeRepository:
             badges = await glob.db.fetchall(
                 "SELECT badge_id FROM user_badges WHERE userid = %s",
                 [user_id]
-            )  # ty:ignore[invalid-return-type]
+            )
             klogging.log(f"User {user_id} has {len(badges)} badges", level=klogging.logLevel.DEBUG, extra={"user_id": user_id, "count": len(badges)})
-            return badges
+            return list(badges)  # ty:ignore[invalid-return-type]
         except Exception as e:
             klogging.log(f"Error getting badges for user {user_id}: {e}", start_color=klogging.Ansi.LRED, level=klogging.logLevel.ERROR, extra={"user_id": user_id, "error": str(e)})
             raise DatabaseError(f"Failed to get badges for user {user_id}: {str(e)}") from e
@@ -662,9 +662,9 @@ class MapRequestRepository:
             requests = await glob.db.fetchall(
                 "SELECT * FROM map_requests WHERE active = 1 ORDER BY datetime DESC LIMIT %s OFFSET %s",
                 [limit, offset]
-            )  # ty:ignore[invalid-return-type]
+            )
             klogging.log(f"Found {len(requests)} active map requests", level=klogging.logLevel.DEBUG, extra={"count": len(requests)})
-            return requests
+            return list(requests)  # ty:ignore[invalid-return-type]
         except Exception as e:
             klogging.log(f"Error getting active map requests: {e}", start_color=klogging.Ansi.LRED, level=klogging.logLevel.ERROR, extra={"limit": limit, "offset": offset, "error": str(e)})
             raise DatabaseError(f"Failed to get active map requests: {str(e)}") from e
@@ -733,9 +733,9 @@ class LogRepository:
             logs = await glob.db.fetchall(
                 "SELECT * FROM logs WHERE `to_id` = %s ORDER BY `created_at` DESC",
                 [target_id]
-            )  # ty:ignore[invalid-return-type]
+            )
             klogging.log(f"Found {len(logs)} log entries for target {target_id}", level=klogging.logLevel.DEBUG, extra={"target_id": target_id, "count": len(logs)})
-            return logs
+            return list(logs)  # ty:ignore[invalid-return-type]
         except Exception as e:
             klogging.log(f"Error getting logs for target {target_id}: {e}", start_color=klogging.Ansi.LRED, level=klogging.logLevel.ERROR, extra={"target_id": target_id, "error": str(e)})
             raise DatabaseError(f"Failed to get logs for target {target_id}: {str(e)}") from e
@@ -752,9 +752,9 @@ class ClientHashRepository:
             hashes = await glob.db.fetchall(
                 "SELECT * FROM client_hashes WHERE userid = %s ORDER BY latest_time DESC",
                 [user_id]
-            )  # ty:ignore[invalid-return-type]
+            )
             klogging.log(f"Found {len(hashes)} client hashes for user {user_id}", level=klogging.logLevel.DEBUG, extra={"user_id": user_id, "count": len(hashes)})
-            return hashes
+            return list(hashes)  # ty:ignore[invalid-return-type]
         except Exception as e:
             klogging.log(f"Error getting client hashes for user {user_id}: {e}", start_color=klogging.Ansi.LRED, level=klogging.logLevel.ERROR, extra={"user_id": user_id, "error": str(e)})
             raise DatabaseError(f"Failed to get client hashes for user {user_id}: {str(e)}") from e
