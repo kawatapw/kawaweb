@@ -1,0 +1,194 @@
+// Shared hero banner. Dynamic cover background pulled from
+// /v1/get_hero_banners; page-specific title/subtitle/badge passed via Jinja.
+// HTML lives at templates/components/hero_banner.html; TS mixin at
+// static/hinaDir/ts/hero_banner.ts (compiled to hero_banner.js).
+
+.kw-hero {
+    position: relative;
+    min-height: 220px;
+    margin: 0 0 22px 0;
+    border-radius: 14px;
+    overflow: hidden;
+    background-color: hsla(var(--main), 18%, 14%, 1);
+    border: 1px solid hsla(var(--main), 25%, 30%, 0.45);
+    cursor: default;
+    transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+
+    &.has-hero {
+        cursor: pointer;
+
+        &:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 14px 34px hsla(var(--main), 55%, 14%, 0.55);
+            border-color: hsla(var(--main), 55%, 55%, 0.5);
+
+            .kw-hero-cover {
+                transform: scale(1.03);
+            }
+        }
+    }
+}
+
+.kw-hero-cover {
+    position: absolute;
+    inset: 0;
+    background-size: cover;
+    background-position: center;
+    transition: transform 0.5s ease;
+}
+
+.kw-hero-vignette {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+        120deg,
+        hsla(var(--main), 20%, 8%, 0.95) 0%,
+        hsla(var(--main), 20%, 8%, 0.78) 45%,
+        hsla(var(--main), 20%, 8%, 0.35) 100%
+    );
+}
+
+.kw-hero-fade--bottom {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 40%;
+    background: linear-gradient(
+        to top,
+        hsla(var(--main), 20%, 8%, 0.55) 0%,
+        hsla(var(--main), 20%, 8%, 0) 100%
+    );
+    pointer-events: none;
+}
+
+.kw-hero-content {
+    position: relative;
+    z-index: 1;
+    padding: 26px 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    color: #fff;
+    max-width: 72%;
+}
+
+.kw-hero-eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 11px;
+    border-radius: 999px;
+    background: hsla(var(--main), 50%, 45%, 0.25);
+    border: 1px solid hsla(var(--main), 55%, 60%, 0.4);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: hsl(var(--main), 70%, 78%);
+    align-self: flex-start;
+    margin-bottom: 4px;
+
+    i {
+        color: hsl(20, 85%, 60%);
+    }
+}
+
+.kw-hero-song {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    text-transform: none;
+    letter-spacing: 0;
+    color: hsl(var(--main), 25%, 88%);
+    font-weight: 500;
+    font-size: 10px;
+    max-width: 360px;
+    overflow: hidden;
+
+    span:not(.kw-hero-song-sep) {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        max-width: 160px;
+    }
+}
+
+.kw-hero-song-sep {
+    opacity: 0.6;
+    padding: 0 1px;
+}
+
+.kw-hero-title {
+    font-size: 32px;
+    font-weight: 800;
+    line-height: 1.15;
+    margin: 4px 0 0 0;
+    text-shadow: 0 3px 14px rgba(0, 0, 0, 0.55);
+    color: #fff;
+
+    i {
+        margin-right: 10px;
+        color: hsl(var(--main), 65%, 72%);
+        font-size: 28px;
+        vertical-align: baseline;
+    }
+}
+
+.kw-hero-subtitle {
+    font-size: 14px;
+    line-height: 1.45;
+    margin: 0;
+    color: hsl(var(--main), 20%, 86%);
+    max-width: 520px;
+}
+
+.kw-hero-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 6px;
+    padding: 6px 12px;
+    border-radius: 999px;
+    background: hsla(var(--main), 25%, 18%, 0.7);
+    border: 1px solid hsla(var(--main), 35%, 45%, 0.4);
+    font-size: 12px;
+    font-weight: 600;
+    color: hsl(var(--main), 20%, 85%);
+    align-self: flex-start;
+
+    i {
+        color: hsl(var(--main), 55%, 70%);
+    }
+}
+
+@media (max-width: 768px) {
+    .kw-hero {
+        min-height: 180px;
+    }
+
+    .kw-hero-content {
+        max-width: 90%;
+        padding: 22px 20px;
+    }
+
+    .kw-hero-title {
+        font-size: 22px;
+
+        i {
+            font-size: 20px;
+        }
+    }
+
+    .kw-hero-subtitle {
+        font-size: 12.5px;
+    }
+
+    .kw-hero-song {
+        max-width: 220px;
+
+        span:not(.kw-hero-song-sep) {
+            max-width: 95px;
+        }
+    }
+}

@@ -28,6 +28,8 @@ if (typeof Vue === 'undefined') {
                 resizeListener: null,
                 searchBusListener: null,
                 isUserDropdownOpen: false,
+                isMobileLegacyAdminOpen: false,
+                isMobileHinaWIPOpen: false,
                 currentHue: 180,
                 _userDropdownClickHandler: null,
                 _userDropdownKeyHandler: null
@@ -107,6 +109,9 @@ if (typeof Vue === 'undefined') {
                 },
                 closeMobileMenu() {
                     this.isMobileMenuOpen = false;
+                    // Reset submenu state so toggles don't persist across opens.
+                    this.isMobileLegacyAdminOpen = false;
+                    this.isMobileHinaWIPOpen = false;
                     this.resetSearch();
                 },
                 startAnimation() {
@@ -341,6 +346,12 @@ if (typeof Vue === 'undefined') {
                 toggleMobileDropdown(event) {
                     const dropdown = event.currentTarget.parentElement;
                     dropdown.classList.toggle('active');
+                },
+                toggleMobileLegacyAdmin() {
+                    this.isMobileLegacyAdminOpen = !this.isMobileLegacyAdminOpen;
+                },
+                toggleMobileHinaWIP() {
+                    this.isMobileHinaWIPOpen = !this.isMobileHinaWIPOpen;
                 },
                 showDocsPanel(doc, page) {
                     docsBus.$emit('show-docs-panel', doc || 'Rules', page || 'Main');

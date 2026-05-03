@@ -247,6 +247,10 @@ new Vue({
                     if (self.activeSeason && self.schedules.some(function(sc) { return sc.id === self.activeSeason.schedule_id; })) {
                         self.selectedSchedule = self.activeSeason.schedule_id;
                     }
+                    // Default to current season (was 0 = All Time before).
+                    if (self.activeSeason && (self.selectedSeason == null || self.selectedSeason === 0)) {
+                        self.selectedSeason = self.activeSeason.id;
+                    }
                     if (self.yearOptions.length > 0) {
                         self.selectedYear = self.yearOptions[0];
                     }
@@ -536,7 +540,7 @@ new Vue({
         DisplayCheats(obj) {
             let htmlString = '';
             if (obj.RelaxHack === true) htmlString += `<div>Relax</div>`;
-            if (obj.ARChanger === true & obj.ARChangerAR) htmlString += `<div>AR: ${obj.ARChangerAR.toFixed(2)}</div>`;
+            if (obj.ARChanger === true && obj.ARChangerAR) htmlString += `<div>AR: ${obj.ARChangerAR.toFixed(2)}</div>`;
             if (obj.Timewarp === true) {
                 if (obj.TimewarpRate || obj.TimewarpType == 'Rate') htmlString += `<div>TW: ${obj.TimewarpRate}%</div>`
                 else if (obj.TimewarpMultiplier || obj.TimewarpType == 'Multiplier') htmlString += `<div>TW: ${obj.TimewarpMultiplier}x</div>`

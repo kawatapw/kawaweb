@@ -22,6 +22,10 @@ HINAI_AUDIO = f'{HINAI_MIRROR}/v3/osu/music/audio'
 OSUDIRECT_SEARCH = 'https://osu.direct/api/v2/search'
 MIRROR_DOWNLOAD = f'{HINAI_MIRROR}/api/v1/hinai/d'
 
+# Nerinyan — third official mirror (partner of Hinai). Public API, no auth.
+NERINYAN_SEARCH = 'https://api.nerinyan.moe/search'
+NERINYAN_DOWNLOAD = 'https://api.nerinyan.moe/d'
+
 # Mirror is fully public — no auth headers needed.
 _MIRROR_HEADERS = {}
 
@@ -108,7 +112,7 @@ def _cheesegull_to_v2(cg: dict) -> dict:
 @hina_beatmaps.route('/beatmaps')
 async def beatmaps_page():
     if not session or 'authenticated' not in session:
-        return await flash('error', 'You must be logged in to access that page.', 'hinaDir/login')
+        return await flash('error', 'You must be logged in to access that page.', 'login')
     return await render_template('beatmaps.html', globalNotice=g.globalNotice)
 
 
@@ -181,8 +185,52 @@ async def beatmaps_search():
 
     if source == 'hinai':
         return await _search_hinai_v2(query, mode, status, page, limit, sort)
+    elif source == 'nerinyan':
+        return await _search_nerinyan(query, mode, status, amount, offset)
     else:
         return await _search_osudirect(query, mode, status, amount, offset)
+
+
+async def _search_nerinyan(query, mode, status, amount, offset):
+    """Search via Nerinyan mirror (https://api.nerinyan.moe).
+
+    Uses the legacy offset/amount interface (load-more) — only Hinai has
+    the dedicated paginated v2 endpoint, so Nerinyan plays nicely with
+    the same flow osu.direct uses. Nerinyan exposes `b` (beatmapset
+    offset) and `ps` (page size) on its /search endpoint.
+
+    Returns an osu! API v2-shaped beatmapset array; there is no
+    total_count header, so has_more is inferred from `len(sets) == amount`.
+    """
+    params: dict = {'ps': amount, 'b': offset}
+    if query:
+        params['q'] = query
+    if mode >= 0:
+        params['m'] = mode
+    if status not in (-99, -1):
+        params['s'] = _STATUS_INT_TO_STR.get(status, 'ranked')
+
+    try:
+        async with glob.http.get(NERINYAN_SEARCH, params=params, timeout=15) as resp:
+            if resp.status != 200:
+                klogging.log(f'Nerinyan search returned {resp.status}',
+                             klogging.Ansi.LYELLOW)
+                return jsonify({
+                    'status': 'error',
+                    'message': f'Nerinyan returned {resp.status}',
+                }), 502
+            data = await resp.json(content_type=None)
+            sets = data if isinstance(data, list) else []
+            return jsonify({
+                'status': 'success',
+                'sets': sets,
+                'download_base': NERINYAN_DOWNLOAD,
+                'source': 'nerinyan',
+                'has_more': len(sets) >= amount,
+            })
+    except Exception as e:
+        klogging.log(f'Nerinyan search error: {e}', klogging.Ansi.LRED)
+        return jsonify({'status': 'error', 'message': str(e)}), 502
 
 
 async def _search_hinai_v2(query, mode, status, page, limit, sort):

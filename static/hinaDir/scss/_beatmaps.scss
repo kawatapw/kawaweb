@@ -146,7 +146,7 @@ $status-graveyard: #999;
   align-items: center;
   height: 100%;
   padding: 0 6px;
-  // No gap — use margin-right on frames for seamless -50% loop
+  /* No gap — use margin-right on frames for seamless -50% loop */
   animation: bm-hero-scroll 60s linear infinite;
   will-change: transform;
   position: relative;
@@ -280,6 +280,17 @@ $status-graveyard: #999;
   .bm-hero {
     animation: none;
   }
+  /* Coderabbit: also disable the mirror status pulse, the player-pulse
+     loop, and the modal-skeleton shimmer for users who prefer reduced
+     motion — they were added after the original block and were running
+     unconditionally. The player class is .hinai-player-btn--playing
+     (correcting an earlier typo of .bm-player-button--playing). */
+  .bm-mirror-ping-pulse,
+  .hinai-player-btn--playing,
+  .bm-modal-skeleton-circle,
+  .bm-modal-skeleton-lines div {
+    animation: none !important;
+  }
 }
 
 // ── Header ──
@@ -312,7 +323,8 @@ $status-graveyard: #999;
 .bm-search-bar {
   position: relative;
   max-width: 600px;
-  margin-bottom: 22px;
+  /* Coderabbit: prior margin-bottom: 22px was overridden by this shorthand,
+     keeping single source of truth. */
   margin: 0 auto 20px;
 }
 
@@ -373,7 +385,6 @@ $status-graveyard: #999;
   margin-bottom: 28px;
   padding: 16px 20px;
   background: rgba(255, 255, 255, 0.02);
-  backdrop-filter: blur(2px);
   border: 1px solid rgba(255, 255, 255, 0.05);
   border-radius: 12px;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.2);
@@ -966,7 +977,11 @@ $status-graveyard: #999;
   right: 0;
   bottom: 0;
   background: rgba(0, 0, 0, 0.75);
-  z-index: 50;
+  /* Coderabbit: 50 was below navbar dropdowns (1001-1002 in
+     _dropdown.scss) and Admin V2 toasts (100), so the modal could be
+     hidden behind an open dropdown. Bumped to 1100 — above all
+     known site chrome but below any future modal-layer reservations. */
+  z-index: 1100;
   display: flex;
   align-items: flex-start;
   justify-content: center;
@@ -1032,7 +1047,17 @@ $status-graveyard: #999;
   right: 50px;
   z-index: 1;
 
-  .bm-status { margin-bottom: 6px; }
+  /* Coderabbit: the global .bm-status rule is `position: absolute;
+     top: 8px; left: 8px;` (anchors the badge to a card cover). Inside
+     this banner-info container we want the badge to flow above the
+     title in normal block order, so reset positioning before applying
+     spacing — without this the badge overlaps the title/artist text. */
+  .bm-status {
+    position: static;
+    top: auto;
+    left: auto;
+    margin-bottom: 6px;
+  }
 }
 
 .bm-modal-title {
@@ -1101,7 +1126,9 @@ $status-graveyard: #999;
   font-weight: 600;
   color: $text-primary;
   text-align: center;
-  word-break: break-word;
+  /* Coderabbit: overflow-wrap is the modern equivalent of word-break:
+     break-word; the latter is deprecated outside of legacy IE/Edge. */
+  overflow-wrap: break-word;
 }
 
 .bm-modal-stat-key {
@@ -1167,7 +1194,8 @@ $status-graveyard: #999;
   font-size: 0.78rem;
   color: $text-muted;
   line-height: 1.6;
-  word-break: break-word;
+  /* Coderabbit: see .bm-modal-stat-val above for rationale. */
+  overflow-wrap: break-word;
   margin: 0;
 }
 

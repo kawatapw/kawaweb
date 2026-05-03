@@ -327,3 +327,125 @@
         }
     }
 }
+
+// ── Nested admin dropdown: desktop flyout (hover to reveal) ──
+// Use .navbar-dropdown-menu scoping so these rules match Loki's component-layer
+// specificity (0,2,0) and aren't short-circuited by the @layer components
+// precedence over @layer styles-override. Also use display: none/block for the
+// submenu visibility because visibility:hidden is inheritable and can be
+// forced-visible by ancestor hover rules.
+.navbar-dropdown-menu .navbar-dropdown-item--has-submenu {
+    position: relative;
+    display: flex !important;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    cursor: pointer;
+    user-select: none;
+
+    &:hover,
+    &:focus,
+    &:focus-within {
+        background: var(--navbar-bg-hover);
+        color: var(--navbar-accent);
+
+        > .navbar-dropdown-submenu {
+            display: block;
+        }
+
+        > .navbar-dropdown-submenu-chevron {
+            transform: translateX(2px);
+            color: var(--navbar-accent);
+        }
+    }
+}
+
+.navbar-dropdown-menu .navbar-dropdown-submenu-chevron {
+    font-size: 0.7rem;
+    color: var(--navbar-text-muted);
+    transition: transform 0.2s ease, color 0.2s ease;
+    flex-shrink: 0;
+}
+
+.navbar-dropdown-menu .navbar-dropdown-submenu {
+    display: none;
+    position: absolute;
+    top: -8px;
+    left: 100%;
+    min-width: 200px;
+    background: var(--navbar-bg);
+    border: 1px solid var(--navbar-border);
+    border-radius: var(--navbar-radius);
+    box-shadow: var(--navbar-shadow);
+    padding: 8px 0;
+    margin-left: 4px;
+    z-index: 1002;
+
+    // Invisible bridge covering the 4px gap + slack so :hover stays alive
+    // when the cursor traverses from parent item to flyout.
+    &::before {
+        content: '';
+        position: absolute;
+        top: -4px;
+        left: -10px;
+        width: 14px;
+        height: calc(100% + 8px);
+        background: transparent;
+    }
+}
+
+// ── Nested admin dropdown: mobile accordion (tap to expand) ──
+.navbar-mobile-dropdown-subgroup {
+    display: flex;
+    flex-direction: column;
+}
+
+.navbar-mobile-dropdown-subgroup-trigger {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px 16px 12px 48px;
+    background: none;
+    border: none;
+    color: var(--navbar-text);
+    font-weight: 500;
+    font-size: 0.711rem;
+    text-align: left;
+    cursor: pointer;
+    transition: background 0.2s ease, color 0.2s ease;
+
+    &:hover {
+        background: var(--navbar-bg-hover);
+        color: var(--navbar-accent);
+    }
+}
+
+.navbar-mobile-dropdown-subgroup-chevron {
+    width: auto;
+    margin-left: auto;
+    font-size: 0.75rem;
+    color: var(--navbar-text-muted);
+    transition: transform 0.25s ease;
+
+    &.is-flipped {
+        transform: rotate(90deg);
+    }
+}
+
+.navbar-mobile-dropdown-submenu {
+    max-height: 0;
+    overflow: hidden;
+    background: hsl(var(--main), 8%, 14%);
+    transition: max-height 0.3s ease;
+
+    .navbar-mobile-dropdown-item {
+        padding-left: 68px;
+    }
+}
+
+.navbar-mobile-dropdown-subgroup.is-open .navbar-mobile-dropdown-submenu {
+    max-height: 320px;
+    overflow-y: auto;
+}

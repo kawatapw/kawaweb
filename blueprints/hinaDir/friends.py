@@ -15,7 +15,7 @@ def login_required(func):
     async def wrapper(*args, **kwargs):
         if not session or 'authenticated' not in session:
             from objects.utils import flash
-            return await flash('error', 'You must be logged in to access that page.', 'hinaDir/login')
+            return await flash('error', 'You must be logged in to access that page.', 'login')
         return await func(*args, **kwargs)
     return wrapper
 

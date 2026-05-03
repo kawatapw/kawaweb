@@ -1,0 +1,50 @@
+{#
+  Dynamic hero banner. Consumes GET /v1/get_hero_banners (top-50 beatmapsets
+  weighted by plays + favourites) and renders one random pick as a full-bleed
+  cover background with a page title overlay.
+
+  Usage:
+    {% include 'components/hero_banner.html'
+       with context ignore missing
+       ppr_title='Staff Team'
+       ppr_subtitle='The people running the show.'
+       ppr_badge_html='<i class="fas fa-users"></i> ' ~ total_staff ~ ' members'
+    %}
+
+  The host page's Vue app must include window.HeroBannerMixin for `hero`,
+  `heroLoading`, `fetchHero`, and `openHeroPanel` to exist on the instance.
+
+  ⚠ XSS contract: ppr_title, ppr_subtitle, and ppr_badge_html are rendered
+  with the Jinja2 |safe filter (so callers can include FA icon markup like
+  `<i class="fas fa-fire"></i>`). This BYPASSES auto-escape — callers MUST
+  pass only literal/trusted HTML, NEVER user-controlled input. If you ever
+  need to interpolate dynamic data here, escape it server-side first
+  (e.g. via Markup.escape or jinja's |e filter on the inner value) and
+  pass the resulting safe string in.
+#}
+<div class="kw-hero" :class="{ 'has-hero': hero }" @click="openHeroPanel">
+    <div class="kw-hero-cover" v-if="hero" :style="{ backgroundImage: 'url(' + hero.cover_url + ')' }"></div>
+    <div class="kw-hero-vignette"></div>
+    <div class="kw-hero-content">
+        <span class="kw-hero-eyebrow" v-if="hero">
+            <i class="fas fa-fire"></i>
+            Now trending
+            <span class="kw-hero-song">
+                <span v-text="hero.title"></span>
+                <span class="kw-hero-song-sep">—</span>
+                <span v-text="hero.artist"></span>
+            </span>
+        </span>
+        {% if ppr_title is defined %}
+        <h1 class="kw-hero-title">{{ ppr_title|safe }}</h1>
+        {% endif %}
+        {% if ppr_subtitle is defined %}
+        <p class="kw-hero-subtitle">{{ ppr_subtitle|safe }}</p>
+        {% endif %}
+        {% if ppr_badge_html is defined %}
+        <span class="kw-hero-badge">{{ ppr_badge_html|safe }}</span>
+        {% endif %}
+    </div>
+    <div class="kw-hero-fade kw-hero-fade--bottom"></div>
+</div>
+<script src="{{ bust('/static/hinaDir/compiled/hero_banner.js') }}"></script>

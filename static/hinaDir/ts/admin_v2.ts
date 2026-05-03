@@ -105,9 +105,11 @@ document.addEventListener('DOMContentLoaded', function () {
                 needsReason: false,
                 needsDuration: false,
                 needsPassword: false,
+                needsScoreId: false,
                 reason: '',
                 duration: 24,
                 password: '',
+                scoreId: '',
                 targetId: 0,
             },
 
@@ -310,7 +312,7 @@ document.addEventListener('DOMContentLoaded', function () {
         },
 
         methods: {
-            // ── Navigation ────────────────────────────────────────
+        // ── Navigation ────────────────────────────────────────
 
             navigateTo: function (view: string) {
                 if (this.currentView === view) return;
@@ -345,7 +347,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
             },
 
-            // ── Dashboard ─────────────────────────────────────────
+        // ── Dashboard ─────────────────────────────────────────
 
             loadDashboard: function () {
                 var self = this;
@@ -402,7 +404,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
             },
 
-            // ── Global Search ─────────────────────────────────────
+        // ── Global Search ─────────────────────────────────────
 
             openGlobalSearch: function () {
                 this.search.isOpen = true;
@@ -454,7 +456,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 });
             },
 
-            // ── Users ─────────────────────────────────────────────
+        // ── Users ─────────────────────────────────────────────
 
             loadUsers: function (page: number) {
                 var self = this;
@@ -591,7 +593,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 });
             },
 
-            // ── Bulk Selection ────────────────────────────────────
+        // ── Bulk Selection ────────────────────────────────────
 
             toggleSelectAll: function () {
                 var self = this;
@@ -623,7 +625,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 this.users.selectAll = false;
             },
 
-            // ── Bulk Actions ─────────────────────────────────────
+        // ── Bulk Actions ─────────────────────────────────────
 
             bulkAction: function (action: string) {
                 this.confirmDialog = {
@@ -660,7 +662,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 });
             },
 
-            // ── Row Menu ─────────────────────────────────────────
+        // ── Row Menu ─────────────────────────────────────────
 
             toggleRowMenu: function (userId: number) {
                 this.users.openMenuId = this.users.openMenuId === userId ? null : userId;
@@ -714,13 +716,13 @@ document.addEventListener('DOMContentLoaded', function () {
                 };
             },
 
-            // ── Advanced Filters ─────────────────────────────────
+        // ── Advanced Filters ─────────────────────────────────
 
             toggleAdvancedFilters: function () {
                 this.users.showAdvancedFilters = !this.users.showAdvancedFilters;
             },
 
-            // ── Overview Helpers ──────────────────────────────────
+        // ── Overview Helpers ──────────────────────────────────
 
             getStatsForMode: function (mode: number): any {
                 if (!this.users.editUser || !this.users.editUser.stats) return null;
@@ -745,7 +747,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 return names[mode] || ('mode ' + mode);
             },
 
-            // ── Quick Actions (with confirm dialog) ──────────────
+        // ── Quick Actions (with confirm dialog) ──────────────
 
             quickAction: function (action: string) {
                 if (!this.users.editUser) return;
@@ -758,6 +760,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     silence: 'Silence ' + userName + '?',
                     unsilence: 'Unsilence ' + userName + '?',
                     wipe: 'Wipe all scores for ' + userName + '?',
+                    removescore: 'Remove a score for ' + userName + '?',
                     changepassword: 'Change password for ' + userName + '?',
                 };
                 var messages: { [key: string]: string } = {
@@ -766,6 +769,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     silence: 'They will not be able to send messages in-game.',
                     unsilence: 'They will be able to send messages again.',
                     wipe: 'This will delete ALL scores and reset ALL stats. This cannot be undone easily.',
+                    removescore: 'Enter the ID of the score you want to remove. This can be found in console when clicking on a users score in their profile.',
                     changepassword: 'Enter a new password for this user.',
                 };
 
@@ -777,10 +781,12 @@ document.addEventListener('DOMContentLoaded', function () {
                     needsReason: true,
                     needsDuration: action === 'silence',
                     needsPassword: action === 'changepassword',
+                    needsScoreId: action === 'removescore',
                     reason: '',
                     duration: 24,
                     password: '',
                     targetId: userId,
+                    scoreId: '',
                 };
             },
 
@@ -819,6 +825,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 var body: any = { user: d.targetId, reason: d.reason };
                 if (d.needsDuration) body.duration = d.duration;
                 if (d.needsPassword) body.password = d.password;
+                if (d.needsScoreId) body.score = d.scoreId;
 
                 d.show = false;
 
@@ -836,7 +843,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 });
             },
 
-            // ── Beatmap Review ────────────────────────────────────
+        // ── Beatmap Review ────────────────────────────────────
 
             loadWorkItems: function (page?: number) {
                 var self = this;
@@ -947,7 +954,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 }).catch(function (e: any) { self.showToast('error', e.message); });
             },
 
-            // ── Diff Selection ─────────────────────────────────────
+        // ── Diff Selection ─────────────────────────────────────
 
             toggleDiffSelect: function (diffId: number) {
                 var idx = this.beatmaps.selectedDiffs.indexOf(diffId);
@@ -977,7 +984,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 return this.beatmaps.selectedDiffs.indexOf(diffId) !== -1;
             },
 
-            // ── PP Table ──────────────────────────────────────────────
+        // ── PP Table ──────────────────────────────────────────────
 
             openPPTable: function () {
                 var pp = this.beatmaps.ppTable;
@@ -1079,7 +1086,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 return names.join(', ');
             },
 
-            // ── Set Status (per-diff, stays open) ────────────────
+        // ── Set Status (per-diff, stays open) ────────────────
 
             setDiffStatus: function (action: string) {
                 var self = this;
@@ -1137,7 +1144,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 }).catch(function (e: any) { self.showToast('error', e.message); });
             },
 
-            // ── Resolve Review (closes work item) ────────────────
+        // ── Resolve Review (closes work item) ────────────────
 
             bmResolve: function (action: string) {
                 var self = this;
@@ -1234,7 +1241,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 return m + ':' + (s < 10 ? '0' : '') + s;
             },
 
-            // ── Staff Activity Log ─────────────────────────────────
+        // ── Staff Activity Log ─────────────────────────────────
 
             loadStaffLog: function (page: number) {
                 var self = this;
@@ -1311,7 +1318,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 return '';
             },
 
-            // ── Manual Beatmap Actions ────────────────────────────
+        // ── Manual Beatmap Actions ────────────────────────────
 
             parseMapInput: function (input: string): any {
                 if (!input || !input.trim()) return null;
@@ -1471,7 +1478,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 };
             },
 
-            // ── Manual Map PP Table ───────────────────────────────
+        // ── Manual Map PP Table ───────────────────────────────
 
             toggleManualPP: function () {
                 var pp = this.manualMap.ppTable;
@@ -1564,7 +1571,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 this.navigateTo('staff-log');
             },
 
-            // ── Badges ────────────────────────────────────────────
+        // ── Badges ────────────────────────────────────────────
 
             loadBadges: function () {
                 var self = this;
@@ -1638,7 +1645,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 });
             },
 
-            // ── Mod & Flag Decoders ───────────────────────────────
+        // ── Mod & Flag Decoders ───────────────────────────────
 
             formatMods: function (mods: number): string {
                 if (!mods) return '';
@@ -1672,7 +1679,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 return names.length ? names.join(', ') : ('Unknown flags: ' + flags);
             },
 
-            // ── Trend Helpers ─────────────────────────────────────
+        // ── Trend Helpers ─────────────────────────────────────
 
             getTrendClass: function (current: number, previous: number): string {
                 if (previous === 0 && current > 0) return 'av2-stat-trend--positive';
@@ -1714,7 +1721,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 return Math.round((count / max) * 100);
             },
 
-            // ── Utilities ─────────────────────────────────────────
+        // ── Utilities ─────────────────────────────────────────
 
             badgeStyle: function (badge: any): string {
                 var styles = badge.styles || {};

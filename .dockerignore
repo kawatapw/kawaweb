@@ -10,5 +10,5 @@ _testing/
 .pytest_cache/
 tools/cf_records.txt
 .env
-# Keep uv.lock but ignore local .venv
-!.uv-cache/
+# Keep uv.lock but always exclude the local uv cache from build context.
+.uv-cache/

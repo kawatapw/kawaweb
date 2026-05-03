@@ -60,6 +60,7 @@ class SessionManager:
     def require_authentication() -> None:
         """Require authentication, raise error if not authenticated."""
         if not SessionManager.is_authenticated():
+            klogging.log("Authentication required but user not authenticated", level=klogging.logLevel.WARNING, extra={"ip": request.remote_addr, "path": request.path})
             raise AuthenticationError()
 
     @staticmethod
@@ -67,6 +68,8 @@ class SessionManager:
         """Require staff privileges, raise error if not staff."""
         SessionManager.require_authentication()
         if not SessionManager.is_staff():
+            user_id = SessionManager.get_user_id()
+            klogging.log(f"Staff privileges required but user {user_id} is not staff", level=klogging.logLevel.WARNING, extra={"user_id": user_id, "path": request.path})
             raise AuthorizationError()
 
 
@@ -78,6 +81,7 @@ class RequestValidator:
         """Validate request content type."""
         received = (request.content_type or "").split(";", 1)[0].strip()
         if received != expected:
+            klogging.log(f"Invalid content type: received '{received}', expected '{expected}'", level=klogging.logLevel.WARNING, extra={"received_content_type": received, "expected_content_type": expected, "path": request.path})
             raise ValidationError(f"Invalid content type. Use {expected}.")
 
     @staticmethod
@@ -85,6 +89,7 @@ class RequestValidator:
         """Get form data from request."""
         form = await request.form
         if not form:
+            klogging.log("No form data provided in request", level=klogging.logLevel.WARNING, extra={"path": request.path, "method": request.method})
             raise ValidationError("No form data provided.")
         return form
 
@@ -93,6 +98,7 @@ class RequestValidator:
         """Get JSON data from request."""
         data = await request.get_json()
         if not data:
+            klogging.log("No JSON data provided in request", level=klogging.logLevel.WARNING, extra={"path": request.path, "method": request.method})
             raise ValidationError("No JSON data provided.")
         return data
 
@@ -111,109 +117,128 @@ class DiscordLogger:
 
     async def log_user_action(self, action: Action, mod_name: str, mod_id: int, user_name: str, user_id: int) -> None:
         """Log user action to Discord."""
-        if action.action == ActionType.CHANGE_PASSWORD:
-            # Don't log password changes
-            return
+        try:
+            if action.action == ActionType.CHANGE_PASSWORD:
+                # Don't log password changes
+                klogging.log("Skipping Discord log for password change", level=klogging.logLevel.DEBUG, extra={"action_id": action.id, "user_id": user_id})
+                return
 
-        webhook = DiscordWebhook(self.admin_webhook_url)
+            klogging.log(f"Logging user action to Discord: {action.action.value} on {user_name}", level=klogging.logLevel.INFO, extra={"action_id": action.id, "mod_id": mod_id, "user_id": user_id, "action_type": action.action.value})
 
-        embed = DiscordEmbed(
-            title=f"{user_name} was {action.text} by {mod_name}",
-            description=f"a {action.action.value} was performed.",
-            color=5126045,
-            timestamp=datetime.now()
-        )
+            webhook = DiscordWebhook(self.admin_webhook_url)
 
-        embed.set_author(
-            name=f"New Action By {mod_name}",
-            icon_url=f"https://a.kawata.pw/{mod_id}"
-        )
+            embed = DiscordEmbed(
+                title=f"{user_name} was {action.text} by {mod_name}",
+                description=f"a {action.action.value} was performed.",
+                color=5126045,
+                timestamp=datetime.now()
+            )
 
-        embed.add_embed_field(
-            name="Information:",
-            value=f"Action ID: {action.id}\nAction Moderator: {mod_name} ({mod_id})\nAction User: {user_name} ({user_id})\nAction Type: {action.action.value}\nAction Reason: {action.reason}",
-            inline=False
-        )
+            embed.set_author(
+                name=f"New Action By {mod_name}",
+                icon_url=f"https://a.kawata.pw/{mod_id}"
+            )
 
-        embed.set_footer(
-            text=f"ID: {action.id}",
-            icon_url=f"https://a.kawata.pw/{user_id}"
-        )
+            embed.add_embed_field(
+                name="Information:",
+                value=f"Action ID: {action.id}\nAction Moderator: {mod_name} ({mod_id})\nAction User: {user_name} ({user_id})\nAction Type: {action.action.value}\nAction Reason: {action.reason}",
+                inline=False
+            )
 
-        webhook.add_embed(embed)
-        await asyncio.to_thread(webhook.execute)
+            embed.set_footer(
+                text=f"ID: {action.id}",
+                icon_url=f"https://a.kawata.pw/{user_id}"
+            )
+
+            webhook.add_embed(embed)
+            await asyncio.to_thread(webhook.execute)
+            klogging.log("Successfully logged user action to Discord", level=klogging.logLevel.INFO, extra={"action_id": action.id})
+        except Exception as e:
+            klogging.log(f"Failed to log user action to Discord: {e}", start_color=klogging.Ansi.LYELLOW, level=klogging.logLevel.WARNING, extra={"action_id": action.id, "error": str(e)})
 
     async def log_map_action(self, action: Action, mod_name: str, mod_id: int, map_obj: Any) -> None:
         """Log map action to Discord."""
-        webhook = DiscordWebhook(self.ranked_webhook_url)
+        try:
+            klogging.log(f"Logging map action to Discord: {action.action.value} on {map_obj.title} [{map_obj.version}]", level=klogging.logLevel.INFO, extra={"action_id": action.id, "mod_id": mod_id, "map_id": map_obj.id, "action_type": action.action.value})
 
-        embed = DiscordEmbed(
-            title=f"{map_obj.title} [{map_obj.version}] was {action.text} by {mod_name} ({mod_id})",
-            description=f"[{map_obj.title} [{map_obj.version}]](https://osu.ppy.sh/b/{map_obj.id}) was {action.text}",
-            color=5126045,
-            timestamp=datetime.now()
-        )
+            webhook = DiscordWebhook(self.ranked_webhook_url)
 
-        embed.set_author(
-            name=f"Diff {action.text} By {mod_name} ({mod_id})",
-            icon_url=f"https://a.kawata.pw/{mod_id}"
-        )
+            embed = DiscordEmbed(
+                title=f"{map_obj.title} [{map_obj.version}] was {action.text} by {mod_name} ({mod_id})",
+                description=f"[{map_obj.title} [{map_obj.version}]](https://osu.ppy.sh/b/{map_obj.id}) was {action.text}",
+                color=5126045,
+                timestamp=datetime.now()
+            )
 
-        embed.add_embed_field(
-            name="Information:",
-            value=f"""
-            Ranked By: {mod_name} ({mod_id})
-            Map: {map_obj.title} [{map_obj.version}] ({map_obj.id})
-            Map Stats: CS: {map_obj.cs} AR: {map_obj.ar} OD: {map_obj.od} HP: {map_obj.hp} NM*: {map_obj.diff}
-            Action: {action.action.value}
-            """,
-            inline=False
-        )
+            embed.set_author(
+                name=f"Diff {action.text} By {mod_name} ({mod_id})",
+                icon_url=f"https://a.kawata.pw/{mod_id}"
+            )
 
-        embed.set_image(url=f"https://assets.ppy.sh/beatmaps/{map_obj.set_id}/covers/card@2x.jpg")
+            embed.add_embed_field(
+                name="Information:",
+                value=f"""
+                Ranked By: {mod_name} ({mod_id})
+                Map: {map_obj.title} [{map_obj.version}] ({map_obj.id})
+                Map Stats: CS: {map_obj.cs} AR: {map_obj.ar} OD: {map_obj.od} HP: {map_obj.hp} NM*: {map_obj.diff}
+                Action: {action.action.value}
+                """,
+                inline=False
+            )
 
-        embed.set_footer(
-            text=f"ID: {action.id}",
-            icon_url=f"https://a.kawata.pw/{mod_id}"
-        )
+            embed.set_image(url=f"https://assets.ppy.sh/beatmaps/{map_obj.set_id}/covers/card@2x.jpg")
 
-        webhook.add_embed(embed)
-        await asyncio.to_thread(webhook.execute)
+            embed.set_footer(
+                text=f"ID: {action.id}",
+                icon_url=f"https://a.kawata.pw/{mod_id}"
+            )
+
+            webhook.add_embed(embed)
+            await asyncio.to_thread(webhook.execute)
+            klogging.log("Successfully logged map action to Discord", level=klogging.logLevel.INFO, extra={"action_id": action.id, "map_id": map_obj.id})
+        except Exception as e:
+            klogging.log(f"Failed to log map action to Discord: {e}", start_color=klogging.Ansi.LYELLOW, level=klogging.logLevel.WARNING, extra={"action_id": action.id, "map_id": map_obj.id, "error": str(e)})
 
     async def log_badge_action(self, action: Action, mod_name: str, mod_id: int, user_name: str, user_id: int, badge: Any) -> None:
         """Log badge action to Discord."""
-        webhook = DiscordWebhook(self.admin_webhook_url)
+        try:
+            klogging.log(f"Logging badge action to Discord: {action.action.value} badge '{badge['name']}' on {user_name}", level=klogging.logLevel.INFO, extra={"action_id": action.id, "mod_id": mod_id, "user_id": user_id, "badge_id": badge['id'], "action_type": action.action.value})
 
-        embed = DiscordEmbed(
-            title=f"{user_name} was {action.text} {badge['name']} by {mod_name}",
-            description="",
-            color=5126045,
-            timestamp=datetime.now()
-        )
+            webhook = DiscordWebhook(self.admin_webhook_url)
 
-        embed.set_author(
-            name=f"New Action By {mod_name}",
-            icon_url=f"https://a.kawata.pw/{mod_id}"
-        )
+            embed = DiscordEmbed(
+                title=f"{user_name} was {action.text} {badge['name']} by {mod_name}",
+                description="",
+                color=5126045,
+                timestamp=datetime.now()
+            )
 
-        embed.add_embed_field(
-            name="Information:",
-            value=f"""
-            Action Moderator: {mod_name} ({mod_id})
-            Action User: {user_name} ({user_id})
-            Badge: {badge['name']} ({badge['id']})
-            Badge Description: {badge['description']}
-            """,
-            inline=False
-        )
+            embed.set_author(
+                name=f"New Action By {mod_name}",
+                icon_url=f"https://a.kawata.pw/{mod_id}"
+            )
 
-        embed.set_footer(
-            text=f"ID: {action.id}",
-            icon_url=f"https://a.kawata.pw/{user_id}"
-        )
+            embed.add_embed_field(
+                name="Information:",
+                value=f"""
+                Action Moderator: {mod_name} ({mod_id})
+                Action User: {user_name} ({user_id})
+                Badge: {badge['name']} ({badge['id']})
+                Badge Description: {badge['description']}
+                """,
+                inline=False
+            )
 
-        webhook.add_embed(embed)
-        await asyncio.to_thread(webhook.execute)
+            embed.set_footer(
+                text=f"ID: {action.id}",
+                icon_url=f"https://a.kawata.pw/{user_id}"
+            )
+
+            webhook.add_embed(embed)
+            await asyncio.to_thread(webhook.execute)
+            klogging.log("Successfully logged badge action to Discord", level=klogging.logLevel.INFO, extra={"action_id": action.id, "badge_id": badge['id']})
+        except Exception as e:
+            klogging.log(f"Failed to log badge action to Discord: {e}", start_color=klogging.Ansi.LYELLOW, level=klogging.logLevel.WARNING, extra={"action_id": action.id, "badge_id": badge['id'], "error": str(e)})
 
 
 class ResponseFormatter:
@@ -343,6 +368,7 @@ class MapStatusUpdater:
     async def update_status(map_id: int, status: int) -> bool:
         """Update map status via external API."""
         try:
+            klogging.log(f"Updating map {map_id} status to {status} via API", level=klogging.logLevel.INFO, extra={"map_id": map_id, "status": status, "operation": "update_map_status"})
             url = "http://bancho:10000/v1/update_map_status"
             headers = {
                 "Authorization": f"Bearer {glob.config.api_key}",
@@ -357,12 +383,13 @@ class MapStatusUpdater:
                 json_response = await response.json(content_type=None)
 
             if json_response.get("status") == "success":
+                klogging.log(f"Successfully updated map {map_id} status to {status}", level=klogging.logLevel.INFO, extra={"map_id": map_id, "status": status})
                 return True
             else:
-                klogging.log(f"Failed to update map status: {json_response.get('status')}", klogging.Ansi.LRED)
+                klogging.log(f"Failed to update map status: {json_response.get('status')}", start_color=klogging.Ansi.LRED, level=klogging.logLevel.ERROR, extra={"map_id": map_id, "api_response": json_response})
                 return False
         except Exception as e:
-            klogging.log(f"Error on updating map status: {e}", klogging.Ansi.LRED)
+            klogging.log(f"Error updating map status: {e}", start_color=klogging.Ansi.LRED, level=klogging.logLevel.ERROR, extra={"map_id": map_id, "error": str(e)})
             return False
 
 

@@ -1,4 +1,4 @@
-.PHONY: help install install-dev sync clean test lint format type-check security-check check-all run
+.PHONY: help install install-dev sync lock clean test test-cov lint format format-check imports imports-check autoflake type-check type-check2 type-check3 security-check check-all pre-commit run docker-build docker-up docker-down
 
 # Default target
 help:

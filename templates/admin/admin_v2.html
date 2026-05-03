@@ -739,6 +739,10 @@
                                     title="Permanently delete ALL scores and reset ALL stats to zero (irreversible)">
                                 <i class="fas fa-eraser"></i> Wipe
                             </button>
+                            <button class="av2-btn av2-btn--danger" @click="quickAction('removescore')"
+                                    title="Remove a specific score by its ID">
+                                <i class="fas fa-trash"></i> Remove Score
+                            </button>
                             <button class="av2-btn" @click="quickAction('changepassword')"
                                     title="Set a new password for this user (9-32 characters)">
                                 <i class="fas fa-key"></i> Password
@@ -1986,6 +1990,10 @@
                     <i class="fas fa-exclamation-triangle"></i>
                     <strong>This is irreversible.</strong> All scores across every mode will be permanently deleted and all stats reset to zero. Only do this if you are certain.
                 </div>
+                <div class="av2-hint av2-hint--warn" v-if="confirmDialog.action === 'removescore'">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <strong>This is irreversible.</strong> The selected score will be permanently deleted. Only do this if you are certain.
+                </div>
                 <div class="av2-hint av2-hint--info" v-if="confirmDialog.action === 'changepassword'">
                     <i class="fas fa-info-circle"></i>
                     The user will need to log in again with the new password. Make sure to communicate it to them securely.
@@ -2031,10 +2039,15 @@
                            placeholder="Enter new password..." minlength="9" maxlength="32">
                     <span class="av2-field-hint">Must be 9-32 characters. The user will need this to log in.</span>
                 </div>
+                <div class="av2-form-group" v-if="confirmDialog.needsScoreId">
+                    <label>Score ID</label>
+                    <input class="av2-input" v-model="confirmDialog.scoreId" placeholder="Enter the ID of the score to remove...">
+                    <span class="av2-field-hint">This can be found in the console when clicking on a user's score in their profile and opening console or clicking share score.</span>
+                </div>
                 <div class="av2-confirm-actions">
                     <button class="av2-btn" @click="confirmDialog.show = false">Cancel</button>
                     <button class="av2-btn av2-btn--danger" @click="executeConfirmedAction"
-                            :disabled="confirmDialog.needsPassword && (confirmDialog.password.length < 9 || confirmDialog.password.length > 32)">
+                            :disabled="confirmDialog.needsPassword && (confirmDialog.password.length < 9 || confirmDialog.password.length > 32) || (confirmDialog.needsScoreId && !confirmDialog.scoreId)">
                         Confirm
                     </button>
                 </div>

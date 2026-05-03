@@ -16,6 +16,10 @@
 
 {% block content %}
 <div id="app" :class="(load ? 'load' : '')">
+    {% with ppr_title='<i class="fas fa-scroll"></i> Changelog',
+            ppr_subtitle='What is new on kawata — front-end polish, back-end rollouts, and client updates. Newest first.' %}
+        {% include 'components/hero_banner.html' %}
+    {% endwith %}
     <div class="changelog-banner main-banner">
         <div class="main-selector"> <!-- Selectors for Change Type (Frontend, Backend, Client) -->
             <div class="simple-banner-switch" :class="(type == 'frontend' ? 'active' : '')" @click="LoadChangelogs(changelogs, 'frontend', category)">Frontend</div>

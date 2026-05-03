@@ -1,8 +1,10 @@
 (function () {
     var Vue = window.Vue;
     var domain = window.domain;
+    var HeroBannerMixin = window.HeroBannerMixin;
     new Vue({
         el: '#pp-records-app',
+        mixins: HeroBannerMixin ? [HeroBannerMixin] : [],
         data: {
             mode: 0,
             records: [],
@@ -15,7 +17,10 @@
             schedules: [],
             selectedSchedule: null,
             seasons: [],
-            selectedSeason: 0,
+            // Coderabbit: null sentinel for "no season selected" — onScheduleChange
+            // and onYearChange both clear to null when filteredSeasons is empty,
+            // so the initial value matches the cleared state.
+            selectedSeason: null,
             selectedYear: null,
             activeSeason: null,
             // Filter state
@@ -102,6 +107,9 @@
         },
         mounted: function () {
             var self = this;
+            if (typeof this.fetchHero === 'function') {
+                this.fetchHero();
+            }
             this.fetchSeasons().then(function () {
                 self.loadRecords();
             });
@@ -264,6 +272,10 @@
                         if (self.activeSeason && self.schedules.some(function (sc) { return sc.id === self.activeSeason.schedule_id; })) {
                             self.selectedSchedule = self.activeSeason.schedule_id;
                         }
+                        // Default to current season (was 0 = All Time before).
+                        if (self.activeSeason && (self.selectedSeason == null || self.selectedSeason === 0)) {
+                            self.selectedSeason = self.activeSeason.id;
+                        }
                         if (self.yearOptions.length > 0) {
                             self.selectedYear = self.yearOptions[0];
                         }
@@ -283,19 +295,29 @@
                     this.selectedYear = this.yearOptions[0];
                 }
                 var seasons = this.filteredSeasons;
+                this.page = 1;
                 if (seasons.length > 0) {
                     this.selectedSeason = seasons[seasons.length - 1].id;
-                    this.page = 1;
-                    this.loadRecords();
                 }
+                else {
+                    // Empty schedule — clear selection so stale records aren't shown.
+                    this.selectedSeason = null;
+                }
+                this.loadRecords();
             },
             onYearChange: function () {
+                // Coderabbit: mirror onScheduleChange so empty-year switches
+                // clear the season selection and reload (was leaving stale
+                // records on screen when filteredSeasons came back empty).
                 var seasons = this.filteredSeasons;
+                this.page = 1;
                 if (seasons.length > 0) {
                     this.selectedSeason = seasons[seasons.length - 1].id;
-                    this.page = 1;
-                    this.loadRecords();
                 }
+                else {
+                    this.selectedSeason = null;
+                }
+                this.loadRecords();
             },
             onSeasonChange: function () {
                 this.page = 1;

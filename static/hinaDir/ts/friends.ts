@@ -25,8 +25,11 @@ interface FriendUser {
     player_status: PlayerStatus | null;
 }
 
+var HeroBannerMixin = (window as any).HeroBannerMixin;
+
 new Vue({
     el: '#friends-app',
+    mixins: HeroBannerMixin ? [HeroBannerMixin] : [],
     data: {
         tab: 'mutuals' as string,
         mutuals: [] as FriendUser[],
@@ -152,6 +155,7 @@ new Vue({
         },
     },
     created() {
+        if (typeof (this as any).fetchHero === 'function') (this as any).fetchHero();
         this.loadAll();
         this.startPolling();
 

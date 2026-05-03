@@ -26,7 +26,9 @@ import sys
 import time
 import traceback
 from collections.abc import Mapping
+from datetime import date as _dt_date
 from datetime import datetime
+from datetime import time as _dt_time
 from enum import IntEnum
 
 import orjson
@@ -126,8 +128,9 @@ def magnitude_fmt_time(nanosec: int | float) -> str:
     """
     Formats a time value in nanoseconds into a human-readable string representation.
     """
-    suffix = None
+    suffix = TIME_ORDER_SUFFIXES[0]
     for _suffix in TIME_ORDER_SUFFIXES:
+        suffix = _suffix
         if nanosec < 1000:
             break
         nanosec /= 1000
@@ -445,14 +448,8 @@ class klogging:
 
         msg = f"{color_prefix}{msg}{color_suffix}"
 
-        # Check if 'msg' is a format string
-        if '%' in msg:
-            # If 'extra' is a dictionary, use it to format the string
-            if isinstance(extra, dict):
-                msg = msg % extra
-            # If 'extra' is a list or tuple, ensure it has the correct length
-            elif isinstance(extra, (list, tuple)) and len(extra) == msg.count('%'):
-                msg = msg % extra
+        # Note: The msg parameter should be pre-formatted before calling klogging.log()
+        # The extra parameter is for structured logging data, not string formatting
 
         # Create a LogRecord with the correct information
         record = logging.LogRecord(
@@ -530,7 +527,7 @@ class klogging:
 
         def serialize(value):
             try:
-                if isinstance(value, (datetime, datetime.date, datetime.time)):
+                if isinstance(value, (datetime, _dt_date, _dt_time)):
                     return value.isoformat()
                 elif isinstance(value, decimal.Decimal):
                     return float(value)
@@ -674,9 +671,21 @@ def error_catcher(func):
             try:
                 return await func(*args, **kwargs)
             except Exception as e:
-                klogging.log(f"Error in {func.__name__}: {e}", start_color=klogging.Ansi.LRED, level=logging.ERROR, extra={
-                    "error": f"{e}",
-                    })
+                import sys
+                import traceback
+                # Get full exception info
+                exc_info = sys.exc_info()
+                # Log with exception info properly attached
+                klogging.log(
+                    f"Error in {func.__name__}: {e}",
+                    start_color=klogging.Ansi.LRED,
+                    level=logging.ERROR,
+                    extra={
+                        "error": f"{e}",
+                        "error_type": exc_info[0].__name__ if exc_info[0] else "Unknown",
+                        "stack_trace": traceback.format_exc()
+                    }
+                )
                 return await flash('error', 'An error occurred, please report this to the developer', 'error')
     else:
         @functools.wraps(func)
@@ -684,8 +693,18 @@ def error_catcher(func):
             try:
                 return func(*args, **kwargs)
             except Exception as e:
-                klogging.log(f"Error in {func.__name__}: {e}", start_color=klogging.Ansi.LRED, level=logging.ERROR, extra={
-                    "error": f"{e}",
-                    })
+                import sys
+                import traceback
+                exc_info = sys.exc_info()
+                klogging.log(
+                    f"Error in {func.__name__}: {e}",
+                    start_color=klogging.Ansi.LRED,
+                    level=logging.ERROR,
+                    extra={
+                        "error": f"{e}",
+                        "error_type": exc_info[0].__name__ if exc_info[0] else "Unknown",
+                        "stack_trace": traceback.format_exc()
+                    }
+                )
                 return jsonify({'error': 'An error occurred, please report this to the developer', 'timestamp': datetime.now()}), 500
     return wrapper

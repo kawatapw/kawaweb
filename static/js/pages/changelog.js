@@ -1,6 +1,7 @@
 new Vue({
     el: "#app",
     delimiters: ["<%", "%>"],
+    mixins: window.HeroBannerMixin ? [window.HeroBannerMixin] : [],
     data() {
         return {
             flags: window.flags,
@@ -14,6 +15,7 @@ new Vue({
     created() {
         this.$log = ColorfulLogger.child('Changelog Page');
         this.$log.info('LIFECYCLE', "Loading Changelog Page");
+        if (typeof this.fetchHero === 'function') this.fetchHero();
         this.changelogs = window.changelogs;
         this.$log.debug('DATA', "Changelogs:", this.changelogs);
 

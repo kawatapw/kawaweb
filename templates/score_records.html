@@ -1,0 +1,262 @@
+{% extends 'base.html' %}
+{% block title %}Score Records{% endblock %}
+
+{% block header %}
+<link rel="stylesheet" href="{{ bust('/static/hinaDir/compiled/pp_records.css') }}">
+<style>
+.ppr-season-switcher {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 10px 16px;
+    backdrop-filter: blur(8px) saturate(1.5);
+    border-radius: 8px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+}
+.ppr-season-pill {
+    padding: 6px 16px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    background: hsla(var(--main), 15%, 28%, 0.7);
+    color: hsl(var(--main), 15%, 65%);
+    border: 1px solid hsla(var(--main), 15%, 35%, 0.3);
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+.ppr-season-pill:hover {
+    background: hsla(var(--main), 25%, 35%, 0.8);
+    color: #fff;
+    border-color: hsla(var(--main), 30%, 45%, 0.5);
+}
+.ppr-season-pill.active {
+    background: hsl(var(--main), 45%, 42%);
+    color: #fff;
+    pointer-events: none;
+    border-color: hsl(var(--main), 50%, 50%);
+}
+.ppr-season-dropdowns {
+    display: flex;
+    gap: 6px;
+}
+.ppr-season-switcher select.ppr-season-select {
+    padding: 6px 28px 6px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    font-family: inherit;
+    background-color: hsla(var(--main), 12%, 18%, 0.9);
+    color: hsl(var(--main), 15%, 80%);
+    border: 1px solid hsla(var(--main), 20%, 32%, 0.5);
+    cursor: pointer;
+    outline: none;
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23777'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 8px center;
+    background-size: 9px;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div id="score-records-app" v-cloak>
+
+  {% with ppr_title='<i class="fas fa-trophy"></i> Score Records',
+          ppr_subtitle='The biggest raw scores across kawata — vanilla and relax, season by season. Pure leaderboard, no filters.' %}
+    {% include 'components/hero_banner.html' %}
+  {% endwith %}
+
+  <!-- Header -->
+  <div class="ppr-header">
+    <h1 class="ppr-title">Score Records</h1>
+    <p class="ppr-subtitle" v-if="!loading && total > 0">
+      <span v-text="total.toLocaleString()"></span> scores found
+    </p>
+  </div>
+
+  <!-- Mode tabs -->
+  <div class="ppr-mode-tabs">
+    <button v-for="m in modes" :key="'mode-' + m.value"
+            class="ppr-mode-btn"
+            :class="{ active: mode === m.value }"
+            @click="switchMode(m.value)">
+      <span v-text="m.short"></span>
+    </button>
+  </div>
+
+  <!-- Season switcher -->
+  <div class="ppr-season-switcher" v-if="seasons.length > 0">
+    <button type="button" class="ppr-season-pill" :class="{ active: selectedSeason === 0 }" @click="selectSeason(0)">
+      <i class="fas fa-infinity"></i> All Time
+    </button>
+    <div class="ppr-season-dropdowns" v-if="yearOptions.length > 0">
+      <select class="ppr-season-select" v-model.number="selectedSchedule" @change="onScheduleChange" v-if="schedules.length > 1">
+        <option v-for="sc in schedules" :key="'psc'+sc.id" :value="sc.id" v-text="sc.name"></option>
+      </select>
+      <select class="ppr-season-select" v-model.number="selectedYear" @change="onYearChange">
+        <option v-for="y in yearOptions" :key="'py'+y" :value="y" v-text="y"></option>
+      </select>
+      <select class="ppr-season-select" v-model.number="selectedSeason" @change="onSeasonChange">
+        <option v-for="s in filteredSeasons" :key="'ps'+s.id" :value="s.id" v-text="s.label"></option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Skeleton: desktop -->
+  <div v-if="loading" class="ppr-desktop ppr-skeleton-wrap">
+    <table class="ppr-table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Player</th>
+          <th>Beatmap</th>
+          <th>Score</th>
+          <th>Accuracy</th>
+          <th>Combo</th>
+          <th>Mods</th>
+          <th>Grade</th>
+          <th>Date</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr v-for="n in 10" :key="'sk-' + n" class="ppr-skeleton-row">
+          <td><span class="ppr-skeleton-bar ppr-sk-rank"></span></td>
+          <td>
+            <div class="ppr-player-cell">
+              <span class="ppr-skeleton-bar ppr-sk-flag"></span>
+              <span class="ppr-skeleton-bar ppr-sk-player"></span>
+            </div>
+          </td>
+          <td>
+            <div class="ppr-beatmap-cell">
+              <span class="ppr-skeleton-bar ppr-sk-cover"></span>
+              <div class="ppr-map-info">
+                <span class="ppr-skeleton-bar ppr-sk-map-title"></span>
+                <span class="ppr-skeleton-bar ppr-sk-map-diff"></span>
+              </div>
+            </div>
+          </td>
+          <td><span class="ppr-skeleton-bar ppr-sk-pp"></span></td>
+          <td><span class="ppr-skeleton-bar ppr-sk-acc"></span></td>
+          <td><span class="ppr-skeleton-bar ppr-sk-combo"></span></td>
+          <td><span class="ppr-skeleton-bar ppr-sk-mods"></span></td>
+          <td><span class="ppr-skeleton-bar ppr-sk-grade"></span></td>
+          <td><span class="ppr-skeleton-bar ppr-sk-date"></span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Skeleton: mobile -->
+  <div v-if="loading" class="ppr-mobile ppr-skeleton-wrap">
+    <div v-for="n in 6" :key="'mk-' + n" class="ppr-card ppr-skeleton-card">
+      <div class="ppr-card-rank"><span class="ppr-skeleton-bar ppr-sk-mob-rank"></span></div>
+      <span class="ppr-skeleton-bar ppr-sk-mob-cover"></span>
+      <div class="ppr-card-body">
+        <div class="ppr-card-top">
+          <span class="ppr-skeleton-bar ppr-sk-mob-map"></span>
+          <span class="ppr-skeleton-bar ppr-sk-mob-pp"></span>
+        </div>
+        <div class="ppr-card-details">
+          <span class="ppr-skeleton-bar ppr-sk-mob-detail"></span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div v-else-if="error" class="ppr-error"><i class="fas fa-exclamation-triangle"></i><span v-text="error"></span></div>
+  <div v-else-if="records.length === 0" class="ppr-empty">No scores found for this mode.</div>
+
+  <!-- Desktop table -->
+  <div v-if="!loading && !error && records.length > 0" class="ppr-desktop">
+    <table class="ppr-table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Player</th>
+          <th>Beatmap</th>
+          <th>Score</th>
+          <th>Accuracy</th>
+          <th>Combo</th>
+          <th>Mods</th>
+          <th>Grade</th>
+          <th>Date</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr v-for="(r, i) in records" :key="r.id">
+          <td class="ppr-rank" :class="rankClass(i)" v-text="getRank(i)"></td>
+          <td>
+            <div class="ppr-player-cell">
+              <img class="ppr-flag"
+                   :src="'/static/images/flags/' + r.player_country.toUpperCase() + '.png'"
+                   :alt="r.player_country">
+              <a class="ppr-player-name" :href="'/u/' + r.player_id" v-text="r.player_name"></a>
+            </div>
+          </td>
+          <td>
+            <div class="ppr-beatmap-cell">
+              <img class="ppr-cover"
+                   :src="coverUrl(r.set_id)"
+                   @error="coverError($event)"
+                   loading="lazy">
+              <div class="ppr-map-info">
+                <span class="ppr-map-title" v-text="r.artist + ' - ' + r.title"></span>
+                <span class="ppr-map-diff" v-text="'[' + r.version + '] ★' + r.diff.toFixed(2)"></span>
+              </div>
+            </div>
+          </td>
+          <td class="ppr-pp" v-text="formatScore(r.score)"></td>
+          <td class="ppr-acc" v-text="formatAcc(r.acc)"></td>
+          <td v-text="r.max_combo + 'x'"></td>
+          <td class="ppr-mods" v-text="r.mods_readable || 'NM'"></td>
+          <td><img class="ppr-grade" :src="gradeUrl(r.grade)" :alt="r.grade"></td>
+          <td class="ppr-date" v-text="formatDate(r.play_time)"></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Mobile cards -->
+  <div v-if="!loading && !error && records.length > 0" class="ppr-mobile">
+    <div v-for="(r, i) in records" :key="'m-' + r.id" class="ppr-card">
+      <div class="ppr-card-rank" :class="rankClass(i)" v-text="getRank(i)"></div>
+      <img class="ppr-card-cover" :src="coverUrl(r.set_id)" @error="coverError($event)" loading="lazy">
+      <div class="ppr-card-body">
+        <div class="ppr-card-top">
+          <span class="ppr-card-map" v-text="r.artist + ' - ' + r.title + ' [' + r.version + ']'"></span>
+          <span class="ppr-card-pp" v-text="formatScore(r.score)"></span>
+        </div>
+        <div class="ppr-card-details">
+          <span class="ppr-card-player">
+            <img class="ppr-flag" :src="'/static/images/flags/' + r.player_country.toUpperCase() + '.png'" :alt="r.player_country">
+            <a :href="'/u/' + r.player_id" v-text="r.player_name"></a>
+          </span>
+          <span class="ppr-card-sep">|</span>
+          <span v-text="formatAcc(r.acc)"></span>
+          <span class="ppr-card-sep">|</span>
+          <span v-text="r.mods_readable || 'NM'"></span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pagination -->
+  <div v-if="!loading && !error && total > pageSize" class="ppr-pagination">
+    <button class="ppr-page-btn" :disabled="page === 1" @click="goToPage(page - 1)">
+      <i class="fas fa-chevron-left"></i>
+    </button>
+    <span class="ppr-page-info">Page <span v-text="page"></span> / <span v-text="totalPages"></span></span>
+    <button class="ppr-page-btn" :disabled="page >= totalPages" @click="goToPage(page + 1)">
+      <i class="fas fa-chevron-right"></i>
+    </button>
+  </div>
+</div>
+
+<script src="{{ bust('/static/hinaDir/compiled/score_records.js') }}"></script>
+{% endblock %}

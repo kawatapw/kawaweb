@@ -9,14 +9,14 @@
             <div id="editUserWindow" class="modal-content" v-if="show" data-panel="EditUser">
                 <div class="main-block">
                     <div class="profile-bg" :style="'background-image: url(/banners/' + userid + ')'">
-                        <div class="info-block">
-                            <h1 class="title">
-                                <p class="ranks">
-                                    <img :src="'/static/images/flags/' + user.country.toUpperCase() + '.png'" class="profile-flag">
-                                    <span class="bgf"><% user.name %></span>
-                                </p>
-                            </h1>
-                        </div>
+                    <div class="info-block">
+                        <h1 class="title">
+                            <p class="ranks">
+                                <img v-if="user.country" :src="'/static/images/flags/' + user.country.toUpperCase() + '.png'" class="profile-flag">
+                                <span class="bgf"><% user.name %></span>
+                            </p>
+                        </h1>
+                    </div>
                     </div>
                     <div class="profile-flex">
                         <div class="profile-avatar-area">
@@ -44,7 +44,7 @@
                             </div>
                         </div>
                         <div class="bar-selection badge-selects">
-                            <div v-if="user.badges.length != 0" class="select-left badge-block">
+                            <div v-if="user.badges && user.badges.length != 0" class="select-left badge-block">
                                 <div class="badge-block-spacer"></div>
                                 <badge v-for="badge in user.badges" :badge="badge"></badge>
                             </div>
@@ -334,15 +334,15 @@
                                             <div class="log-sender-info">
                                                 <h4 class="log-sender-title">Action taken by:</h4>
                                                 <h5>
-                                                    <img :src="'/static/images/flags/' + log.mod.country.toUpperCase() + '.png'" class="user-flag">
+                                                    <img v-if="log.mod.country" :src="'/static/images/flags/' + log.mod.country.toUpperCase() + '.png'" class="user-flag">
                                                     <a :href="'/u/' + log.mod.id"><% log.mod.name %></a>
                                                 </h5>
-                                                <h6>On: <% log.time %></h6>
+                                                <h6>On: <% log.created_at %></h6>
                                             </div>
                                         </div>
                                         <div class="log-action">
                                             <h4 class="log-action-title">Action: <% log.action %></h4>
-                                            <p class="log-action-reason">Reason: <% log.reason %></p>
+                                            <p class="log-action-reason">Reason: <% log.msg %></p>
                                         </div>
                                     </div>
                                 </div>

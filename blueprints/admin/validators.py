@@ -8,6 +8,8 @@ ensuring data integrity and security.
 import re
 from typing import Any
 
+from objects.utils import klogging
+
 from .exceptions import FormValidationError, ValidationError
 from .models import ActionRequest, ActionType, BadgeRequest, MapRequest, UserListRequest
 
@@ -19,95 +21,117 @@ class Validator:
     def validate_required(value: Any, field_name: str) -> None:
         """Validate that a required field is present."""
         if value is None or (isinstance(value, str) and not value.strip()):
+            klogging.log(f"Validation failed: {field_name} is required", level=klogging.logLevel.WARNING, extra={"field": field_name, "validation_type": "required"})
             raise ValidationError(f"{field_name} is required", field_name)
 
     @staticmethod
     def validate_string(value: Any, field_name: str, min_length: int = 1, max_length: int = 255) -> None:
         """Validate string field."""
         if not isinstance(value, str):
+            klogging.log(f"Validation failed: {field_name} must be a string", level=klogging.logLevel.WARNING, extra={"field": field_name, "validation_type": "type_check", "expected_type": "str"})
             raise ValidationError(f"{field_name} must be a string", field_name)
 
         if len(value) < min_length:
+            klogging.log(f"Validation failed: {field_name} too short (length={len(value)}, min={min_length})", level=klogging.logLevel.WARNING, extra={"field": field_name, "validation_type": "min_length", "actual_length": len(value), "min_length": min_length})
             raise ValidationError(f"{field_name} must be at least {min_length} characters", field_name)
 
         if len(value) > max_length:
+            klogging.log(f"Validation failed: {field_name} too long (length={len(value)}, max={max_length})", level=klogging.logLevel.WARNING, extra={"field": field_name, "validation_type": "max_length", "actual_length": len(value), "max_length": max_length})
             raise ValidationError(f"{field_name} must be at most {max_length} characters", field_name)
 
     @staticmethod
     def validate_integer(value: Any, field_name: str, min_value: int | None = None, max_value: int | None = None) -> None:
         """Validate integer field."""
         if not isinstance(value, int):
+            klogging.log(f"Validation failed: {field_name} must be an integer", level=klogging.logLevel.WARNING, extra={"field": field_name, "validation_type": "type_check", "expected_type": "int"})
             raise ValidationError(f"{field_name} must be an integer", field_name)
 
         if min_value is not None and value < min_value:
+            klogging.log(f"Validation failed: {field_name} below minimum (value={value}, min={min_value})", level=klogging.logLevel.WARNING, extra={"field": field_name, "validation_type": "min_value", "actual_value": value, "min_value": min_value})
             raise ValidationError(f"{field_name} must be at least {min_value}", field_name)
 
         if max_value is not None and value > max_value:
+            klogging.log(f"Validation failed: {field_name} above maximum (value={value}, max={max_value})", level=klogging.logLevel.WARNING, extra={"field": field_name, "validation_type": "max_value", "actual_value": value, "max_value": max_value})
             raise ValidationError(f"{field_name} must be at most {max_value}", field_name)
 
     @staticmethod
     def validate_email(value: str, field_name: str = "email") -> None:
         """Validate email format."""
         if not isinstance(value, str):
+            klogging.log(f"Validation failed: {field_name} must be a string", level=klogging.logLevel.WARNING, extra={"field": field_name, "validation_type": "type_check"})
             raise ValidationError(f"{field_name} must be a string", field_name)
 
         # Basic email regex pattern
         email_pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
         if not re.match(email_pattern, value):
+            klogging.log(f"Validation failed: {field_name} is not a valid email address", level=klogging.logLevel.WARNING, extra={"field": field_name, "validation_type": "email_format", "value": value})
             raise ValidationError(f"{field_name} is not a valid email address", field_name)
 
     @staticmethod
     def validate_country_code(value: str, field_name: str = "country") -> None:
         """Validate country code (2-letter ISO code)."""
         if not isinstance(value, str):
+            klogging.log(f"Validation failed: {field_name} must be a string", level=klogging.logLevel.WARNING, extra={"field": field_name, "validation_type": "type_check"})
             raise ValidationError(f"{field_name} must be a string", field_name)
 
         if len(value) != 2:
+            klogging.log(f"Validation failed: {field_name} must be 2 characters (got {len(value)})", level=klogging.logLevel.WARNING, extra={"field": field_name, "validation_type": "length", "actual_length": len(value), "expected_length": 2})
             raise ValidationError(f"{field_name} must be a 2-letter country code", field_name)
 
         if not value.isalpha():
+            klogging.log(f"Validation failed: {field_name} must contain only letters", level=klogging.logLevel.WARNING, extra={"field": field_name, "validation_type": "alpha_check", "value": value})
             raise ValidationError(f"{field_name} must contain only letters", field_name)
 
     @staticmethod
     def validate_password(value: str, field_name: str = "password") -> None:
         """Validate password strength."""
         if not isinstance(value, str):
+            klogging.log(f"Validation failed: {field_name} must be a string", level=klogging.logLevel.WARNING, extra={"field": field_name, "validation_type": "type_check"})
             raise ValidationError(f"{field_name} must be a string", field_name)
 
         if len(value) < 8:
+            klogging.log(f"Validation failed: {field_name} too short (length={len(value)}, min=8)", level=klogging.logLevel.WARNING, extra={"field": field_name, "validation_type": "min_length", "actual_length": len(value)})
             raise ValidationError(f"{field_name} must be at least 8 characters", field_name)
 
         if len(value) > 32:
+            klogging.log(f"Validation failed: {field_name} too long (length={len(value)}, max=32)", level=klogging.logLevel.WARNING, extra={"field": field_name, "validation_type": "max_length", "actual_length": len(value)})
             raise ValidationError(f"{field_name} must be at most 32 characters", field_name)
 
     @staticmethod
     def validate_privileges(value: int, field_name: str = "privs") -> None:
         """Validate privilege value."""
         if not isinstance(value, int):
+            klogging.log(f"Validation failed: {field_name} must be an integer", level=klogging.logLevel.WARNING, extra={"field": field_name, "validation_type": "type_check"})
             raise ValidationError(f"{field_name} must be an integer", field_name)
 
         if value < 0:
+            klogging.log(f"Validation failed: {field_name} must be non-negative (got {value})", level=klogging.logLevel.WARNING, extra={"field": field_name, "validation_type": "range_check", "value": value})
             raise ValidationError(f"{field_name} must be a non-negative integer", field_name)
 
     @staticmethod
     def validate_duration(value: int, field_name: str = "duration") -> None:
         """Validate duration in hours."""
         if not isinstance(value, int):
+            klogging.log(f"Validation failed: {field_name} must be an integer", level=klogging.logLevel.WARNING, extra={"field": field_name, "validation_type": "type_check"})
             raise ValidationError(f"{field_name} must be an integer", field_name)
 
         if value < 1:
+            klogging.log(f"Validation failed: {field_name} must be at least 1 hour (got {value})", level=klogging.logLevel.WARNING, extra={"field": field_name, "validation_type": "min_value", "value": value})
             raise ValidationError(f"{field_name} must be at least 1 hour", field_name)
 
         if value > 8760:  # 1 year in hours
+            klogging.log(f"Validation failed: {field_name} exceeds maximum (value={value}, max=8760)", level=klogging.logLevel.WARNING, extra={"field": field_name, "validation_type": "max_value", "value": value})
             raise ValidationError(f"{field_name} must be at most 8760 hours (1 year)", field_name)
 
     @staticmethod
     def validate_id(value: int, field_name: str = "id") -> None:
         """Validate ID value."""
         if not isinstance(value, int):
+            klogging.log(f"Validation failed: {field_name} must be an integer", level=klogging.logLevel.WARNING, extra={"field": field_name, "validation_type": "type_check"})
             raise ValidationError(f"{field_name} must be an integer", field_name)
 
         if value < 1:
+            klogging.log(f"Validation failed: {field_name} must be positive (got {value})", level=klogging.logLevel.WARNING, extra={"field": field_name, "validation_type": "range_check", "value": value})
             raise ValidationError(f"{field_name} must be a positive integer", field_name)
 
     @staticmethod
@@ -115,6 +139,7 @@ class Validator:
         """Validate sort field."""
         valid_fields = ['id', 'name', 'creation_time', 'latest_activity', 'priv']
         if value not in valid_fields:
+            klogging.log(f"Validation failed: {field_name} must be one of {valid_fields} (got '{value}')", level=klogging.logLevel.WARNING, extra={"field": field_name, "validation_type": "choice_check", "value": value, "valid_choices": valid_fields})
             raise ValidationError(
                 f"{field_name} must be one of: {', '.join(valid_fields)}",
                 field_name
@@ -125,6 +150,7 @@ class Validator:
         """Validate sort order."""
         valid_orders = ['ASC', 'DESC']
         if value not in valid_orders:
+            klogging.log(f"Validation failed: {field_name} must be one of {valid_orders} (got '{value}')", level=klogging.logLevel.WARNING, extra={"field": field_name, "validation_type": "choice_check", "value": value, "valid_choices": valid_orders})
             raise ValidationError(
                 f"{field_name} must be one of: {', '.join(valid_orders)}",
                 field_name
@@ -134,9 +160,11 @@ class Validator:
     def validate_page(value: int, field_name: str = "page") -> None:
         """Validate page number."""
         if not isinstance(value, int):
+            klogging.log(f"Validation failed: {field_name} must be an integer", level=klogging.logLevel.WARNING, extra={"field": field_name, "validation_type": "type_check"})
             raise ValidationError(f"{field_name} must be an integer", field_name)
 
         if value < 1:
+            klogging.log(f"Validation failed: {field_name} must be at least 1 (got {value})", level=klogging.logLevel.WARNING, extra={"field": field_name, "validation_type": "range_check", "value": value})
             raise ValidationError(f"{field_name} must be at least 1", field_name)
 
 

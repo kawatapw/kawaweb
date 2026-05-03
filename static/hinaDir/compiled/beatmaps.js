@@ -53,18 +53,17 @@
             mirrors: [
                 { key: 'hinai', name: 'Hinai', enabled: true },
                 { key: 'osu_direct', name: 'osu!direct', enabled: true },
-                { key: 'osu_api_v1', name: 'osu! API v1', enabled: false },
-                { key: 'osu_api_v2', name: 'osu! API v2', enabled: false },
-                { key: 'catboy', name: 'catboy.best', enabled: false },
+                { key: 'nerinyan', name: 'NeriNyan', enabled: true },
             ],
         },
         computed: {
-            // Whether to show pagination controls (Hinai mirror + online + multiple pages)
+            // Only Hinai supports full paginated search (dedicated v2 endpoint
+            // with total_count + total_pages metadata). osu!direct and Nerinyan
+            // use the legacy offset/load-more flow.
             showPagination: function () {
                 var self = this;
                 return self.mirror === 'hinai' && self.hinaiOnline && self.totalPages > 1;
             },
-            // Whether to show legacy load-more (osu.direct fallback)
             showLoadMore: function () {
                 var self = this;
                 return self.mirror !== 'hinai' && self.sets.length > 0 && self.hasMore && !self.loading;
@@ -140,6 +139,9 @@
                 if (self.mirror === 'osu_direct') {
                     base = 'https://osu.direct/api/d/' + setId;
                 }
+                else if (self.mirror === 'nerinyan') {
+                    base = 'https://api.nerinyan.moe/d/' + setId;
+                }
                 else {
                     base = self.downloadBase + '/' + setId;
                 }
@@ -185,7 +187,7 @@
             fetchPage: function (page) {
                 var self = this;
                 if (self.mirror !== 'hinai') {
-                    // osu.direct: use legacy offset-based fetch
+                    // osu.direct + Nerinyan: legacy offset-based load-more
                     self.fetchLegacy(false);
                     return;
                 }
@@ -200,7 +202,7 @@
                     + '&status=' + statusParam
                     + '&page=' + page
                     + '&limit=' + self.perPage
-                    + '&source=hinai';
+                    + '&source=' + self.mirror;
                 var xhr = new XMLHttpRequest();
                 xhr.open('GET', url, true);
                 xhr.onreadystatechange = function () {
@@ -240,7 +242,7 @@
                             + '&status=' + statusParam
                             + '&page=' + (self.currentPage + 1)
                             + '&limit=' + self.perPage
-                            + '&source=hinai';
+                            + '&source=' + self.mirror;
                         fetch(nextUrl).catch(function () { }); // fire-and-forget prefetch
                     }
                 };
@@ -264,7 +266,7 @@
                     + '&status=' + statusParam
                     + '&amount=30'
                     + '&offset=' + self.offset
-                    + '&source=osu_direct';
+                    + '&source=' + self.mirror;
                 var xhr = new XMLHttpRequest();
                 xhr.open('GET', url, true);
                 xhr.onreadystatechange = function () {

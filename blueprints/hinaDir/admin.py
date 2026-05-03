@@ -20,7 +20,7 @@ import config as cfg
 from constants import regexes
 from objects import glob
 from objects.privileges import ComparePrivs, GetPriv, Privileges
-from objects.utils import get_safe_name
+from objects.utils import error_catcher, get_safe_name
 
 hina_admin = Blueprint('hina_admin', __name__)
 
@@ -30,19 +30,6 @@ DEFAULT_CHECKLIST = json.dumps({
 })
 
 # ─── Decorators ────────────────────────────────────────────────────────
-
-def error_catcher(func):
-    """JSON-safe error catcher for admin API endpoints (replaces shared one that returns HTML)."""
-    @wraps(func)
-    async def wrapper(*args, **kwargs):
-        try:
-            return await func(*args, **kwargs)
-        except Exception as e:
-            import logging
-            logging.getLogger('console.error').error(f"Error in {func.__name__}: {e}")
-            return jsonify({'status': 'error', 'message': str(e)}), 500
-    return wrapper
-
 
 def staff_required(func):
     """Require login + is_staff for admin-v2 API routes. Returns JSON errors."""
@@ -295,20 +282,13 @@ async def api_dashboard():
     action_placeholders = ', '.join(['%s'] * len(_STAFF_ACTION_WHITELIST))
     whitelist = list(_STAFF_ACTION_WHITELIST)
     raw_actions = await glob.db.fetchall(
-        'SELECT * FROM ('
-        '  SELECT CAST(l.id AS CHAR) AS id, '
-        '    CONVERT(l.action USING utf8mb4) AS action, '
-        '    CONVERT(l.msg USING utf8mb4) AS msg, '
-        '    l.created_at AS time, l.from_id AS mod_id, l.to_id AS target_id '
-        f'  FROM logs l WHERE l.action IN ({action_placeholders}) '
-        '  UNION ALL '
-        '  SELECT CAST(l.id AS CHAR) AS id, '
-        '    CONVERT(l.action USING utf8mb4) AS action, '
-        '    CONVERT(l.msg USING utf8mb4) AS msg, '
-        '    l.created_at AS time, l.from_id AS mod_id, l.to_id AS target_id '
-        f'  FROM logs l WHERE l.action IN ({action_placeholders}) '
-        ') combined ORDER BY time DESC LIMIT 10',
-        whitelist + whitelist
+        'SELECT CAST(l.id AS CHAR) AS id, '
+        '  CONVERT(l.action USING utf8mb4) AS action, '
+        '  CONVERT(l.msg USING utf8mb4) AS msg, '
+        '  l.created_at AS time, l.from_id AS mod_id, l.to_id AS target_id '
+        f'FROM logs l WHERE l.action IN ({action_placeholders}) '
+        'ORDER BY time DESC LIMIT 10',
+        whitelist
     )
 
     recent_actions = []
@@ -895,7 +875,8 @@ async def action_silence():
         return jsonify({'status': 'error', 'message': 'User not found.'}), 404
     if user['priv'] and not ComparePrivs(mod_priv, user['priv']):  # ty:ignore[invalid-argument-type]
         return jsonify({'status': 'error', 'message': 'Cannot modify users with privileges you do not possess.'}), 403
-    if user['silence_end'] != 0:  # ty:ignore[invalid-argument-type]
+    now_ts = int(datetime.datetime.now().timestamp())
+    if user['silence_end'] and user['silence_end'] > now_ts:  # ty:ignore[invalid-argument-type]
         return jsonify({'status': 'error', 'message': 'User is already silenced.'}), 400
 
     silence_end = int(datetime.datetime.now().timestamp()) + duration_hours * 3600
@@ -1209,10 +1190,10 @@ async def action_removescore():
         "INSERT INTO wiped_scores "
         "(id, map_md5, score, pp, acc, max_combo, mods, n300, n100, n50, nmiss, "
         "ngeki, nkatu, grade, status, mode, play_time, time_elapsed, client_flags, "
-        "userid, perfect, online_checksum, r_replay_id) "
+        "userid, perfect, online_checksum) "
         "SELECT id, map_md5, score, pp, acc, max_combo, mods, n300, n100, n50, nmiss, "
         "ngeki, nkatu, grade, status, mode, play_time, time_elapsed, client_flags, "
-        "userid, perfect, online_checksum, r_replay_id "
+        "userid, perfect, online_checksum "
         "FROM scores WHERE id = %s",
         [score_id]
     )
@@ -1981,6 +1962,9 @@ async def api_bm_assign(item_id):
 @staff_required
 async def api_bm_checklist(item_id):
     data = await request.get_json()
+    if not isinstance(data, dict):
+        return jsonify({'status': 'error', 'message': 'Request body must be a JSON object.'}), 400
+
     item = await glob.db.fetch("SELECT checklist FROM beatmap_work_items WHERE id = %s", [item_id])
     if not item:
         return jsonify({'status': 'error', 'message': 'Work item not found.'}), 404

@@ -24,6 +24,7 @@ from blueprints.hinaDir import (
     hina_auth,
     hina_beatmaps,
     hina_friends,
+    hina_hall_of_fame,
     hina_pp_records,
     hina_team,
 )
@@ -182,6 +183,7 @@ app.register_blueprint(hina_admin, url_prefix='/admin-v2')
 app.register_blueprint(hina_beatmaps)
 app.register_blueprint(hina_team)
 app.register_blueprint(hina_pp_records)
+app.register_blueprint(hina_hall_of_fame)
 app.register_blueprint(hina_auth)
 
 @app.errorhandler(404)

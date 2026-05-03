@@ -116,11 +116,17 @@
         font-size: 13px;
     }
 }
+
 </style>
 {% endblock %}
 
 {% block content %}
 <div id="pp-records-app" v-cloak>
+
+  {% with ppr_title='<i class="fas fa-chart-line"></i> PP Records',
+          ppr_subtitle='The highest-rated plays across the kawata community. Pick a mode, a season, and see who is on top.' %}
+    {% include 'components/hero_banner.html' %}
+  {% endwith %}
 
   <!-- Header -->
   <div class="ppr-header">
@@ -146,13 +152,13 @@
       <i class="fas fa-infinity"></i> All Time
     </button>
     <div class="ppr-season-dropdowns" v-if="yearOptions.length > 0">
-      <select class="ppr-season-select" v-model.number="selectedSchedule" @change="onScheduleChange" v-if="schedules.length > 1">
+      <select aria-label="Schedule" class="ppr-season-select" v-model.number="selectedSchedule" @change="onScheduleChange" v-if="schedules.length > 1">
         <option v-for="sc in schedules" :key="'psc'+sc.id" :value="sc.id" v-text="sc.name"></option>
       </select>
-      <select class="ppr-season-select" v-model.number="selectedYear" @change="onYearChange">
+      <select aria-label="Year" class="ppr-season-select" v-model.number="selectedYear" @change="onYearChange">
         <option v-for="y in yearOptions" :key="'py'+y" :value="y" v-text="y"></option>
       </select>
-      <select class="ppr-season-select" v-model.number="selectedSeason" @change="onSeasonChange">
+      <select aria-label="Season" class="ppr-season-select" v-model.number="selectedSeason" @change="onSeasonChange">
         <option v-for="s in filteredSeasons" :key="'ps'+s.id" :value="s.id" v-text="s.label"></option>
       </select>
     </div>

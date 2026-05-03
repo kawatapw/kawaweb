@@ -101,10 +101,21 @@
           </select>
           <i class="fas fa-chevron-down bm-mirror-chevron"></i>
         </div>
-        <a v-if="mirror === 'hinai'" class="bm-mirror-ping" :class="hinaiOnline ? 'bm-mirror-ping--on' : 'bm-mirror-ping--off'"
+        <a v-if="mirror === 'hinai'" class="bm-mirror-ping bm-mirror-ping--on"
+           :class="hinaiOnline ? 'bm-mirror-ping--on' : 'bm-mirror-ping--off'"
            href="https://hinamizawa.ai/osu/beatmaps" target="_blank" rel="noopener" title="Hinai Mirror">
           <span class="bm-mirror-ping-pulse"></span>
           <img src="/static/hinaDir/images/hinai_logo.png" class="bm-mirror-ping-logo" alt="Hinai">
+        </a>
+        <a v-else-if="mirror === 'osu_direct'" class="bm-mirror-ping bm-mirror-ping--on"
+           href="https://osu.direct/browse" target="_blank" rel="noopener" title="osu!direct">
+          <span class="bm-mirror-ping-pulse"></span>
+          <img src="/static/hinaDir/images/osu_direct_logo.svg" class="bm-mirror-ping-logo bm-mirror-ping-logo--svg" alt="osu!direct">
+        </a>
+        <a v-else-if="mirror === 'nerinyan'" class="bm-mirror-ping bm-mirror-ping--on"
+           href="https://nerinyan.moe/main" target="_blank" rel="noopener" title="NeriNyan (partner of Hinai)">
+          <span class="bm-mirror-ping-pulse"></span>
+          <img src="/static/hinaDir/images/nerinyan_logo.png" class="bm-mirror-ping-logo" alt="NeriNyan">
         </a>
       </div>
     </div>
