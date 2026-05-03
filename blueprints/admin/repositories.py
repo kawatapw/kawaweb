@@ -5,7 +5,6 @@ This module contains repository classes for database operations,
 providing a clean separation between business logic and data access.
 """
 
-import logging
 from datetime import datetime
 from typing import Any
 

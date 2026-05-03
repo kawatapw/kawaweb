@@ -671,9 +671,21 @@ def error_catcher(func):
             try:
                 return await func(*args, **kwargs)
             except Exception as e:
-                klogging.log(f"Error in {func.__name__}: {e}", start_color=klogging.Ansi.LRED, level=logging.ERROR, extra={
-                    "error": f"{e}",
-                    })
+                import sys
+                import traceback
+                # Get full exception info
+                exc_info = sys.exc_info()
+                # Log with exception info properly attached
+                klogging.log(
+                    f"Error in {func.__name__}: {e}",
+                    start_color=klogging.Ansi.LRED,
+                    level=logging.ERROR,
+                    extra={
+                        "error": f"{e}",
+                        "error_type": exc_info[0].__name__ if exc_info[0] else "Unknown",
+                        "stack_trace": traceback.format_exc()
+                    }
+                )
                 return await flash('error', 'An error occurred, please report this to the developer', 'error')
     else:
         @functools.wraps(func)
@@ -681,8 +693,18 @@ def error_catcher(func):
             try:
                 return func(*args, **kwargs)
             except Exception as e:
-                klogging.log(f"Error in {func.__name__}: {e}", start_color=klogging.Ansi.LRED, level=logging.ERROR, extra={
-                    "error": f"{e}",
-                    })
+                import sys
+                import traceback
+                exc_info = sys.exc_info()
+                klogging.log(
+                    f"Error in {func.__name__}: {e}",
+                    start_color=klogging.Ansi.LRED,
+                    level=logging.ERROR,
+                    extra={
+                        "error": f"{e}",
+                        "error_type": exc_info[0].__name__ if exc_info[0] else "Unknown",
+                        "stack_trace": traceback.format_exc()
+                    }
+                )
                 return jsonify({'error': 'An error occurred, please report this to the developer', 'timestamp': datetime.now()}), 500
     return wrapper

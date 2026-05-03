@@ -7,7 +7,6 @@ providing common functionality used across different services.
 
 import asyncio
 import hashlib
-import logging
 from datetime import datetime
 from typing import Any
 

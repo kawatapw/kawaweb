@@ -5,7 +5,6 @@ This module contains custom exceptions for the admin panel,
 providing clear error handling and better error messages.
 """
 
-import logging
 
 from objects.utils import klogging
 

@@ -6,7 +6,6 @@ coordinating between repositories, validators, and external services.
 """
 
 import hashlib
-import logging
 from datetime import datetime
 from typing import Any
 

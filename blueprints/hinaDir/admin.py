@@ -20,7 +20,7 @@ import config as cfg
 from constants import regexes
 from objects import glob
 from objects.privileges import ComparePrivs, GetPriv, Privileges
-from objects.utils import get_safe_name
+from objects.utils import error_catcher, get_safe_name
 
 hina_admin = Blueprint('hina_admin', __name__)
 
@@ -30,19 +30,6 @@ DEFAULT_CHECKLIST = json.dumps({
 })
 
 # ─── Decorators ────────────────────────────────────────────────────────
-
-def error_catcher(func):
-    """JSON-safe error catcher for admin API endpoints (replaces shared one that returns HTML)."""
-    @wraps(func)
-    async def wrapper(*args, **kwargs):
-        try:
-            return await func(*args, **kwargs)
-        except Exception as e:
-            import logging
-            logging.getLogger('console.error').error(f"Error in {func.__name__}: {e}")
-            return jsonify({'status': 'error', 'message': str(e)}), 500
-    return wrapper
-
 
 def staff_required(func):
     """Require login + is_staff for admin-v2 API routes. Returns JSON errors."""
@@ -1206,7 +1193,7 @@ async def action_removescore():
         "userid, perfect, online_checksum) "
         "SELECT id, map_md5, score, pp, acc, max_combo, mods, n300, n100, n50, nmiss, "
         "ngeki, nkatu, grade, status, mode, play_time, time_elapsed, client_flags, "
-        "userid, perfect, online_checksum"
+        "userid, perfect, online_checksum "
         "FROM scores WHERE id = %s",
         [score_id]
     )

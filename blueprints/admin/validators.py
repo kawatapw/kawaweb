@@ -5,7 +5,6 @@ This module provides validation functions for admin panel inputs,
 ensuring data integrity and security.
 """
 
-import logging
 import re
 from typing import Any
 

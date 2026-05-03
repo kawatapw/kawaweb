@@ -6,7 +6,6 @@ handling HTTP requests and coordinating with services.
 """
 
 import datetime
-import logging
 
 import timeago
 from quart import jsonify, render_template, request
