@@ -137,6 +137,7 @@ def magnitude_fmt_time(nanosec: int | float) -> str:
     return f"{nanosec:.2f} {suffix}"
 
 def get_required_score_for_level(level: int) -> float:
+    """Return the total score required to reach the given level."""
     if level <= 100:
         if level >= 2:
             return 5000 / 3 * (4 * (level ** 3) - 3 * (level ** 2) - level) + 1.25 * (1.8 ** (level - 60))
@@ -146,6 +147,7 @@ def get_required_score_for_level(level: int) -> float:
         return 26931190829 + 1e11 * (level - 100)
 
 def get_level(totalScore: int) -> int:
+    """Derive the current level from a total score value."""
     level = 1
     while True:
         # Avoid endless loops
@@ -166,6 +168,7 @@ def get_level(totalScore: int) -> int:
 BANNERS_PATH = Path.cwd() / '.data/banners'
 BACKGROUND_PATH = Path.cwd() / '.data/backgrounds'
 def has_profile_customizations(user_id: int = 0) -> dict[str, bool]:
+    """Check whether the user has a custom banner or background on disk."""
     # check for custom banner image file
     for ext in ('jpg', 'jpeg', 'png', 'gif'):
         path = BANNERS_PATH / f'{user_id}.{ext}'
@@ -188,6 +191,7 @@ def has_profile_customizations(user_id: int = 0) -> dict[str, bool]:
     }
 
 def crop_image(image: 'Image') -> 'Image':
+    """Crop an image to a square by removing equal margins from the longer axis."""
     width, height = image.size
     if width == height:
         return image
@@ -665,6 +669,7 @@ class BytesJsonFormatter(jsonlogger.JsonFormatter):
         return string_record.encode('utf-8') + b'\n'
 
 def error_catcher(func):
+    """Decorator: catch and log exceptions in async or sync route handlers."""
     if asyncio.iscoroutinefunction(func):
         @functools.wraps(func)
         async def wrapper(*args, **kwargs):

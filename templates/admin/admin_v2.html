@@ -2040,8 +2040,8 @@
                     <span class="av2-field-hint">Must be 9-32 characters. The user will need this to log in.</span>
                 </div>
                 <div class="av2-form-group" v-if="confirmDialog.needsScoreId">
-                    <label>Score ID</label>
-                    <input class="av2-input" v-model="confirmDialog.scoreId" placeholder="Enter the ID of the score to remove...">
+                    <label for="score-id-input">Score ID</label>
+                    <input id="score-id-input" class="av2-input" inputmode="numeric" v-model.trim="confirmDialog.scoreId" placeholder="Enter the ID of the score to remove...">
                     <span class="av2-field-hint">This can be found in the console when clicking on a user's score in their profile and opening console or clicking share score.</span>
                 </div>
                 <div class="av2-confirm-actions">
