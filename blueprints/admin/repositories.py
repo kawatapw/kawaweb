@@ -5,6 +5,7 @@ This module contains repository classes for database operations,
 providing a clean separation between business logic and data access.
 """
 
+import hashlib
 from datetime import datetime
 from typing import Any
 
@@ -76,19 +77,20 @@ class UserRepository:
     @staticmethod
     async def get_by_email(email: str) -> User | None:
         """Get user by email."""
+        hashed_email = hashlib.sha256(email.encode()).hexdigest()
         try:
-            klogging.log(f"Fetching user by email: {email}", level=klogging.logLevel.DEBUG, extra={"email": email, "operation": "get_by_email"})
+            klogging.log(f"Fetching user by email [{hashed_email}]", level=klogging.logLevel.DEBUG, extra={"hashed_email": hashed_email, "operation": "get_by_email"})
             data = await glob.db.fetch(
                 "SELECT * FROM users WHERE email = %s",
                 [email]
             )
             if data is None:
-                klogging.log(f"User not found with email: {email}", level=klogging.logLevel.DEBUG, extra={"email": email})
+                klogging.log(f"User not found with email [{hashed_email}]", level=klogging.logLevel.DEBUG, extra={"hashed_email": hashed_email})
                 return None
-            klogging.log(f"Successfully fetched user: {data.get('name', 'unknown')} (email: {email})", level=klogging.logLevel.DEBUG, extra={"email": email})  # ty:ignore[unresolved-attribute]
+            klogging.log(f"Successfully fetched user: {data.get('name', 'unknown')} [{hashed_email}]", level=klogging.logLevel.DEBUG, extra={"hashed_email": hashed_email, "user_id": data.get("id")})  # ty:ignore[unresolved-attribute]
             return User.from_dict(data)  # ty:ignore[invalid-argument-type]
         except Exception as e:
-            klogging.log(f"Error fetching user by email {email}: {e}", start_color=klogging.Ansi.LRED, level=klogging.logLevel.ERROR, extra={"email": email, "error": str(e)})
+            klogging.log(f"Error fetching user by email [{hashed_email}]: {e}", start_color=klogging.Ansi.LRED, level=klogging.logLevel.ERROR, extra={"hashed_email": hashed_email, "error": str(e)})
             raise DatabaseError(f"Failed to fetch user by email: {str(e)}") from e
 
     @staticmethod
