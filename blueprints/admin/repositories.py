@@ -77,7 +77,7 @@ class UserRepository:
     @staticmethod
     async def get_by_email(email: str) -> User | None:
         """Get user by email."""
-        hashed_email = hashlib.sha256(email.encode()).hexdigest()
+        hashed_email = hashlib.sha256(email.encode()).hexdigest() if isinstance(email, str) else "<invalid>"
         try:
             klogging.log(f"Fetching user by email [{hashed_email}]", level=klogging.logLevel.DEBUG, extra={"hashed_email": hashed_email, "operation": "get_by_email"})
             data = await glob.db.fetch(
