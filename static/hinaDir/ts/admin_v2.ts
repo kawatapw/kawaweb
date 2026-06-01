@@ -825,7 +825,14 @@ document.addEventListener('DOMContentLoaded', function () {
                 var body: any = { user: d.targetId, reason: d.reason };
                 if (d.needsDuration) body.duration = d.duration;
                 if (d.needsPassword) body.password = d.password;
-                if (d.needsScoreId) body.score = d.scoreId;
+                if (d.needsScoreId) {
+                    var trimmedScoreId = (d.scoreId || '').trim();
+                    if (!/^\d+$/.test(trimmedScoreId)) {
+                        self.showToast('error', 'Score ID must be a number.');
+                        return;
+                    }
+                    body.score = trimmedScoreId;
+                }
 
                 d.show = false;
 
