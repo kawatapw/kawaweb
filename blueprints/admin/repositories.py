@@ -124,8 +124,9 @@ class UserRepository:
     @staticmethod
     async def update_account(user_id: int, username: str, safe_name: str, email: str, country: str, userpage_content: str) -> None:
         """Update user account details."""
+        hashed_email = hashlib.sha256(email.encode()).hexdigest() if isinstance(email, str) else "<invalid>"
         try:
-            klogging.log(f"Updating account for user {user_id}: username={username}, email={email}, country={country}", level=klogging.logLevel.INFO, extra={"user_id": user_id, "username": username, "email": email, "country": country, "operation": "update_account"})
+            klogging.log(f"Updating account for user {user_id}: username={username}, email=[{hashed_email}], country={country}", level=klogging.logLevel.INFO, extra={"user_id": user_id, "username": username, "hashed_email": hashed_email, "country": country, "operation": "update_account"})
             await glob.db.execute(
                 "UPDATE users SET name = %s, safe_name = %s, email = %s, country = %s, userpage_content = %s WHERE id = %s",
                 [username, safe_name, email, country, userpage_content, user_id]
