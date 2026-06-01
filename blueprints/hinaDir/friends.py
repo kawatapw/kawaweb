@@ -11,6 +11,7 @@ hina_friends = Blueprint('hina_friends', __name__)
 
 
 def login_required(func):
+    """Decorator: redirect to login if user is not authenticated."""
     @wraps(func)
     async def wrapper(*args, **kwargs):
         if not session or 'authenticated' not in session:
@@ -24,6 +25,7 @@ def login_required(func):
 @error_catcher
 @login_required
 async def friends():
+    """Render the friends list page."""
     return await render_template('friends.html', globalNotice=g.globalNotice)
 
 
@@ -31,6 +33,7 @@ async def friends():
 @error_catcher
 @login_required
 async def friends_leaderboard():
+    """Render the friends leaderboard page."""
     return await render_template('friends_leaderboard.html', globalNotice=g.globalNotice)
 
 
@@ -38,6 +41,7 @@ async def friends_leaderboard():
 @error_catcher
 @login_required
 async def friends_action(action):
+    """Handle add/remove/block/unblock friend actions via POST."""
     valid_actions = {
         'add': 'add_friend',
         'remove': 'remove_friend',
